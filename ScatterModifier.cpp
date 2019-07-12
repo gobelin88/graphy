@@ -45,6 +45,11 @@ ScatterDataModifier::~ScatterDataModifier()
     delete m_graph;
 }
 
+void ScatterDataModifier::setGradient(int preset)
+{
+    gradient.loadPreset((QCPColorGradient::GradientPreset)preset);
+}
+
 void ScatterDataModifier::setData(const Cloud & cloud)
 {
     // Configure the axes according to the data
@@ -63,6 +68,31 @@ void ScatterDataModifier::setData(const Cloud & cloud)
     }
 
     m_graph->seriesList().at(0)->dataProxy()->resetArray(dataArray);
+    m_graph->seriesList().at(0)->setBaseColor(QColor(0,255,0));
+    m_graph->seriesList().at(0)->setColorStyle(Q3DTheme::ColorStyleUniform);
+}
+
+void ScatterDataModifier::setData(const CloudTransform & cloud)
+{
+    // Configure the axes according to the data
+    m_graph->axisX()->setTitle("X");
+    m_graph->axisY()->setTitle("Y");
+    m_graph->axisZ()->setTitle("Z");
+
+    QScatterDataArray *dataArray = new QScatterDataArray;
+    dataArray->resize(cloud.data().size());
+    QScatterDataItem *ptrToDataArray = &dataArray->first();
+
+    for (int k=0;k<cloud.data().size();k++)
+    {
+        ptrToDataArray->setPosition(cloud.data()[k].first);
+        ptrToDataArray->setRotation(cloud.data()[k].second);
+        ptrToDataArray++;
+    }
+
+    m_graph->seriesList().at(0)->dataProxy()->resetArray(dataArray);
+    m_graph->seriesList().at(0)->setBaseColor(QColor(0,255,0));
+    m_graph->seriesList().at(0)->setColorStyle(Q3DTheme::ColorStyleUniform);
 }
 
 void ScatterDataModifier::setXMin(double xmin){if(xmin<getXMax())m_graph->axisX()->setMin(xmin);}
@@ -78,8 +108,30 @@ void ScatterDataModifier::changeStyle(int style)
     if (comboBox) {
         m_style = QAbstract3DSeries::Mesh(comboBox->itemData(style).toInt());
         if (m_graph->seriesList().size())
-            m_graph->seriesList().at(0)->setMesh(m_style);
+        {
+            if(m_style==QAbstract3DSeries::MeshUserDefined)
+            {
+                if(m_graph->seriesList().at(0)->userDefinedMesh().isEmpty())
+                {
+                    setUserDefinedMesh();
+                }
+                else
+                {
+                    m_graph->seriesList().at(0)->setMesh(m_style);
+                }
+            }
+            else
+            {
+                m_graph->seriesList().at(0)->setMesh(m_style);
+            }
+        }
     }
+}
+
+void ScatterDataModifier::setSize(double size)
+{
+    if (m_graph->seriesList().size())
+        m_graph->seriesList().at(0)->setItemSize((float)size);
 }
 
 void ScatterDataModifier::setSmoothDots(int smooth)
@@ -87,6 +139,19 @@ void ScatterDataModifier::setSmoothDots(int smooth)
     m_smooth = bool(smooth);
     QScatter3DSeries *series = m_graph->seriesList().at(0);
     series->setMeshSmooth(m_smooth);
+}
+
+void ScatterDataModifier::setUserDefinedMesh()
+{
+    QString filename=QFileDialog::getOpenFileName(nullptr,"Custom Mesh","","*.obj");
+
+    if(!filename.isEmpty())
+    {
+        QScatter3DSeries *series = m_graph->seriesList().at(0);
+        series->setUserDefinedMesh(filename);
+
+        m_graph->seriesList().at(0)->setMesh(QAbstract3DSeries::MeshUserDefined);
+    }
 }
 
 void ScatterDataModifier::changeTheme(int theme)

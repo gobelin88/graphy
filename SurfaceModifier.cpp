@@ -38,6 +38,15 @@ SurfaceDataModifier::SurfaceDataModifier(Q3DSurface *scatter)
 
     scatter->setAspectRatio(1.0);
     scatter->setHorizontalAspectRatio(1.0);
+
+    QLinearGradient gr;
+    gr.setColorAt(0.0, Qt::black);
+    gr.setColorAt(0.33, Qt::blue);
+    gr.setColorAt(0.67, Qt::red);
+    gr.setColorAt(1.0, Qt::yellow);
+
+    m_graph->seriesList().at(0)->setBaseGradient(gr);
+    m_graph->seriesList().at(0)->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
 }
 
 SurfaceDataModifier::~SurfaceDataModifier()
@@ -47,7 +56,10 @@ SurfaceDataModifier::~SurfaceDataModifier()
 
 void SurfaceDataModifier::setData(const Cloud & cloud)
 {
-    Surface surface=cloud.getExtrapolated();
+    //fillSqrtSinProxy();
+    Eigen::MatrixXd surface(100,100);//=cloud.getExtrapolated();
+
+    std::cout<<surface.rows()<<" "<<surface.cols()<<std::endl;
 
     // Configure the axes according to the data
     m_graph->axisX()->setTitle("X");
@@ -55,17 +67,17 @@ void SurfaceDataModifier::setData(const Cloud & cloud)
     m_graph->axisZ()->setTitle("Z");
 
     QSurfaceDataArray * dataArray = new QSurfaceDataArray;
-    QSurfaceDataRow * dataRow=new QSurfaceDataRow;
+    dataArray->reserve(surface.rows());
 
-    for (int j=0;j<surface.cols();j++)
+    for (int k=0;k<surface.rows();k++)
     {
-        dataRow->resize(surface.rows());
-        QSurfaceDataItem * ptrToDataRow = &dataRow->first();
-        for (int k=0;k<surface.rows();k++)
+        QSurfaceDataRow * dataRow=new QSurfaceDataRow(surface.cols());
+        for (int j=0;j<surface.cols();j++)
         {
-            ptrToDataRow->setPosition( QVector3D(k,j,surface(k,j)) );
-            ptrToDataRow++;
+            (*dataRow)[j].setPosition(QVector3D(j,surface(j,k),k));
         }
+
+        *dataArray<<dataRow;
     }
 
 

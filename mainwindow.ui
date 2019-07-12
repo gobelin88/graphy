@@ -15,7 +15,7 @@
   </property>
   <widget class="QWidget" name="centralWidget"/>
   <widget class="QStatusBar" name="statusBar"/>
-  <widget class="QToolBar" name="toolBar">
+  <widget class="QToolBar" name="toolbar">
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
@@ -31,6 +31,7 @@
    <addaction name="actionPlot_MapXYZ"/>
    <addaction name="actionHistogram"/>
    <addaction name="actionPlot_Cloud_3D"/>
+   <addaction name="actionPlot_Surface_3D"/>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -164,6 +165,11 @@
   <action name="actionPlot_Cloud_3D">
    <property name="text">
     <string>Plot Cloud 3D</string>
+   </property>
+  </action>
+  <action name="actionPlot_Surface_3D">
+   <property name="text">
+    <string>Plot Surface 3D</string>
    </property>
   </action>
  </widget>

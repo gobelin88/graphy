@@ -5,6 +5,7 @@
 #include <QtDataVisualization/qabstract3dseries.h>
 #include <QtGui/QFont>
 #include "Cloud.h"
+#include "qcustomplot.h"
 
 using namespace QtDataVisualization;
 
@@ -16,6 +17,7 @@ public:
     ~ScatterDataModifier();
 
     void setData(const Cloud & cloud);
+    void setData(const CloudTransform & cloud);
 
     void changeStyle();
     void changePresetCamera();
@@ -34,11 +36,16 @@ public:
     float getZMin(){return m_graph->axisZ()->min();}
     float getZMax(){return m_graph->axisZ()->max();}
 
+    float getSize(){return m_graph->seriesList().at(0)->itemSize();}
+
 public Q_SLOTS:
+    void setUserDefinedMesh();
     void changeStyle(int style);
     void changeTheme(int theme);
     void changeShadowQuality(int quality);
+    void setSize(double size);
     void shadowQualityUpdatedByVisual(QAbstract3DGraph::ShadowQuality shadowQuality);
+    void setGradient(int preset);
 
     void setXMin(double xmin);
     void setXMax(double xmax);
@@ -58,6 +65,8 @@ private:
     int m_fontSize;
     QAbstract3DSeries::Mesh m_style;
     bool m_smooth;
+
+    QCPColorGradient gradient;
 };
 
 #endif

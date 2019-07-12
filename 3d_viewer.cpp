@@ -14,6 +14,11 @@ ViewerScatter3D::ViewerScatter3D()
     hLayout->addWidget(container, 1);
     hLayout->addLayout(vLayout);
 
+    scatterSize=new QDoubleSpinBox();
+    scatterSize->setRange(0,1e3);
+    scatterSize->setSingleStep(0.01);
+    scatterSize->setPrefix("Size=");
+
     QComboBox *themeList = new QComboBox(this);
     themeList->addItem(QStringLiteral("Qt"));
     themeList->addItem(QStringLiteral("Primary Colors"));
@@ -30,14 +35,21 @@ ViewerScatter3D::ViewerScatter3D()
     smoothCheckBox->setChecked(true);
 
     QComboBox *itemStyleList = new QComboBox(this);
-    itemStyleList->addItem(QStringLiteral("Sphere"), int(QAbstract3DSeries::MeshSphere));
-    itemStyleList->addItem(QStringLiteral("Cube"), int(QAbstract3DSeries::MeshCube));
-    itemStyleList->addItem(QStringLiteral("Minimal"), int(QAbstract3DSeries::MeshMinimal));
-    itemStyleList->addItem(QStringLiteral("Point"), int(QAbstract3DSeries::MeshPoint));
+    itemStyleList->addItem(QStringLiteral("Sphere"),      int(QAbstract3DSeries::MeshSphere));
+    itemStyleList->addItem(QStringLiteral("Cube"),        int(QAbstract3DSeries::MeshCube));
+    itemStyleList->addItem(QStringLiteral("Minimal"),     int(QAbstract3DSeries::MeshMinimal));
+    itemStyleList->addItem(QStringLiteral("Point"),       int(QAbstract3DSeries::MeshPoint));
+    itemStyleList->addItem(QStringLiteral("Arrow"),       int(QAbstract3DSeries::MeshArrow));
+    itemStyleList->addItem(QStringLiteral("Bar"),         int(QAbstract3DSeries::MeshBar));
+    itemStyleList->addItem(QStringLiteral("Minimal"),     int(QAbstract3DSeries::MeshMinimal));
+    itemStyleList->addItem(QStringLiteral("User-Defined"),int(QAbstract3DSeries::MeshUserDefined));
     itemStyleList->setCurrentIndex(0);
 
     QPushButton *cameraButton = new QPushButton(this);
     cameraButton->setText(QStringLiteral("Change camera preset"));
+
+    QPushButton *loadMesh = new QPushButton(this);
+    loadMesh->setText(QStringLiteral("Load custom Mesh"));
 
     QCheckBox *backgroundCheckBox = new QCheckBox(this);
     backgroundCheckBox->setText(QStringLiteral("Show background"));
@@ -87,6 +99,9 @@ ViewerScatter3D::ViewerScatter3D()
     vLayout->addWidget(shadowQuality);
     vLayout->addWidget(new QLabel(QStringLiteral("Change font")));
     vLayout->addWidget(fontList, 1, Qt::AlignTop);
+    vLayout->addWidget(scatterSize, 1, Qt::AlignTop);
+    vLayout->addWidget(loadMesh, 1, Qt::AlignTop);
+
     vLayout->addLayout(glayout,2);
 
     modifier = new ScatterDataModifier(graph);
@@ -104,6 +119,8 @@ ViewerScatter3D::ViewerScatter3D()
     QObject::connect(graph, &Q3DScatter::shadowQualityChanged, modifier,&ScatterDataModifier::shadowQualityUpdatedByVisual);
     QObject::connect(fontList, &QFontComboBox::currentFontChanged, modifier,&ScatterDataModifier::changeFont);
     QObject::connect(modifier, &ScatterDataModifier::fontChanged, fontList,&QFontComboBox::setCurrentFont);
+    QObject::connect(scatterSize, SIGNAL(valueChanged(double)), modifier,SLOT(setSize(double)));
+    QObject::connect(loadMesh, SIGNAL(clicked()), modifier,SLOT(setUserDefinedMesh()));
 
     QObject::connect(sb_xmin,SIGNAL(valueChanged(double)), modifier,SLOT(setXMin(double)));
     QObject::connect(sb_xmax,SIGNAL(valueChanged(double)), modifier,SLOT(setXMax(double)));
@@ -117,6 +134,20 @@ void ViewerScatter3D::set_data(const Cloud & cloud)
 {
     modifier->setData(cloud);
 
+    scatterSize->setValue(modifier->getSize());
+    sb_xmin->setValue(double(modifier->getXMin()));
+    sb_xmax->setValue(double(modifier->getXMax()));
+    sb_ymin->setValue(double(modifier->getYMin()));
+    sb_ymax->setValue(double(modifier->getYMax()));
+    sb_zmin->setValue(double(modifier->getZMin()));
+    sb_zmax->setValue(double(modifier->getZMax()));
+}
+
+void ViewerScatter3D::set_data(const CloudTransform & cloud)
+{
+    modifier->setData(cloud);
+
+    scatterSize->setValue(modifier->getSize());
     sb_xmin->setValue(double(modifier->getXMin()));
     sb_xmax->setValue(double(modifier->getXMax()));
     sb_ymin->setValue(double(modifier->getYMin()));
@@ -128,7 +159,7 @@ void ViewerScatter3D::set_data(const Cloud & cloud)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ViewerSurface3D::ViewerSurface3D()
 {
-    QtDataVisualization::Q3DScatter *graph = new QtDataVisualization::Q3DScatter();
+    QtDataVisualization::Q3DSurface *graph = new QtDataVisualization::Q3DSurface();
     QWidget *container = QWidget::createWindowContainer(graph);
 
     container->setMinimumSize(QSize(512,512));
@@ -215,21 +246,21 @@ ViewerSurface3D::ViewerSurface3D()
     vLayout->addWidget(fontList, 1, Qt::AlignTop);
     vLayout->addLayout(glayout,2);
 
-    modifier = new ScatterDataModifier(graph);
+    modifier = new SurfaceDataModifier(graph);
 
-    QObject::connect(cameraButton, &QPushButton::clicked, modifier,&ScatterDataModifier::changePresetCamera);
-    QObject::connect(backgroundCheckBox, &QCheckBox::stateChanged, modifier,&ScatterDataModifier::setBackgroundEnabled);
-    QObject::connect(gridCheckBox, &QCheckBox::stateChanged, modifier,&ScatterDataModifier::setGridEnabled);
-    QObject::connect(smoothCheckBox, &QCheckBox::stateChanged, modifier,&ScatterDataModifier::setSmoothDots);
-    QObject::connect(modifier, &ScatterDataModifier::backgroundEnabledChanged,backgroundCheckBox, &QCheckBox::setChecked);
-    QObject::connect(modifier, &ScatterDataModifier::gridEnabledChanged,gridCheckBox, &QCheckBox::setChecked);
+    QObject::connect(cameraButton, &QPushButton::clicked, modifier,&SurfaceDataModifier::changePresetCamera);
+    QObject::connect(backgroundCheckBox, &QCheckBox::stateChanged, modifier,&SurfaceDataModifier::setBackgroundEnabled);
+    QObject::connect(gridCheckBox, &QCheckBox::stateChanged, modifier,&SurfaceDataModifier::setGridEnabled);
+    QObject::connect(smoothCheckBox, &QCheckBox::stateChanged, modifier,&SurfaceDataModifier::setSmoothDots);
+    QObject::connect(modifier, &SurfaceDataModifier::backgroundEnabledChanged,backgroundCheckBox, &QCheckBox::setChecked);
+    QObject::connect(modifier, &SurfaceDataModifier::gridEnabledChanged,gridCheckBox, &QCheckBox::setChecked);
     QObject::connect(itemStyleList, SIGNAL(currentIndexChanged(int)), modifier,SLOT(changeStyle(int)));
     QObject::connect(themeList, SIGNAL(currentIndexChanged(int)), modifier,SLOT(changeTheme(int)));
     QObject::connect(shadowQuality, SIGNAL(currentIndexChanged(int)), modifier,SLOT(changeShadowQuality(int)));
-    QObject::connect(modifier, &ScatterDataModifier::shadowQualityChanged, shadowQuality,&QComboBox::setCurrentIndex);
-    QObject::connect(graph, &Q3DScatter::shadowQualityChanged, modifier,&ScatterDataModifier::shadowQualityUpdatedByVisual);
-    QObject::connect(fontList, &QFontComboBox::currentFontChanged, modifier,&ScatterDataModifier::changeFont);
-    QObject::connect(modifier, &ScatterDataModifier::fontChanged, fontList,&QFontComboBox::setCurrentFont);
+    QObject::connect(modifier, &SurfaceDataModifier::shadowQualityChanged, shadowQuality,&QComboBox::setCurrentIndex);
+    QObject::connect(graph, &Q3DScatter::shadowQualityChanged, modifier,&SurfaceDataModifier::shadowQualityUpdatedByVisual);
+    QObject::connect(fontList, &QFontComboBox::currentFontChanged, modifier,&SurfaceDataModifier::changeFont);
+    QObject::connect(modifier, &SurfaceDataModifier::fontChanged, fontList,&QFontComboBox::setCurrentFont);
 
     QObject::connect(sb_xmin,SIGNAL(valueChanged(double)), modifier,SLOT(setXMin(double)));
     QObject::connect(sb_xmax,SIGNAL(valueChanged(double)), modifier,SLOT(setXMax(double)));

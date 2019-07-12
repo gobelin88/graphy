@@ -53,6 +53,7 @@ public slots:
     void slot_plot_xyz();
     void slot_plot_histogram();
     void slot_plot_cloud_3D();
+    void slot_plot_surface_3D();
 
 private:
     void setCurrentFilename(QString filename);

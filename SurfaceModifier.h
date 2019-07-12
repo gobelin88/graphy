@@ -1,10 +1,13 @@
-#ifndef SCATTERDATAMODIFIER_H
-#define SCATTERDATAMODIFIER_H
+#ifndef SURFACEDATAMODIFIER_H
+#define SURFACEDATAMODIFIER_H
 
 #include <QtDataVisualization/q3dsurface.h>
 #include <QtDataVisualization/qabstract3dseries.h>
 #include <QtGui/QFont>
 #include "Cloud.h"
+#include <iostream>
+#include <algorithm>
+
 
 using namespace QtDataVisualization;
 

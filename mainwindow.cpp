@@ -19,6 +19,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionPlot_MapXYZ    , &QAction::triggered,this,&MainWindow::slot_plot_xyz);
     connect(ui->actionHistogram      , &QAction::triggered,this,&MainWindow::slot_plot_histogram);
     connect(ui->actionPlot_Cloud_3D  , &QAction::triggered,this,&MainWindow::slot_plot_cloud_3D);
+    connect(ui->actionPlot_Surface_3D  , &QAction::triggered,this,&MainWindow::slot_plot_surface_3D);
 
 
     connect(ui->actionTile,&QAction::triggered,mdiArea,&QMdiArea::tileSubWindows);
@@ -438,6 +439,58 @@ void MainWindow::slot_plot_cloud_3D()
         viewer3d->set_data(*cloud);
 
         QMdiSubWindow *subWindow = new QMdiSubWindow;
+        subWindow->setWindowTitle("Cloud");
+        subWindow->setWidget(viewer3d);
+        subWindow->setAttribute(Qt::WA_DeleteOnClose);
+        mdiArea->addSubWindow(subWindow);
+        viewer3d->show();
+    }
+    else if(id_list.size()==7)
+    {
+        QVector<double> data_x =getCol(id_list[0].column(),datatable);
+        QVector<double> data_y =getCol(id_list[1].column(),datatable);
+        QVector<double> data_z =getCol(id_list[2].column(),datatable);
+        QVector<double> data_qw=getCol(id_list[3].column(),datatable);
+        QVector<double> data_qx=getCol(id_list[4].column(),datatable);
+        QVector<double> data_qy=getCol(id_list[5].column(),datatable);
+        QVector<double> data_qz=getCol(id_list[6].column(),datatable);
+
+        ViewerScatter3D * viewer3d=new ViewerScatter3D;
+
+        CloudTransform * cloud=new CloudTransform(data_x,data_y,data_z,
+                                                  data_qw,data_qx,data_qy,data_qz);
+        viewer3d->set_data(*cloud);
+
+        QMdiSubWindow *subWindow = new QMdiSubWindow;
+        subWindow->setWindowTitle("Cloud");
+        subWindow->setWidget(viewer3d);
+        subWindow->setAttribute(Qt::WA_DeleteOnClose);
+        mdiArea->addSubWindow(subWindow);
+        viewer3d->show();
+    }
+    else
+    {
+        QMessageBox::information(this,"Information","Please select 3 or 7 columns");
+    }
+}
+
+void MainWindow::slot_plot_surface_3D()
+{
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+
+    if(id_list.size()==3)
+    {
+        QVector<double> data_x=getCol(id_list[0].column(),datatable);
+        QVector<double> data_y=getCol(id_list[1].column(),datatable);
+        QVector<double> data_z=getCol(id_list[2].column(),datatable);
+
+        ViewerSurface3D * viewer3d=new ViewerSurface3D;
+
+        Cloud * cloud=new Cloud(data_x,data_y,data_z);
+        viewer3d->set_data(*cloud);
+
+        QMdiSubWindow *subWindow = new QMdiSubWindow;
+        subWindow->setWindowTitle("Surface");
         subWindow->setWidget(viewer3d);
         subWindow->setAttribute(Qt::WA_DeleteOnClose);
         mdiArea->addSubWindow(subWindow);

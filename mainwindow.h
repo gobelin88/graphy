@@ -18,7 +18,7 @@
 #include "1d_viewer.h"
 #include "2d_viewer.h"
 #include "3d_viewer.h"
-
+#include "view3d.h"
 
 
 namespace Ui {
@@ -54,6 +54,7 @@ public slots:
     void slot_plot_histogram();
     void slot_plot_cloud_3D();
     void slot_plot_surface_3D();
+    void slot_mode_changed();
 
 private:
     void setCurrentFilename(QString filename);
@@ -75,6 +76,14 @@ private:
     TableData datatable;
 
     Curve2D shared;
+
+    enum GraphMode
+    {
+        MODE_POINTS,
+        MODE_LINES
+    };
+
+    bool graphMode;
 };
 
 #endif // MAINWINDOW_H

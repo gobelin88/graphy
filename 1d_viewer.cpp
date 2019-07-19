@@ -109,6 +109,8 @@ void Viewer1D::createPopup()
     actDelete->setShortcut(QKeySequence("Del"));
     actColor= new QAction("Color",  this);
     actColor->setShortcut(QKeySequence("C"));
+    actStyle= new QAction("Style",  this);
+    actStyle->setShortcut(QKeySequence("!"));
 
     actLegendShow= new QAction("Hide",  this);
     actLegendShow->setCheckable(true);
@@ -125,16 +127,18 @@ void Viewer1D::createPopup()
     this->addAction(actRescale);
     this->addAction(actDelete);
     this->addAction(actLegendShow);
-    this->addAction(actColor);
     this->addAction(actClearMarks);
+    this->addAction(actColor);
+    this->addAction(actStyle);
 
     popup_menu->addAction(actCopy);
     popup_menu->addAction(actPaste);
     popup_menu->addAction(actSave);
-    popup_menu->addAction(actRescale);
     popup_menu->addAction(actDelete);
+    popup_menu->addSeparator();
+    popup_menu->addAction(actRescale);
     popup_menu->addAction(actClearMarks);
-    popup_menu->addAction(actColor);
+    popup_menu->addSeparator();
 
     menu_fit=new QMenu("Fit",popup_menu);
     menu_mathematics=new QMenu("Mathematics",menu_fit);
@@ -157,6 +161,7 @@ void Viewer1D::createPopup()
 
     menu_legend->addAction(actLegendShow);
     menu_legend->addAction(actLegendTop);
+    menu_legend->addAction(actStyle);
 
     popup_menu->addMenu(menu_fit);
     popup_menu->addMenu(menu_legend);
@@ -179,6 +184,7 @@ void Viewer1D::createPopup()
     connect(actLegendShow,SIGNAL(toggled(bool)),this,SLOT(slot_show_legend(bool)));
     connect(actLegendTop,SIGNAL(toggled(bool)),this,SLOT(slot_top_legend(bool)));
     connect(actClearMarks,SIGNAL(triggered()),this,SLOT(slot_clear_marks()));
+    connect(actStyle,SIGNAL(triggered()),this,SLOT(slot_set_style()));
 }
 
 void Viewer1D::slot_clear_marks()
@@ -261,8 +267,6 @@ void Viewer1D::slot_fit_linear()
 
         QVector<double> X=curves[i].getX();
         QVector<double> Y=curves[i].at(C,X);
-
-
 
         slot_add_data_graph(Curve2D(X,Y,QString("Fit Linear Y=%1 X + %2").arg(C[1]).arg(C[0])));
     }
@@ -409,8 +413,76 @@ void Viewer1D::slot_set_color()
     {
         QColor color=QColorDialog::getColor(graphslist[0]->pen().color(),this,"Get Color");
 
-
         graphslist[0]->setPen(QPen(color));
+    }
+}
+
+void Viewer1D::slot_set_style()
+{
+    QList<QCPGraph*> graphslist=this->selectedGraphs();
+
+    if(graphslist.size()>0)
+    {
+        QDialog * dialog=new QDialog;
+
+        QComboBox *itemLineStyleList = new QComboBox(dialog);
+        itemLineStyleList->addItem(QStringLiteral("lsNone"),        int(QCPGraph::LineStyle::lsNone));
+        itemLineStyleList->addItem(QStringLiteral("lsLine"),        int(QCPGraph::LineStyle::lsLine));
+        itemLineStyleList->addItem(QStringLiteral("lsStepLeft"),    int(QCPGraph::LineStyle::lsStepLeft));
+        itemLineStyleList->addItem(QStringLiteral("lsStepRight"),   int(QCPGraph::LineStyle::lsStepRight));
+        itemLineStyleList->addItem(QStringLiteral("lsStepCenter"),  int(QCPGraph::LineStyle::lsStepCenter));
+        itemLineStyleList->addItem(QStringLiteral("lsImpulse"),     int(QCPGraph::LineStyle::lsImpulse));
+        itemLineStyleList->setCurrentIndex(graphslist[0]->lineStyle());
+
+        QComboBox *itemScatterStyleList = new QComboBox(dialog);
+        itemScatterStyleList->addItem(QStringLiteral("ssNone"),             int(QCPScatterStyle::ScatterShape::ssNone));
+        itemScatterStyleList->addItem(QStringLiteral("ssDot"),              int(QCPScatterStyle::ScatterShape::ssDot));
+        itemScatterStyleList->addItem(QStringLiteral("ssCross"),            int(QCPScatterStyle::ScatterShape::ssCross));
+        itemScatterStyleList->addItem(QStringLiteral("ssPlus"),             int(QCPScatterStyle::ScatterShape::ssPlus));
+        itemScatterStyleList->addItem(QStringLiteral("ssCircle"),           int(QCPScatterStyle::ScatterShape::ssCircle));
+        itemScatterStyleList->addItem(QStringLiteral("ssDisc"),             int(QCPScatterStyle::ScatterShape::ssDisc));
+        itemScatterStyleList->addItem(QStringLiteral("ssSquare"),           int(QCPScatterStyle::ScatterShape::ssSquare));
+        itemScatterStyleList->addItem(QStringLiteral("ssDiamond"),          int(QCPScatterStyle::ScatterShape::ssDiamond));
+        itemScatterStyleList->addItem(QStringLiteral("ssStar"),             int(QCPScatterStyle::ScatterShape::ssStar));
+        itemScatterStyleList->addItem(QStringLiteral("ssTriangle"),         int(QCPScatterStyle::ScatterShape::ssTriangle));
+        itemScatterStyleList->addItem(QStringLiteral("ssTriangleInverted"), int(QCPScatterStyle::ScatterShape::ssTriangleInverted));
+        itemScatterStyleList->addItem(QStringLiteral("ssCrossSquare"),      int(QCPScatterStyle::ScatterShape::ssCrossSquare));
+        itemScatterStyleList->addItem(QStringLiteral("ssPlusSquare"),       int(QCPScatterStyle::ScatterShape::ssPlusSquare));
+        itemScatterStyleList->addItem(QStringLiteral("ssCrossCircle"),      int(QCPScatterStyle::ScatterShape::ssCrossCircle));
+        itemScatterStyleList->addItem(QStringLiteral("ssPlusCircle"),       int(QCPScatterStyle::ScatterShape::ssPlusCircle));
+        itemScatterStyleList->addItem(QStringLiteral("ssPeace"),            int(QCPScatterStyle::ScatterShape::ssPeace));
+        itemScatterStyleList->setCurrentIndex(graphslist[0]->scatterStyle().shape());
+
+        QPushButton * pb_color=new  QPushButton("Color",dialog);
+        QObject::connect(pb_color, SIGNAL(clicked()), this, SLOT(slot_set_color()));
+
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("Initials parameters");
+        QGridLayout * gbox = new QGridLayout();
+
+
+        gbox->addWidget(itemLineStyleList,0,0);
+        gbox->addWidget(itemScatterStyleList,1,0);
+        gbox->addWidget(pb_color,2,0);
+
+        QDialogButtonBox * buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                            | QDialogButtonBox::Cancel);
+
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+        gbox->addWidget(buttonBox,3,0);
+
+        dialog->setLayout(gbox);
+
+        int result=dialog->exec();
+
+        if(result == QDialog::Accepted)
+        {
+            graphslist[0]->setLineStyle( QCPGraph::LineStyle (itemLineStyleList->currentData().toInt()) );
+            graphslist[0]->setScatterStyle( QCPScatterStyle::ScatterShape (itemScatterStyleList->currentData().toInt()) );
+            replot();
+        }
     }
 }
 

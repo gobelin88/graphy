@@ -38,6 +38,7 @@ public slots:
     void slot_histogram(QVector<double> data,QString name);
 
     void slot_set_color();
+    void slot_set_style();
     void slot_clear_marks();
 
     void slot_copy();
@@ -74,6 +75,7 @@ protected:
     QAction *actFitRLC;
     QAction *actFitSinusoide;
     QAction *actColor;
+    QAction *actStyle;
 
     QString current_filename;
 

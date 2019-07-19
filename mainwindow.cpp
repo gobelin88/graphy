@@ -19,13 +19,14 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionPlot_MapXYZ    , &QAction::triggered,this,&MainWindow::slot_plot_xyz);
     connect(ui->actionHistogram      , &QAction::triggered,this,&MainWindow::slot_plot_histogram);
     connect(ui->actionPlot_Cloud_3D  , &QAction::triggered,this,&MainWindow::slot_plot_cloud_3D);
-    connect(ui->actionPlot_Surface_3D  , &QAction::triggered,this,&MainWindow::slot_plot_surface_3D);
-
 
     connect(ui->actionTile,&QAction::triggered,mdiArea,&QMdiArea::tileSubWindows);
     connect(ui->actionCascade,&QAction::triggered,mdiArea,&QMdiArea::cascadeSubWindows);
     connect(ui->actionNext,&QAction::triggered,mdiArea,&QMdiArea::activateNextSubWindow);
     connect(ui->actionPrevious,&QAction::triggered,mdiArea,&QMdiArea::activatePreviousSubWindow);
+
+    connect(ui->actionPoints,&QAction::triggered,this,&MainWindow::slot_mode_changed);
+    connect(ui->actionLines,&QAction::triggered,this,&MainWindow::slot_mode_changed);
 
 //    QMdiSubWindow* w = mdiArea->addSubWindow(table);
 //    w->setWindowFlags(Qt::FramelessWindowHint);
@@ -33,10 +34,19 @@ MainWindow::MainWindow(QWidget *parent) :
 
     mdiArea->setViewport(table);
 
-    mdiArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
-    table->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+    //mdiArea->viewport()->stackUnder(table);
+
+    mdiArea->setSizeAdjustPolicy (QAbstractScrollArea::AdjustToContents);
+    table->setSizeAdjustPolicy   (QAbstractScrollArea::AdjustToContents);
 
     direct_new(10,10);
+
+    graphMode=MODE_POINTS;
+
+    QActionGroup * actionGroup=new QActionGroup(this);
+    actionGroup->addAction(ui->actionPoints);
+    actionGroup->addAction(ui->actionLines);
+    ui->actionPoints->setChecked(true);
 }
 
 MainWindow::~MainWindow()
@@ -423,6 +433,18 @@ void MainWindow::slot_plot_xyz()
     }
 }
 
+void MainWindow::slot_mode_changed()
+{
+    if(ui->actionPoints->isChecked())
+    {
+        graphMode=MODE_POINTS;
+    }
+    else if(ui->actionLines->isChecked())
+    {
+        graphMode=MODE_LINES;
+    }
+}
+
 void MainWindow::slot_plot_cloud_3D()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
@@ -433,40 +455,56 @@ void MainWindow::slot_plot_cloud_3D()
         QVector<double> data_y=getCol(id_list[1].column(),datatable);
         QVector<double> data_z=getCol(id_list[2].column(),datatable);
 
-        ViewerScatter3D * viewer3d=new ViewerScatter3D;
-
         Cloud * cloud=new Cloud(data_x,data_y,data_z);
-        viewer3d->set_data(*cloud);
+
+        View3D * view3d=new View3D;
+        view3d->addGrid(0.01,100,QColor(64,64,64));
+
+        if(graphMode==MODE_POINTS)
+        {
+            view3d->addCloud(cloud,QColor(0,255,0));
+        }
+        else
+        {
+            view3d->addCloudLine(cloud,QColor(0,255,0));
+        }
 
         QMdiSubWindow *subWindow = new QMdiSubWindow;
         subWindow->setWindowTitle("Cloud");
-        subWindow->setWidget(viewer3d);
+        subWindow->setWidget(view3d->getContainer());
         subWindow->setAttribute(Qt::WA_DeleteOnClose);
         mdiArea->addSubWindow(subWindow);
-        viewer3d->show();
+        view3d->getContainer()->show();
+
     }
-    else if(id_list.size()==7)
+    else if(id_list.size()==4)
     {
-        QVector<double> data_x =getCol(id_list[0].column(),datatable);
-        QVector<double> data_y =getCol(id_list[1].column(),datatable);
-        QVector<double> data_z =getCol(id_list[2].column(),datatable);
-        QVector<double> data_qw=getCol(id_list[3].column(),datatable);
-        QVector<double> data_qx=getCol(id_list[4].column(),datatable);
-        QVector<double> data_qy=getCol(id_list[5].column(),datatable);
-        QVector<double> data_qz=getCol(id_list[6].column(),datatable);
+        QVector<double> data_x=getCol(id_list[0].column(),datatable);
+        QVector<double> data_y=getCol(id_list[1].column(),datatable);
+        QVector<double> data_z=getCol(id_list[2].column(),datatable);
+        QVector<double> data_s=getCol(id_list[3].column(),datatable);
 
-        ViewerScatter3D * viewer3d=new ViewerScatter3D;
+        std::cout<<"plot cloud"<<std::endl;
+        CloudScalar * cloud=new CloudScalar(data_x,data_y,data_z,data_s);
 
-        CloudTransform * cloud=new CloudTransform(data_x,data_y,data_z,
-                                                  data_qw,data_qx,data_qy,data_qz);
-        viewer3d->set_data(*cloud);
+        View3D * view3d=new View3D;
+        view3d->addGrid(0.01,100,QColor(64,64,64));
+
+        if(graphMode==MODE_POINTS)
+        {
+            view3d->addCloudScalar(cloud);
+        }
+        else
+        {
+            view3d->addCloudScalarLine(cloud);
+        }
 
         QMdiSubWindow *subWindow = new QMdiSubWindow;
         subWindow->setWindowTitle("Cloud");
-        subWindow->setWidget(viewer3d);
+        subWindow->setWidget(view3d->getContainer());
         subWindow->setAttribute(Qt::WA_DeleteOnClose);
         mdiArea->addSubWindow(subWindow);
-        viewer3d->show();
+        view3d->getContainer()->show();
     }
     else
     {

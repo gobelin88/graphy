@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>666</width>
+    <width>712</width>
     <height>629</height>
    </rect>
   </property>
@@ -15,30 +15,12 @@
   </property>
   <widget class="QWidget" name="centralWidget"/>
   <widget class="QStatusBar" name="statusBar"/>
-  <widget class="QToolBar" name="toolbar">
-   <property name="windowTitle">
-    <string>toolBar</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionPlot_GraphY"/>
-   <addaction name="actionPlot_GraphXY"/>
-   <addaction name="actionPlot_CurveXY"/>
-   <addaction name="actionPlot_MapXYZ"/>
-   <addaction name="actionHistogram"/>
-   <addaction name="actionPlot_Cloud_3D"/>
-   <addaction name="actionPlot_Surface_3D"/>
-  </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>666</width>
+     <width>712</width>
      <height>21</height>
     </rect>
    </property>
@@ -60,6 +42,26 @@
    </widget>
    <addaction name="menuMenu"/>
    <addaction name="menuView"/>
+  </widget>
+  <widget class="QToolBar" name="toolbar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionPlot_GraphY"/>
+   <addaction name="actionPlot_GraphXY"/>
+   <addaction name="actionPlot_CurveXY"/>
+   <addaction name="actionPlot_MapXYZ"/>
+   <addaction name="actionHistogram"/>
+   <addaction name="actionPlot_Cloud_3D"/>
+   <addaction name="separator"/>
+   <addaction name="actionPoints"/>
+   <addaction name="actionLines"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -170,6 +172,22 @@
   <action name="actionPlot_Surface_3D">
    <property name="text">
     <string>Plot Surface 3D</string>
+   </property>
+  </action>
+  <action name="actionPoints">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Points</string>
+   </property>
+  </action>
+  <action name="actionLines">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Lines</string>
    </property>
   </action>
  </widget>

@@ -28,25 +28,27 @@ CONFIG += c++11
 SOURCES += \
         1d_viewer.cpp \
         2d_viewer.cpp \
-    3d_viewer.cpp \
-    Cloud.cpp \
-    ScatterModifier.cpp \
-    SurfaceModifier.cpp \
+        3d_viewer.cpp \
+        Cloud.cpp \
+        ScatterModifier.cpp \
+        SurfaceModifier.cpp \
         ShapeFit.cpp \
         curve2d.cpp \
         main.cpp \
         mainwindow.cpp \
         qcustomplot.cpp \
         tabledata.cpp \
+        view3d.cpp \
+        qPosAtt.cpp
 
 HEADERS += \
         1d_viewer.h \
         2d_viewer.h \
-    3d_viewer.h \
-    Cloud.h \
+        3d_viewer.h \
+        Cloud.h \
         Functor.h \
-    ScatterModifier.h \
-    SurfaceModifier.h \
+        ScatterModifier.h \
+        SurfaceModifier.h \
         ShapeFit.h \
         box.h \
         boxplot.h \
@@ -54,6 +56,8 @@ HEADERS += \
         mainwindow.h \
         qcustomplot.h \
         tabledata.h \
+        view3d.h \
+        qPosAtt.h
 
 FORMS += \
         mainwindow.ui

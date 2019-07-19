@@ -3,6 +3,8 @@
 #include <QQuaternion>
 #include <Eigen/Dense>
 
+#include "qcustomplot.h"
+
 #ifndef CLOUD_H
 #define CLOUD_H
 
@@ -16,7 +18,26 @@ public:
 private:
     QVector<QVector3D> pts;
 };
+/////////////////////////////////////////////////////////////////////////////////////////////
+class CloudScalar
+{
+public:
+    CloudScalar(const QVector<double> & x,const QVector<double> &  y,const QVector<double> &  z,const QVector<double> &  s);
+    void operator=(const CloudScalar & other);
+    const QVector<QVector4D> & data()const {return pts;}
 
+    QCPRange getRange();
+
+    QVector<QRgb> & getColors(){return colors;}
+
+private:
+    QVector<QVector4D> pts;
+    QVector<double> scalar;
+    QVector<QRgb> colors;
+
+    QCPColorGradient gradient;
+};
+/////////////////////////////////////////////////////////////////////////////////////////////
 class CloudTransform
 {
 public:

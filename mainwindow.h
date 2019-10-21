@@ -21,6 +21,7 @@
 #include "3d_viewer.h"
 #include "view3d.h"
 
+#include <unsupported/Eigen/FFT>
 
 namespace Ui {
 class MainWindow;
@@ -57,6 +58,8 @@ public slots:
     void slot_plot_surface_3D();
     void slot_mode_changed();
     void slot_plot_gain_phase();
+
+    void slot_plot_fft();
 
 private:
     void setCurrentFilename(QString filename);

@@ -15,6 +15,29 @@
   </property>
   <widget class="QWidget" name="centralWidget"/>
   <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionPlot_GraphY"/>
+   <addaction name="actionPlot_GraphXY"/>
+   <addaction name="actionPlot_CurveXY"/>
+   <addaction name="actionPlot_MapXYZ"/>
+   <addaction name="actionHistogram"/>
+   <addaction name="actionPlot_Cloud_3D"/>
+   <addaction name="separator"/>
+   <addaction name="actionPoints"/>
+   <addaction name="actionLines"/>
+   <addaction name="separator"/>
+   <addaction name="actionPlot_Gain_Phase"/>
+   <addaction name="actionFFT"/>
+  </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
@@ -42,28 +65,6 @@
    </widget>
    <addaction name="menuMenu"/>
    <addaction name="menuView"/>
-  </widget>
-  <widget class="QToolBar" name="toolBar">
-   <property name="windowTitle">
-    <string>toolBar</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionPlot_GraphY"/>
-   <addaction name="actionPlot_GraphXY"/>
-   <addaction name="actionPlot_CurveXY"/>
-   <addaction name="actionPlot_MapXYZ"/>
-   <addaction name="actionHistogram"/>
-   <addaction name="actionPlot_Cloud_3D"/>
-   <addaction name="separator"/>
-   <addaction name="actionPoints"/>
-   <addaction name="actionLines"/>
-   <addaction name="separator"/>
-   <addaction name="actionPlot_Gain_Phase"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -195,6 +196,11 @@
   <action name="actionPlot_Gain_Phase">
    <property name="text">
     <string>Plot Gain-Phase</string>
+   </property>
+  </action>
+  <action name="actionFFT">
+   <property name="text">
+    <string>FFT</string>
    </property>
   </action>
  </widget>

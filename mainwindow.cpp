@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "FIR.h"
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -19,6 +21,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionPlot_MapXYZ    , &QAction::triggered,this,&MainWindow::slot_plot_xyz);
     connect(ui->actionHistogram      , &QAction::triggered,this,&MainWindow::slot_plot_histogram);
     connect(ui->actionPlot_Cloud_3D  , &QAction::triggered,this,&MainWindow::slot_plot_cloud_3D);
+    connect(ui->actionFFT  , &QAction::triggered,this,&MainWindow::slot_plot_fft);
 
     connect(ui->actionPlot_Gain_Phase  , &QAction::triggered,this,&MainWindow::slot_plot_gain_phase);
 
@@ -444,6 +447,61 @@ void MainWindow::slot_mode_changed()
     else if(ui->actionLines->isChecked())
     {
         graphMode=MODE_LINES;
+    }
+}
+
+void MainWindow::slot_plot_fft()
+{
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+
+    if(id_list.size()>0)
+    {
+        Viewer1D * viewer1d=new Viewer1D(&shared);
+        viewer1d->setMinimumSize(600,400);
+
+        for(int k=0;k<id_list.size();k++)
+        {
+            QVector<double> data_y=getCol(id_list[k].column(),datatable);
+
+            std::vector< double > time=std::vector< double >(data_y.size()/2.0, 0);
+            for(unsigned int i=0;i<time.size();i++)time[i]=i*1.0/data_y.size();
+
+            FIR win;
+            win.getHannCoef(data_y.size());
+
+            for(int i=0;i<data_y.size();i++)
+            {
+                data_y[i]*=win.at(i);
+            }
+
+            Eigen::FFT<double> fft;
+            fft.SetFlag(Eigen::FFT<double>::HalfSpectrum);
+            fft.SetFlag(Eigen::FFT<double>::Unscaled);
+
+            std::vector< std::complex<double> > fft_data_cplx;
+            fft.fwd(fft_data_cplx,data_y.toStdVector());
+            fft_data_cplx.pop_back();
+
+            std::vector< double > fft_data_module(fft_data_cplx.size());
+            for(unsigned int k=0;k<fft_data_cplx.size();k++)fft_data_module[k]=20*log10(std::abs(fft_data_cplx[k]));
+
+
+
+            if(data_y.size()>0)
+            {
+                viewer1d->slot_add_data_graph(Curve2D(QVector<double>::fromStdVector(time),QVector<double>::fromStdVector(fft_data_module) ,QString("FFT %1").arg(getColName(id_list[k  ].column()))));
+            }
+        }
+
+        QMdiSubWindow *subWindow = new QMdiSubWindow;
+        subWindow->setWidget(viewer1d);
+        subWindow->setAttribute(Qt::WA_DeleteOnClose);
+        mdiArea->addSubWindow(subWindow);
+        viewer1d->show();
+    }
+    else
+    {
+        QMessageBox::information(this,"Information","Please select k columns (k>1)");
     }
 }
 

@@ -31,6 +31,7 @@ SOURCES += \
         2d_viewer.cpp \
         3d_viewer.cpp \
         Cloud.cpp \
+        FIR.cpp \
         ScatterModifier.cpp \
         SurfaceModifier.cpp \
         ShapeFit.cpp \
@@ -49,6 +50,7 @@ HEADERS += \
         2d_viewer.h \
         3d_viewer.h \
         Cloud.h \
+        FIR.h \
         Functor.h \
         ScatterModifier.h \
         SurfaceModifier.h \

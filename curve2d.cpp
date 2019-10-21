@@ -87,7 +87,7 @@ double Curve2D::at(const Eigen::VectorXd & A,double value)
 
 QVector<double> Curve2D::at(const Eigen::VectorXd & A,QVector<double> values)
 {
-    QVector<double> y(x.size());
+    QVector<double> y(values.size());
     for(int i=0;i<y.size();i++)
     {
         y[i]=at(A,values[i]);

@@ -16,6 +16,7 @@
 #include <QScrollArea>
 
 #include "1d_viewer.h"
+#include "1d_cplx_viewer.h"
 #include "2d_viewer.h"
 #include "3d_viewer.h"
 #include "view3d.h"
@@ -55,6 +56,7 @@ public slots:
     void slot_plot_cloud_3D();
     void slot_plot_surface_3D();
     void slot_mode_changed();
+    void slot_plot_gain_phase();
 
 private:
     void setCurrentFilename(QString filename);

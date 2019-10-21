@@ -43,7 +43,7 @@
    <addaction name="menuMenu"/>
    <addaction name="menuView"/>
   </widget>
-  <widget class="QToolBar" name="toolbar">
+  <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
@@ -62,6 +62,8 @@
    <addaction name="separator"/>
    <addaction name="actionPoints"/>
    <addaction name="actionLines"/>
+   <addaction name="separator"/>
+   <addaction name="actionPlot_Gain_Phase"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -188,6 +190,11 @@
    </property>
    <property name="text">
     <string>Lines</string>
+   </property>
+  </action>
+  <action name="actionPlot_Gain_Phase">
+   <property name="text">
+    <string>Plot Gain-Phase</string>
    </property>
   </action>
  </widget>

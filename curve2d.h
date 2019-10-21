@@ -15,6 +15,23 @@ public:
     QVector<double> getX()const {return x;}
     QVector<double> getY()const {return y;}
 
+    QVector<double> getLinX(int n)const
+    {
+        double min=x[0];
+        double max=x[x.size()-1];
+
+        std::cout<<max<<" "<<min<<std::endl;
+
+        QVector<double> xlin(n);
+
+        for(int i=0;i<n;i++)
+        {
+            xlin[i]=i*(max-min)/n+min;
+        }
+
+        return xlin;
+    }
+
     void fit(Shape<Eigen::Vector2d> * model);
 
     Eigen::VectorXd fit(unsigned int order);

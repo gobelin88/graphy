@@ -20,6 +20,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionHistogram      , &QAction::triggered,this,&MainWindow::slot_plot_histogram);
     connect(ui->actionPlot_Cloud_3D  , &QAction::triggered,this,&MainWindow::slot_plot_cloud_3D);
 
+    connect(ui->actionPlot_Gain_Phase  , &QAction::triggered,this,&MainWindow::slot_plot_gain_phase);
+
     connect(ui->actionTile,&QAction::triggered,mdiArea,&QMdiArea::tileSubWindows);
     connect(ui->actionCascade,&QAction::triggered,mdiArea,&QMdiArea::cascadeSubWindows);
     connect(ui->actionNext,&QAction::triggered,mdiArea,&QMdiArea::activateNextSubWindow);
@@ -449,66 +451,89 @@ void MainWindow::slot_plot_cloud_3D()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-    if(id_list.size()==3)
+    if(id_list.size()==3 || id_list.size()==4)
     {
+        View3D * view3d=new View3D;
+        view3d->addGrid(0.01,100,QColor(64,64,64));
         QVector<double> data_x=getCol(id_list[0].column(),datatable);
         QVector<double> data_y=getCol(id_list[1].column(),datatable);
         QVector<double> data_z=getCol(id_list[2].column(),datatable);
 
-        Cloud * cloud=new Cloud(data_x,data_y,data_z);
-
-        View3D * view3d=new View3D;
-        view3d->addGrid(0.01,100,QColor(64,64,64));
-
-        if(graphMode==MODE_POINTS)
+        if(id_list.size()==3)
         {
-            view3d->addCloud(cloud,QColor(0,255,0));
+            Cloud * cloud=new Cloud(data_x,data_y,data_z);
+
+            if(graphMode==MODE_POINTS)
+            {
+                view3d->addCloud(cloud,QColor(0,255,0));
+            }
+            else
+            {
+                view3d->addCloudLine(cloud,QColor(0,255,0));
+            }
         }
-        else
+        else if(id_list.size()==4)
         {
-            view3d->addCloudLine(cloud,QColor(0,255,0));
+            QVector<double> data_s=getCol(id_list[3].column(),datatable);
+            CloudScalar * cloud=new CloudScalar(data_x,data_y,data_z,data_s);
+
+            if(graphMode==MODE_POINTS)
+            {
+                view3d->addCloudScalar(cloud);
+            }
+            else
+            {
+                view3d->addCloudScalarLine(cloud);
+            }
         }
 
-        QMdiSubWindow *subWindow = new QMdiSubWindow;
-        subWindow->setWindowTitle("Cloud");
-        subWindow->setWidget(view3d->getContainer());
-        subWindow->setAttribute(Qt::WA_DeleteOnClose);
-        mdiArea->addSubWindow(subWindow);
+//        mdiArea->addSubWindow(view3d->getContainer());
         view3d->getContainer()->show();
 
-    }
-    else if(id_list.size()==4)
-    {
-        QVector<double> data_x=getCol(id_list[0].column(),datatable);
-        QVector<double> data_y=getCol(id_list[1].column(),datatable);
-        QVector<double> data_z=getCol(id_list[2].column(),datatable);
-        QVector<double> data_s=getCol(id_list[3].column(),datatable);
+//        view3d->show();
 
-        std::cout<<"plot cloud"<<std::endl;
-        CloudScalar * cloud=new CloudScalar(data_x,data_y,data_z,data_s);
-
-        View3D * view3d=new View3D;
-        view3d->addGrid(0.01,100,QColor(64,64,64));
-
-        if(graphMode==MODE_POINTS)
-        {
-            view3d->addCloudScalar(cloud);
-        }
-        else
-        {
-            view3d->addCloudScalarLine(cloud);
-        }
-
-        QMdiSubWindow *subWindow = new QMdiSubWindow;
-        subWindow->setWindowTitle("Cloud");
-        subWindow->setWidget(view3d->getContainer());
-        subWindow->setAttribute(Qt::WA_DeleteOnClose);
-        mdiArea->addSubWindow(subWindow);
-        view3d->getContainer()->show();
     }
     else
     {
-        QMessageBox::information(this,"Information","Please select 3 or 7 columns");
+        QMessageBox::information(this,"Information","Please select 3 columns (x,y,z) or 4 columns (x,y,z,scalar)");
+    }
+}
+
+void MainWindow::slot_plot_gain_phase()
+{
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+
+
+    if(id_list.size()%3==0 && id_list.size()>0)
+    {
+        Viewer1DCPLX * viewer1d=new Viewer1DCPLX();
+        viewer1d->setMinimumSize(600,400);
+
+        for(int k=0;k<id_list.size();k+=3)
+        {
+
+            QVector<double> data_f=getCol(id_list[k  ].column(),datatable);
+            QVector<double> data_gain=getCol(id_list[k+1].column(),datatable);
+            QVector<double> data_phase=getCol(id_list[k+2].column(),datatable);
+
+            if(data_f.size()>0 && data_gain.size()>0 && data_phase.size()>0)
+            {
+                viewer1d->slot_add_data_graph(
+                Curve2D_GainPhase(data_f,data_gain,data_phase,QString("Gain %2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column()))
+                ,QString("Phase %2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+2].column())))
+                );
+            }
+        }
+
+        QMdiSubWindow *subWindow = new QMdiSubWindow;
+        subWindow->setWidget(viewer1d);
+        subWindow->setAttribute(Qt::WA_DeleteOnClose);
+        mdiArea->addSubWindow(subWindow);
+        viewer1d->show();
+    }
+    else
+    {
+        QMessageBox::information(this,"Information","Please select 3k columns (k>1)");
     }
 }
 

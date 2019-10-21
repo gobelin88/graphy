@@ -8,11 +8,11 @@ View3D::View3D()
     //renderSettings()->setRenderPolicy(Qt3DRender::QRenderSettings::RenderPolicy::OnDemand);
 
     defaultFrameGraph()->setClearColor(QColor(0,0,0));
-    defaultFrameGraph()->setFrustumCullingEnabled(false);
+    defaultFrameGraph()->setFrustumCullingEnabled(true);
 
     container = QWidget::createWindowContainer(this);
     container->setMinimumSize(QSize(512, 512));
-    container->setMaximumSize(screen()->size());
+    //container->setMaximumSize(screen()->size());
     //registerAspect(new Qt3DInput::QInputAspect);
 
     //Camera

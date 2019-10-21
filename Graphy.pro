@@ -27,6 +27,7 @@ CONFIG += c++11
 
 SOURCES += \
         1d_viewer.cpp \
+        1d_cplx_viewer.cpp \
         2d_viewer.cpp \
         3d_viewer.cpp \
         Cloud.cpp \
@@ -34,6 +35,7 @@ SOURCES += \
         SurfaceModifier.cpp \
         ShapeFit.cpp \
         curve2d.cpp \
+        curve2d_gainphase.cpp \
         main.cpp \
         mainwindow.cpp \
         qcustomplot.cpp \
@@ -43,6 +45,7 @@ SOURCES += \
 
 HEADERS += \
         1d_viewer.h \
+        1d_cplx_viewer.h \
         2d_viewer.h \
         3d_viewer.h \
         Cloud.h \
@@ -53,6 +56,7 @@ HEADERS += \
         box.h \
         boxplot.h \
         curve2d.h \
+        curve2d_gainphase.h \
         mainwindow.h \
         qcustomplot.h \
         tabledata.h \

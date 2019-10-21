@@ -1,9 +1,7 @@
-#include "1d_viewer.h"
+#include "1d_cplx_viewer.h"
 
-Viewer1D::Viewer1D(Curve2D * sharedBuf)
+Viewer1DCPLX::Viewer1DCPLX()
 {
-    this->sharedBuf=sharedBuf;
-
     colors.append(QColor(255,0,0));
     colors.append(QColor(0,128,0));
     colors.append(QColor(0,0,255));
@@ -17,8 +15,7 @@ Viewer1D::Viewer1D(Curve2D * sharedBuf)
 
     createPopup();
 
-    this->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
-                          QCP::iSelectLegend | QCP::iSelectPlottables);
+    this->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom );
 
     connect(this, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(mousePress(QMouseEvent*)));
     connect(this, SIGNAL(mouseDoubleClick(QMouseEvent*)), this, SLOT(mouseDoublePress(QMouseEvent*)));
@@ -27,18 +24,18 @@ Viewer1D::Viewer1D(Curve2D * sharedBuf)
     pen_select.setStyle(Qt::SolidLine);
 }
 
-Viewer1D::~Viewer1D()
+Viewer1DCPLX::~Viewer1DCPLX()
 {
 
 }
 
-unsigned int Viewer1D::getId()
+unsigned int Viewer1DCPLX::getId()
 {
     unsigned int id=(this->plottableCount()-1)%colors.size();
     return id;
 }
 
-void Viewer1D::newGraph(QString name)
+void Viewer1DCPLX::newGraph(QString name)
 {
     this->addGraph();
     QPen pen_model(colors[getId()]);
@@ -56,47 +53,51 @@ void Viewer1D::newGraph(QString name)
     decorator_select->setPen(pen_select);
     this->graph()->setSelectionDecorator(decorator_select);
     graph()->setName(name);
+
+    this->yAxis->setLabel("Gain");
 }
 
-void Viewer1D::slot_add_data_graph(const Curve2D & datacurve)
+void Viewer1DCPLX::newSubGraph(QString name)
 {
-    newGraph(datacurve.name());
-
-    graph()->setData(datacurve.getX(), datacurve.getY());
-
-    rescaleAxes();
-    replot();
-}
-
-void Viewer1D::slot_add_data_curve(const Curve2D & datacurve)
-{
-    QCPCurve *newCurve = new QCPCurve(this->xAxis, this->yAxis);
-
-    newCurve->setName(datacurve.name());
-    newCurve->setData(datacurve.getX(), datacurve.getY());
+    this->addGraph(this->xAxis, this->yAxis2);
     QPen pen_model(colors[getId()]);
+
     pen_model.setStyle(Qt::SolidLine);
-    newCurve->setPen(pen_model);
+    this->graph()->setPen(pen_model);
+    this->graph()->setLineStyle(QCPGraph::lsLine);
+    this->graph()->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssNone, 10));
+    this->rescaleAxes();
+    legend->setVisible(true);
+
+    this->graph()->setSelectable(QCP::stWhole);
+
+    this->yAxis2->setVisible(true);
+
+    this->yAxis2->setLabel("Phase");
 
     QCPSelectionDecorator * decorator_select=new QCPSelectionDecorator;
     decorator_select->setPen(pen_select);
-    newCurve->setSelectionDecorator(decorator_select);
-    legend->setVisible(true);
+    this->graph()->setSelectionDecorator(decorator_select);
+    graph()->setName(name);
+}
 
-    axisRect()->setupFullAxesBox();
+void Viewer1DCPLX::slot_add_data_graph(const Curve2D_GainPhase & curve)
+{
+    std::cout<<"slot_add_data_graph1"<<std::endl;
+
+    newGraph(curve.gname());
+    graph()->setData(curve.getF(), curve.getG());
+
+    newSubGraph(curve.pname());
+    graph()->setData(curve.getF(), curve.getP());
+
     rescaleAxes();
     replot();
 }
 
-
-void Viewer1D::createPopup()
+void Viewer1DCPLX::createPopup()
 {
     popup_menu=new QMenu(this);
-
-    actCopy   = new QAction("Copy",  this);
-    actCopy->setShortcut(QKeySequence("Ctrl+C"));
-    actPaste   = new QAction("Paste",  this);
-    actPaste->setShortcut(QKeySequence("Ctrl+V"));
 
     actClearMarks   = new QAction("Clear Marks",  this);
     actClearMarks->setShortcut(QKeySequence("Space"));
@@ -105,8 +106,6 @@ void Viewer1D::createPopup()
     actSave->setShortcut(QKeySequence("S"));
     actRescale= new QAction("Rescale",  this);
     actRescale->setShortcut(QKeySequence("R"));
-    actDelete= new QAction("Delete",  this);
-    actDelete->setShortcut(QKeySequence("Del"));
     actColor= new QAction("Color",  this);
     actColor->setShortcut(QKeySequence("C"));
     actStyle= new QAction("Style",  this);
@@ -121,43 +120,33 @@ void Viewer1D::createPopup()
     actLegendTop->setCheckable(true);
     actLegendTop->setChecked(true);
 
-    this->addAction(actCopy);
-    this->addAction(actPaste);
     this->addAction(actSave);
     this->addAction(actRescale);
-    this->addAction(actDelete);
     this->addAction(actLegendShow);
     this->addAction(actClearMarks);
     this->addAction(actColor);
     this->addAction(actStyle);
 
-    popup_menu->addAction(actCopy);
-    popup_menu->addAction(actPaste);
     popup_menu->addAction(actSave);
-    popup_menu->addAction(actDelete);
     popup_menu->addSeparator();
     popup_menu->addAction(actRescale);
     popup_menu->addAction(actClearMarks);
     popup_menu->addSeparator();
 
     menu_fit=new QMenu("Fit",popup_menu);
-    menu_mathematics=new QMenu("Mathematics",menu_fit);
-    menu_electronics=new QMenu("Electronics",menu_fit);
     menu_legend=new QMenu("Legend",menu_fit);
 
-    actFitLinear= new QAction("Linear",  this);
-    actFitPolynome= new QAction("Polynome",  this);
-    actFitGaussian= new QAction("Gaussian",  this);
-
+    actFitRaLpCpRb= new QAction("RaL|C|Rb",  this);
+    actFitRLpC= new QAction("RL|C",  this);
+    actFitRL= new QAction("RL",  this);
     actFitRLC= new QAction("RLC",  this);
-    actFitSinusoide= new QAction("Sinusoide",  this);
+    actFitRLCapCb= new QAction("RLCapCb",  this);
 
-    menu_mathematics->addAction(actFitLinear);
-    menu_mathematics->addAction(actFitPolynome);
-    menu_mathematics->addAction(actFitGaussian);
-
-    menu_electronics->addAction(actFitRLC);
-    menu_electronics->addAction(actFitSinusoide);
+    menu_fit->addAction(actFitRL);
+    menu_fit->addAction(actFitRLpC);
+    menu_fit->addAction(actFitRaLpCpRb);
+    menu_fit->addAction(actFitRLC);
+    menu_fit->addAction(actFitRLCapCb);
 
     menu_legend->addAction(actLegendShow);
     menu_legend->addAction(actLegendTop);
@@ -165,29 +154,25 @@ void Viewer1D::createPopup()
 
     popup_menu->addMenu(menu_fit);
     popup_menu->addMenu(menu_legend);
-    menu_fit->addMenu(menu_mathematics);
-    menu_fit->addMenu(menu_electronics);
 
     connect(actSave,SIGNAL(triggered()),this,SLOT(slot_save_image()));
     connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_rescale()));
-    connect(actFitLinear,SIGNAL(triggered()),this,SLOT(slot_fit_linear()));
-    connect(actFitPolynome,SIGNAL(triggered()),this,SLOT(slot_fit_polynome()));
+    connect(actFitRLpC,SIGNAL(triggered()),this,SLOT(slot_fit_rlpc()));
+    connect(actFitRaLpCpRb,SIGNAL(triggered()),this,SLOT(slot_fit_ralpcprb()));
+    connect(actFitRL,SIGNAL(triggered()),this,SLOT(slot_fit_rl()));
+
     connect(actFitRLC,SIGNAL(triggered()),this,SLOT(slot_fit_rlc()));
-    connect(actFitGaussian,SIGNAL(triggered()),this,SLOT(slot_fit_gaussian()));
-    connect(actFitSinusoide,SIGNAL(triggered()),this,SLOT(slot_fit_sinusoide()));
+    connect(actFitRLCapCb,SIGNAL(triggered()),this,SLOT(slot_fit_rlcapcb()));
+
     connect(actColor,SIGNAL(triggered()),this,SLOT(slot_set_color()));
 
-    connect(actCopy,SIGNAL(triggered()),this,SLOT(slot_copy()));
-    connect(actPaste,SIGNAL(triggered()),this,SLOT(slot_paste()));
-
-    connect(actDelete,SIGNAL(triggered()),this,SLOT(slot_delete()));
     connect(actLegendShow,SIGNAL(toggled(bool)),this,SLOT(slot_show_legend(bool)));
     connect(actLegendTop,SIGNAL(toggled(bool)),this,SLOT(slot_top_legend(bool)));
     connect(actClearMarks,SIGNAL(triggered()),this,SLOT(slot_clear_marks()));
     connect(actStyle,SIGNAL(triggered()),this,SLOT(slot_set_style()));
 }
 
-void Viewer1D::slot_clear_marks()
+void Viewer1DCPLX::slot_clear_marks()
 {
     std::cout<<"clear items "<<this->itemCount()<<std::endl;
     this->clearItems();
@@ -196,7 +181,7 @@ void Viewer1D::slot_clear_marks()
 }
 
 
-void Viewer1D::mousePress(QMouseEvent * event)
+void Viewer1DCPLX::mousePress(QMouseEvent * event)
 {
     if(event->button() == Qt::RightButton)
     {
@@ -204,7 +189,7 @@ void Viewer1D::mousePress(QMouseEvent * event)
     }
 }
 
-void Viewer1D::mouseDoublePress(QMouseEvent * event)
+void Viewer1DCPLX::mouseDoublePress(QMouseEvent * event)
 {
     if(event->button() == Qt::LeftButton)
     {
@@ -256,125 +241,136 @@ void Viewer1D::mouseDoublePress(QMouseEvent * event)
     }
 }
 
-
-void Viewer1D::slot_fit_linear()
+void Viewer1DCPLX::slot_fit_ralpcprb()
 {
-    QList<Curve2D> curves=getSelectedCurves();
+    QList<Curve2D_GainPhase> curves=getCurves();
+    QDoubleSpinBox *Ra,*L,*C,*Rb;
+    QCheckBox *fixedRa,*fixedL,*fixedC,*fixedRb;
+    QDialog * dialog=RaLpCpRb_cplx::createDialog(Ra,L,C,Rb,fixedRa,fixedL,fixedC,fixedRb);
+    Ra->setValue(200);
+    L->setValue(10);
+    C->setValue(2);
+    Rb->setValue(100);
 
-    for(int i=0;i<curves.size();i++)
-    {
-        Eigen::VectorXd C=curves[i].fit(2);
-
-        QVector<double> X=curves[i].getX();
-        QVector<double> Y=curves[i].at(C,X);
-
-        slot_add_data_graph(Curve2D(X,Y,QString("Fit Linear Y=%1 X + %2").arg(C[1]).arg(C[0])));
-    }
-}
-
-void Viewer1D::slot_fit_sinusoide()
-{
-    QList<Curve2D> curves=getSelectedCurves();
-
-    QDoubleSpinBox *A,*F,*P;
-    QDialog * dialog=Sinusoide::createDialog(A,F,P);
-    A->setValue(0.0001);
-    F->setValue(0.0001);
     int result=dialog->exec();
 
     if(result == QDialog::Accepted)
     {
-        Sinusoide sinusoide(A->value(),F->value(),P->value());
+        RaLpCpRb_cplx rlpc_cplx(Ra->value(),L->value(),C->value(),Rb->value(),fixedRa->isChecked(),fixedL->isChecked(),fixedC->isChecked(),fixedRb->isChecked());
 
         for(int i=0;i<curves.size();i++)
         {
-            curves[i].fit(&sinusoide);
+            std::cout<<"fit..."<<std::endl;
+            curves[i].fit(&rlpc_cplx);
+            std::cout<<"fit ok"<<std::endl;
 
-            sinusoide.regularized();
+            QVector<double> F=curves[i].getLinF(1000),G,P;
+            rlpc_cplx.at(F,G,P);
 
-            QVector<double> X=curves[i].getLinX(1000);
-            QVector<double> Y=sinusoide.at(X);
-
-            slot_add_data_graph(Curve2D(X,Y,QString("Fit A=%1 F=%2[Hz] P=%3[°]").arg(sinusoide.getA()).arg(sinusoide.getF()).arg(sinusoide.getP()*180/M_PI)) );
+            slot_add_data_graph(Curve2D_GainPhase(F,G,P,
+                                                  QString("Fit R=%1Ohm L=%2mH C=%3nF Rb=%4kOhm").arg(rlpc_cplx.getRa()).arg(rlpc_cplx.getL()).arg(rlpc_cplx.getC()).arg(rlpc_cplx.getRb()),
+                                                  QString("Fit R=%1Ohm L=%2mH C=%3nF Rb=%4kOhm").arg(rlpc_cplx.getRa()).arg(rlpc_cplx.getL()).arg(rlpc_cplx.getC()).arg(rlpc_cplx.getRb())));
         }
     }
 }
 
-void Viewer1D::slot_fit_gaussian()
+void Viewer1DCPLX::slot_fit_rlpc()
 {
-    QList<Curve2D> curves=getSelectedCurves();
-
-    QDoubleSpinBox *S,*M,*K;
-    QDialog * dialog=Gaussian::createDialog(S,M,K);
-    S->setValue(10);
-    M->setValue(0);
-    int result=dialog->exec();
-
-    if(result == QDialog::Accepted)
-    {
-        Gaussian gaussian(S->value(),M->value(),K->value());
-
-        for(int i=0;i<curves.size();i++)
-        {
-            curves[i].fit(&gaussian);
-            QVector<double> X=curves[i].getLinX(1000);
-            QVector<double> Y=gaussian.at(X);
-
-            slot_add_data_graph(Curve2D(X,Y,QString("Fit Sigma=%1 Mean=%2 K=%3").arg(gaussian.getS()).arg(gaussian.getM()).arg(gaussian.getK())));
-        }
-    }
-}
-
-void Viewer1D::slot_fit_rlc()
-{
-    QList<Curve2D> curves=getSelectedCurves();
-
+    QList<Curve2D_GainPhase> curves=getCurves();
     QDoubleSpinBox *R,*L,*C;
     QCheckBox *fixedR,*fixedL,*fixedC;
-
-    QDialog * dialog=RLpC::createDialog(R,L,C,fixedR,fixedL,fixedC);
+    QDialog * dialog=RLpC_cplx::createDialog(R,L,C,fixedR,fixedL,fixedC);
     R->setValue(200);
     L->setValue(10);
     C->setValue(2);
+
     int result=dialog->exec();
 
     if(result == QDialog::Accepted)
     {
-        RLpC rlpc(R->value(),L->value(),C->value(),fixedR->isChecked(),fixedL->isChecked(),fixedC->isChecked());
+        RLpC_cplx rlpc_cplx(R->value(),L->value(),C->value(),fixedR->isChecked(),fixedL->isChecked(),fixedC->isChecked());
 
         for(int i=0;i<curves.size();i++)
         {
-            curves[i].fit(&rlpc);
-            QVector<double> X=curves[i].getLinX(1000);
-            QVector<double> Y=rlpc.at(X);
+            curves[i].fit(&rlpc_cplx);
+            QVector<double> F=curves[i].getLinF(1000);
+            QVector<double> G,P;
+            rlpc_cplx.at(F,G,P);
 
-            slot_add_data_graph(Curve2D(X,Y,QString("Fit R=%1Ohm L=%2mH C=%3nF Fc=%4Hz").arg(rlpc.getR()).arg(rlpc.getL()).arg(rlpc.getC()).arg(rlpc.getFc())));
+            slot_add_data_graph(Curve2D_GainPhase(F,G,P,
+                                                  QString("Fit R=%1Ohm L=%2mH C=%3nF Fc=%4Hz").arg(rlpc_cplx.getR()).arg(rlpc_cplx.getL()).arg(rlpc_cplx.getC()).arg(rlpc_cplx.getFc()),
+                                                  QString("Fit R=%1Ohm L=%2mH C=%3nF Fc=%4Hz").arg(rlpc_cplx.getR()).arg(rlpc_cplx.getL()).arg(rlpc_cplx.getC()).arg(rlpc_cplx.getFc())));
         }
     }
 }
 
-void Viewer1D::slot_fit_polynome()
+void Viewer1DCPLX::slot_fit_rlc()
 {
-    int order=1+QInputDialog::getInt(this,"Order of the polynome","Order=",2,1,20,1);
-    QList<Curve2D> curves=getSelectedCurves();
+    QList<Curve2D_GainPhase> curves=getCurves();
+    QDoubleSpinBox *R,*L,*C;
+    QCheckBox *fixedR,*fixedL,*fixedC;
 
-    std::cout<<curves.size()<<std::endl;
+    QDialog * dialog=RLC_cplx::createDialog(R,L,C,fixedR,fixedL,fixedC);
+    R->setValue(200);
+    L->setValue(10);
 
-    for(int i=0;i<curves.size();i++)
+    int result=dialog->exec();
+
+    if(result == QDialog::Accepted)
     {
-        Eigen::VectorXd C=curves[i].fit(order);
+        RLC_cplx rlc_cplx(R->value(),L->value(),C->value(),fixedR->isChecked(),fixedL->isChecked(),fixedC->isChecked());
 
-        QVector<double> X=curves[i].getLinX(1000);
-        QVector<double> Y=curves[i].at(C,X);
+        for(int i=0;i<curves.size();i++)
+        {
+            curves[i].fit(&rlc_cplx);
+            QVector<double> F=curves[i].getLinF(1000);
+            QVector<double> G,P;
+            rlc_cplx.at(F,G,P);
 
-        QString name("Fit Polynome Coeffs=");
-        for(int k=0;k<order;k++){name+=QString("%1 ").arg(C[order-k-1]);}
-
-        slot_add_data_graph(Curve2D(X,Y,name));
+            slot_add_data_graph(Curve2D_GainPhase(F,G,P,
+                                                  QString("Fit R=%1Ohm L=%2mH C=%3nF Fc=%4Hz").arg(rlc_cplx.getR()).arg(rlc_cplx.getL()).arg(rlc_cplx.getC()).arg(rlc_cplx.getFc()),
+                                                  QString("Fit R=%1Ohm L=%2mH C=%3nF Fc=%4Hz").arg(rlc_cplx.getR()).arg(rlc_cplx.getL()).arg(rlc_cplx.getC()).arg(rlc_cplx.getFc())));
+        }
     }
 }
 
-void Viewer1D::slot_show_legend(bool value)
+void Viewer1DCPLX::slot_fit_rlcapcb()
+{
+
+}
+
+void Viewer1DCPLX::slot_fit_rl()
+{
+    QList<Curve2D_GainPhase> curves=getCurves();
+    QDoubleSpinBox *R,*L;
+    QCheckBox *fixedR,*fixedL;
+
+    QDialog * dialog=RL_cplx::createDialog(R,L,fixedR,fixedL);
+    R->setValue(200);
+    L->setValue(10);
+
+    std::cout<<"slot_fit_rlc3"<<std::endl;
+    int result=dialog->exec();
+
+    if(result == QDialog::Accepted)
+    {
+        RL_cplx rl_cplx(R->value(),L->value(),fixedR->isChecked(),fixedL->isChecked());
+
+        for(int i=0;i<curves.size();i++)
+        {
+            curves[i].fit(&rl_cplx);
+            QVector<double> F=curves[i].getLinF(1000);
+            QVector<double> G,P;
+            rl_cplx.at(F,G,P);
+
+            slot_add_data_graph(Curve2D_GainPhase(F,G,P,
+                                                  QString("Fit R=%1Ohm L=%2mH").arg(rl_cplx.getR()).arg(rl_cplx.getL()),
+                                                  QString("Fit R=%1Ohm L=%2mH").arg(rl_cplx.getR()).arg(rl_cplx.getL())));
+        }
+    }
+}
+
+void Viewer1DCPLX::slot_show_legend(bool value)
 {
     legend->setVisible(value);
     replot();
@@ -389,7 +385,7 @@ void Viewer1D::slot_show_legend(bool value)
     }
 }
 
-void Viewer1D::slot_top_legend(bool value)
+void Viewer1DCPLX::slot_top_legend(bool value)
 {
     if(value)
     {
@@ -405,7 +401,7 @@ void Viewer1D::slot_top_legend(bool value)
     replot();
 }
 
-void Viewer1D::slot_set_color()
+void Viewer1DCPLX::slot_set_color()
 {
     QList<QCPGraph*> graphslist=this->selectedGraphs();
 
@@ -417,7 +413,7 @@ void Viewer1D::slot_set_color()
     }
 }
 
-void Viewer1D::slot_set_style()
+void Viewer1DCPLX::slot_set_style()
 {
     QList<QCPGraph*> graphslist=this->selectedGraphs();
 
@@ -486,88 +482,33 @@ void Viewer1D::slot_set_style()
     }
 }
 
-void Viewer1D::slot_histogram(QVector<double> data,QString name)
+QList<Curve2D_GainPhase> Viewer1DCPLX::getCurves()
 {
-    int nbbins=QInputDialog::getInt(this,"Number of bins","Nb bins=",100,2,10000,1);
-    QVector<double> labels;
-    QVector<double> hist;
-    labels.resize(nbbins);
-    hist.resize(nbbins);
+    QList<Curve2D_GainPhase> curvelist;
 
-    double min=*std::min_element(data.constBegin(), data.constEnd());
-    double max=*std::max_element(data.constBegin(), data.constEnd());
-
-    double delta= (max-min)/nbbins;
-
-    for(int k=0;k<data.size();k++)
+    for(int i=0;i<this->graphCount();i+=2)
     {
-        unsigned int index=std::round((data[k]-min)/delta);
+        QVector<double> f,g,p;
 
-        if(index>0 && index<data.size())
+        QCPGraph * currentgraph_g,*currentgraph_p;
+
+        currentgraph_g=this->graph(i);
+        currentgraph_p=this->graph(i+1);
+
+        if(currentgraph_g && currentgraph_p)
         {
-            hist[index]+=1;
-        }
-    }
+            auto itg =currentgraph_g->data()->begin();
+            auto itp =currentgraph_p->data()->begin();
 
-    for(int i=0;i<labels.size();i++)
-    {
-        labels[i]=delta*i+min;
-    }
-
-    std::cout<<"slot_set_data_graph "<<labels.size()<<" "<<hist.size()<<std::endl;
-
-    slot_add_data_graph(Curve2D(labels,hist,name));
-}
-
-void Viewer1D::slot_delete()
-{
-    QList<QCPAbstractPlottable*> plottableslist=this->selectedPlottables();
-
-    for(int i=0;i<plottableslist.size();i++)
-    {
-        this->removePlottable(plottableslist[i]);
-    }
-
-    this->replot();
-}
-
-QList<Curve2D> Viewer1D::getSelectedCurves()
-{
-    QList<Curve2D> curvelist;
-    QList<QCPAbstractPlottable*> plottableslist=this->selectedPlottables();
-
-    for(int i=0,id=0;i<plottableslist.size();i++)
-    {
-        QVector<double> x,y;
-
-        QCPCurve * currentcurve=dynamic_cast<QCPCurve*>(plottableslist[i]);
-        if(currentcurve)
-        {
-            auto it =currentcurve->data()->begin();
-
-            while(it!=currentcurve->data()->end())
+            while(itg!=currentgraph_g->data()->end())
             {
-                x.push_back(it->key);
-                y.push_back(it->value);
-                it++;
+                f.push_back(itg->key);
+                g.push_back(itg->value);
+                p.push_back(itp->value);
+                itg++;
+                itp++;
             }
-            curvelist.push_back(Curve2D(x,y,currentcurve->name()));
-            id++;
-        }
-
-        QCPGraph * currentgraph=dynamic_cast<QCPGraph*>(plottableslist[i]);
-        if(currentgraph)
-        {
-            auto it =currentgraph->data()->begin();
-
-            while(it!=currentgraph->data()->end())
-            {
-                x.push_back(it->key);
-                y.push_back(it->value);
-                it++;
-            }
-            curvelist.push_back(Curve2D(x,y,currentgraph->name()));
-            id++;
+            curvelist.push_back(Curve2D_GainPhase(f,g,p,currentgraph_g->name(),currentgraph_p->name()));
         }
 
     }
@@ -576,7 +517,7 @@ QList<Curve2D> Viewer1D::getSelectedCurves()
 }
 
 
-void Viewer1D::slot_save_image()
+void Viewer1DCPLX::slot_save_image()
 {
     QFileInfo info(current_filename);
     QString where=info.path();
@@ -613,37 +554,8 @@ void Viewer1D::slot_save_image()
     }
 }
 
-void Viewer1D::slot_rescale()
+void Viewer1DCPLX::slot_rescale()
 {
     this->rescaleAxes();
     this->replot();
-}
-
-void Viewer1D::slot_copy()
-{
-    QList<Curve2D> list=getSelectedCurves();
-
-    if(list.size()>0 && sharedBuf!=nullptr)
-    {
-        *sharedBuf=list[0];
-    }
-}
-
-void Viewer1D::slot_paste()
-{
-    if(sharedBuf!=nullptr)
-    {
-        if(sharedBuf->getX().size()>0)
-        {
-            if(sharedBuf->name().contains("Graph"))
-            {
-                slot_add_data_graph(*sharedBuf);
-            }
-            else if(sharedBuf->name().contains("Curve"))
-            {
-                slot_add_data_curve(*sharedBuf);
-            }
-        }
-    }
-    slot_rescale();
 }

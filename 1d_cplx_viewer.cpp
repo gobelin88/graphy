@@ -140,7 +140,7 @@ void Viewer1DCPLX::createPopup()
     actFitRLpC= new QAction("RL|C",  this);
     actFitRL= new QAction("RL",  this);
     actFitRLC= new QAction("RLC",  this);
-    actFitRLCapCb= new QAction("RLCapCb",  this);
+    actFitRLCapCb= new QAction("RL|CaCb",  this);
 
     menu_fit->addAction(actFitRL);
     menu_fit->addAction(actFitRLpC);
@@ -336,7 +336,35 @@ void Viewer1DCPLX::slot_fit_rlc()
 
 void Viewer1DCPLX::slot_fit_rlcapcb()
 {
+    QList<Curve2D_GainPhase> curves=getCurves();
+    QDoubleSpinBox *R,*L,*Ca,*Cb;
+    QCheckBox *fixedR,*fixedL,*fixedCa,*fixedCb;
+    QDialog * dialog=RLpCaCb_cplx::createDialog(R,L,Ca,Cb,fixedR,fixedL,fixedCa,fixedCb);
+    R->setValue(200);
+    L->setValue(10);
+    Ca->setValue(2);
+    Cb->setValue(0);
 
+    int result=dialog->exec();
+
+    if(result == QDialog::Accepted)
+    {
+        RLpCaCb_cplx rlpcacb_cplx(R->value(),L->value(),Ca->value(),Cb->value(),fixedR->isChecked(),fixedL->isChecked(),fixedCa->isChecked(),fixedCb->isChecked());
+
+        for(int i=0;i<curves.size();i++)
+        {
+            std::cout<<"fit..."<<std::endl;
+            curves[i].fit(&rlpcacb_cplx);
+            std::cout<<"fit ok"<<std::endl;
+
+            QVector<double> F=curves[i].getLinF(1000),G,P;
+            rlpcacb_cplx.at(F,G,P);
+
+            slot_add_data_graph(Curve2D_GainPhase(F,G,P,
+                                                  QString("Fit R=%1Ohm L=%2mH Ca=%3nF Cb=%4nF").arg(rlpcacb_cplx.getR()).arg(rlpcacb_cplx.getL()).arg(rlpcacb_cplx.getCa()).arg(rlpcacb_cplx.getCb()),
+                                                  QString("Fit R=%1Ohm L=%2mH Ca=%3nF Cb=%4nF").arg(rlpcacb_cplx.getR()).arg(rlpcacb_cplx.getL()).arg(rlpcacb_cplx.getCa()).arg(rlpcacb_cplx.getCb())));
+        }
+    }
 }
 
 void Viewer1DCPLX::slot_fit_rl()

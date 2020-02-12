@@ -24,6 +24,8 @@ public slots:
     void mouseDoublePress(QMouseEvent * event);
 
     void slot_save_image();
+    void colorScaleChanged(const QCPRange & range);
+    void slot_add_data_cloud(const Curve2D & datacurve);
     void slot_add_data_curve(const Curve2D & datacurve);
     void slot_add_data_graph(const Curve2D & datacurve);
     void slot_fit_linear();
@@ -34,6 +36,7 @@ public slots:
     void slot_top_legend(bool value);
     void slot_fit_gaussian();
     void slot_fit_sinusoide();
+    void slot_fit_sigmoid();
     void slot_fit_rlc();
     void slot_histogram(QVector<double> data,QString name);
 
@@ -48,7 +51,10 @@ signals:
     void pick(double p0);
 
 protected:
+    QList<QCPCurve*> getQCPCurves();
+    QList<QCPCurve*> getSelectedQCPCurves();
     QList<Curve2D> getSelectedCurves();
+    QList<QCPAbstractPlottable *> getSelectedCurvesOrGraphs();
 
     QList<QColor> colors;
 
@@ -72,6 +78,7 @@ protected:
     QAction * actFitLinear;
     QAction *actFitPolynome;
     QAction *actFitGaussian;
+    QAction *actFitSigmoid;
     QAction *actFitRLC;
     QAction *actFitSinusoide;
     QAction *actColor;

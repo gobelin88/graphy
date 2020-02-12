@@ -23,6 +23,8 @@
 **          Version: 2.0.1                                                **
 ****************************************************************************/
 
+#include <iostream>
+
 #include "qcustomplot.h"
 
 
@@ -13615,6 +13617,11 @@ QList<QCPAbstractPlottable*> QCustomPlot::selectedPlottables() const
   return result;
 }
 
+QList<QCPAbstractPlottable*> QCustomPlot::plottables() const
+{
+  return mPlottables;
+}
+
 /*!
   Returns the plottable at the pixel position \a pos. Plottables that only consist of single lines
   (like graphs) have a tolerance band around them, see \ref setSelectionTolerance. If multiple
@@ -22114,10 +22121,11 @@ QCPRange QCPCurve::getValueRange(bool &foundRange, QCP::SignDomain inSignDomain,
 void QCPCurve::draw(QCPPainter *painter)
 {
   if (mDataContainer->isEmpty()) return;
-  
+
   // allocate line vector:
   QVector<QPointF> lines, scatters;
-  
+  QVector<QRgb> scattercolors;
+
   // loop over and draw segments of unselected/selected data:
   QList<QCPDataRange> selectedSegments, unselectedSegments, allSegments;
   getDataSegments(selectedSegments, unselectedSegments);
@@ -22168,8 +22176,17 @@ void QCPCurve::draw(QCPPainter *painter)
       finalScatterStyle = mSelectionDecorator->getFinalScatterStyle(mScatterStyle);
     if (!finalScatterStyle.isNone())
     {
-      getScatters(&scatters, allSegments.at(i), finalScatterStyle.size());
-      drawScatterPlot(painter, scatters, finalScatterStyle);
+      if(scalarFieldData.size()>0)
+      {
+            getScatters(&scatters,&scattercolors, allSegments.at(i), finalScatterStyle.size());
+      }
+      else
+      {
+            std::cout<<"ok nullptr"<<std::endl;
+            getScatters(&scatters,nullptr, allSegments.at(i), finalScatterStyle.size());
+      }
+      drawScatterPlot(painter, scatters , scattercolors, finalScatterStyle);
+
     }
   }
   
@@ -22235,14 +22252,29 @@ void QCPCurve::drawCurveLine(QCPPainter *painter, const QVector<QPointF> &lines)
 
   \see drawCurveLine, getCurveLines
 */
-void QCPCurve::drawScatterPlot(QCPPainter *painter, const QVector<QPointF> &points, const QCPScatterStyle &style) const
+void QCPCurve::drawScatterPlot(QCPPainter *painter,
+                               const QVector<QPointF> &points,
+                               const QVector<QRgb> &scattercolors,
+                               const QCPScatterStyle &style) const
 {
   // draw scatter point symbols:
   applyScattersAntialiasingHint(painter);
-  style.applyTo(painter, mPen);
+
   for (int i=0; i<points.size(); ++i)
+  {
     if (!qIsNaN(points.at(i).x()) && !qIsNaN(points.at(i).y()))
-      style.drawShape(painter,  points.at(i));
+    {
+        if(i<scattercolors.size())
+        {
+            painter->setPen(QPen(scattercolors[i]));
+        }
+        else
+        {
+            painter->setPen(mPen);
+        }
+        style.drawShape(painter,  points.at(i));
+    }
+  }
 }
 
 /*! \internal
@@ -22376,10 +22408,11 @@ void QCPCurve::getCurveLines(QVector<QPointF> *lines, const QCPDataRange &dataRa
 
   \see draw, drawScatterPlot
 */
-void QCPCurve::getScatters(QVector<QPointF> *scatters, const QCPDataRange &dataRange, double scatterWidth) const
+void QCPCurve::getScatters(QVector<QPointF> *scatters,QVector<QRgb> * scatters_colors, const QCPDataRange &dataRange, double scatterWidth) const
 {
   if (!scatters) return;
   scatters->clear();
+  if(scatters_colors!=nullptr){scatters_colors->clear();}
   QCPAxis *keyAxis = mKeyAxis.data();
   QCPAxis *valueAxis = mValueAxis.data();
   if (!keyAxis || !valueAxis) { qDebug() << Q_FUNC_INFO << "invalid key or value axis"; return; }
@@ -22402,30 +22435,41 @@ void QCPCurve::getScatters(QVector<QPointF> *scatters, const QCPDataRange &dataR
   valueRange.upper = valueAxis->pixelToCoord(valueAxis->coordToPixel(valueRange.upper)+scatterWidth*valueAxis->pixelOrientation());
   
   QCPCurveDataContainer::const_iterator it = begin;
+    int id=0;
   int itIndex = begin-mDataContainer->constBegin();
   while (doScatterSkip && it != end && itIndex % scatterModulo != 0) // advance begin iterator to first non-skipped scatter
   {
     ++itIndex;
     ++it;
+      ++id;
   }
   if (keyAxis->orientation() == Qt::Vertical)
   {
     while (it != end)
     {
       if (!qIsNaN(it->value) && keyRange.contains(it->key) && valueRange.contains(it->value))
+      {
         scatters->append(QPointF(valueAxis->coordToPixel(it->value), keyAxis->coordToPixel(it->key)));
-      
+        if(scatters_colors!=nullptr){scatters_colors->append(scalarFieldColors[id]);}
+      }
       // advance iterator to next (non-skipped) data point:
       if (!doScatterSkip)
+      {
         ++it;
+          ++id;
+      }
       else
       {
         itIndex += scatterModulo;
         if (itIndex < endIndex) // make sure we didn't jump over end
-          it += scatterModulo;
+        {
+            it += scatterModulo;
+            id += scatterModulo;
+        }
         else
         {
           it = end;
+          id = endIndex;
           itIndex = endIndex;
         }
       }
@@ -22435,19 +22479,29 @@ void QCPCurve::getScatters(QVector<QPointF> *scatters, const QCPDataRange &dataR
     while (it != end)
     {
       if (!qIsNaN(it->value) && keyRange.contains(it->key) && valueRange.contains(it->value))
+      {
         scatters->append(QPointF(keyAxis->coordToPixel(it->key), valueAxis->coordToPixel(it->value)));
+        if(scatters_colors!=nullptr){scatters_colors->append(scalarFieldColors[id]);}
+      }
       
       // advance iterator to next (non-skipped) data point:
       if (!doScatterSkip)
-        ++it;
+        {
+          ++it;
+        ++id;
+        }
       else
       {
         itIndex += scatterModulo;
         if (itIndex < endIndex) // make sure we didn't jump over end
+        {
           it += scatterModulo;
+            id+=scatterModulo;
+        }
         else
         {
           it = end;
+          id =endIndex ;
           itIndex = endIndex;
         }
       }

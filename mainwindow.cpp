@@ -15,11 +15,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->actionOpen           , &QAction::triggered,this,&MainWindow::slot_open);
     connect(ui->actionSave           , &QAction::triggered,this,&MainWindow::slot_save);
+    connect(ui->actionExport           , &QAction::triggered,this,&MainWindow::slot_export);
     connect(ui->actionPlot_GraphY    , &QAction::triggered,this,&MainWindow::slot_plot_y);
     connect(ui->actionPlot_GraphXY   ,&QAction::triggered,this,&MainWindow::slot_plot_graph_xy);
     connect(ui->actionPlot_CurveXY   ,&QAction::triggered,this,&MainWindow::slot_plot_curve_xy);
     connect(ui->actionPlot_MapXYZ    , &QAction::triggered,this,&MainWindow::slot_plot_xyz);
     connect(ui->actionHistogram      , &QAction::triggered,this,&MainWindow::slot_plot_histogram);
+    connect(ui->actionPlot_Cloud_XYZ   ,&QAction::triggered,this,&MainWindow::slot_plot_cloud_xys);
     connect(ui->actionPlot_Cloud_3D  , &QAction::triggered,this,&MainWindow::slot_plot_cloud_3D);
     connect(ui->actionFFT  , &QAction::triggered,this,&MainWindow::slot_plot_fft);
 
@@ -149,6 +151,76 @@ void MainWindow::slot_save()
     if(!filename.isEmpty())
     {
         direct_save(filename);
+    }
+}
+
+void MainWindow::slot_export()
+{
+    QFileInfo info(current_filename);
+    QString filename=QFileDialog::getSaveFileName(this,"Export data tex",info.path()+"/"+info.baseName()+".tex","*.tex");
+
+    if(!filename.isEmpty())
+    {
+        direct_export(filename);
+    }
+}
+
+void MainWindow::direct_export(QString filename)
+{
+    QFile file(filename);
+    if(file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QString textData;
+        int rows = table->model()->rowCount();
+        int columns = table->model()->columnCount();
+
+        textData+= QString("\\begin{tabular}{|*{%1}{c|}} \n").arg(columns+1);
+        textData += "\\hline \n";
+        if(hasheader)
+        {
+            for (int j = 0; j < columns; j++)
+            {
+                textData+="$"+model->horizontalHeaderItem(j)->text()+"$";
+                textData += "&";
+            }
+            textData += "\\\\ \\hline \n";
+        }
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < columns; j++)
+            {
+                bool okvf,okvi;
+                double vf=table->model()->data(table->model()->index(i,j)).toDouble(&okvf);
+                int vi=table->model()->data(table->model()->index(i,j)).toInt(&okvi);
+                if(okvi)
+                {
+                        textData += QString::number(vi);
+                }
+                else if(okvf)
+                {
+                        textData += QString::number(vf,'f',1);
+                }
+                else
+                {
+                    textData+=table->model()->data(table->model()->index(i,j)).toString();
+                }
+                textData += "&";      // for .csv file format
+            }
+            textData += "\\\\ \\hline \n";             // (optional: for new line segmentation)
+        }
+
+        textData+=QString("\\end{tabular}");
+
+        QTextStream out(&file);
+        out << textData;
+
+
+
+    }
+    else
+    {
+        QMessageBox::information(this,"Erreur",QString("Impossible d'ouvrir le fichier : ")+filename);
     }
 }
 
@@ -402,6 +474,42 @@ void MainWindow::slot_plot_curve_xy()
     else
     {
         QMessageBox::information(this,"Information","Please select 2k columns (k>1)");
+    }
+}
+
+void MainWindow::slot_plot_cloud_xys()
+{
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+
+    if(id_list.size()%3==0 && id_list.size()>0)
+    {
+        Viewer1D * viewer1d=new Viewer1D(&shared);
+        viewer1d->setMinimumSize(600,400);
+
+        for(int k=0;k<id_list.size();k+=3)
+        {
+
+            QVector<double> data_x=getCol(id_list[k  ].column(),datatable);
+            QVector<double> data_y=getCol(id_list[k+1].column(),datatable);
+            QVector<double> data_s=getCol(id_list[k+2].column(),datatable);
+
+            if(data_x.size()>0 && data_y.size()>0)
+            {
+                Curve2D curve(data_x,data_y,QString("Curve (%2,%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())));
+                curve.setScalarField(data_s);
+                viewer1d->slot_add_data_cloud(curve);
+            }
+        }
+
+        QMdiSubWindow *subWindow = new QMdiSubWindow;
+        subWindow->setWidget(viewer1d);
+        subWindow->setAttribute(Qt::WA_DeleteOnClose);
+        mdiArea->addSubWindow(subWindow);
+        viewer1d->show();
+    }
+    else
+    {
+        QMessageBox::information(this,"Information","Please select 3k columns (k>1)");
     }
 }
 

@@ -68,6 +68,54 @@ void Viewer1D::slot_add_data_graph(const Curve2D & datacurve)
     replot();
 }
 
+void Viewer1D::colorScaleChanged(const QCPRange & range)
+{
+    QList<QCPCurve*> listcurves=getQCPCurves();
+
+    if(listcurves.size()>0)
+    {
+        listcurves[0]->setGradientRange(range);
+    }
+}
+
+void Viewer1D::slot_add_data_cloud(const Curve2D & datacurve)
+{
+    QCPCurve *newCurve = new QCPCurve(this->xAxis, this->yAxis);
+
+    newCurve->setScalarField(datacurve.getScalarField());
+
+    newCurve->setName(datacurve.name());
+    newCurve->setData(datacurve.getX(), datacurve.getY());
+    QPen pen_model(colors[getId()]);
+    pen_model.setStyle(Qt::SolidLine);
+    newCurve->setPen(pen_model);
+    newCurve->setLineStyle(QCPCurve::lsNone);
+    newCurve->setScatterStyle(QCPScatterStyle::ScatterShape::ssDisc);
+
+    QCPSelectionDecorator * decorator_select=new QCPSelectionDecorator;
+    decorator_select->setPen(pen_select);
+    newCurve->setSelectionDecorator(decorator_select);
+    legend->setVisible(true);
+
+    QCPColorScale * colorScale = new QCPColorScale(this);
+    this->plotLayout()->addElement(0, 1, colorScale);
+    colorScale->setType(QCPAxis::atRight);
+    colorScale->setDataRange(newCurve->getScalarFieldRange());
+    colorScale->setGradient(newCurve->getGradient());
+    //colorScale->setRangeDrag(false);
+    //colorScale->setRangeZoom(false);
+
+    connect(colorScale,SIGNAL(dataRangeChanged(const QCPRange &)),this,SLOT(colorScaleChanged(const QCPRange &)));
+
+    QCPMarginGroup * marginGroup = new QCPMarginGroup(this);
+    this->axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
+    colorScale->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
+
+    axisRect()->setupFullAxesBox();
+    rescaleAxes();
+    replot();
+}
+
 void Viewer1D::slot_add_data_curve(const Curve2D & datacurve)
 {
     QCPCurve *newCurve = new QCPCurve(this->xAxis, this->yAxis);
@@ -118,6 +166,7 @@ void Viewer1D::createPopup()
     actLegendShow->setShortcut(QKeySequence("L"));
 
     actLegendTop= new QAction("Move bottom",  this);
+    actLegendTop->setShortcut(QKeySequence("Ctrl+L"));
     actLegendTop->setCheckable(true);
     actLegendTop->setChecked(true);
 
@@ -130,6 +179,7 @@ void Viewer1D::createPopup()
     this->addAction(actClearMarks);
     this->addAction(actColor);
     this->addAction(actStyle);
+    this->addAction(actLegendTop);
 
     popup_menu->addAction(actCopy);
     popup_menu->addAction(actPaste);
@@ -148,6 +198,7 @@ void Viewer1D::createPopup()
     actFitLinear= new QAction("Linear",  this);
     actFitPolynome= new QAction("Polynome",  this);
     actFitGaussian= new QAction("Gaussian",  this);
+    actFitSigmoid= new QAction("Sigmoid",  this);
 
     actFitRLC= new QAction("RLC",  this);
     actFitSinusoide= new QAction("Sinusoide",  this);
@@ -155,6 +206,7 @@ void Viewer1D::createPopup()
     menu_mathematics->addAction(actFitLinear);
     menu_mathematics->addAction(actFitPolynome);
     menu_mathematics->addAction(actFitGaussian);
+    menu_mathematics->addAction(actFitSigmoid);
 
     menu_electronics->addAction(actFitRLC);
     menu_electronics->addAction(actFitSinusoide);
@@ -175,6 +227,7 @@ void Viewer1D::createPopup()
     connect(actFitRLC,SIGNAL(triggered()),this,SLOT(slot_fit_rlc()));
     connect(actFitGaussian,SIGNAL(triggered()),this,SLOT(slot_fit_gaussian()));
     connect(actFitSinusoide,SIGNAL(triggered()),this,SLOT(slot_fit_sinusoide()));
+    connect(actFitSigmoid,SIGNAL(triggered()),this,SLOT(slot_fit_sigmoid()));
     connect(actColor,SIGNAL(triggered()),this,SLOT(slot_set_color()));
 
     connect(actCopy,SIGNAL(triggered()),this,SLOT(slot_copy()));
@@ -300,6 +353,35 @@ void Viewer1D::slot_fit_sinusoide()
     }
 }
 
+void Viewer1D::slot_fit_sigmoid()
+{
+    QList<Curve2D> curves=getSelectedCurves();
+
+    QDoubleSpinBox *A,*B,*C,*P,*As;
+    QDialog * dialog=Sigmoid::createDialog(A,B,C,P,As);
+    A->setValue(-1);
+    B->setValue(1);
+    C->setValue(0);
+    P->setValue(1);
+    As->setValue(0);
+    int result=dialog->exec();
+
+    if(result == QDialog::Accepted)
+    {
+        Sigmoid sigmoid(A->value(),B->value(),C->value(),P->value(),As->value());
+
+        for(int i=0;i<curves.size();i++)
+        {
+            curves[i].fit(&sigmoid);
+
+            QVector<double> X=curves[i].getLinX(1000);
+            QVector<double> Y=sigmoid.at(X);
+
+            slot_add_data_graph(Curve2D(X,Y,QString("Fit A=%1 B=%2 C=%3 P=%4 As=%5").arg(sigmoid.getA()).arg(sigmoid.getB()).arg(sigmoid.getC()).arg(sigmoid.getP()).arg(sigmoid.getAsymp())) );
+        }
+    }
+}
+
 void Viewer1D::slot_fit_gaussian()
 {
     QList<Curve2D> curves=getSelectedCurves();
@@ -420,69 +502,97 @@ void Viewer1D::slot_set_color()
 void Viewer1D::slot_set_style()
 {
     QList<QCPGraph*> graphslist=this->selectedGraphs();
+    QList<QCPCurve*> curveslist=this->getSelectedQCPCurves();
 
-    if(graphslist.size()>0)
+    if(graphslist.size()==0 && curveslist.size()==0)return;
+
+    QDialog * dialog=new QDialog;
+    QComboBox *itemLineStyleList = new QComboBox(dialog);
+
+    if(curveslist.size()>0)
     {
-        QDialog * dialog=new QDialog;
-
-        QComboBox *itemLineStyleList = new QComboBox(dialog);
+        itemLineStyleList->addItem(QStringLiteral("lsNone"),        int(QCPCurve::LineStyle::lsNone));
+        itemLineStyleList->addItem(QStringLiteral("lsLine"),        int(QCPCurve::LineStyle::lsLine));
+    }
+    else
+    {
         itemLineStyleList->addItem(QStringLiteral("lsNone"),        int(QCPGraph::LineStyle::lsNone));
         itemLineStyleList->addItem(QStringLiteral("lsLine"),        int(QCPGraph::LineStyle::lsLine));
         itemLineStyleList->addItem(QStringLiteral("lsStepLeft"),    int(QCPGraph::LineStyle::lsStepLeft));
         itemLineStyleList->addItem(QStringLiteral("lsStepRight"),   int(QCPGraph::LineStyle::lsStepRight));
         itemLineStyleList->addItem(QStringLiteral("lsStepCenter"),  int(QCPGraph::LineStyle::lsStepCenter));
         itemLineStyleList->addItem(QStringLiteral("lsImpulse"),     int(QCPGraph::LineStyle::lsImpulse));
+    }
+
+    QComboBox *itemScatterStyleList = new QComboBox(dialog);
+    itemScatterStyleList->addItem(QStringLiteral("ssNone"),             int(QCPScatterStyle::ScatterShape::ssNone));
+    itemScatterStyleList->addItem(QStringLiteral("ssDot"),              int(QCPScatterStyle::ScatterShape::ssDot));
+    itemScatterStyleList->addItem(QStringLiteral("ssCross"),            int(QCPScatterStyle::ScatterShape::ssCross));
+    itemScatterStyleList->addItem(QStringLiteral("ssPlus"),             int(QCPScatterStyle::ScatterShape::ssPlus));
+    itemScatterStyleList->addItem(QStringLiteral("ssCircle"),           int(QCPScatterStyle::ScatterShape::ssCircle));
+    itemScatterStyleList->addItem(QStringLiteral("ssDisc"),             int(QCPScatterStyle::ScatterShape::ssDisc));
+    itemScatterStyleList->addItem(QStringLiteral("ssSquare"),           int(QCPScatterStyle::ScatterShape::ssSquare));
+    itemScatterStyleList->addItem(QStringLiteral("ssDiamond"),          int(QCPScatterStyle::ScatterShape::ssDiamond));
+    itemScatterStyleList->addItem(QStringLiteral("ssStar"),             int(QCPScatterStyle::ScatterShape::ssStar));
+    itemScatterStyleList->addItem(QStringLiteral("ssTriangle"),         int(QCPScatterStyle::ScatterShape::ssTriangle));
+    itemScatterStyleList->addItem(QStringLiteral("ssTriangleInverted"), int(QCPScatterStyle::ScatterShape::ssTriangleInverted));
+    itemScatterStyleList->addItem(QStringLiteral("ssCrossSquare"),      int(QCPScatterStyle::ScatterShape::ssCrossSquare));
+    itemScatterStyleList->addItem(QStringLiteral("ssPlusSquare"),       int(QCPScatterStyle::ScatterShape::ssPlusSquare));
+    itemScatterStyleList->addItem(QStringLiteral("ssCrossCircle"),      int(QCPScatterStyle::ScatterShape::ssCrossCircle));
+    itemScatterStyleList->addItem(QStringLiteral("ssPlusCircle"),       int(QCPScatterStyle::ScatterShape::ssPlusCircle));
+    itemScatterStyleList->addItem(QStringLiteral("ssPeace"),            int(QCPScatterStyle::ScatterShape::ssPeace));
+
+
+    if(graphslist.size()>0)
+    {
         itemLineStyleList->setCurrentIndex(graphslist[0]->lineStyle());
-
-        QComboBox *itemScatterStyleList = new QComboBox(dialog);
-        itemScatterStyleList->addItem(QStringLiteral("ssNone"),             int(QCPScatterStyle::ScatterShape::ssNone));
-        itemScatterStyleList->addItem(QStringLiteral("ssDot"),              int(QCPScatterStyle::ScatterShape::ssDot));
-        itemScatterStyleList->addItem(QStringLiteral("ssCross"),            int(QCPScatterStyle::ScatterShape::ssCross));
-        itemScatterStyleList->addItem(QStringLiteral("ssPlus"),             int(QCPScatterStyle::ScatterShape::ssPlus));
-        itemScatterStyleList->addItem(QStringLiteral("ssCircle"),           int(QCPScatterStyle::ScatterShape::ssCircle));
-        itemScatterStyleList->addItem(QStringLiteral("ssDisc"),             int(QCPScatterStyle::ScatterShape::ssDisc));
-        itemScatterStyleList->addItem(QStringLiteral("ssSquare"),           int(QCPScatterStyle::ScatterShape::ssSquare));
-        itemScatterStyleList->addItem(QStringLiteral("ssDiamond"),          int(QCPScatterStyle::ScatterShape::ssDiamond));
-        itemScatterStyleList->addItem(QStringLiteral("ssStar"),             int(QCPScatterStyle::ScatterShape::ssStar));
-        itemScatterStyleList->addItem(QStringLiteral("ssTriangle"),         int(QCPScatterStyle::ScatterShape::ssTriangle));
-        itemScatterStyleList->addItem(QStringLiteral("ssTriangleInverted"), int(QCPScatterStyle::ScatterShape::ssTriangleInverted));
-        itemScatterStyleList->addItem(QStringLiteral("ssCrossSquare"),      int(QCPScatterStyle::ScatterShape::ssCrossSquare));
-        itemScatterStyleList->addItem(QStringLiteral("ssPlusSquare"),       int(QCPScatterStyle::ScatterShape::ssPlusSquare));
-        itemScatterStyleList->addItem(QStringLiteral("ssCrossCircle"),      int(QCPScatterStyle::ScatterShape::ssCrossCircle));
-        itemScatterStyleList->addItem(QStringLiteral("ssPlusCircle"),       int(QCPScatterStyle::ScatterShape::ssPlusCircle));
-        itemScatterStyleList->addItem(QStringLiteral("ssPeace"),            int(QCPScatterStyle::ScatterShape::ssPeace));
         itemScatterStyleList->setCurrentIndex(graphslist[0]->scatterStyle().shape());
+    }
 
-        QPushButton * pb_color=new  QPushButton("Color",dialog);
-        QObject::connect(pb_color, SIGNAL(clicked()), this, SLOT(slot_set_color()));
+    if(curveslist.size()>0)
+    {
+        itemLineStyleList->setCurrentIndex(curveslist[0]->lineStyle());
+        itemScatterStyleList->setCurrentIndex(curveslist[0]->scatterStyle().shape());
+    }
 
-        dialog->setLocale(QLocale("C"));
-        dialog->setWindowTitle("Initials parameters");
-        QGridLayout * gbox = new QGridLayout();
+    QPushButton * pb_color=new  QPushButton("Color",dialog);
+    QObject::connect(pb_color, SIGNAL(clicked()), this, SLOT(slot_set_color()));
+
+    dialog->setLocale(QLocale("C"));
+    dialog->setWindowTitle("Initials parameters");
+    QGridLayout * gbox = new QGridLayout();
 
 
-        gbox->addWidget(itemLineStyleList,0,0);
-        gbox->addWidget(itemScatterStyleList,1,0);
-        gbox->addWidget(pb_color,2,0);
+    gbox->addWidget(itemLineStyleList,0,0);
+    gbox->addWidget(itemScatterStyleList,1,0);
+    gbox->addWidget(pb_color,2,0);
 
-        QDialogButtonBox * buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                            | QDialogButtonBox::Cancel);
+    QDialogButtonBox * buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                        | QDialogButtonBox::Cancel);
 
-        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
-        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+    QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
-        gbox->addWidget(buttonBox,3,0);
+    gbox->addWidget(buttonBox,3,0);
 
-        dialog->setLayout(gbox);
+    dialog->setLayout(gbox);
 
-        int result=dialog->exec();
+    int result=dialog->exec();
 
-        if(result == QDialog::Accepted)
+    if(result == QDialog::Accepted)
+    {
+        if(graphslist.size()>0)
         {
             graphslist[0]->setLineStyle( QCPGraph::LineStyle (itemLineStyleList->currentData().toInt()) );
             graphslist[0]->setScatterStyle( QCPScatterStyle::ScatterShape (itemScatterStyleList->currentData().toInt()) );
-            replot();
         }
+
+        if(curveslist.size()>0)
+        {
+            curveslist[0]->setLineStyle( QCPCurve::LineStyle (itemLineStyleList->currentData().toInt()) );
+            curveslist[0]->setScatterStyle( QCPScatterStyle::ScatterShape (itemScatterStyleList->currentData().toInt()) );
+        }
+        replot();
     }
 }
 
@@ -529,6 +639,57 @@ void Viewer1D::slot_delete()
     }
 
     this->replot();
+}
+
+QList<QCPCurve*> Viewer1D::getSelectedQCPCurves()
+{
+    QList<QCPAbstractPlottable*> plottableslist=this->selectedPlottables();
+    QList<QCPCurve*> listcurves;
+    for(int i=0;i<plottableslist.size();i++)
+    {
+        QCPCurve * currentcurve=dynamic_cast<QCPCurve*>(plottableslist[i]);
+        if(currentcurve)
+        {
+            listcurves.push_back(currentcurve);
+        }
+    }
+    return listcurves;
+}
+
+QList<QCPCurve*> Viewer1D::getQCPCurves()
+{
+    QList<QCPAbstractPlottable*> plottableslist=this->plottables();
+    QList<QCPCurve*> listcurves;
+    for(int i=0;i<plottableslist.size();i++)
+    {
+        QCPCurve * currentcurve=dynamic_cast<QCPCurve*>(plottableslist[i]);
+        if(currentcurve)
+        {
+            listcurves.push_back(currentcurve);
+        }
+    }
+    return listcurves;
+}
+
+QList<QCPAbstractPlottable *> Viewer1D::getSelectedCurvesOrGraphs()
+{
+    QList<QCPAbstractPlottable*> plottableslist=this->selectedPlottables();
+    QList<QCPAbstractPlottable*> list;
+    for(int i=0;i<plottableslist.size();i++)
+    {
+        QCPAbstractPlottable * currentp=dynamic_cast<QCPCurve*>(plottableslist[i]);
+        if(currentp)
+        {
+            list.push_back(currentp);
+        }
+
+        currentp=dynamic_cast<QCPGraph*>(plottableslist[i]);
+        if(currentp)
+        {
+            list.push_back(currentp);
+        }
+    }
+    return list;
 }
 
 QList<Curve2D> Viewer1D::getSelectedCurves()

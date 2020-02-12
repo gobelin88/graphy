@@ -45,13 +45,16 @@ public slots:
 
     void slot_open();
     void slot_save();
+    void slot_export();
     void direct_open(QString filename);
     void direct_save(QString filename);
+    void direct_export(QString filename);
     void direct_new(int sx,int sy);
 
     void slot_plot_y();
     void slot_plot_graph_xy();
     void slot_plot_curve_xy();
+    void slot_plot_cloud_xys();
     void slot_plot_xyz();
     void slot_plot_histogram();
     void slot_plot_cloud_3D();

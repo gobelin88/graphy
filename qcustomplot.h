@@ -23,6 +23,8 @@
 **          Version: 2.0.1                                                **
 ****************************************************************************/
 
+#include <iostream>
+
 #ifndef QCUSTOMPLOT_H
 #define QCUSTOMPLOT_H
 
@@ -3680,6 +3682,7 @@ public:
   int clearPlottables();
   int plottableCount() const;
   QList<QCPAbstractPlottable*> selectedPlottables() const;
+  QList<QCPAbstractPlottable*> plottables() const;
   QCPAbstractPlottable *plottableAt(const QPointF &pos, bool onlySelectable=false) const;
   bool hasPlottable(QCPAbstractPlottable *plottable) const;
  
@@ -5347,6 +5350,37 @@ public:
   virtual QCPRange getKeyRange(bool &foundRange, QCP::SignDomain inSignDomain=QCP::sdBoth) const Q_DECL_OVERRIDE;
   virtual QCPRange getValueRange(bool &foundRange, QCP::SignDomain inSignDomain=QCP::sdBoth, const QCPRange &inKeyRange=QCPRange()) const Q_DECL_OVERRIDE;
   
+  ////////////////////////////////////hack
+  QCPRange getScalarFieldRange()const
+  {
+      double min = *std::min_element(scalarFieldData.constBegin(), scalarFieldData.constEnd());
+      double max = *std::max_element(scalarFieldData.constBegin(), scalarFieldData.constEnd());
+      return QCPRange (min,max);
+  }
+
+  void setScalarField(const QVector<double> & scalarFieldData)
+  {
+      this->scalarFieldData=scalarFieldData;
+      gradient = QCPColorGradient(QCPColorGradient::gpPolar);
+      scalarFieldColors=QVector<QRgb>(scalarFieldData.size(),0);
+      setGradientRange(getScalarFieldRange());
+  }
+
+  void setGradientRange(QCPRange range)
+  {
+      gradient.colorize(scalarFieldData.data(),range,scalarFieldColors.data(),scalarFieldColors.size());
+  }
+
+  QVector<double> getScalarField(){return scalarFieldData;}
+  QCPColorGradient getGradient()const
+  {
+      return gradient;
+  }
+
+  QVector<QRgb> scalarFieldColors;
+  QVector<double> scalarFieldData;
+  QCPColorGradient gradient;
+
 protected:
   // property members:
   QCPScatterStyle mScatterStyle;
@@ -5359,11 +5393,14 @@ protected:
   
   // introduced virtual methods:
   virtual void drawCurveLine(QCPPainter *painter, const QVector<QPointF> &lines) const;
-  virtual void drawScatterPlot(QCPPainter *painter, const QVector<QPointF> &points, const QCPScatterStyle &style) const;
+  virtual void drawScatterPlot(QCPPainter *painter,
+                               const QVector<QPointF> &points,
+                               const QVector<QRgb> &scattercolors,
+                               const QCPScatterStyle &style) const;
   
   // non-virtual methods:
   void getCurveLines(QVector<QPointF> *lines, const QCPDataRange &dataRange, double penWidth) const;
-  void getScatters(QVector<QPointF> *scatters, const QCPDataRange &dataRange, double scatterWidth) const;
+  void getScatters(QVector<QPointF> *scatters,QVector<QRgb> * scatters_colors, const QCPDataRange &dataRange, double scatterWidth) const;
   int getRegion(double key, double value, double keyMin, double valueMax, double keyMax, double valueMin) const;
   QPointF getOptimizedPoint(int prevRegion, double prevKey, double prevValue, double key, double value, double keyMin, double valueMax, double keyMax, double valueMin) const;
   QVector<QPointF> getOptimizedCornerPoints(int prevRegion, int currentRegion, double prevKey, double prevValue, double key, double value, double keyMin, double valueMax, double keyMax, double valueMin) const;

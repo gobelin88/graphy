@@ -286,6 +286,111 @@ private:
 /**
  * @brief The Gaussian class
  */
+class Sigmoid: public Shape<Eigen::Vector2d>
+{
+public:
+
+    Sigmoid(double A,double B,double C,double P,double Asymp)
+    {
+        p.resize(5);
+        setA(A);setB(B);setC(C);setP(P);setAsymp(Asymp);
+    }
+
+    static QDialog * createDialog(QDoubleSpinBox *& getA,
+                                  QDoubleSpinBox *& getB,
+                                  QDoubleSpinBox *& getC,
+                                  QDoubleSpinBox *& getP,
+                                  QDoubleSpinBox *& getAsymp)
+    {
+        QDialog * dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("Initials parameters");
+        QGridLayout * gbox = new QGridLayout();
+
+        getA=new QDoubleSpinBox(dialog);getA->setRange(-1e8,1e8);getA->setDecimals(4);
+        getA->setPrefix("A=");
+        getB=new QDoubleSpinBox(dialog);getB->setRange(-1e8,1e8);getB->setDecimals(4);
+        getB->setPrefix("B=");
+        getC=new QDoubleSpinBox(dialog);getC->setRange(-1e8,1e8);getC->setDecimals(4);
+        getC->setPrefix("C=");
+        getP=new QDoubleSpinBox(dialog);getP->setRange(-1e8,1e8);getP->setDecimals(4);
+        getP->setPrefix("Phi=");
+        getAsymp=new QDoubleSpinBox(dialog);getAsymp->setRange(-1e8,1e8);getAsymp->setDecimals(4);
+        getAsymp->setPrefix("Asymp=");
+
+
+        gbox->addWidget(getA,0,0);
+        gbox->addWidget(getB,1,0);
+        gbox->addWidget(getC,2,0);
+        gbox->addWidget(getP,3,0);
+        gbox->addWidget(getAsymp,4,0);
+
+        QDialogButtonBox * buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                            | QDialogButtonBox::Cancel);
+
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+        gbox->addWidget(buttonBox,5,0);
+
+        dialog->setLayout(gbox);
+
+        return dialog;
+    }
+
+    Eigen::Vector2d delta(const Eigen::Vector2d & pt)const
+    {
+        return Eigen::Vector2d (pt[1]-at(pt[0]),0);
+    }
+
+    double getA()const{return p[0];}
+    double getB()const{return p[1];}
+    double getC()const{return p[2];}
+    double getP()const{return p[3];}
+    double getAsymp()const{return p[4];}
+
+    void  setA(double A){p[0]=A;}
+    void  setB(double B){p[1]=B;}
+    void  setC(double C){p[2]=C;}
+    void  setP(double P){p[3]=P;}
+    void  setAsymp(double Asymp){p[4]=Asymp;}
+
+    double at(double t)const
+    {
+        double A=getA();
+        double B=getB();
+        double C=getC();
+        double P=getP();
+        double Asymp=getAsymp();
+
+        return ((B-A)/(1+std::exp((C-t)*P*(B-A)))+A)*(std::abs(Asymp*(C-t))+1);//
+    }
+
+    QVector<double> at(QVector<double> t)
+    {
+        QVector<double> y(t.size());
+
+        for(int i=0;i<t.size();i++)
+        {
+            y[i]=at(t[i]);
+        }
+        return y;
+    }
+
+    int nb_params(){return this->p.rows();}
+    void setParams(const Eigen::VectorXd & p)
+    {
+        this->p=p;
+    }
+    const Eigen::VectorXd & getParams(){return p;}
+
+private:
+    Eigen::VectorXd p;
+};
+
+/**
+ * @brief The Gaussian class
+ */
 class Gaussian: public Shape<Eigen::Vector2d>
 {
 public:

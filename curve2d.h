@@ -4,6 +4,7 @@
 #include <Eigen/Dense>
 #include <QVector>
 #include "ShapeFit.h"
+#include "qcustomplot.h"
 
 class Curve2D
 {
@@ -14,6 +15,9 @@ public:
 
     QVector<double> getX()const {return x;}
     QVector<double> getY()const {return y;}
+
+    void setScalarField(QVector<double> & scalarField){this->s=scalarField;}
+    QVector<double> getScalarField()const{return s;}
 
     QVector<double> getLinX(int n)const
     {
@@ -50,6 +54,7 @@ public:
 private:
     QVector<double> x;
     QVector<double> y;
+    QVector<double> s;
     QString legendname;
 };
 

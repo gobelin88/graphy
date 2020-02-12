@@ -99,5 +99,6 @@ void Curve2D::operator=(const Curve2D & other)
 {
     this->x=other.x;
     this->y=other.y;
+    this->s=other.s;
     this->legendname=other.legendname;
 }

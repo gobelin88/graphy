@@ -51,6 +51,8 @@ signals:
     void pick(double p0);
 
 protected:
+    QCPColorScale * colorScale;
+
     QList<QCPCurve*> getQCPCurves();
     QList<QCPCurve*> getSelectedQCPCurves();
     QList<Curve2D> getSelectedCurves();

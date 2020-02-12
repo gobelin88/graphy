@@ -25,6 +25,8 @@ Viewer1D::Viewer1D(Curve2D * sharedBuf)
 
     pen_select.setColor(colors[2]);
     pen_select.setStyle(Qt::SolidLine);
+
+    colorScale=nullptr;
 }
 
 Viewer1D::~Viewer1D()
@@ -97,7 +99,7 @@ void Viewer1D::slot_add_data_cloud(const Curve2D & datacurve)
     newCurve->setSelectionDecorator(decorator_select);
     legend->setVisible(true);
 
-    QCPColorScale * colorScale = new QCPColorScale(this);
+    colorScale = new QCPColorScale(this);
     this->plotLayout()->addElement(0, 1, colorScale);
     colorScale->setType(QCPAxis::atRight);
     colorScale->setDataRange(newCurve->getScalarFieldRange());
@@ -776,6 +778,15 @@ void Viewer1D::slot_save_image()
 
 void Viewer1D::slot_rescale()
 {
+    if(colorScale)
+    {
+        QList<QCPCurve*> listcurves=getQCPCurves();
+        if(listcurves.size()>0)
+        {
+            colorScale->setDataRange(listcurves[0]->getScalarFieldRange());
+        }
+    }
+
     this->rescaleAxes();
     this->replot();
 }

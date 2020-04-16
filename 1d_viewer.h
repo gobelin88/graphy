@@ -13,21 +13,21 @@ class Viewer1D:public QCustomPlot
 {
     Q_OBJECT
 public:
-    Viewer1D(Curve2D * sharedBuf);
+    Viewer1D(Curve2D* sharedBuf);
     ~Viewer1D();
 
     void newGraph(QString name);
     void createPopup();
 
 public slots:
-    void mousePress(QMouseEvent * event);
-    void mouseDoublePress(QMouseEvent * event);
+    void mousePress(QMouseEvent* event);
+    void mouseDoublePress(QMouseEvent* event);
 
     void slot_save_image();
-    void colorScaleChanged(const QCPRange & range);
-    void slot_add_data_cloud(const Curve2D & datacurve);
-    void slot_add_data_curve(const Curve2D & datacurve);
-    void slot_add_data_graph(const Curve2D & datacurve);
+    void colorScaleChanged(const QCPRange& range);
+    void slot_add_data_cloud(const Curve2D& datacurve);
+    void slot_add_data_curve(const Curve2D& datacurve);
+    void slot_add_data_graph(const Curve2D& datacurve);
     void slot_fit_linear();
     void slot_rescale();
     void slot_fit_polynome();
@@ -43,6 +43,7 @@ public slots:
     void slot_set_color();
     void slot_set_style();
     void slot_clear_marks();
+    void addMark(double cx,double cy,QString markstr);
 
     void slot_copy();
     void slot_paste();
@@ -51,46 +52,46 @@ signals:
     void pick(double p0);
 
 protected:
-    QCPColorScale * colorScale;
+    QCPColorScale* colorScale;
 
     QList<QCPCurve*> getQCPCurves();
     QList<QCPCurve*> getSelectedQCPCurves();
     QList<Curve2D> getSelectedCurves();
-    QList<QCPAbstractPlottable *> getSelectedCurvesOrGraphs();
+    QList<QCPAbstractPlottable*> getSelectedCurvesOrGraphs();
 
     QList<QColor> colors;
 
-    QMenu * popup_menu;
-    QAction * actSave;
-    QAction * actRescale;
-    QAction * actDelete;
-    QAction * actClearMarks;
+    QMenu* popup_menu;
+    QAction* actSave;
+    QAction* actRescale;
+    QAction* actDelete;
+    QAction* actClearMarks;
 
-    QAction * actCopy;
-    QAction * actPaste;
+    QAction* actCopy;
+    QAction* actPaste;
 
-    QAction * actLegendShow;
-    QAction * actLegendTop;
+    QAction* actLegendShow;
+    QAction* actLegendTop;
 
-    QMenu * menu_legend;
-    QMenu * menu_fit;
-    QMenu * menu_mathematics;
-    QMenu * menu_electronics;
+    QMenu* menu_legend;
+    QMenu* menu_fit;
+    QMenu* menu_mathematics;
+    QMenu* menu_electronics;
 
-    QAction * actFitLinear;
-    QAction *actFitPolynome;
-    QAction *actFitGaussian;
-    QAction *actFitSigmoid;
-    QAction *actFitRLC;
-    QAction *actFitSinusoide;
-    QAction *actColor;
-    QAction *actStyle;
+    QAction* actFitLinear;
+    QAction* actFitPolynome;
+    QAction* actFitGaussian;
+    QAction* actFitSigmoid;
+    QAction* actFitRLC;
+    QAction* actFitSinusoide;
+    QAction* actColor;
+    QAction* actStyle;
 
     QString current_filename;
 
     unsigned int getId();
 
-    Curve2D * sharedBuf;
+    Curve2D* sharedBuf;
     QPen pen_select;
 };
 

@@ -1,6 +1,6 @@
 #include "1d_viewer.h"
 
-Viewer1D::Viewer1D(Curve2D * sharedBuf)
+Viewer1D::Viewer1D(Curve2D* sharedBuf)
 {
     this->sharedBuf=sharedBuf;
 
@@ -54,13 +54,13 @@ void Viewer1D::newGraph(QString name)
 
     this->graph()->setSelectable(QCP::stWhole);
 
-    QCPSelectionDecorator * decorator_select=new QCPSelectionDecorator;
+    QCPSelectionDecorator* decorator_select=new QCPSelectionDecorator;
     decorator_select->setPen(pen_select);
     this->graph()->setSelectionDecorator(decorator_select);
     graph()->setName(name);
 }
 
-void Viewer1D::slot_add_data_graph(const Curve2D & datacurve)
+void Viewer1D::slot_add_data_graph(const Curve2D& datacurve)
 {
     newGraph(datacurve.name());
 
@@ -70,19 +70,19 @@ void Viewer1D::slot_add_data_graph(const Curve2D & datacurve)
     replot();
 }
 
-void Viewer1D::colorScaleChanged(const QCPRange & range)
+void Viewer1D::colorScaleChanged(const QCPRange& range)
 {
     QList<QCPCurve*> listcurves=getQCPCurves();
 
-    if(listcurves.size()>0)
+    if (listcurves.size()>0)
     {
         listcurves[0]->setGradientRange(range);
     }
 }
 
-void Viewer1D::slot_add_data_cloud(const Curve2D & datacurve)
+void Viewer1D::slot_add_data_cloud(const Curve2D& datacurve)
 {
-    QCPCurve *newCurve = new QCPCurve(this->xAxis, this->yAxis);
+    QCPCurve* newCurve = new QCPCurve(this->xAxis, this->yAxis);
 
     newCurve->setScalarField(datacurve.getScalarField());
 
@@ -94,7 +94,7 @@ void Viewer1D::slot_add_data_cloud(const Curve2D & datacurve)
     newCurve->setLineStyle(QCPCurve::lsNone);
     newCurve->setScatterStyle(QCPScatterStyle::ScatterShape::ssDisc);
 
-    QCPSelectionDecorator * decorator_select=new QCPSelectionDecorator;
+    QCPSelectionDecorator* decorator_select=new QCPSelectionDecorator;
     decorator_select->setPen(pen_select);
     newCurve->setSelectionDecorator(decorator_select);
     legend->setVisible(true);
@@ -107,9 +107,9 @@ void Viewer1D::slot_add_data_cloud(const Curve2D & datacurve)
     //colorScale->setRangeDrag(false);
     //colorScale->setRangeZoom(false);
 
-    connect(colorScale,SIGNAL(dataRangeChanged(const QCPRange &)),this,SLOT(colorScaleChanged(const QCPRange &)));
+    connect(colorScale,SIGNAL(dataRangeChanged(const QCPRange&)),this,SLOT(colorScaleChanged(const QCPRange&)));
 
-    QCPMarginGroup * marginGroup = new QCPMarginGroup(this);
+    QCPMarginGroup* marginGroup = new QCPMarginGroup(this);
     this->axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
     colorScale->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
 
@@ -118,9 +118,9 @@ void Viewer1D::slot_add_data_cloud(const Curve2D & datacurve)
     replot();
 }
 
-void Viewer1D::slot_add_data_curve(const Curve2D & datacurve)
+void Viewer1D::slot_add_data_curve(const Curve2D& datacurve)
 {
-    QCPCurve *newCurve = new QCPCurve(this->xAxis, this->yAxis);
+    QCPCurve* newCurve = new QCPCurve(this->xAxis, this->yAxis);
 
     newCurve->setName(datacurve.name());
     newCurve->setData(datacurve.getX(), datacurve.getY());
@@ -128,7 +128,7 @@ void Viewer1D::slot_add_data_curve(const Curve2D & datacurve)
     pen_model.setStyle(Qt::SolidLine);
     newCurve->setPen(pen_model);
 
-    QCPSelectionDecorator * decorator_select=new QCPSelectionDecorator;
+    QCPSelectionDecorator* decorator_select=new QCPSelectionDecorator;
     decorator_select->setPen(pen_select);
     newCurve->setSelectionDecorator(decorator_select);
     legend->setVisible(true);
@@ -250,64 +250,76 @@ void Viewer1D::slot_clear_marks()
     this->replot();
 }
 
-
-void Viewer1D::mousePress(QMouseEvent * event)
+void Viewer1D::addMark(double cx,double cy,QString markstr)
 {
-    if(event->button() == Qt::RightButton)
+    double mx=this->xAxis->range().lower;
+    double my=this->yAxis->range().lower;
+
+    QPen linePen(QColor(200,200,200));
+
+    QCPItemLine* lineX= new QCPItemLine(this);
+    lineX->start->setType(QCPItemPosition::ptPlotCoords);
+    lineX->end->setType(QCPItemPosition::ptPlotCoords);
+    lineX->start->setCoords(cx, my);
+    lineX->end->setCoords(cx, cy);
+    lineX->setPen(linePen);
+
+    QCPItemLine* lineY= new QCPItemLine(this);
+    lineY->start->setType(QCPItemPosition::ptPlotCoords);
+    lineY->end->setType(QCPItemPosition::ptPlotCoords);
+    lineY->start->setCoords(mx, cy);
+    lineY->end->setCoords(cx, cy);
+    lineY->setPen(linePen);
+
+    // add the text label at the top:
+    QCPItemText* coordtextX = new QCPItemText(this);
+    coordtextX->position->setType(QCPItemPosition::ptPlotCoords);
+    coordtextX->setPositionAlignment(Qt::AlignLeft);
+    coordtextX->position->setCoords(cx, my); // lower right corner of axis rect
+    coordtextX->setRotation(-90);
+    coordtextX->setText(QString("%1").arg(cx));
+    coordtextX->setTextAlignment(Qt::AlignLeft);
+    coordtextX->setFont(QFont(font().family(), 9));
+    coordtextX->setPadding(QMargins(8, 0, 0, 0));
+
+    QCPItemText* coordtextY = new QCPItemText(this);
+    coordtextY->position->setType(QCPItemPosition::ptPlotCoords);
+    coordtextY->setPositionAlignment(Qt::AlignLeft|Qt::AlignBottom);
+    coordtextY->position->setCoords(mx, cy); // lower right corner of axis rect
+    coordtextY->setText(QString("%1").arg(cy));
+    coordtextY->setTextAlignment(Qt::AlignLeft);
+    coordtextY->setFont(QFont(font().family(), 9));
+    coordtextY->setPadding(QMargins(8, 0, 0, 0));
+
+    QCPItemText* coordtextStr = new QCPItemText(this);
+    coordtextStr->position->setType(QCPItemPosition::ptPlotCoords);
+    coordtextStr->setPositionAlignment(Qt::AlignLeft|Qt::AlignBottom);
+    coordtextStr->position->setCoords(cx, cy); // lower right corner of axis rect
+    coordtextStr->setText(markstr);
+    coordtextStr->setTextAlignment(Qt::AlignLeft);
+    coordtextStr->setFont(QFont(font().family(), 9));
+    coordtextStr->setPadding(QMargins(8, 0, 0, 0));
+
+    this->replot();
+}
+
+void Viewer1D::mousePress(QMouseEvent* event)
+{
+    if (event->button() == Qt::RightButton)
     {
         popup_menu->exec(mapToGlobal(event->pos()));
     }
 }
 
-void Viewer1D::mouseDoublePress(QMouseEvent * event)
+void Viewer1D::mouseDoublePress(QMouseEvent* event)
 {
-    if(event->button() == Qt::LeftButton)
+    if (event->button() == Qt::LeftButton)
     {
         double cx=this->xAxis->pixelToCoord(event->x());
         double cy=this->yAxis->pixelToCoord(event->y());
 
-        double mx=this->xAxis->range().lower;
-        double my=this->yAxis->range().lower;
-
-        std::cout<<cx<<" "<<cy<<std::endl;
-
-        QPen linePen(QColor(200,200,200));
-
-        QCPItemLine * lineX= new QCPItemLine(this);
-        lineX->start->setType(QCPItemPosition::ptPlotCoords);
-        lineX->end->setType(QCPItemPosition::ptPlotCoords);
-        lineX->start->setCoords(cx, my);
-        lineX->end->setCoords(cx, cy);
-        lineX->setPen(linePen);
-
-        QCPItemLine * lineY= new QCPItemLine(this);
-        lineY->start->setType(QCPItemPosition::ptPlotCoords);
-        lineY->end->setType(QCPItemPosition::ptPlotCoords);
-        lineY->start->setCoords(mx, cy);
-        lineY->end->setCoords(cx, cy);
-        lineY->setPen(linePen);
-
-        // add the text label at the top:
-        QCPItemText *coordtextX = new QCPItemText(this);
-        coordtextX->position->setType(QCPItemPosition::ptPlotCoords);
-        coordtextX->setPositionAlignment(Qt::AlignLeft);
-        coordtextX->position->setCoords(cx, my); // lower right corner of axis rect
-        coordtextX->setRotation(-90);
-        coordtextX->setText(QString("%1").arg(cx));
-        coordtextX->setTextAlignment(Qt::AlignLeft);
-        coordtextX->setFont(QFont(font().family(), 9));
-        coordtextX->setPadding(QMargins(8, 0, 0, 0));
-
-        QCPItemText *coordtextY = new QCPItemText(this);
-        coordtextY->position->setType(QCPItemPosition::ptPlotCoords);
-        coordtextY->setPositionAlignment(Qt::AlignLeft|Qt::AlignBottom);
-        coordtextY->position->setCoords(mx, cy); // lower right corner of axis rect
-        coordtextY->setText(QString("%1").arg(cy));
-        coordtextY->setTextAlignment(Qt::AlignLeft);
-        coordtextY->setFont(QFont(font().family(), 9));
-        coordtextY->setPadding(QMargins(8, 0, 0, 0));
-
-        this->replot();
+        QString str=QInputDialog::getText(this,"Text input","Text=");
+        addMark(cx,cy,str);
     }
 }
 
@@ -316,7 +328,7 @@ void Viewer1D::slot_fit_linear()
 {
     QList<Curve2D> curves=getSelectedCurves();
 
-    for(int i=0;i<curves.size();i++)
+    for (int i=0; i<curves.size(); i++)
     {
         Eigen::VectorXd C=curves[i].fit(2);
 
@@ -331,17 +343,17 @@ void Viewer1D::slot_fit_sinusoide()
 {
     QList<Curve2D> curves=getSelectedCurves();
 
-    QDoubleSpinBox *A,*F,*P;
-    QDialog * dialog=Sinusoide::createDialog(A,F,P);
+    QDoubleSpinBox* A,*F,*P;
+    QDialog* dialog=Sinusoide::createDialog(A,F,P);
     A->setValue(0.0001);
     F->setValue(0.0001);
     int result=dialog->exec();
 
-    if(result == QDialog::Accepted)
+    if (result == QDialog::Accepted)
     {
         Sinusoide sinusoide(A->value(),F->value(),P->value());
 
-        for(int i=0;i<curves.size();i++)
+        for (int i=0; i<curves.size(); i++)
         {
             curves[i].fit(&sinusoide);
 
@@ -359,8 +371,8 @@ void Viewer1D::slot_fit_sigmoid()
 {
     QList<Curve2D> curves=getSelectedCurves();
 
-    QDoubleSpinBox *A,*B,*C,*P,*As;
-    QDialog * dialog=Sigmoid::createDialog(A,B,C,P,As);
+    QDoubleSpinBox* A,*B,*C,*P,*As;
+    QDialog* dialog=Sigmoid::createDialog(A,B,C,P,As);
     A->setValue(-1);
     B->setValue(1);
     C->setValue(0);
@@ -368,11 +380,11 @@ void Viewer1D::slot_fit_sigmoid()
     As->setValue(0);
     int result=dialog->exec();
 
-    if(result == QDialog::Accepted)
+    if (result == QDialog::Accepted)
     {
         Sigmoid sigmoid(A->value(),B->value(),C->value(),P->value(),As->value());
 
-        for(int i=0;i<curves.size();i++)
+        for (int i=0; i<curves.size(); i++)
         {
             curves[i].fit(&sigmoid);
 
@@ -388,17 +400,17 @@ void Viewer1D::slot_fit_gaussian()
 {
     QList<Curve2D> curves=getSelectedCurves();
 
-    QDoubleSpinBox *S,*M,*K;
-    QDialog * dialog=Gaussian::createDialog(S,M,K);
+    QDoubleSpinBox* S,*M,*K;
+    QDialog* dialog=Gaussian::createDialog(S,M,K);
     S->setValue(10);
     M->setValue(0);
     int result=dialog->exec();
 
-    if(result == QDialog::Accepted)
+    if (result == QDialog::Accepted)
     {
         Gaussian gaussian(S->value(),M->value(),K->value());
 
-        for(int i=0;i<curves.size();i++)
+        for (int i=0; i<curves.size(); i++)
         {
             curves[i].fit(&gaussian);
             QVector<double> X=curves[i].getLinX(1000);
@@ -413,20 +425,20 @@ void Viewer1D::slot_fit_rlc()
 {
     QList<Curve2D> curves=getSelectedCurves();
 
-    QDoubleSpinBox *R,*L,*C;
-    QCheckBox *fixedR,*fixedL,*fixedC;
+    QDoubleSpinBox* R,*L,*C;
+    QCheckBox* fixedR,*fixedL,*fixedC;
 
-    QDialog * dialog=RLpC::createDialog(R,L,C,fixedR,fixedL,fixedC);
+    QDialog* dialog=RLpC::createDialog(R,L,C,fixedR,fixedL,fixedC);
     R->setValue(200);
     L->setValue(10);
     C->setValue(2);
     int result=dialog->exec();
 
-    if(result == QDialog::Accepted)
+    if (result == QDialog::Accepted)
     {
         RLpC rlpc(R->value(),L->value(),C->value(),fixedR->isChecked(),fixedL->isChecked(),fixedC->isChecked());
 
-        for(int i=0;i<curves.size();i++)
+        for (int i=0; i<curves.size(); i++)
         {
             curves[i].fit(&rlpc);
             QVector<double> X=curves[i].getLinX(1000);
@@ -444,7 +456,7 @@ void Viewer1D::slot_fit_polynome()
 
     std::cout<<curves.size()<<std::endl;
 
-    for(int i=0;i<curves.size();i++)
+    for (int i=0; i<curves.size(); i++)
     {
         Eigen::VectorXd C=curves[i].fit(order);
 
@@ -452,7 +464,10 @@ void Viewer1D::slot_fit_polynome()
         QVector<double> Y=curves[i].at(C,X);
 
         QString name("Fit Polynome Coeffs=");
-        for(int k=0;k<order;k++){name+=QString("%1 ").arg(C[order-k-1]);}
+        for (int k=0; k<order; k++)
+        {
+            name+=QString("%1 ").arg(C[order-k-1]);
+        }
 
         slot_add_data_graph(Curve2D(X,Y,name));
     }
@@ -463,7 +478,7 @@ void Viewer1D::slot_show_legend(bool value)
     legend->setVisible(value);
     replot();
 
-    if(value)
+    if (value)
     {
         actLegendShow->setText("Hide");
     }
@@ -475,7 +490,7 @@ void Viewer1D::slot_show_legend(bool value)
 
 void Viewer1D::slot_top_legend(bool value)
 {
-    if(value)
+    if (value)
     {
         this->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignTop|Qt::AlignRight);
         actLegendTop->setText("Move bottom");
@@ -493,7 +508,7 @@ void Viewer1D::slot_set_color()
 {
     QList<QCPGraph*> graphslist=this->selectedGraphs();
 
-    if(graphslist.size()>0)
+    if (graphslist.size()>0)
     {
         QColor color=QColorDialog::getColor(graphslist[0]->pen().color(),this,"Get Color");
 
@@ -506,12 +521,15 @@ void Viewer1D::slot_set_style()
     QList<QCPGraph*> graphslist=this->selectedGraphs();
     QList<QCPCurve*> curveslist=this->getSelectedQCPCurves();
 
-    if(graphslist.size()==0 && curveslist.size()==0)return;
+    if (graphslist.size()==0 && curveslist.size()==0)
+    {
+        return;
+    }
 
-    QDialog * dialog=new QDialog;
-    QComboBox *itemLineStyleList = new QComboBox(dialog);
+    QDialog* dialog=new QDialog;
+    QComboBox* itemLineStyleList = new QComboBox(dialog);
 
-    if(curveslist.size()>0)
+    if (curveslist.size()>0)
     {
         itemLineStyleList->addItem(QStringLiteral("lsNone"),        int(QCPCurve::LineStyle::lsNone));
         itemLineStyleList->addItem(QStringLiteral("lsLine"),        int(QCPCurve::LineStyle::lsLine));
@@ -526,7 +544,7 @@ void Viewer1D::slot_set_style()
         itemLineStyleList->addItem(QStringLiteral("lsImpulse"),     int(QCPGraph::LineStyle::lsImpulse));
     }
 
-    QComboBox *itemScatterStyleList = new QComboBox(dialog);
+    QComboBox* itemScatterStyleList = new QComboBox(dialog);
     itemScatterStyleList->addItem(QStringLiteral("ssNone"),             int(QCPScatterStyle::ScatterShape::ssNone));
     itemScatterStyleList->addItem(QStringLiteral("ssDot"),              int(QCPScatterStyle::ScatterShape::ssDot));
     itemScatterStyleList->addItem(QStringLiteral("ssCross"),            int(QCPScatterStyle::ScatterShape::ssCross));
@@ -545,32 +563,32 @@ void Viewer1D::slot_set_style()
     itemScatterStyleList->addItem(QStringLiteral("ssPeace"),            int(QCPScatterStyle::ScatterShape::ssPeace));
 
 
-    if(graphslist.size()>0)
+    if (graphslist.size()>0)
     {
         itemLineStyleList->setCurrentIndex(graphslist[0]->lineStyle());
         itemScatterStyleList->setCurrentIndex(graphslist[0]->scatterStyle().shape());
     }
 
-    if(curveslist.size()>0)
+    if (curveslist.size()>0)
     {
         itemLineStyleList->setCurrentIndex(curveslist[0]->lineStyle());
         itemScatterStyleList->setCurrentIndex(curveslist[0]->scatterStyle().shape());
     }
 
-    QPushButton * pb_color=new  QPushButton("Color",dialog);
+    QPushButton* pb_color=new  QPushButton("Color",dialog);
     QObject::connect(pb_color, SIGNAL(clicked()), this, SLOT(slot_set_color()));
 
     dialog->setLocale(QLocale("C"));
     dialog->setWindowTitle("Initials parameters");
-    QGridLayout * gbox = new QGridLayout();
+    QGridLayout* gbox = new QGridLayout();
 
 
     gbox->addWidget(itemLineStyleList,0,0);
     gbox->addWidget(itemScatterStyleList,1,0);
     gbox->addWidget(pb_color,2,0);
 
-    QDialogButtonBox * buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                        | QDialogButtonBox::Cancel);
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                       | QDialogButtonBox::Cancel);
 
     QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
     QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
@@ -581,15 +599,15 @@ void Viewer1D::slot_set_style()
 
     int result=dialog->exec();
 
-    if(result == QDialog::Accepted)
+    if (result == QDialog::Accepted)
     {
-        if(graphslist.size()>0)
+        if (graphslist.size()>0)
         {
             graphslist[0]->setLineStyle( QCPGraph::LineStyle (itemLineStyleList->currentData().toInt()) );
             graphslist[0]->setScatterStyle( QCPScatterStyle::ScatterShape (itemScatterStyleList->currentData().toInt()) );
         }
 
-        if(curveslist.size()>0)
+        if (curveslist.size()>0)
         {
             curveslist[0]->setLineStyle( QCPCurve::LineStyle (itemLineStyleList->currentData().toInt()) );
             curveslist[0]->setScatterStyle( QCPScatterStyle::ScatterShape (itemScatterStyleList->currentData().toInt()) );
@@ -611,17 +629,17 @@ void Viewer1D::slot_histogram(QVector<double> data,QString name)
 
     double delta= (max-min)/nbbins;
 
-    for(int k=0;k<data.size();k++)
+    for (int k=0; k<data.size(); k++)
     {
         unsigned int index=std::round((data[k]-min)/delta);
 
-        if(index>0 && index<data.size())
+        if (index>0 && index<data.size())
         {
             hist[index]+=1;
         }
     }
 
-    for(int i=0;i<labels.size();i++)
+    for (int i=0; i<labels.size(); i++)
     {
         labels[i]=delta*i+min;
     }
@@ -635,7 +653,7 @@ void Viewer1D::slot_delete()
 {
     QList<QCPAbstractPlottable*> plottableslist=this->selectedPlottables();
 
-    for(int i=0;i<plottableslist.size();i++)
+    for (int i=0; i<plottableslist.size(); i++)
     {
         this->removePlottable(plottableslist[i]);
     }
@@ -647,10 +665,10 @@ QList<QCPCurve*> Viewer1D::getSelectedQCPCurves()
 {
     QList<QCPAbstractPlottable*> plottableslist=this->selectedPlottables();
     QList<QCPCurve*> listcurves;
-    for(int i=0;i<plottableslist.size();i++)
+    for (int i=0; i<plottableslist.size(); i++)
     {
-        QCPCurve * currentcurve=dynamic_cast<QCPCurve*>(plottableslist[i]);
-        if(currentcurve)
+        QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(plottableslist[i]);
+        if (currentcurve)
         {
             listcurves.push_back(currentcurve);
         }
@@ -662,10 +680,10 @@ QList<QCPCurve*> Viewer1D::getQCPCurves()
 {
     QList<QCPAbstractPlottable*> plottableslist=this->plottables();
     QList<QCPCurve*> listcurves;
-    for(int i=0;i<plottableslist.size();i++)
+    for (int i=0; i<plottableslist.size(); i++)
     {
-        QCPCurve * currentcurve=dynamic_cast<QCPCurve*>(plottableslist[i]);
-        if(currentcurve)
+        QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(plottableslist[i]);
+        if (currentcurve)
         {
             listcurves.push_back(currentcurve);
         }
@@ -673,20 +691,20 @@ QList<QCPCurve*> Viewer1D::getQCPCurves()
     return listcurves;
 }
 
-QList<QCPAbstractPlottable *> Viewer1D::getSelectedCurvesOrGraphs()
+QList<QCPAbstractPlottable*> Viewer1D::getSelectedCurvesOrGraphs()
 {
     QList<QCPAbstractPlottable*> plottableslist=this->selectedPlottables();
     QList<QCPAbstractPlottable*> list;
-    for(int i=0;i<plottableslist.size();i++)
+    for (int i=0; i<plottableslist.size(); i++)
     {
-        QCPAbstractPlottable * currentp=dynamic_cast<QCPCurve*>(plottableslist[i]);
-        if(currentp)
+        QCPAbstractPlottable* currentp=dynamic_cast<QCPCurve*>(plottableslist[i]);
+        if (currentp)
         {
             list.push_back(currentp);
         }
 
         currentp=dynamic_cast<QCPGraph*>(plottableslist[i]);
-        if(currentp)
+        if (currentp)
         {
             list.push_back(currentp);
         }
@@ -699,16 +717,16 @@ QList<Curve2D> Viewer1D::getSelectedCurves()
     QList<Curve2D> curvelist;
     QList<QCPAbstractPlottable*> plottableslist=this->selectedPlottables();
 
-    for(int i=0,id=0;i<plottableslist.size();i++)
+    for (int i=0,id=0; i<plottableslist.size(); i++)
     {
         QVector<double> x,y;
 
-        QCPCurve * currentcurve=dynamic_cast<QCPCurve*>(plottableslist[i]);
-        if(currentcurve)
+        QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(plottableslist[i]);
+        if (currentcurve)
         {
             auto it =currentcurve->data()->begin();
 
-            while(it!=currentcurve->data()->end())
+            while (it!=currentcurve->data()->end())
             {
                 x.push_back(it->key);
                 y.push_back(it->value);
@@ -718,12 +736,12 @@ QList<Curve2D> Viewer1D::getSelectedCurves()
             id++;
         }
 
-        QCPGraph * currentgraph=dynamic_cast<QCPGraph*>(plottableslist[i]);
-        if(currentgraph)
+        QCPGraph* currentgraph=dynamic_cast<QCPGraph*>(plottableslist[i]);
+        if (currentgraph)
         {
             auto it =currentgraph->data()->begin();
 
-            while(it!=currentgraph->data()->end())
+            while (it!=currentgraph->data()->end())
             {
                 x.push_back(it->key);
                 y.push_back(it->value);
@@ -744,17 +762,23 @@ void Viewer1D::slot_save_image()
     QFileInfo info(current_filename);
     QString where=info.path();
 
-    QDialog * dialog=new QDialog;
+    QDialog* dialog=new QDialog;
     dialog->setLocale(QLocale("C"));
     dialog->setWindowTitle("Resolution");
-    QGridLayout * gbox = new QGridLayout();
-    QSpinBox * getWidth=new QSpinBox(dialog);
-    QSpinBox * getHeight=new QSpinBox(dialog);
-    getWidth->setRange(32,1024);getWidth->setPrefix("Width=");getWidth->setSuffix(" px");getWidth->setValue(width());
-    getHeight->setRange(32,1024);getHeight->setPrefix("Height=");getHeight->setSuffix(" px");getHeight->setValue(height());
+    QGridLayout* gbox = new QGridLayout();
+    QSpinBox* getWidth=new QSpinBox(dialog);
+    QSpinBox* getHeight=new QSpinBox(dialog);
+    getWidth->setRange(32,1024);
+    getWidth->setPrefix("Width=");
+    getWidth->setSuffix(" px");
+    getWidth->setValue(width());
+    getHeight->setRange(32,1024);
+    getHeight->setPrefix("Height=");
+    getHeight->setSuffix(" px");
+    getHeight->setValue(height());
     gbox->addWidget(getWidth,0,0);
     gbox->addWidget(getHeight,0,1);
-    QDialogButtonBox * buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok| QDialogButtonBox::Cancel);
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok| QDialogButtonBox::Cancel);
     QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
     QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
     gbox->addWidget(buttonBox,4,0,2,1);
@@ -762,10 +786,10 @@ void Viewer1D::slot_save_image()
 
     int result=dialog->exec();
 
-    if(result == QDialog::Accepted)
+    if (result == QDialog::Accepted)
     {
         QString filename=QFileDialog::getSaveFileName(this,"Save Image",where,"(*.png)");
-        if(!filename.isEmpty())
+        if (!filename.isEmpty())
         {
             this->current_filename=filename;
 
@@ -778,10 +802,10 @@ void Viewer1D::slot_save_image()
 
 void Viewer1D::slot_rescale()
 {
-    if(colorScale)
+    if (colorScale)
     {
         QList<QCPCurve*> listcurves=getQCPCurves();
-        if(listcurves.size()>0)
+        if (listcurves.size()>0)
         {
             colorScale->setDataRange(listcurves[0]->getScalarFieldRange());
         }
@@ -795,7 +819,7 @@ void Viewer1D::slot_copy()
 {
     QList<Curve2D> list=getSelectedCurves();
 
-    if(list.size()>0 && sharedBuf!=nullptr)
+    if (list.size()>0 && sharedBuf!=nullptr)
     {
         *sharedBuf=list[0];
     }
@@ -803,15 +827,15 @@ void Viewer1D::slot_copy()
 
 void Viewer1D::slot_paste()
 {
-    if(sharedBuf!=nullptr)
+    if (sharedBuf!=nullptr)
     {
-        if(sharedBuf->getX().size()>0)
+        if (sharedBuf->getX().size()>0)
         {
-            if(sharedBuf->name().contains("Graph"))
+            if (sharedBuf->name().contains("Graph"))
             {
                 slot_add_data_graph(*sharedBuf);
             }
-            else if(sharedBuf->name().contains("Curve"))
+            else if (sharedBuf->name().contains("Curve"))
             {
                 slot_add_data_curve(*sharedBuf);
             }

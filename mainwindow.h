@@ -32,16 +32,16 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
 
-    QVector<double> getCol(int id,const TableData & table);
+    QVector<double> getCol(int id,const TableData& table);
     QString getColName(int id);
 
 public slots:
     void updateTable();
-    void updateTable(int i,int j,double value);
+    void updateTable(const QModelIndex& indexA, const QModelIndex& indexB);
 
     void slot_open();
     void slot_save();
@@ -67,17 +67,17 @@ public slots:
 private:
     void setCurrentFilename(QString filename);
 
-    void resizeEvent(QResizeEvent * event);
+    void resizeEvent(QResizeEvent* event);
 
-    Ui::MainWindow *ui;
+    Ui::MainWindow* ui;
 
-    QTableView * table;
+    QTableView* table;
 
     QString current_filename;
 
-    QMdiArea * mdiArea;
+    QMdiArea* mdiArea;
 
-    QStandardItemModel *model;
+    QStandardItemModel* model;
 
     bool hasheader;
 

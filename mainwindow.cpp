@@ -39,6 +39,25 @@ MainWindow::MainWindow(QWidget* parent) :
 //    w->setWindowFlags(Qt::FramelessWindowHint);
 //    w->showMaximized();
 
+    //Action Edition----------------------------------------------------------------
+    a_renameColumn=new QAction(this);
+    a_renameColumn->setShortcut(QKeySequence("Space"));
+
+    a_newColumn=new QAction(this);
+    a_newColumn->setShortcut(QKeySequence("Ins"));
+
+    a_delColumn=new QAction(this);
+    a_delColumn->setShortcut(QKeySequence("Del"));
+
+    this->addAction(a_renameColumn);
+    this->addAction(a_newColumn);
+    this->addAction(a_delColumn);
+
+    connect(a_newColumn,&QAction::triggered,this,&MainWindow::slot_newColumn);
+    connect(a_delColumn,&QAction::triggered,this,&MainWindow::slot_delColumn);
+    connect(a_renameColumn,&QAction::triggered,this,&MainWindow::slot_renameColumn);
+    //------------------------------------------------------------------------------
+
     mdiArea->setViewport(table);
 
     //mdiArea->viewport()->stackUnder(table);
@@ -285,6 +304,123 @@ void MainWindow::direct_save(QString filename)
     }
 }
 
+QString MainWindow::askForValidColumnName()
+{
+    QString varname =QInputDialog::getText(this,"Nommer une colonne",QString("Nommer la colonne en : "));
+
+    if (varname.begin()->isDigit())
+    {
+        QMessageBox::information(this,"Erreur",QString("Un nom valide ne commence pas par un chiffre"));
+        return QString();
+    }
+
+    if (varname.contains(" "))
+    {
+        QMessageBox::information(this,"Erreur",QString("Un nom valide ne contient pas d'espace"));
+        return QString();
+    }
+
+    int nbCols=model->columnCount();
+    for (int k=0; k<nbCols; k++)
+    {
+        if (getColName(k)==varname)
+        {
+            QMessageBox::information(this,"Erreur",QString("Ce nom existe deja"));
+            return QString();
+        }
+    }
+
+    return varname;
+}
+
+void MainWindow::registerNewVariable(QString varname)
+{
+    variables_names.push_back(varname);
+    variables.push_back(0.0);
+    symbolsTable.add_variable(varname.toStdString(),*variables.end());
+}
+
+void MainWindow::registerDelVariable(QString varname)
+{
+    int index=variables_names.indexOf(varname);
+    variables_names.removeAt(index);
+    variables.removeAt(index);
+    symbolsTable.remove_variable(varname.toStdString());
+}
+
+void MainWindow::registerRenameVariable(QString old_varname,QString new_varname)
+{
+    registerDelVariable(old_varname);
+    registerNewVariable(new_varname);
+}
+
+
+
+void MainWindow::slot_renameColumn()
+{
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+
+    if (id_list.size()==1)
+    {
+        QString value =askForValidColumnName();
+        if (!value.isEmpty())
+        {
+            registerRenameVariable(getColName(id_list[0].column()),value);
+
+            QStandardItem* item = new QStandardItem(value);
+            model->setHorizontalHeaderItem(id_list[0].column(), item);
+            table->setModel(model);
+        }
+    }
+    else
+    {
+        QMessageBox::information(this,"Message",QString("Selectionner colonne à renommer"));
+    }
+}
+
+
+void MainWindow::slot_delColumn()
+{
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+    if (id_list.size()>=1)
+    {
+        for (int i=0; i<id_list.size(); i++)
+        {
+            registerDelVariable(getColName(id_list[i].column()-i));
+            model->removeColumn(id_list[i].column()-i);
+        }
+        table->setModel(model);
+        updateTable();
+    }
+    else
+    {
+        QMessageBox::information(this,"Message",QString("Selectionner au moins une colonne à supprimer"));
+    }
+}
+
+void MainWindow::slot_newColumn()
+{
+    int nbCols=model->columnCount();
+    int nbRows=model->rowCount();
+
+    QString value = askForValidColumnName();
+    if (!value.isEmpty())
+    {
+        for (int dy=0; dy<nbRows; dy++)
+        {
+            //QStandardItem* item = new QStandardItem(QString::number(dy));
+            QStandardItem* item = new QStandardItem();
+            model->setItem(dy, nbCols, item);
+        }
+
+        registerNewVariable(value);
+        QStandardItem* item = new QStandardItem(value);
+        model->setHorizontalHeaderItem(nbCols, item);
+        table->setModel(model);
+        updateTable();
+    }
+}
+
 void MainWindow::direct_new(int sx,int sy)
 {
     hasheader=false;
@@ -302,6 +438,7 @@ void MainWindow::direct_new(int sx,int sy)
     for (int j = 0; j < model->columnCount(); j++)
     {
         QString value = QString("C%1").arg(j);
+        registerNewVariable(value);
         QStandardItem* item = new QStandardItem(value);
         model->setHorizontalHeaderItem(j, item);
     }
@@ -371,18 +508,29 @@ QString MainWindow::getColName(int id)
     {
         return QString("C%1").arg(id);
     }
-
 }
 
-QVector<double> MainWindow::getCol(int id,const TableData& table)
+int MainWindow::getColId(QString colName)
 {
-    if (table.size()>id)
+    int nbCols=model->columnCount();
+    for (int i=0; i<nbCols; i++)
     {
-        return table[id];
+        if (getColName(i)==colName)
+        {
+            return i;
+        }
+    }
+}
+
+QVector<double> MainWindow::getCol(int id,const TableData& tableData)
+{
+    if (tableData.size()>id)
+    {
+        return tableData[id];
     }
     else
     {
-        std::cout<<id<<" "<<table.size()<<std::endl;
+        std::cout<<id<<" "<<tableData.size()<<std::endl;
         return QVector<double>();
     }
 }

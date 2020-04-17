@@ -63,6 +63,7 @@ HEADERS += \
         qcustomplot.h \
         tabledata.h \
         view3d.h \
+        exprtk\exprtk.hpp \
         qPosAtt.h
 
 FORMS += \

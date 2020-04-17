@@ -48,7 +48,7 @@ MainWindow::MainWindow(QWidget* parent) :
 
     direct_new(3,3);
 
-    graphMode=MODE_POINTS;
+    graphMode=View3D::MODE_POINTS;
 
     QActionGroup* actionGroup=new QActionGroup(this);
     actionGroup->addAction(ui->actionPoints);
@@ -583,11 +583,11 @@ void MainWindow::slot_mode_changed()
 {
     if (ui->actionPoints->isChecked())
     {
-        graphMode=MODE_POINTS;
+        graphMode=View3D::MODE_POINTS;
     }
     else if (ui->actionLines->isChecked())
     {
-        graphMode=MODE_LINES;
+        graphMode=View3D::MODE_LINES;
     }
 }
 
@@ -659,37 +659,33 @@ void MainWindow::slot_plot_cloud_3D()
     if (id_list.size()==3 || id_list.size()==4)
     {
         View3D* view3d=new View3D;
-        view3d->addGrid(0.01,100,QColor(64,64,64));
         QVector<double> data_x=getCol(id_list[0].column(),datatable);
         QVector<double> data_y=getCol(id_list[1].column(),datatable);
         QVector<double> data_z=getCol(id_list[2].column(),datatable);
 
+        CloudScalar* cloud=nullptr;
+
         if (id_list.size()==3)
         {
-            Cloud* cloud=new Cloud(data_x,data_y,data_z);
+            cloud=new CloudScalar(data_x,data_y,data_z,
+                                  getColName(id_list[0].column()),
+                                  getColName(id_list[1].column()),
+                                  getColName(id_list[2].column()));
 
-            if (graphMode==MODE_POINTS)
-            {
-                view3d->addCloud(cloud,QColor(0,255,0));
-            }
-            else
-            {
-                view3d->addCloudLine(cloud,QColor(0,255,0));
-            }
         }
         else if (id_list.size()==4)
         {
             QVector<double> data_s=getCol(id_list[3].column(),datatable);
-            CloudScalar* cloud=new CloudScalar(data_x,data_y,data_z,data_s);
+            cloud=new CloudScalar(data_x,data_y,data_z,data_s,
+                                  getColName(id_list[0].column()),
+                                  getColName(id_list[1].column()),
+                                  getColName(id_list[2].column()),
+                                  getColName(id_list[3].column()));
+        }
 
-            if (graphMode==MODE_POINTS)
-            {
-                view3d->addCloudScalar(cloud);
-            }
-            else
-            {
-                view3d->addCloudScalarLine(cloud);
-            }
+        if (cloud)
+        {
+            view3d->setCloudScalar(cloud,graphMode);
         }
 
 //        mdiArea->addSubWindow(view3d->getContainer());
@@ -739,34 +735,6 @@ void MainWindow::slot_plot_gain_phase()
     else
     {
         QMessageBox::information(this,"Information","Please select 3k columns (k>1)");
-    }
-}
-
-void MainWindow::slot_plot_surface_3D()
-{
-    QModelIndexList id_list=table->selectionModel()->selectedColumns();
-
-    if (id_list.size()==3)
-    {
-        QVector<double> data_x=getCol(id_list[0].column(),datatable);
-        QVector<double> data_y=getCol(id_list[1].column(),datatable);
-        QVector<double> data_z=getCol(id_list[2].column(),datatable);
-
-        ViewerSurface3D* viewer3d=new ViewerSurface3D;
-
-        Cloud* cloud=new Cloud(data_x,data_y,data_z);
-        viewer3d->set_data(*cloud);
-
-        QMdiSubWindow* subWindow = new QMdiSubWindow;
-        subWindow->setWindowTitle("Surface");
-        subWindow->setWidget(viewer3d);
-        subWindow->setAttribute(Qt::WA_DeleteOnClose);
-        mdiArea->addSubWindow(subWindow);
-        viewer3d->show();
-    }
-    else
-    {
-        QMessageBox::information(this,"Information","Please select 3 columns");
     }
 }
 

@@ -1,64 +1,157 @@
 #include "Cloud.h"
 
-Cloud::Cloud(const QVector<double> & x,const QVector<double> &  y,const QVector<double> &  z)
+CloudScalar::CloudScalar(const QVector<double>& x,
+                         const QVector<double>& y,
+                         const QVector<double>& z,
+                         QString labelX,
+                         QString labelY,
+                         QString labelZ)
 {
-    for(int i=0;i<x.size();i++)
+    for (int i=0; i<x.size(); i++)
     {
         pts.push_back(QVector3D(x[i],y[i],z[i]));
     }
+    scalarField.resize(x.size());
+    scalarField.fill(0.0);
+
+    rangeX=getRange(x);
+    rangeY=getRange(y);
+    rangeZ=getRange(z);
+    rangeS=getRange(scalarField);
+
+    gradient.loadPreset(QCPColorGradient::gpPolar);
+    colors.resize(scalarField.size());
+    gradient.colorize(scalarField.data(),rangeS,colors.data(),scalarField.size());
+
+    this->labelX =labelX;
+    this->labelY =labelY;
+    this->labelZ =labelZ;
+    this->labelS .clear();
+
+    calcBarycenterAndBoundingRadius();
 }
 
-void Cloud::operator=(const Cloud & other)
+CloudScalar::CloudScalar(const QVector<double>& x,
+                         const QVector<double>& y,
+                         const QVector<double>& z,
+                         const QVector<double>& s,
+                         QString labelX,
+                         QString labelY,
+                         QString labelZ,
+                         QString labelS)
 {
-    this->pts=other.pts;
-}
-
-CloudScalar::CloudScalar(const QVector<double> & x,const QVector<double> &  y,const QVector<double> &  z,const QVector<double> &  s)
-{
-    for(int i=0;i<x.size();i++)
+    for (int i=0; i<x.size(); i++)
     {
-        pts.push_back(QVector4D(x[i],y[i],z[i],s[i]));
+        pts.push_back(QVector3D(x[i],y[i],z[i]));
     }
+    scalarField=s;
 
-    gradient.loadPreset(QCPColorGradient::gpHues);
-    QCPRange range=getRange();
-    colors.resize(s.size());
-    gradient.colorize(s.data(),range,colors.data(),s.size());
+    rangeX=getRange(x);
+    rangeY=getRange(y);
+    rangeZ=getRange(z);
+    rangeS=getRange(s);
+
+    gradient.loadPreset(QCPColorGradient::gpPolar);
+    colors.resize(scalarField.size());
+    gradient.colorize(scalarField.data(),rangeS,colors.data(),scalarField.size());
+
+    this->labelX =labelX;
+    this->labelY =labelY;
+    this->labelZ =labelZ;
+    this->labelS =labelS;
+
+    calcBarycenterAndBoundingRadius();
 }
 
-QCPRange CloudScalar::getRange()
+QCPRange CloudScalar::getRange(const QVector<double>& v)
 {
-    float min=FLT_MAX,max=-FLT_MAX;
-
-    for(int i=0;i<pts.size();i++)
-    {
-        if(pts[i][3]>max)max=pts[i][3];
-        if(pts[i][3]<min)min=pts[i][3];
-    }
-
+    double min = *std::min_element(v.constBegin(), v.constEnd());
+    double max = *std::max_element(v.constBegin(), v.constEnd());
     return QCPRange(min,max);
 }
 
-void CloudScalar::operator=(const CloudScalar & other)
+QCPRange CloudScalar::getXRange()
+{
+    return rangeX;
+}
+QCPRange CloudScalar::getYRange()
+{
+    return rangeY;
+}
+QCPRange CloudScalar::getZRange()
+{
+    return rangeZ;
+}
+QCPRange CloudScalar::getScalarFieldRange()
+{
+    return rangeS;
+}
+
+QVector<QRgb>& CloudScalar::getColors()
+{
+    return colors;
+}
+
+const QVector<QVector3D>& CloudScalar::data()const
+{
+    return pts;
+}
+
+void CloudScalar::operator=(const CloudScalar& other)
 {
     this->pts=other.pts;
 }
 
-CloudTransform::CloudTransform(const QVector<double> & x,
-                               const QVector<double> & y,
-                               const QVector<double> & z,
-                               const QVector<double> & qw,
-                               const QVector<double> & qx,
-                               const QVector<double> & qy,
-                               const QVector<double> & qz)
+QVector3D CloudScalar::getBarycenter()
 {
-    for(int i=0;i<x.size();i++)
+    return Barycenter;
+}
+
+void CloudScalar::calcBarycenterAndBoundingRadius()
+{
+    Barycenter=QVector3D(0,0,0);
+    for (int i=0; i<pts.size(); i++)
     {
-        pts.push_back(QPair<QVector3D,QQuaternion>(QVector3D(x[i],y[i],z[i]),QQuaternion(qw[i],qx[i],qy[i],qz[i])));
+        Barycenter+=pts[i];
+    }
+    Barycenter/=pts.size();
+
+    boundingRadius=0.0;
+
+    for (int i=0; i<pts.size(); i++)
+    {
+        float radius=pts[i].distanceToPoint(Barycenter);
+
+        if (radius>boundingRadius)
+        {
+            boundingRadius=radius;
+        }
     }
 }
 
-void CloudTransform::operator=(const CloudTransform & other)
+float CloudScalar::getBoundingRadius()
 {
-    this->pts=other.pts;
+    return boundingRadius;
+}
+
+QCPColorGradient CloudScalar::getGradient()
+{
+    return gradient;
+}
+
+QString CloudScalar::getLabelX()
+{
+    return labelX;
+}
+QString CloudScalar::getLabelY()
+{
+    return labelY;
+}
+QString CloudScalar::getLabelZ()
+{
+    return labelZ;
+}
+QString CloudScalar::getLabelS()
+{
+    return labelS;
 }

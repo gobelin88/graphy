@@ -8,52 +8,64 @@
 #ifndef CLOUD_H
 #define CLOUD_H
 
-class Cloud
-{
-public:
-    Cloud(const QVector<double> & x,const QVector<double> &  y,const QVector<double> &  z);
-    void operator=(const Cloud & other);
-    const QVector<QVector3D> & data()const {return pts;}
-
-private:
-    QVector<QVector3D> pts;
-};
 /////////////////////////////////////////////////////////////////////////////////////////////
 class CloudScalar
 {
 public:
-    CloudScalar(const QVector<double> & x,const QVector<double> &  y,const QVector<double> &  z,const QVector<double> &  s);
-    void operator=(const CloudScalar & other);
-    const QVector<QVector4D> & data()const {return pts;}
+    CloudScalar(const QVector<double>& x,
+                const QVector<double>& y,
+                const QVector<double>& z,
+                QString labelX,
+                QString labelY,
+                QString labelZ);
 
-    QCPRange getRange();
+    CloudScalar(const QVector<double>& x,
+                const QVector<double>& y,
+                const QVector<double>& z,
+                const QVector<double>& scalarField,
+                QString labelX,
+                QString labelY,
+                QString labelZ,
+                QString labelS);
 
-    QVector<QRgb> & getColors(){return colors;}
+    void operator=(const CloudScalar& other);
+    const QVector<QVector3D>& data()const;
+
+    QCPRange getXRange();
+    QCPRange getYRange();
+    QCPRange getZRange();
+    QCPRange getScalarFieldRange();
+    QVector<QRgb>& getColors();
+
+    QVector3D getBarycenter();
+    float getBoundingRadius();
+
+    QCPColorGradient getGradient();
+
+    QString getLabelX();
+    QString getLabelY();
+    QString getLabelZ();
+    QString getLabelS();
 
 private:
-    QVector<QVector4D> pts;
-    QVector<double> scalar;
+    void calcBarycenterAndBoundingRadius();
+
+    QCPRange getRange(const QVector<double>& v);
+
+    QVector<QVector3D> pts;
+    QVector<double> scalarField;
     QVector<QRgb> colors;
 
     QCPColorGradient gradient;
-};
-/////////////////////////////////////////////////////////////////////////////////////////////
-class CloudTransform
-{
-public:
-    CloudTransform(const QVector<double> & x,
-                   const QVector<double> & y,
-                   const QVector<double> & z,
-                   const QVector<double> & qw,
-                   const QVector<double> & qx,
-                   const QVector<double> & qy,
-                   const QVector<double> & qz);
 
-    void operator=(const CloudTransform & other);
-    const QVector<QPair<QVector3D,QQuaternion>> & data()const {return pts;}
+    QCPRange rangeX,rangeY,rangeZ,rangeS;
+    QString labelX ;
+    QString labelY ;
+    QString labelZ ;
+    QString labelS ;
 
-private:
-    QVector<QPair<QVector3D,QQuaternion>> pts;
+    QVector3D Barycenter;
+    float boundingRadius;
 };
 
 #endif

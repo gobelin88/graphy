@@ -58,7 +58,6 @@ public slots:
     void slot_plot_xyz();
     void slot_plot_histogram();
     void slot_plot_cloud_3D();
-    void slot_plot_surface_3D();
     void slot_mode_changed();
     void slot_plot_gain_phase();
 
@@ -85,13 +84,7 @@ private:
 
     Curve2D shared;
 
-    enum GraphMode
-    {
-        MODE_POINTS,
-        MODE_LINES
-    };
-
-    bool graphMode;
+    View3D::PrimitiveMode graphMode;
 };
 
 #endif // MAINWINDOW_H

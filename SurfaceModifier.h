@@ -15,27 +15,45 @@ class SurfaceDataModifier : public QObject
 {
     Q_OBJECT
 public:
-    explicit SurfaceDataModifier(Q3DSurface *scatter);
+    explicit SurfaceDataModifier(Q3DSurface* scatter);
     ~SurfaceDataModifier();
 
-    void setData(const Cloud & cloud);
+    void setData(const CloudScalar& cloud);
 
     void changeStyle();
     void changePresetCamera();
     void changeLabelStyle();
-    void changeFont(const QFont &font);
+    void changeFont(const QFont& font);
     void changeFontSize(int fontsize);
     void setBackgroundEnabled(int enabled);
     void setGridEnabled(int enabled);
     void setSmoothDots(int smooth);
     void start();
 
-    float getXMin(){return m_graph->axisX()->min();}
-    float getXMax(){return m_graph->axisX()->max();}
-    float getYMin(){return m_graph->axisY()->min();}
-    float getYMax(){return m_graph->axisY()->max();}
-    float getZMin(){return m_graph->axisZ()->min();}
-    float getZMax(){return m_graph->axisZ()->max();}
+    float getXMin()
+    {
+        return m_graph->axisX()->min();
+    }
+    float getXMax()
+    {
+        return m_graph->axisX()->max();
+    }
+    float getYMin()
+    {
+        return m_graph->axisY()->min();
+    }
+    float getYMax()
+    {
+        return m_graph->axisY()->max();
+    }
+    float getZMin()
+    {
+        return m_graph->axisZ()->min();
+    }
+    float getZMax()
+    {
+        return m_graph->axisZ()->max();
+    }
 
 public Q_SLOTS:
     void changeStyle(int style);
@@ -57,7 +75,7 @@ Q_SIGNALS:
     void fontChanged(QFont font);
 
 private:
-    Q3DSurface *m_graph;
+    Q3DSurface* m_graph;
     int m_fontSize;
     QAbstract3DSeries::Mesh m_style;
     bool m_smooth;

@@ -14,7 +14,7 @@ using namespace QtDataVisualization;
 //#define RANDOM_SCATTER // Uncomment this to switch to random scatter
 
 
-SurfaceDataModifier::SurfaceDataModifier(Q3DSurface *scatter)
+SurfaceDataModifier::SurfaceDataModifier(Q3DSurface* scatter)
     : m_graph(scatter),
       m_fontSize(40.0f),
       m_style(QAbstract3DSeries::MeshSphere),
@@ -30,8 +30,8 @@ SurfaceDataModifier::SurfaceDataModifier(Q3DSurface *scatter)
 
     m_graph->scene()->activeCamera()->setZoomLevel(180);
 
-    QSurfaceDataProxy *proxy = new QSurfaceDataProxy;
-    QSurface3DSeries *series = new QSurface3DSeries(proxy);
+    QSurfaceDataProxy* proxy = new QSurfaceDataProxy;
+    QSurface3DSeries* series = new QSurface3DSeries(proxy);
     series->setItemLabelFormat(QStringLiteral("@xTitle: @xLabel @yTitle: @yLabel @zTitle: @zLabel"));
     series->setMeshSmooth(m_smooth);
     m_graph->addSeries(series);
@@ -54,7 +54,7 @@ SurfaceDataModifier::~SurfaceDataModifier()
     delete m_graph;
 }
 
-void SurfaceDataModifier::setData(const Cloud & cloud)
+void SurfaceDataModifier::setData(const CloudScalar& cloud)
 {
     //fillSqrtSinProxy();
     Eigen::MatrixXd surface(100,100);//=cloud.getExtrapolated();
@@ -66,13 +66,13 @@ void SurfaceDataModifier::setData(const Cloud & cloud)
     m_graph->axisY()->setTitle("Y");
     m_graph->axisZ()->setTitle("Z");
 
-    QSurfaceDataArray * dataArray = new QSurfaceDataArray;
+    QSurfaceDataArray* dataArray = new QSurfaceDataArray;
     dataArray->reserve(surface.rows());
 
-    for (int k=0;k<surface.rows();k++)
+    for (int k=0; k<surface.rows(); k++)
     {
-        QSurfaceDataRow * dataRow=new QSurfaceDataRow(surface.cols());
-        for (int j=0;j<surface.cols();j++)
+        QSurfaceDataRow* dataRow=new QSurfaceDataRow(surface.cols());
+        for (int j=0; j<surface.cols(); j++)
         {
             (*dataRow)[j].setPosition(QVector3D(j,surface(j,k),k));
         }
@@ -84,33 +84,72 @@ void SurfaceDataModifier::setData(const Cloud & cloud)
     m_graph->seriesList().at(0)->dataProxy()->resetArray(dataArray);
 }
 
-void SurfaceDataModifier::setXMin(double xmin){if(xmin<getXMax())m_graph->axisX()->setMin(xmin);}
-void SurfaceDataModifier::setXMax(double xmax){if(xmax>getXMin())m_graph->axisX()->setMax(xmax);}
-void SurfaceDataModifier::setYMin(double ymin){if(ymin<getYMax())m_graph->axisY()->setMin(ymin);}
-void SurfaceDataModifier::setYMax(double ymax){if(ymax>getYMin())m_graph->axisY()->setMax(ymax);}
-void SurfaceDataModifier::setZMin(double zmin){if(zmin<getZMax())m_graph->axisZ()->setMin(zmin);}
-void SurfaceDataModifier::setZMax(double zmax){if(zmax>getZMin())m_graph->axisZ()->setMax(zmax);}
+void SurfaceDataModifier::setXMin(double xmin)
+{
+    if (xmin<getXMax())
+    {
+        m_graph->axisX()->setMin(xmin);
+    }
+}
+void SurfaceDataModifier::setXMax(double xmax)
+{
+    if (xmax>getXMin())
+    {
+        m_graph->axisX()->setMax(xmax);
+    }
+}
+void SurfaceDataModifier::setYMin(double ymin)
+{
+    if (ymin<getYMax())
+    {
+        m_graph->axisY()->setMin(ymin);
+    }
+}
+void SurfaceDataModifier::setYMax(double ymax)
+{
+    if (ymax>getYMin())
+    {
+        m_graph->axisY()->setMax(ymax);
+    }
+}
+void SurfaceDataModifier::setZMin(double zmin)
+{
+    if (zmin<getZMax())
+    {
+        m_graph->axisZ()->setMin(zmin);
+    }
+}
+void SurfaceDataModifier::setZMax(double zmax)
+{
+    if (zmax>getZMin())
+    {
+        m_graph->axisZ()->setMax(zmax);
+    }
+}
 
 void SurfaceDataModifier::changeStyle(int style)
 {
-    QComboBox *comboBox = qobject_cast<QComboBox *>(sender());
-    if (comboBox) {
+    QComboBox* comboBox = qobject_cast<QComboBox*>(sender());
+    if (comboBox)
+    {
         m_style = QAbstract3DSeries::Mesh(comboBox->itemData(style).toInt());
         if (m_graph->seriesList().size())
+        {
             m_graph->seriesList().at(0)->setMesh(m_style);
+        }
     }
 }
 
 void SurfaceDataModifier::setSmoothDots(int smooth)
 {
     m_smooth = bool(smooth);
-    QSurface3DSeries *series = m_graph->seriesList().at(0);
+    QSurface3DSeries* series = m_graph->seriesList().at(0);
     series->setMeshSmooth(m_smooth);
 }
 
 void SurfaceDataModifier::changeTheme(int theme)
 {
-    Q3DTheme *currentTheme = m_graph->activeTheme();
+    Q3DTheme* currentTheme = m_graph->activeTheme();
     currentTheme->setType(Q3DTheme::Theme(theme));
     emit backgroundEnabledChanged(currentTheme->isBackgroundEnabled());
     emit gridEnabledChanged(currentTheme->isGridEnabled());
@@ -124,7 +163,9 @@ void SurfaceDataModifier::changePresetCamera()
     m_graph->scene()->activeCamera()->setCameraPreset((Q3DCamera::CameraPreset)preset);
 
     if (++preset > Q3DCamera::CameraPresetDirectlyBelow)
+    {
         preset = Q3DCamera::CameraPresetFrontLow;
+    }
 }
 
 void SurfaceDataModifier::changeLabelStyle()
@@ -132,7 +173,7 @@ void SurfaceDataModifier::changeLabelStyle()
     m_graph->activeTheme()->setLabelBackgroundEnabled(!m_graph->activeTheme()->isLabelBackgroundEnabled());
 }
 
-void SurfaceDataModifier::changeFont(const QFont &font)
+void SurfaceDataModifier::changeFont(const QFont& font)
 {
     QFont newFont = font;
     newFont.setPointSizeF(m_fontSize);

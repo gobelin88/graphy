@@ -14,7 +14,7 @@ using namespace QtDataVisualization;
 //#define RANDOM_SCATTER // Uncomment this to switch to random scatter
 
 
-ScatterDataModifier::ScatterDataModifier(Q3DScatter *scatter)
+ScatterDataModifier::ScatterDataModifier(Q3DScatter* scatter)
     : m_graph(scatter),
       m_fontSize(40.0f),
       m_style(QAbstract3DSeries::MeshSphere),
@@ -30,8 +30,8 @@ ScatterDataModifier::ScatterDataModifier(Q3DScatter *scatter)
 
     m_graph->scene()->activeCamera()->setZoomLevel(180);
 
-    QScatterDataProxy *proxy = new QScatterDataProxy;
-    QScatter3DSeries *series = new QScatter3DSeries(proxy);
+    QScatterDataProxy* proxy = new QScatterDataProxy;
+    QScatter3DSeries* series = new QScatter3DSeries(proxy);
     series->setItemLabelFormat(QStringLiteral("@xTitle: @xLabel @yTitle: @yLabel @zTitle: @zLabel"));
     series->setMeshSmooth(m_smooth);
     m_graph->addSeries(series);
@@ -50,18 +50,18 @@ void ScatterDataModifier::setGradient(int preset)
     gradient.loadPreset((QCPColorGradient::GradientPreset)preset);
 }
 
-void ScatterDataModifier::setData(const Cloud & cloud)
+void ScatterDataModifier::setData(const CloudScalar& cloud)
 {
     // Configure the axes according to the data
     m_graph->axisX()->setTitle("X");
     m_graph->axisY()->setTitle("Y");
     m_graph->axisZ()->setTitle("Z");
 
-    QScatterDataArray *dataArray = new QScatterDataArray;
+    QScatterDataArray* dataArray = new QScatterDataArray;
     dataArray->resize(cloud.data().size());
-    QScatterDataItem *ptrToDataArray = &dataArray->first();
+    QScatterDataItem* ptrToDataArray = &dataArray->first();
 
-    for (int k=0;k<cloud.data().size();k++)
+    for (int k=0; k<cloud.data().size(); k++)
     {
         ptrToDataArray->setPosition(cloud.data()[k]);
         ptrToDataArray++;
@@ -72,46 +72,60 @@ void ScatterDataModifier::setData(const Cloud & cloud)
     m_graph->seriesList().at(0)->setColorStyle(Q3DTheme::ColorStyleUniform);
 }
 
-void ScatterDataModifier::setData(const CloudTransform & cloud)
+void ScatterDataModifier::setXMin(double xmin)
 {
-    // Configure the axes according to the data
-    m_graph->axisX()->setTitle("X");
-    m_graph->axisY()->setTitle("Y");
-    m_graph->axisZ()->setTitle("Z");
-
-    QScatterDataArray *dataArray = new QScatterDataArray;
-    dataArray->resize(cloud.data().size());
-    QScatterDataItem *ptrToDataArray = &dataArray->first();
-
-    for (int k=0;k<cloud.data().size();k++)
+    if (xmin<getXMax())
     {
-        ptrToDataArray->setPosition(cloud.data()[k].first);
-        ptrToDataArray->setRotation(cloud.data()[k].second);
-        ptrToDataArray++;
+        m_graph->axisX()->setMin(xmin);
     }
-
-    m_graph->seriesList().at(0)->dataProxy()->resetArray(dataArray);
-    m_graph->seriesList().at(0)->setBaseColor(QColor(0,255,0));
-    m_graph->seriesList().at(0)->setColorStyle(Q3DTheme::ColorStyleUniform);
 }
-
-void ScatterDataModifier::setXMin(double xmin){if(xmin<getXMax())m_graph->axisX()->setMin(xmin);}
-void ScatterDataModifier::setXMax(double xmax){if(xmax>getXMin())m_graph->axisX()->setMax(xmax);}
-void ScatterDataModifier::setYMin(double ymin){if(ymin<getYMax())m_graph->axisY()->setMin(ymin);}
-void ScatterDataModifier::setYMax(double ymax){if(ymax>getYMin())m_graph->axisY()->setMax(ymax);}
-void ScatterDataModifier::setZMin(double zmin){if(zmin<getZMax())m_graph->axisZ()->setMin(zmin);}
-void ScatterDataModifier::setZMax(double zmax){if(zmax>getZMin())m_graph->axisZ()->setMax(zmax);}
+void ScatterDataModifier::setXMax(double xmax)
+{
+    if (xmax>getXMin())
+    {
+        m_graph->axisX()->setMax(xmax);
+    }
+}
+void ScatterDataModifier::setYMin(double ymin)
+{
+    if (ymin<getYMax())
+    {
+        m_graph->axisY()->setMin(ymin);
+    }
+}
+void ScatterDataModifier::setYMax(double ymax)
+{
+    if (ymax>getYMin())
+    {
+        m_graph->axisY()->setMax(ymax);
+    }
+}
+void ScatterDataModifier::setZMin(double zmin)
+{
+    if (zmin<getZMax())
+    {
+        m_graph->axisZ()->setMin(zmin);
+    }
+}
+void ScatterDataModifier::setZMax(double zmax)
+{
+    if (zmax>getZMin())
+    {
+        m_graph->axisZ()->setMax(zmax);
+    }
+}
 
 void ScatterDataModifier::changeStyle(int style)
 {
-    QComboBox *comboBox = qobject_cast<QComboBox *>(sender());
-    if (comboBox) {
+    QComboBox* comboBox = qobject_cast<QComboBox*>(sender());
+    if (comboBox)
+    {
         m_style = QAbstract3DSeries::Mesh(comboBox->itemData(style).toInt());
         if (m_graph->seriesList().size())
         {
-            if(m_style==QAbstract3DSeries::MeshUserDefined)
+            if (m_style==QAbstract3DSeries::MeshUserDefined)
             {
-                if(m_graph->seriesList().at(0)->userDefinedMesh().isEmpty())
+                if (m_graph->seriesList().at(0)->userDefinedMesh().isEmpty())
                 {
                     setUserDefinedMesh();
                 }
@@ -131,13 +145,15 @@ void ScatterDataModifier::changeStyle(int style)
 void ScatterDataModifier::setSize(double size)
 {
     if (m_graph->seriesList().size())
+    {
         m_graph->seriesList().at(0)->setItemSize((float)size);
+    }
 }
 
 void ScatterDataModifier::setSmoothDots(int smooth)
 {
     m_smooth = bool(smooth);
-    QScatter3DSeries *series = m_graph->seriesList().at(0);
+    QScatter3DSeries* series = m_graph->seriesList().at(0);
     series->setMeshSmooth(m_smooth);
 }
 
@@ -145,9 +161,9 @@ void ScatterDataModifier::setUserDefinedMesh()
 {
     QString filename=QFileDialog::getOpenFileName(nullptr,"Custom Mesh","","*.obj");
 
-    if(!filename.isEmpty())
+    if (!filename.isEmpty())
     {
-        QScatter3DSeries *series = m_graph->seriesList().at(0);
+        QScatter3DSeries* series = m_graph->seriesList().at(0);
         series->setUserDefinedMesh(filename);
 
         m_graph->seriesList().at(0)->setMesh(QAbstract3DSeries::MeshUserDefined);
@@ -156,7 +172,7 @@ void ScatterDataModifier::setUserDefinedMesh()
 
 void ScatterDataModifier::changeTheme(int theme)
 {
-    Q3DTheme *currentTheme = m_graph->activeTheme();
+    Q3DTheme* currentTheme = m_graph->activeTheme();
     currentTheme->setType(Q3DTheme::Theme(theme));
     emit backgroundEnabledChanged(currentTheme->isBackgroundEnabled());
     emit gridEnabledChanged(currentTheme->isGridEnabled());
@@ -170,7 +186,9 @@ void ScatterDataModifier::changePresetCamera()
     m_graph->scene()->activeCamera()->setCameraPreset((Q3DCamera::CameraPreset)preset);
 
     if (++preset > Q3DCamera::CameraPresetDirectlyBelow)
+    {
         preset = Q3DCamera::CameraPresetFrontLow;
+    }
 }
 
 void ScatterDataModifier::changeLabelStyle()
@@ -178,7 +196,7 @@ void ScatterDataModifier::changeLabelStyle()
     m_graph->activeTheme()->setLabelBackgroundEnabled(!m_graph->activeTheme()->isLabelBackgroundEnabled());
 }
 
-void ScatterDataModifier::changeFont(const QFont &font)
+void ScatterDataModifier::changeFont(const QFont& font)
 {
     QFont newFont = font;
     newFont.setPointSizeF(m_fontSize);

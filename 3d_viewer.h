@@ -18,19 +18,18 @@ class ViewerScatter3D:public QWidget
 public:
     ViewerScatter3D();
 
-    void set_data(const Cloud & cloud);
-    void set_data(const CloudTransform & cloud);
+    void set_data(const CloudScalar& cloud);
 
 private:
-    ScatterDataModifier *modifier;
+    ScatterDataModifier* modifier;
 
-    QDoubleSpinBox * sb_xmin;
-    QDoubleSpinBox * sb_xmax;
-    QDoubleSpinBox * sb_ymin;
-    QDoubleSpinBox * sb_ymax;
-    QDoubleSpinBox * sb_zmin;
-    QDoubleSpinBox * sb_zmax;
-    QDoubleSpinBox * scatterSize;
+    QDoubleSpinBox* sb_xmin;
+    QDoubleSpinBox* sb_xmax;
+    QDoubleSpinBox* sb_ymin;
+    QDoubleSpinBox* sb_ymax;
+    QDoubleSpinBox* sb_zmin;
+    QDoubleSpinBox* sb_zmax;
+    QDoubleSpinBox* scatterSize;
 };
 
 class ViewerSurface3D:public QWidget
@@ -38,15 +37,15 @@ class ViewerSurface3D:public QWidget
 public:
     ViewerSurface3D();
 
-    void set_data(const Cloud & cloud);
+    void set_data(const CloudScalar& cloud);
 
 private:
-    SurfaceDataModifier *modifier;
+    SurfaceDataModifier* modifier;
 
-    QDoubleSpinBox * sb_xmin;
-    QDoubleSpinBox * sb_xmax;
-    QDoubleSpinBox * sb_ymin;
-    QDoubleSpinBox * sb_ymax;
-    QDoubleSpinBox * sb_zmin;
-    QDoubleSpinBox * sb_zmax;    
+    QDoubleSpinBox* sb_xmin;
+    QDoubleSpinBox* sb_xmax;
+    QDoubleSpinBox* sb_ymin;
+    QDoubleSpinBox* sb_ymax;
+    QDoubleSpinBox* sb_zmin;
+    QDoubleSpinBox* sb_zmax;
 };

@@ -13,30 +13,50 @@ class ScatterDataModifier : public QObject
 {
     Q_OBJECT
 public:
-    explicit ScatterDataModifier(Q3DScatter *scatter);
+    explicit ScatterDataModifier(Q3DScatter* scatter);
     ~ScatterDataModifier();
 
-    void setData(const Cloud & cloud);
-    void setData(const CloudTransform & cloud);
+    void setData(const CloudScalar& cloud);
 
     void changeStyle();
     void changePresetCamera();
     void changeLabelStyle();
-    void changeFont(const QFont &font);
+    void changeFont(const QFont& font);
     void changeFontSize(int fontsize);
     void setBackgroundEnabled(int enabled);
     void setGridEnabled(int enabled);
     void setSmoothDots(int smooth);
     void start();
 
-    float getXMin(){return m_graph->axisX()->min();}
-    float getXMax(){return m_graph->axisX()->max();}
-    float getYMin(){return m_graph->axisY()->min();}
-    float getYMax(){return m_graph->axisY()->max();}
-    float getZMin(){return m_graph->axisZ()->min();}
-    float getZMax(){return m_graph->axisZ()->max();}
+    float getXMin()
+    {
+        return m_graph->axisX()->min();
+    }
+    float getXMax()
+    {
+        return m_graph->axisX()->max();
+    }
+    float getYMin()
+    {
+        return m_graph->axisY()->min();
+    }
+    float getYMax()
+    {
+        return m_graph->axisY()->max();
+    }
+    float getZMin()
+    {
+        return m_graph->axisZ()->min();
+    }
+    float getZMax()
+    {
+        return m_graph->axisZ()->max();
+    }
 
-    float getSize(){return m_graph->seriesList().at(0)->itemSize();}
+    float getSize()
+    {
+        return m_graph->seriesList().at(0)->itemSize();
+    }
 
 public Q_SLOTS:
     void setUserDefinedMesh();
@@ -61,7 +81,7 @@ Q_SIGNALS:
     void fontChanged(QFont font);
 
 private:
-    Q3DScatter *m_graph;
+    Q3DScatter* m_graph;
     int m_fontSize;
     QAbstract3DSeries::Mesh m_style;
     bool m_smooth;

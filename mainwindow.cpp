@@ -95,6 +95,8 @@ void MainWindow::direct_open(QString filename)
     QFile file(filename);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
+        registerClear();
+
         model = new QStandardItemModel;
 
         int lineindex = 0;                     // file line counter
@@ -137,6 +139,7 @@ void MainWindow::direct_open(QString filename)
                     QString value = lineToken.at(j);
                     QStandardItem* item = new QStandardItem(value);
                     model->setHorizontalHeaderItem(j, item);
+                    registerNewVariable(value);
                 }
             }
             else
@@ -160,6 +163,7 @@ void MainWindow::direct_open(QString filename)
                 QString value = QString("C%1").arg(j);
                 QStandardItem* item = new QStandardItem(value);
                 model->setHorizontalHeaderItem(j, item);
+                registerNewVariable(value);
             }
         }
 
@@ -306,7 +310,13 @@ void MainWindow::direct_save(QString filename)
 
 QString MainWindow::askForValidColumnName()
 {
-    QString varname =QInputDialog::getText(this,"Nommer une colonne",QString("Nommer la colonne en : "));
+    QString colname =QInputDialog::getText(this,"Definir une variable",QString("Variable : "));
+
+    QString varname=colname;
+    if (colname.contains("="))
+    {
+        varname=colname.split("=")[0];
+    }
 
     if (varname.begin()->isDigit())
     {
@@ -320,31 +330,34 @@ QString MainWindow::askForValidColumnName()
         return QString();
     }
 
-    int nbCols=model->columnCount();
-    for (int k=0; k<nbCols; k++)
+    if (variables_names.contains(varname))
     {
-        if (getColName(k)==varname)
-        {
-            QMessageBox::information(this,"Erreur",QString("Ce nom existe deja"));
-            return QString();
-        }
+        QMessageBox::information(this,"Erreur",QString("Ce nom existe deja"));
+        return QString();
     }
 
-    return varname;
+    return colname;
+}
+
+void MainWindow::registerClear()
+{
+    variables_names.clear();
+    variables.clear();
+    symbolsTable.clear();
 }
 
 void MainWindow::registerNewVariable(QString varname)
 {
     variables_names.push_back(varname);
     variables.push_back(0.0);
-    symbolsTable.add_variable(varname.toStdString(),*variables.end());
+    symbolsTable.add_variable(varname.toStdString(),variables.last());
 }
 
 void MainWindow::registerDelVariable(QString varname)
 {
     int index=variables_names.indexOf(varname);
     variables_names.removeAt(index);
-    variables.removeAt(index);
+    variables.erase(variables.begin()+index);
     symbolsTable.remove_variable(varname.toStdString());
 }
 
@@ -386,7 +399,7 @@ void MainWindow::slot_delColumn()
     {
         for (int i=0; i<id_list.size(); i++)
         {
-            registerDelVariable(getColName(id_list[i].column()-i));
+            registerDelVariable(variables_names[id_list[i].column()-i]);
             model->removeColumn(id_list[i].column()-i);
         }
         table->setModel(model);
@@ -398,24 +411,89 @@ void MainWindow::slot_delColumn()
     }
 }
 
+void MainWindow::dispVariables()
+{
+    for (int i=0; i<variables_names.size(); i++)
+    {
+        std::cout<<variables_names[i].toLocal8Bit().data()<<"="<<*(variables.begin()+i)<<" ("<<& *(variables.begin()+i) <<") ";
+    }
+    std::cout<<std::endl;
+}
+
+bool MainWindow::eval(QString expression,QVector<double>& results)
+{
+    int nbRows=model->rowCount();
+    int nbCols=model->columnCount();
+
+    exprtk::parser<double> parser;
+    exprtk::expression<double> expr;
+
+    expr.register_symbol_table(symbolsTable);
+    bool ok=parser.compile(expression.toStdString(),expr);
+
+    results.resize(nbRows);
+
+    if (ok)
+    {
+        for (int i=0; i<nbRows; i++)
+        {
+            //std::cout<<float(i)/nbRows<<std::endl;
+            for (int j=0; j<nbCols; j++)
+            {
+                *(variables.begin()+j)=datatable[j][i];
+            }
+            results[i]=expr.value();
+        }
+
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+void MainWindow::addColumn(const QVector<double>& v)
+{
+    QList<QStandardItem*> items;
+    items.reserve(v.size());
+    for (int i=0; i<v.size(); i++)
+    {
+        items.append(new QStandardItem(QString::number(v[i])));
+    }
+    model->appendColumn(items);
+}
+
 void MainWindow::slot_newColumn()
 {
+    std::cout<<"slot_newColumn"<<std::endl;
+
     int nbCols=model->columnCount();
     int nbRows=model->rowCount();
 
-    QString value = askForValidColumnName();
-    if (!value.isEmpty())
+    QString colname = askForValidColumnName();
+    if (!colname.isEmpty())
     {
-        for (int dy=0; dy<nbRows; dy++)
+        QString varname=colname,expression;
+        if (colname.contains("="))
         {
-            //QStandardItem* item = new QStandardItem(QString::number(dy));
-            QStandardItem* item = new QStandardItem();
-            model->setItem(dy, nbCols, item);
+            QStringList args=colname.split("=");
+            varname=args[0];
+            expression=args[1];
+
+            QVector<double> result;
+            if (!eval(expression,result))
+            {
+                QMessageBox::information(this,"Erreur",QString("Expression invalide : ")+expression);
+                return;
+            }
+
+            addColumn(result);
         }
 
-        registerNewVariable(value);
-        QStandardItem* item = new QStandardItem(value);
-        model->setHorizontalHeaderItem(nbCols, item);
+        model->setHorizontalHeaderItem(nbCols, new QStandardItem(colname));
+
+        registerNewVariable(varname);
         table->setModel(model);
         updateTable();
     }

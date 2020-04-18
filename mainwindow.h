@@ -71,6 +71,7 @@ public slots:
     void slot_plot_fft();
 
 private:
+
     QString askForValidColumnName();
 
     void setCurrentFilename(QString filename);
@@ -91,14 +92,20 @@ private:
     QAction* a_renameColumn;
     QAction* a_delColumn;
 
+    void addColumn(const QVector<double>& v);
+
     //expr
+    bool eval(QString expression,QVector<double>& results);
+
+    void dispVariables();
+    void registerClear();
     void registerNewVariable(QString value);
     void registerDelVariable(QString value);
     void registerRenameVariable(QString old_varname,QString new_varname);
 
     exprtk::symbol_table<double> symbolsTable;
     QStringList variables_names;
-    QList<double> variables;
+    QLinkedList<double> variables;
 };
 
 #endif // MAINWINDOW_H

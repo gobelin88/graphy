@@ -55,7 +55,6 @@ public slots:
     void direct_new(int sx,int sy);
 
     void slot_newColumn();
-    void slot_renameColumn();
     void slot_delColumn();
 
     void slot_plot_y();
@@ -72,7 +71,9 @@ public slots:
 
 private:
 
-    QString askForValidColumnName();
+    bool isValidVariable(QString variableName, int currentIndex);
+    bool askForValidVariable(QString& variableName, QString& variableExpression,
+                             QString currentName, QString currentExpression,int currentIndex);
 
     void setCurrentFilename(QString filename);
 
@@ -89,22 +90,26 @@ private:
     View3D::PrimitiveMode graphMode;
 
     QAction* a_newColumn;
-    QAction* a_renameColumn;
     QAction* a_delColumn;
 
-    void addColumn(const QVector<double>& v);
+    //Col/row
+    void setColumn(int idCol,const QVector<double>& vec_col);
+    void addColumn(const QVector<double>& vec_col);
+    void addRow(const QStringList& str_row);
 
     //expr
     bool eval(QString expression,QVector<double>& results);
 
     void dispVariables();
     void registerClear();
-    void registerNewVariable(QString value);
-    void registerDelVariable(QString value);
+    void registerNewVariable(QString varname,QString varexpr);
+    void registerDelVariable(QString varname);
     void registerRenameVariable(QString old_varname,QString new_varname);
 
     exprtk::symbol_table<double> symbolsTable;
+
     QStringList variables_names;
+    QStringList variables_expressions;
     QLinkedList<double> variables;
 };
 

@@ -43,9 +43,17 @@ public:
     int getColId(QString colName);
 
 public slots:
+    //underlying table
+    void addRowTable(QVector<double> dataRow);
+    void addColTable(QVector<double> dataCol);
     void updateTable();
     void updateTable(const QModelIndex& indexA, const QModelIndex& indexB);
 
+    void slot_editColumn();
+    void slot_delColumn();
+    void slot_newRow();
+
+    //IO
     void slot_open();
     void slot_save();
     void slot_export();
@@ -54,9 +62,7 @@ public slots:
     void direct_export(QString filename);
     void direct_new(int sx,int sy);
 
-    void slot_newColumn();
-    void slot_delColumn();
-
+    //Graphs
     void slot_plot_y();
     void slot_plot_graph_xy();
     void slot_plot_curve_xy();
@@ -66,14 +72,13 @@ public slots:
     void slot_plot_cloud_3D();
     void slot_mode_changed();
     void slot_plot_gain_phase();
-
     void slot_plot_fft();
 
 private:
 
+    bool isValidExpression(QString variableExpression);
     bool isValidVariable(QString variableName, int currentIndex);
-    bool askForValidVariable(QString& variableName, QString& variableExpression,
-                             QString currentName, QString currentExpression,int currentIndex);
+    bool editVariableAndExpression(int currentIndex);
 
     void setCurrentFilename(QString filename);
 
@@ -90,27 +95,29 @@ private:
     View3D::PrimitiveMode graphMode;
 
     QAction* a_newColumn;
+    QAction* a_newRow;
     QAction* a_delColumn;
 
     //Col/row
     void setColumn(int idCol,const QVector<double>& vec_col);
-    void addColumn(const QVector<double>& vec_col);
     void addRow(const QStringList& str_row);
 
     //expr
-    bool eval(QString expression,QVector<double>& results);
+    QVector<double> evalColumn(int colId);
 
     void dispVariables();
     void registerClear();
     void registerNewVariable(QString varname,QString varexpr);
     void registerDelVariable(QString varname);
-    void registerRenameVariable(QString old_varname,QString new_varname);
+    void registerRenameVariable(QString old_varname, QString new_varname, QString oldExpression, QString newExpression);
 
     exprtk::symbol_table<double> symbolsTable;
 
+    QLinkedList<double> variables;
     QStringList variables_names;
     QStringList variables_expressions;
-    QLinkedList<double> variables;
+
+    double activeRow;
 };
 
 #endif // MAINWINDOW_H

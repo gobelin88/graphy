@@ -6,3 +6,4 @@ moc_*
 *.exe
 ui_*
 *.stash
+Makefile*

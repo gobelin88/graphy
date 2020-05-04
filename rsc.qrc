@@ -1,0 +1,20 @@
+<RCC>
+    <qresource prefix="/img">
+        <file>icons/bode.png</file>
+        <file>icons/cloudYX.png</file>
+        <file>icons/cloudZYX.png</file>
+        <file>icons/copy.png</file>
+        <file>icons/curveYX.png</file>
+        <file>icons/delete.png</file>
+        <file>icons/fourier.png</file>
+        <file>icons/graphY.png</file>
+        <file>icons/graphYX.png</file>
+        <file>icons/histogram.png</file>
+        <file>icons/latex.png</file>
+        <file>icons/mapYX.png</file>
+        <file>icons/new.png</file>
+        <file>icons/open.png</file>
+        <file>icons/paste.png</file>
+        <file>icons/save.png</file>
+    </qresource>
+</RCC>

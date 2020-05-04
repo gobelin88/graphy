@@ -76,8 +76,8 @@
   </widget>
   <action name="actionOpen">
    <property name="icon">
-    <iconset>
-     <normaloff>icons/open.png</normaloff>icons/open.png</iconset>
+    <iconset resource="rsc.qrc">
+     <normaloff>:/img/icons/open.png</normaloff>:/img/icons/open.png</iconset>
    </property>
    <property name="text">
     <string>Open</string>
@@ -88,8 +88,8 @@
   </action>
   <action name="actionSave">
    <property name="icon">
-    <iconset>
-     <normaloff>icons/save.png</normaloff>icons/save.png</iconset>
+    <iconset resource="rsc.qrc">
+     <normaloff>:/img/icons/save.png</normaloff>:/img/icons/save.png</iconset>
    </property>
    <property name="text">
     <string>Save</string>
@@ -100,8 +100,8 @@
   </action>
   <action name="actionPlot_GraphY">
    <property name="icon">
-    <iconset>
-     <normaloff>icons/graphY.png</normaloff>icons/graphY.png</iconset>
+    <iconset resource="rsc.qrc">
+     <normaloff>:/img/icons/graphY.png</normaloff>:/img/icons/graphY.png</iconset>
    </property>
    <property name="text">
     <string>Graph Y</string>
@@ -112,8 +112,8 @@
   </action>
   <action name="actionPlot_GraphXY">
    <property name="icon">
-    <iconset>
-     <normaloff>icons/graphYX.png</normaloff>icons/graphYX.png</iconset>
+    <iconset resource="rsc.qrc">
+     <normaloff>:/img/icons/graphYX.png</normaloff>:/img/icons/graphYX.png</iconset>
    </property>
    <property name="text">
     <string>Graphs XY</string>
@@ -137,8 +137,8 @@
   </action>
   <action name="actionHistogram">
    <property name="icon">
-    <iconset>
-     <normaloff>icons/histogram.png</normaloff>icons/histogram.png</iconset>
+    <iconset resource="rsc.qrc">
+     <normaloff>:/img/icons/histogram.png</normaloff>:/img/icons/histogram.png</iconset>
    </property>
    <property name="text">
     <string>Histogram</string>
@@ -149,8 +149,8 @@
   </action>
   <action name="actionPlot_MapXYZ">
    <property name="icon">
-    <iconset>
-     <normaloff>icons/mapYX.png</normaloff>icons/mapYX.png</iconset>
+    <iconset resource="rsc.qrc">
+     <normaloff>:/img/icons/mapYX.png</normaloff>:/img/icons/mapYX.png</iconset>
    </property>
    <property name="text">
     <string>Map XYZ</string>
@@ -193,8 +193,8 @@
   </action>
   <action name="actionPlot_CurveXY">
    <property name="icon">
-    <iconset>
-     <normaloff>icons/curveYX.png</normaloff>icons/curveYX.png</iconset>
+    <iconset resource="rsc.qrc">
+     <normaloff>:/img/icons/curveYX.png</normaloff>:/img/icons/curveYX.png</iconset>
    </property>
    <property name="text">
     <string>Curve XY</string>
@@ -205,8 +205,8 @@
   </action>
   <action name="actionPlot_Cloud_3D">
    <property name="icon">
-    <iconset>
-     <normaloff>icons/cloudZYX.png</normaloff>icons/cloudZYX.png</iconset>
+    <iconset resource="rsc.qrc">
+     <normaloff>:/img/icons/cloudZYX.png</normaloff>:/img/icons/cloudZYX.png</iconset>
    </property>
    <property name="text">
     <string>Cloud 3D</string>
@@ -235,8 +235,8 @@
   </action>
   <action name="actionPlot_Gain_Phase">
    <property name="icon">
-    <iconset>
-     <normaloff>icons/bode.png</normaloff>icons/bode.png</iconset>
+    <iconset resource="rsc.qrc">
+     <normaloff>:/img/icons/bode.png</normaloff>:/img/icons/bode.png</iconset>
    </property>
    <property name="text">
     <string>Bode</string>
@@ -244,8 +244,8 @@
   </action>
   <action name="actionFFT">
    <property name="icon">
-    <iconset>
-     <normaloff>icons/fourier.png</normaloff>icons/fourier.png</iconset>
+    <iconset resource="rsc.qrc">
+     <normaloff>:/img/icons/fourier.png</normaloff>:/img/icons/fourier.png</iconset>
    </property>
    <property name="text">
     <string>FFT</string>
@@ -253,8 +253,8 @@
   </action>
   <action name="actionExport">
    <property name="icon">
-    <iconset>
-     <normaloff>icons/latex.png</normaloff>icons/latex.png</iconset>
+    <iconset resource="rsc.qrc">
+     <normaloff>:/img/icons/latex.png</normaloff>:/img/icons/latex.png</iconset>
    </property>
    <property name="text">
     <string>Latex</string>
@@ -265,8 +265,8 @@
   </action>
   <action name="actionPlot_Cloud_XYZ">
    <property name="icon">
-    <iconset>
-     <normaloff>icons/cloudYX.png</normaloff>icons/cloudYX.png</iconset>
+    <iconset resource="rsc.qrc">
+     <normaloff>:/img/icons/cloudYX.png</normaloff>:/img/icons/cloudYX.png</iconset>
    </property>
    <property name="text">
     <string>Cloud 2D</string>
@@ -274,8 +274,8 @@
   </action>
   <action name="actionNew">
    <property name="icon">
-    <iconset>
-     <normaloff>icons/new.png</normaloff>icons/new.png</iconset>
+    <iconset resource="rsc.qrc">
+     <normaloff>:/img/icons/new.png</normaloff>:/img/icons/new.png</iconset>
    </property>
    <property name="text">
     <string>New</string>
@@ -286,6 +286,8 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <resources/>
+ <resources>
+  <include location="rsc.qrc"/>
+ </resources>
  <connections/>
 </ui>

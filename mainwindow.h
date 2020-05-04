@@ -40,7 +40,6 @@ public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
-
     QVector<double> getCol(int id,const TableData& table);
     QString getColName(int id);
     int getColId(QString colName);
@@ -58,7 +57,6 @@ public slots:
     void slot_delete();
     void slot_newRow();
     void slot_updateColumns();
-
 
     //IO
     void slot_new();
@@ -78,7 +76,6 @@ public slots:
     void slot_plot_xyz();
     void slot_plot_histogram();
     void slot_plot_cloud_3D();
-    void slot_mode_changed();
     void slot_plot_gain_phase();
     void slot_plot_fft();
 
@@ -100,7 +97,6 @@ private:
     bool hasheader;
     TableData datatable;
     Curve2D shared;
-    View3D::PrimitiveMode graphMode;
 
     QAction* a_newColumn;
     QAction* a_newRow;

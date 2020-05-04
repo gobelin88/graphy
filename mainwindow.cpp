@@ -28,13 +28,10 @@ MainWindow::MainWindow(QWidget* parent) :
 
     connect(ui->actionPlot_Gain_Phase, &QAction::triggered,this,&MainWindow::slot_plot_gain_phase);
 
-    connect(ui->actionTile,&QAction::triggered,mdiArea,&QMdiArea::tileSubWindows);
-    connect(ui->actionCascade,&QAction::triggered,mdiArea,&QMdiArea::cascadeSubWindows);
-    connect(ui->actionNext,&QAction::triggered,mdiArea,&QMdiArea::activateNextSubWindow);
-    connect(ui->actionPrevious,&QAction::triggered,mdiArea,&QMdiArea::activatePreviousSubWindow);
-
-    connect(ui->actionPoints,&QAction::triggered,this,&MainWindow::slot_mode_changed);
-    connect(ui->actionLines,&QAction::triggered,this,&MainWindow::slot_mode_changed);
+//    connect(ui->actionTile,&QAction::triggered,mdiArea,&QMdiArea::tileSubWindows);
+//    connect(ui->actionCascade,&QAction::triggered,mdiArea,&QMdiArea::cascadeSubWindows);
+//    connect(ui->actionNext,&QAction::triggered,mdiArea,&QMdiArea::activateNextSubWindow);
+//    connect(ui->actionPrevious,&QAction::triggered,mdiArea,&QMdiArea::activatePreviousSubWindow);
 
 //    QMdiSubWindow* w = mdiArea->addSubWindow(table);
 //    w->setWindowFlags(Qt::FramelessWindowHint);
@@ -74,7 +71,6 @@ MainWindow::MainWindow(QWidget* parent) :
 
     direct_new(10,10);
 
-    graphMode=View3D::MODE_POINTS;
 
     QActionGroup* actionGroup=new QActionGroup(this);
     actionGroup->addAction(ui->actionPoints);
@@ -1265,18 +1261,6 @@ void MainWindow::slot_plot_xyz()
     }
 }
 
-void MainWindow::slot_mode_changed()
-{
-    if (ui->actionPoints->isChecked())
-    {
-        graphMode=View3D::MODE_POINTS;
-    }
-    else if (ui->actionLines->isChecked())
-    {
-        graphMode=View3D::MODE_LINES;
-    }
-}
-
 void MainWindow::slot_plot_fft()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
@@ -1371,7 +1355,7 @@ void MainWindow::slot_plot_cloud_3D()
 
         if (cloud)
         {
-            view3d->setCloudScalar(cloud,graphMode);
+            view3d->setCloudScalar(cloud,View3D::PrimitiveMode::MODE_POINTS);
         }
 
 //        mdiArea->addSubWindow(view3d->getContainer());

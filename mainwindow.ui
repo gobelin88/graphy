@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>712</width>
+    <width>1163</width>
     <height>629</height>
    </rect>
   </property>
@@ -15,7 +15,7 @@
   </property>
   <widget class="QWidget" name="centralWidget"/>
   <widget class="QStatusBar" name="statusBar"/>
-  <widget class="QToolBar" name="toolbar">
+  <widget class="QToolBar" name="toolbar_menu">
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
@@ -24,6 +24,36 @@
    </property>
    <property name="orientation">
     <enum>Qt::Horizontal</enum>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>32</width>
+     <height>32</height>
+    </size>
+   </property>
+   <property name="toolButtonStyle">
+    <enum>Qt::ToolButtonTextUnderIcon</enum>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionNew"/>
+   <addaction name="actionSave"/>
+   <addaction name="actionOpen"/>
+   <addaction name="actionExport"/>
+  </widget>
+  <widget class="QToolBar" name="toolbar_graph">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>32</width>
+     <height>32</height>
+    </size>
    </property>
    <property name="toolButtonStyle">
     <enum>Qt::ToolButtonTextUnderIcon</enum>
@@ -41,45 +71,14 @@
    <addaction name="actionHistogram"/>
    <addaction name="actionPlot_Cloud_3D"/>
    <addaction name="actionPlot_Cloud_XYZ"/>
-   <addaction name="separator"/>
-   <addaction name="actionPoints"/>
-   <addaction name="actionLines"/>
-   <addaction name="separator"/>
-   <addaction name="actionPlot_Gain_Phase"/>
    <addaction name="actionFFT"/>
-  </widget>
-  <widget class="QMenuBar" name="menuBar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>712</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <widget class="QMenu" name="menuMenu">
-    <property name="title">
-     <string>Menu</string>
-    </property>
-    <addaction name="actionOpen"/>
-    <addaction name="actionSave"/>
-    <addaction name="actionNew"/>
-    <addaction name="actionExport"/>
-   </widget>
-   <widget class="QMenu" name="menuView">
-    <property name="title">
-     <string>View</string>
-    </property>
-    <addaction name="actionTile"/>
-    <addaction name="actionCascade"/>
-    <addaction name="actionNext"/>
-    <addaction name="actionPrevious"/>
-    <addaction name="separator"/>
-   </widget>
-   <addaction name="menuMenu"/>
-   <addaction name="menuView"/>
+   <addaction name="actionPlot_Gain_Phase"/>
   </widget>
   <action name="actionOpen">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/open.png</normaloff>icons/open.png</iconset>
+   </property>
    <property name="text">
     <string>Open</string>
    </property>
@@ -88,6 +87,10 @@
    </property>
   </action>
   <action name="actionSave">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/save.png</normaloff>icons/save.png</iconset>
+   </property>
    <property name="text">
     <string>Save</string>
    </property>
@@ -96,16 +99,24 @@
    </property>
   </action>
   <action name="actionPlot_GraphY">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/graphY.png</normaloff>icons/graphY.png</iconset>
+   </property>
    <property name="text">
-    <string>Plot Graph Y</string>
+    <string>Graph Y</string>
    </property>
    <property name="shortcut">
     <string>F1</string>
    </property>
   </action>
   <action name="actionPlot_GraphXY">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/graphYX.png</normaloff>icons/graphYX.png</iconset>
+   </property>
    <property name="text">
-    <string>Plot Graphs XY</string>
+    <string>Graphs XY</string>
    </property>
    <property name="shortcut">
     <string>F2</string>
@@ -125,6 +136,10 @@
    </property>
   </action>
   <action name="actionHistogram">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/histogram.png</normaloff>icons/histogram.png</iconset>
+   </property>
    <property name="text">
     <string>Histogram</string>
    </property>
@@ -133,8 +148,12 @@
    </property>
   </action>
   <action name="actionPlot_MapXYZ">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/mapYX.png</normaloff>icons/mapYX.png</iconset>
+   </property>
    <property name="text">
-    <string>Plot Map XYZ</string>
+    <string>Map XYZ</string>
    </property>
    <property name="shortcut">
     <string>F4</string>
@@ -173,16 +192,24 @@
    </property>
   </action>
   <action name="actionPlot_CurveXY">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/curveYX.png</normaloff>icons/curveYX.png</iconset>
+   </property>
    <property name="text">
-    <string>Plot Curve XY</string>
+    <string>Curve XY</string>
    </property>
    <property name="shortcut">
     <string>F3</string>
    </property>
   </action>
   <action name="actionPlot_Cloud_3D">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/cloudZYX.png</normaloff>icons/cloudZYX.png</iconset>
+   </property>
    <property name="text">
-    <string>Plot Cloud 3D</string>
+    <string>Cloud 3D</string>
    </property>
   </action>
   <action name="actionPlot_Surface_3D">
@@ -207,29 +234,49 @@
    </property>
   </action>
   <action name="actionPlot_Gain_Phase">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/bode.png</normaloff>icons/bode.png</iconset>
+   </property>
    <property name="text">
-    <string>Plot Gain-Phase</string>
+    <string>Bode</string>
    </property>
   </action>
   <action name="actionFFT">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/fourier.png</normaloff>icons/fourier.png</iconset>
+   </property>
    <property name="text">
     <string>FFT</string>
    </property>
   </action>
   <action name="actionExport">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/latex.png</normaloff>icons/latex.png</iconset>
+   </property>
    <property name="text">
-    <string>Export</string>
+    <string>Latex</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+E</string>
    </property>
   </action>
   <action name="actionPlot_Cloud_XYZ">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/cloudYX.png</normaloff>icons/cloudYX.png</iconset>
+   </property>
    <property name="text">
-    <string>Plot 2D Scalar Cloud</string>
+    <string>Cloud 2D</string>
    </property>
   </action>
   <action name="actionNew">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/new.png</normaloff>icons/new.png</iconset>
+   </property>
    <property name="text">
     <string>New</string>
    </property>

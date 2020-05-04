@@ -1,0 +1,8 @@
+*.obj
+*.user
+*.user.*
+*.dll
+moc_*
+*.exe
+ui_*
+*.stash

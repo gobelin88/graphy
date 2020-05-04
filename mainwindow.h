@@ -15,6 +15,9 @@
 #include <QResizeEvent>
 #include <QScrollArea>
 
+#include <QDirIterator>
+#include <QDir>
+
 #include "1d_viewer.h"
 #include "1d_cplx_viewer.h"
 #include "2d_viewer.h"
@@ -126,7 +129,7 @@ private:
 
     double activeRow;
 
-    bool custom_exp_parse(QString expression, QString& result);
+    bool custom_exp_parse(QString expression, int currentRow, QString& result);
 };
 
 #endif // MAINWINDOW_H

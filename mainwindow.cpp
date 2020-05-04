@@ -366,7 +366,7 @@ bool MainWindow::isValidExpression(QString variableExpression)
     else if (variableExpression.startsWith("$"))
     {
         QString result;
-        return custom_exp_parse(variableExpression,result);
+        return custom_exp_parse(variableExpression,0,result);
     }
     else
     {
@@ -668,7 +668,7 @@ QVector<QString> MainWindow::evalColumn(int colId)
                 {
                     *(variables.begin()+j)=datatable[j][i];
                 }
-                custom_exp_parse(variables_expressions[colId],colResults[i]);
+                custom_exp_parse(variables_expressions[colId],i,colResults[i]);
             }
         }
 
@@ -677,38 +677,157 @@ QVector<QString> MainWindow::evalColumn(int colId)
     }
 }
 
-bool MainWindow::custom_exp_parse(QString expression,QString& result)
+void scanDir(QDir dir,QStringList filters,QString name,QString& result,int depth)
+{
+    if (depth==0)
+    {
+        return;
+    }
+
+    dir.setNameFilters(filters);
+    dir.setFilter(QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks);
+
+    QStringList fileList = dir.entryList();
+    for ( int i=0; i<fileList.size(); i++)
+    {
+        if ( fileList[i] .contains(name) )
+        {
+            result=fileList[i];
+            return;
+        }
+    }
+
+    dir.setFilter(QDir::AllDirs | QDir::NoDotAndDotDot | QDir::NoSymLinks);
+    QStringList dirList = dir.entryList();
+    for (int i=0; i<dirList.size(); ++i)
+    {
+        QString newPath = QString("%1/%2").arg(dir.absolutePath()).arg(dirList.at(i));
+        scanDir(QDir(newPath),filters,name,result,depth-1);
+    }
+}
+
+bool MainWindow::custom_exp_parse(QString expression,int currentRow,QString& result)
 {
     expression.remove('$');
     QStringList args=expression.split(" ");
     if (args.size()>0)
     {
-        if (args[0]=="str" && args.size()==3)
+
+        if (args[0]=="search" && args.size()>=5)
         {
-            int index=variables_names.indexOf(args[2]);
-            if (index>=0)
+            QString search_for_name;
+            int index1=variables_names.indexOf(args[1]);
+            if (index1>=0)
             {
-                result=args[1].arg(*(variables.begin()+index));
-                return true;
+                search_for_name=model->item(currentRow,index1)->text();
             }
             else
             {
-                std::cout<<"Bad variable index :"<<index<<std::endl;
                 return false;
             }
+
+            result="none";
+            for (int i=4; i<args.size(); i++)
+            {
+                QStringList filters;
+                filters<<args[2];
+                scanDir(args[i],filters,search_for_name,result,args[4].toInt());
+            }
+
+            return true;
         }
-        if (args[0]=="str" && args.size()==4)
+        else if (args[0]=="str" && args.size()==3)
         {
-            int index1=variables_names.indexOf(args[2]);
-            int index2=variables_names.indexOf(args[3]);
+            QStringList sub_args1=args[2].split(',');
+            int index1=variables_names.indexOf(sub_args1[0]);
+
+            if (index1>=0)
+            {
+                result=args[1];
+                if (sub_args1.size()==2 )
+                {
+                    if (sub_args1[1]=="#" )
+                    {
+                        result=result.arg(model->item(currentRow,index1)->text());
+                    }
+                    else if (sub_args1[1]=="#")
+                    {
+                        result=result.arg(model->item(currentRow,index1)->text());
+                    }
+                    else
+                    {
+                        result=result.arg(*(variables.begin()+index1),sub_args1[1].toInt(),'g',-1,'0');
+                    }
+                }
+                else if (sub_args1.size()==1)
+                {
+                    result=result.arg(*(variables.begin()+index1));
+                }
+
+                return true;
+            }
+        }
+        else if (args[0]=="str" && args.size()==4)
+        {
+            QStringList sub_args1=args[2].split(',');
+            QStringList sub_args2=args[3].split(',');
+            int index1=variables_names.indexOf(sub_args1[0]);
+            int index2=variables_names.indexOf(sub_args2[0]);
+
             if (index1>=0 && index2>=0)
             {
-                result=args[1].arg(*(variables.begin()+index1)).arg(*(variables.begin()+index2));
+                result=args[1];
+                if (sub_args1.size()==2 && sub_args2.size()==2)
+                {
+                    if (sub_args1[1]=="#" && sub_args2[1]=="#")
+                    {
+                        result=result.arg(model->item(currentRow,index1)->text()).arg(model->item(currentRow,index2)->text());
+                    }
+                    else if (sub_args1[1]=="#")
+                    {
+                        result=result.arg(model->item(currentRow,index1)->text()).arg(*(variables.begin()+index2),sub_args2[1].toInt(),'g',-1,'0');
+                    }
+                    else if (sub_args2[1]=="#")
+                    {
+                        result=result.arg(*(variables.begin()+index1),sub_args1[1].toInt(),'g',-1,'0').arg(model->item(currentRow,index2)->text());
+                    }
+                    else
+                    {
+                        result=result.arg(*(variables.begin()+index1),sub_args1[1].toInt(),'g',-1,'0').arg(*(variables.begin()+index2),sub_args2[1].toInt(),'g',-1,'0');
+                    }
+                }
+                else if (sub_args1.size()==2 && sub_args2.size()==1)
+                {
+                    if (sub_args1[1]=="#")
+                    {
+                        result=result.arg(*(variables.begin()+index1),sub_args1[1].toInt(),'g',-1,'0').arg(*(variables.begin()+index2));
+                    }
+                    else
+                    {
+                        result=result.arg(model->item(currentRow,index1)->text()).arg(*(variables.begin()+index2));
+                    }
+                }
+                else if (sub_args1.size()==1 && sub_args2.size()==2)
+                {
+                    if (sub_args2[1]=="#")
+                    {
+                        result=result.arg(*(variables.begin()+index1)).arg(model->item(currentRow,index2)->text());
+                    }
+                    else
+                    {
+                        result=result.arg(*(variables.begin()+index1)).arg(*(variables.begin()+index2),sub_args2[1].toInt(),'g',-1,'0');
+                    }
+                }
+                else if (sub_args1.size()==1 && sub_args2.size()==1)
+                {
+                    result=result.arg(*(variables.begin()+index1)).arg(*(variables.begin()+index2));
+                }
+
                 return true;
             }
             else
             {
-                std::cout<<"Bad variable index :"<<index1<<" "<<index2<<std::endl;
+                std::cout<<"Bad variable indexes :"<<index1<<" "<<index2<<std::endl;
                 return false;
             }
         }

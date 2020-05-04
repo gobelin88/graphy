@@ -46,14 +46,19 @@ public slots:
     //underlying table
     void addRowTable(QVector<double> dataRow);
     void addColTable(QVector<double> dataCol);
+    void delColTable(int id);
+    void delRowTable(int id);
     void updateTable();
     void updateTable(const QModelIndex& indexA, const QModelIndex& indexB);
 
     void slot_editColumn();
-    void slot_delColumn();
+    void slot_delete();
     void slot_newRow();
+    void slot_updateColumns();
+
 
     //IO
+    void slot_new();
     void slot_open();
     void slot_save();
     void slot_export();
@@ -96,14 +101,16 @@ private:
 
     QAction* a_newColumn;
     QAction* a_newRow;
-    QAction* a_delColumn;
+    QAction* a_delete;
+    QAction* a_updateColumns;
 
     //Col/row
-    void setColumn(int idCol,const QVector<double>& vec_col);
+    void setColumn(int idCol,const QVector<QString>& vec_col);
     void addRow(const QStringList& str_row);
+    void addRow(const QVector<double>& vec_row);
 
     //expr
-    QVector<double> evalColumn(int colId);
+    QVector<QString> evalColumn(int colId);
 
     void dispVariables();
     void registerClear();
@@ -118,6 +125,8 @@ private:
     QStringList variables_expressions;
 
     double activeRow;
+
+    bool custom_exp_parse(QString expression, QString& result);
 };
 
 #endif // MAINWINDOW_H

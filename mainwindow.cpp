@@ -13,6 +13,7 @@ MainWindow::MainWindow(QWidget* parent) :
 
     this->setCentralWidget(mdiArea);
 
+    connect(ui->actionNew, &QAction::triggered,this,&MainWindow::slot_new);
     connect(ui->actionOpen, &QAction::triggered,this,&MainWindow::slot_open);
     connect(ui->actionSave, &QAction::triggered,this,&MainWindow::slot_save);
     connect(ui->actionExport, &QAction::triggered,this,&MainWindow::slot_export);
@@ -40,22 +41,27 @@ MainWindow::MainWindow(QWidget* parent) :
 //    w->showMaximized();
 
     //Action Edition----------------------------------------------------------------
+    a_updateColumns=new QAction(this);
+    a_updateColumns->setShortcut(QKeySequence("Space"));
+
     a_newColumn=new QAction(this);
     a_newColumn->setShortcut(QKeySequence("Ins"));
 
     a_newRow=new QAction(this);
     a_newRow->setShortcut(QKeySequence("PgDown"));
 
-    a_delColumn=new QAction(this);
-    a_delColumn->setShortcut(QKeySequence("Del"));
+    a_delete=new QAction(this);
+    a_delete->setShortcut(QKeySequence("Del"));
 
     this->addAction(a_newColumn);
     this->addAction(a_newRow);
-    this->addAction(a_delColumn);
+    this->addAction(a_delete);
+    this->addAction(a_updateColumns);
 
     connect(a_newColumn,&QAction::triggered,this,&MainWindow::slot_editColumn);
     connect(a_newRow,&QAction::triggered,this,&MainWindow::slot_newRow);
-    connect(a_delColumn,&QAction::triggered,this,&MainWindow::slot_delColumn);
+    connect(a_delete,&QAction::triggered,this,&MainWindow::slot_delete);
+    connect(a_updateColumns,&QAction::triggered,this,&MainWindow::slot_updateColumns);
     //------------------------------------------------------------------------------
 
     mdiArea->setViewport(table);
@@ -66,7 +72,7 @@ MainWindow::MainWindow(QWidget* parent) :
     table->setSizeAdjustPolicy   (QAbstractScrollArea::AdjustToContents);
 
 
-    direct_new(10,1);
+    direct_new(10,10);
 
     graphMode=View3D::MODE_POINTS;
 
@@ -81,6 +87,43 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::slot_new()
+{
+    QDialog* dialog=new QDialog;
+    dialog->setLocale(QLocale("C"));
+    dialog->setWindowTitle("New");
+
+    dialog->setMinimumWidth(400);
+    QGridLayout* gbox = new QGridLayout();
+
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+
+    QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+    QSpinBox* sb_sx=new QSpinBox(dialog);
+    sb_sx->setValue(10);
+    sb_sx->setPrefix("nbRows=");
+    sb_sx->setRange(1,10000000);
+    QSpinBox* sb_sy=new QSpinBox(dialog);
+    sb_sy->setValue(10);
+    sb_sy->setPrefix("nbCols=");
+    sb_sy->setRange(1,100);
+
+    gbox->addWidget(sb_sx,0,0);
+    gbox->addWidget(sb_sy,0,1);
+    gbox->addWidget(buttonBox,1,0,1,2);
+
+    dialog->setLayout(gbox);
+    int result=dialog->exec();
+
+    if (result == QDialog::Accepted)
+    {
+        direct_new(sb_sx->value(),sb_sy->value());
+    }
+}
+
+
 void MainWindow::slot_open()
 {
     QString filename=QFileDialog::getOpenFileName(this,"Open data CSV",current_filename,tr("Data file (*.csv *.graphy)"));
@@ -89,6 +132,20 @@ void MainWindow::slot_open()
     {
         direct_open(filename);
     }
+}
+
+QStringList extractToken(QString fileLine)
+{
+    if (fileLine.endsWith("\n"))
+    {
+        fileLine.chop(1);
+    }
+    if (fileLine.endsWith(";"))
+    {
+        fileLine.chop(1);
+    }
+
+    return fileLine.split(";");
 }
 
 void MainWindow::direct_open(QString filename)
@@ -107,51 +164,40 @@ void MainWindow::direct_open(QString filename)
 
         while (!in.atEnd())
         {
-
             // read one line from textstream(separated by "\n")
-            QString fileLine = in.readLine();
+            QString dataLine = in.readLine();
 
-            // parse the read line into separate pieces(tokens) with "," as the delimiter
-            if (fileLine.endsWith("\n"))
+            if (dataLine=="<header>")
             {
-                fileLine.chop(1);
-            }
-            if (fileLine.endsWith(";"))
-            {
-                fileLine.chop(1);
-            }
-            QStringList lineToken = fileLine.split(";");
+                hasheader=true;
+                QString varLine = in.readLine();
+                QString expLine = in.readLine();
+                QStringList varToken = extractToken(varLine);
+                QStringList expToken = extractToken(expLine);
 
-            if (lineToken.size()>0)
-            {
-                bool isnumber=false;
-                lineToken[0].toDouble(&isnumber);
-                if (!isnumber)
+                for (int j = 0; j < varToken.size(); j++)
                 {
-                    hasheader=true;
-                    std::cout<<"Has header:"<<lineToken[0].toLocal8Bit().data()<<std::endl;
-                }
-            }
-
-            if (hasheader && lineindex==0)
-            {
-                for (int j = 0; j < lineToken.size(); j++)
-                {
-                    QString varname = lineToken.at(j);
-                    QString varexpr =QString("");
+                    QString varname = varToken.at(j);
+                    QString varexpr = expToken.at(j);
                     model->setHorizontalHeaderItem(j, new QStandardItem(varname));
                     registerNewVariable(varname,varexpr);
                 }
+
+                do
+                {
+                    dataLine = in.readLine();
+                }
+                while (dataLine!="</header>");
             }
             else
             {
-                addRow(lineToken);
+                QStringList dataToken = extractToken(dataLine);
+                addRow(dataToken);
+                lineindex++;
             }
-
-            lineindex++;
         }
 
-        if (!hasheader)
+        if (!hasheader)//add default header
         {
             for (int j = 0; j < model->columnCount(); j++)
             {
@@ -164,9 +210,8 @@ void MainWindow::direct_open(QString filename)
         }
 
         table->setModel(model);
-        connect(model,SIGNAL(dataChanged(const QModelIndex&)),this,SLOT(updateTable(const QModelIndex&)));
+        connect(model,SIGNAL(dataChanged(const QModelIndex&,const QModelIndex&)),this,SLOT(updateTable(const QModelIndex&,const QModelIndex&)));
         setCurrentFilename(filename);
-
         updateTable();
     }
     else
@@ -275,12 +320,20 @@ void MainWindow::direct_save(QString filename)
 
         if (hasheader)
         {
+            textData += "<header>\n";
             for (int j = 0; j < columns; j++)
             {
-                textData+=model->horizontalHeaderItem(j)->text();
+                textData+=variables_names[j];
                 textData += ";";
             }
             textData += "\n";
+            for (int j = 0; j < columns; j++)
+            {
+                textData+=variables_expressions[j];
+                textData += ";";
+            }
+            textData += "\n";
+            textData += "</header>\n";
         }
 
         for (int i = 0; i < rows; i++)
@@ -309,6 +362,11 @@ bool MainWindow::isValidExpression(QString variableExpression)
     if (variableExpression.isEmpty())
     {
         return true;
+    }
+    else if (variableExpression.startsWith("$"))
+    {
+        QString result;
+        return custom_exp_parse(variableExpression,result);
     }
     else
     {
@@ -482,16 +540,20 @@ void MainWindow::registerRenameVariable(QString old_varname,QString new_varname,
 
 void MainWindow::slot_newRow()
 {
+    int nbCols=model->columnCount();
     std::cout<<"slot_newRow"<<std::endl;
     QList<QStandardItem*> items;
-    items.reserve(model->columnCount());
-    for (int i=0; i<items.size(); i++)
+    items.reserve(nbCols);
+    for (int i=0; i<nbCols; i++)
     {
         items.append(new QStandardItem);
     }
     model->appendRow(items);
 
+    std::cout<<datatable.size()<<" "<<datatable[0].size()<<std::endl;
     addRowTable(QVector<double>(items.size(),0));
+
+    std::cout<<datatable.size()<<" "<<datatable[0].size()<<std::endl;
 
     table->setModel(model);
 }
@@ -508,39 +570,51 @@ void MainWindow::slot_editColumn()
 
     if (editVariableAndExpression(currentColIndex))
     {
-        std::cout<<"newColumn 1"<<std::endl;
-        QVector<double> results=evalColumn(currentColIndex);
+        std::cout<<"editColumn 2 "<<std::endl;
+        setColumn(currentColIndex,evalColumn(currentColIndex));
 
-        std::cout<<"newColumn 2 "<<results.size()<<std::endl;
-        setColumn(currentColIndex,results);
-
-        std::cout<<"newColumn 3"<<std::endl;
+        std::cout<<"editColumn 3"<<std::endl;
         model->setHorizontalHeaderItem(currentColIndex, new QStandardItem(variables_names[currentColIndex]));
         table->setModel(model);
-        updateTable();
 
         hasheader=true;
     }
-
-    dispVariables();
 }
 
-void MainWindow::slot_delColumn()
+void MainWindow::slot_updateColumns()
 {
-    QModelIndexList id_list=table->selectionModel()->selectedColumns();
-    if (id_list.size()>=1)
+    int nbCols=model->columnCount();
+
+    for (int i=0; i<nbCols; i++)
     {
-        for (int i=0; i<id_list.size(); i++)
+        setColumn(i,evalColumn(i));
+    }
+}
+
+void MainWindow::slot_delete()
+{
+    QModelIndexList id_list_cols=table->selectionModel()->selectedColumns();
+    if (id_list_cols.size()>=1)
+    {
+        for (int i=0; i<id_list_cols.size(); i++)
         {
-            registerDelVariable(variables_names[id_list[i].column()-i]);
-            model->removeColumn(id_list[i].column()-i);
+            int index=id_list_cols[i].column()-i;
+            registerDelVariable(variables_names[index]);
+            model->removeColumn(index);
+            delColTable(index);
         }
         table->setModel(model);
-        updateTable();
     }
-    else
+    QModelIndexList id_list_rows=table->selectionModel()->selectedRows();
+    if (id_list_rows.size()>=1)
     {
-        QMessageBox::information(this,"Message",QString("Selectionner au moins une colonne à supprimer"));
+        for (int i=0; i<id_list_rows.size(); i++)
+        {
+            int index=id_list_rows[i].row()-i;
+            model->removeRow(index);
+            delRowTable(index);
+        }
+        table->setModel(model);
     }
 }
 
@@ -553,74 +627,164 @@ void MainWindow::dispVariables()
     std::cout<<std::endl;
 }
 
-QVector<double> MainWindow::evalColumn(int colId)
+QVector<QString> MainWindow::evalColumn(int colId)
 {
     assert(colId<variables_expressions.size());
 
     if (variables_expressions[colId].isEmpty())
     {
-        return QVector<double>();
+        return QVector<QString>();
     }
     else
     {
         int nbRows=model->rowCount();
         std::cout<<"evalColumn 1 "<<std::endl;
 
-        QVector<double> colResults(nbRows);
+        QVector<QString> colResults(nbRows);
 
         exprtk::parser<double> parser;
         exprtk::expression<double> compiled_expression;
         compiled_expression.register_symbol_table(symbolsTable);
-        parser.compile(variables_expressions[colId].toStdString(),compiled_expression);
-
-        for (int i=0; i<nbRows; i++)
+        if (parser.compile(variables_expressions[colId].toStdString(),compiled_expression))
         {
-            activeRow=i;
-            //std::cout<<float(i)/nbRows<<std::endl;
-            for (int j=0; j<datatable.size(); j++)
+            for (int i=0; i<nbRows; i++)
             {
-                *(variables.begin()+j)=datatable[j][i];
+                activeRow=i;
+                //std::cout<<float(i)/nbRows<<std::endl;
+                for (int j=0; j<datatable.size(); j++)
+                {
+                    *(variables.begin()+j)=datatable[j][i];
+                }
+                colResults[i]=QString::number(compiled_expression.value());
             }
-            colResults[i]=compiled_expression.value();
         }
-
+        else
+        {
+            for (int i=0; i<nbRows; i++)
+            {
+                activeRow=i;
+                //std::cout<<float(i)/nbRows<<std::endl;
+                for (int j=0; j<datatable.size(); j++)
+                {
+                    *(variables.begin()+j)=datatable[j][i];
+                }
+                custom_exp_parse(variables_expressions[colId],colResults[i]);
+            }
+        }
 
         std::cout<<"evalColumn 3"<<std::endl;
         return colResults;
     }
 }
 
-void MainWindow::setColumn(int idCol,const QVector<double>& vec_col)
+bool MainWindow::custom_exp_parse(QString expression,QString& result)
 {
+    expression.remove('$');
+    QStringList args=expression.split(" ");
+    if (args.size()>0)
+    {
+        if (args[0]=="str" && args.size()==3)
+        {
+            int index=variables_names.indexOf(args[2]);
+            if (index>=0)
+            {
+                result=args[1].arg(*(variables.begin()+index));
+                return true;
+            }
+            else
+            {
+                std::cout<<"Bad variable index :"<<index<<std::endl;
+                return false;
+            }
+        }
+        if (args[0]=="str" && args.size()==4)
+        {
+            int index1=variables_names.indexOf(args[2]);
+            int index2=variables_names.indexOf(args[3]);
+            if (index1>=0 && index2>=0)
+            {
+                result=args[1].arg(*(variables.begin()+index1)).arg(*(variables.begin()+index2));
+                return true;
+            }
+            else
+            {
+                std::cout<<"Bad variable index :"<<index1<<" "<<index2<<std::endl;
+                return false;
+            }
+        }
+        else
+        {
+            std::cout<<"Bad custom expression "<<expression.toLocal8Bit().data()<<std::endl;
+            return false;
+        }
+    }
+    else
+    {
+        std::cout<<"Bad custom expression "<<expression.toLocal8Bit().data()<<std::endl;
+        return false;
+    }
+}
+
+QVector<double> toDouble(QVector<QString> vec_col_str)
+{
+    QVector<double> vec_col(vec_col_str.size());
+
+    for (int i=0; i<vec_col.size(); i++)
+    {
+        vec_col[i]=vec_col_str[i].toDouble();
+    }
+
+    return vec_col;
+}
+
+void MainWindow::setColumn(int idCol,const QVector<QString>& vec_col)
+{
+    std::cout<<"setColumn 1 id="<<idCol<<std::endl;
     QList<QStandardItem*> items;
     items.reserve(model->rowCount());
     int nbRows=model->rowCount();
 
     if (idCol<model->columnCount()) //set
     {
-        for (int i=0; i<nbRows; i++)
+        std::cout<<"setColumn 2 "<<std::endl;
+        if (vec_col.size()>0)
         {
-            if (vec_col.size()>0)
+            for (int i=0; i<nbRows; i++)
             {
-                model->item(i,idCol)->setText(QString::number(vec_col[i]));
+                if (model->item(i,idCol))
+                {
+                    model->item(i,idCol)->setText(vec_col[i]);
+                }
             }
+            datatable[idCol]=toDouble(vec_col);
         }
+        std::cout<<"setColumn 2 end"<<std::endl;
     }
     else//new column
     {
-        for (int i=0; i<nbRows; i++)
+        std::cout<<"setColumn 3 "<<std::endl;
+        if (vec_col.size()==0)
         {
-            if (vec_col.size()==0)
+            for (int i=0; i<nbRows; i++)
             {
                 items.append(new QStandardItem());
             }
-            else
-            {
-                items.append(new QStandardItem(QString::number(vec_col[i])));
-            }
+            datatable.push_back(QVector<double>(nbRows,0.0));
+            model->appendColumn(items);
         }
-        model->appendColumn(items);
+        else
+        {
+            for (int i=0; i<nbRows; i++)
+            {
+                items.append(new QStandardItem(vec_col[i]));
+            }
+            datatable.push_back(toDouble(vec_col));
+            model->appendColumn(items);
+        }
     }
+
+
+    std::cout<<"setColumn end "<<std::endl;
 }
 
 void MainWindow::addRow(const QStringList& str_row)
@@ -630,6 +794,17 @@ void MainWindow::addRow(const QStringList& str_row)
     for (int i=0; i<str_row.size(); i++)
     {
         items.append(new QStandardItem(str_row[i]));
+    }
+    model->appendRow(items);
+}
+
+void MainWindow::addRow(const QVector<double>& vec_row)
+{
+    QList<QStandardItem*> items;
+    items.reserve(vec_row.size());
+    for (int i=0; i<vec_row.size(); i++)
+    {
+        items.append(new QStandardItem(QString::number(vec_row[i])));
     }
     model->appendRow(items);
 }
@@ -687,6 +862,19 @@ void MainWindow::addRowTable(QVector<double> dataRow)
     }
 }
 
+void MainWindow::delColTable(int id)
+{
+    datatable.removeAt(id);
+}
+
+void MainWindow::delRowTable(int id)
+{
+    for (int i=0; i<datatable.size(); i++)
+    {
+        datatable[i].removeAt(id);
+    }
+}
+
 void MainWindow::addColTable(QVector<double> dataCol)
 {
     datatable.push_back(dataCol);
@@ -723,6 +911,7 @@ void MainWindow::updateTable(const QModelIndex& indexA,const QModelIndex& indexB
             datatable[j][i]=value;
         }
     }
+    std::cout<<"updateTable end"<<std::endl;
 }
 
 

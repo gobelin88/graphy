@@ -76,7 +76,7 @@ View3D::View3D()
 
     //Camera
     camera_params=new CameraParams(camera(),0,0,0);
-    camera_params->entity()->lens()->setPerspectiveProjection(45.0f, 16.0f/9.0f, 0.01f, 1000.0f);
+    camera_params->entity()->lens()->setPerspectiveProjection(45.0f, 16.0f/9.0f, 0.0001f, 100000.0f);
     camera_params->reset();
 
     //Racine

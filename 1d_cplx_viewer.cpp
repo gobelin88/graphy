@@ -1,6 +1,6 @@
 #include "1d_cplx_viewer.h"
 
-Viewer1DCPLX::Viewer1DCPLX()
+Viewer1DCPLX::Viewer1DCPLX(const QMap<QString,QKeySequence>& shortcuts_map)
 {
     colors.append(QColor(255,0,0));
     colors.append(QColor(0,128,0));
@@ -15,13 +15,20 @@ Viewer1DCPLX::Viewer1DCPLX()
 
     createPopup();
 
-    this->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom );
+    //this->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom );
+    this->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
+                          QCP::iSelectLegend | QCP::iSelectPlottables);
 
     connect(this, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(mousePress(QMouseEvent*)));
     connect(this, SIGNAL(mouseDoubleClick(QMouseEvent*)), this, SLOT(mouseDoublePress(QMouseEvent*)));
 
     pen_select.setColor(colors[2]);
     pen_select.setStyle(Qt::SolidLine);
+
+    top_bottom=Qt::AlignTop;
+    left_right=Qt::AlignRight;
+
+    applyShortcuts(shortcuts_map);
 }
 
 Viewer1DCPLX::~Viewer1DCPLX()
@@ -38,7 +45,7 @@ unsigned int Viewer1DCPLX::getId()
 void Viewer1DCPLX::newGraph(QString name)
 {
     this->addGraph();
-    QPen pen_model(colors[getId()]);
+    QPen pen_model(colors[getId()/2]);
 
     pen_model.setStyle(Qt::SolidLine);
     this->graph()->setPen(pen_model);
@@ -49,20 +56,20 @@ void Viewer1DCPLX::newGraph(QString name)
 
     this->graph()->setSelectable(QCP::stWhole);
 
-    QCPSelectionDecorator * decorator_select=new QCPSelectionDecorator;
+    QCPSelectionDecorator* decorator_select=new QCPSelectionDecorator;
     decorator_select->setPen(pen_select);
     this->graph()->setSelectionDecorator(decorator_select);
     graph()->setName(name);
 
-    this->yAxis->setLabel("Gain");
+    this->yAxis->setLabel("Module");
 }
 
 void Viewer1DCPLX::newSubGraph(QString name)
 {
     this->addGraph(this->xAxis, this->yAxis2);
-    QPen pen_model(colors[getId()]);
+    QPen pen_model(colors[getId()/2]);
 
-    pen_model.setStyle(Qt::SolidLine);
+    pen_model.setStyle(Qt::DashLine);
     this->graph()->setPen(pen_model);
     this->graph()->setLineStyle(QCPGraph::lsLine);
     this->graph()->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssNone, 10));
@@ -75,13 +82,13 @@ void Viewer1DCPLX::newSubGraph(QString name)
 
     this->yAxis2->setLabel("Phase");
 
-    QCPSelectionDecorator * decorator_select=new QCPSelectionDecorator;
+    QCPSelectionDecorator* decorator_select=new QCPSelectionDecorator;
     decorator_select->setPen(pen_select);
     this->graph()->setSelectionDecorator(decorator_select);
     graph()->setName(name);
 }
 
-void Viewer1DCPLX::slot_add_data_graph(const Curve2D_GainPhase & curve)
+void Viewer1DCPLX::slot_add_data_graph(const Curve2D_GainPhase& curve)
 {
     std::cout<<"slot_add_data_graph1"<<std::endl;
 
@@ -100,29 +107,35 @@ void Viewer1DCPLX::createPopup()
     popup_menu=new QMenu(this);
 
     actClearMarks   = new QAction("Clear Marks",  this);
-    actClearMarks->setShortcut(QKeySequence("Space"));
-
     actSave   = new QAction("Save",  this);
-    actSave->setShortcut(QKeySequence("S"));
     actRescale= new QAction("Rescale",  this);
-    actRescale->setShortcut(QKeySequence("R"));
     actColor= new QAction("Color",  this);
-    actColor->setShortcut(QKeySequence("C"));
     actStyle= new QAction("Style",  this);
-    actStyle->setShortcut(QKeySequence("!"));
+    actLegendShowHide= new QAction("Hide",  this);
+    actLegendTopBottom= new QAction("Move bottom",  this);
+    actLegendLeftRight= new QAction("Move left",  this);
 
-    actLegendShow= new QAction("Hide",  this);
-    actLegendShow->setCheckable(true);
-    actLegendShow->setChecked(true);
-    actLegendShow->setShortcut(QKeySequence("L"));
+    actClearMarks->setShortcutVisibleInContextMenu(true);
+    actSave->setShortcutVisibleInContextMenu(true);
+    actRescale->setShortcutVisibleInContextMenu(true);
+    actColor->setShortcutVisibleInContextMenu(true);
+    actStyle->setShortcutVisibleInContextMenu(true);
+    actLegendShowHide->setShortcutVisibleInContextMenu(true);
+    actLegendTopBottom->setShortcutVisibleInContextMenu(true);
+    actLegendLeftRight->setShortcutVisibleInContextMenu(true);
 
-    actLegendTop= new QAction("Move bottom",  this);
-    actLegendTop->setCheckable(true);
-    actLegendTop->setChecked(true);
+    actLegendTopBottom->setCheckable(true);
+    actLegendTopBottom->setChecked(true);
+    actLegendShowHide->setChecked(true);
+    actLegendShowHide->setCheckable(true);
+    actLegendLeftRight->setChecked(true);
+    actLegendLeftRight->setCheckable(true);
 
     this->addAction(actSave);
     this->addAction(actRescale);
-    this->addAction(actLegendShow);
+    this->addAction(actLegendShowHide);
+    this->addAction(actLegendTopBottom);
+    this->addAction(actLegendLeftRight);
     this->addAction(actClearMarks);
     this->addAction(actColor);
     this->addAction(actStyle);
@@ -148,8 +161,9 @@ void Viewer1DCPLX::createPopup()
     menu_fit->addAction(actFitRLC);
     menu_fit->addAction(actFitRLCapCb);
 
-    menu_legend->addAction(actLegendShow);
-    menu_legend->addAction(actLegendTop);
+    menu_legend->addAction(actLegendShowHide);
+    menu_legend->addAction(actLegendTopBottom);
+    menu_legend->addAction(actLegendLeftRight);
     menu_legend->addAction(actStyle);
 
     popup_menu->addMenu(menu_fit);
@@ -157,41 +171,40 @@ void Viewer1DCPLX::createPopup()
 
     connect(actSave,SIGNAL(triggered()),this,SLOT(slot_save_image()));
     connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_rescale()));
+
     connect(actFitRLpC,SIGNAL(triggered()),this,SLOT(slot_fit_rlpc()));
     connect(actFitRaLpCpRb,SIGNAL(triggered()),this,SLOT(slot_fit_ralpcprb()));
     connect(actFitRL,SIGNAL(triggered()),this,SLOT(slot_fit_rl()));
-
     connect(actFitRLC,SIGNAL(triggered()),this,SLOT(slot_fit_rlc()));
     connect(actFitRLCapCb,SIGNAL(triggered()),this,SLOT(slot_fit_rlcapcb()));
 
     connect(actColor,SIGNAL(triggered()),this,SLOT(slot_set_color()));
 
-    connect(actLegendShow,SIGNAL(toggled(bool)),this,SLOT(slot_show_legend(bool)));
-    connect(actLegendTop,SIGNAL(toggled(bool)),this,SLOT(slot_top_legend(bool)));
+    connect(actLegendShowHide,SIGNAL(toggled(bool)),this,SLOT(slot_show_legend(bool)));
+    connect(actLegendTopBottom,SIGNAL(toggled(bool)),this,SLOT(slot_top_legend(bool)));
+    connect(actLegendLeftRight,SIGNAL(toggled(bool)),this,SLOT(slot_left_legend(bool)));
     connect(actClearMarks,SIGNAL(triggered()),this,SLOT(slot_clear_marks()));
     connect(actStyle,SIGNAL(triggered()),this,SLOT(slot_set_style()));
 }
 
 void Viewer1DCPLX::slot_clear_marks()
 {
-    std::cout<<"clear items "<<this->itemCount()<<std::endl;
     this->clearItems();
-
     this->replot();
 }
 
 
-void Viewer1DCPLX::mousePress(QMouseEvent * event)
+void Viewer1DCPLX::mousePress(QMouseEvent* event)
 {
-    if(event->button() == Qt::RightButton)
+    if (event->button() == Qt::RightButton)
     {
         popup_menu->exec(mapToGlobal(event->pos()));
     }
 }
 
-void Viewer1DCPLX::mouseDoublePress(QMouseEvent * event)
+void Viewer1DCPLX::mouseDoublePress(QMouseEvent* event)
 {
-    if(event->button() == Qt::LeftButton)
+    if (event->button() == Qt::LeftButton)
     {
         double cx=this->xAxis->pixelToCoord(event->x());
         double cy=this->yAxis->pixelToCoord(event->y());
@@ -203,14 +216,14 @@ void Viewer1DCPLX::mouseDoublePress(QMouseEvent * event)
 
         QPen linePen(QColor(200,200,200));
 
-        QCPItemLine * lineX= new QCPItemLine(this);
+        QCPItemLine* lineX= new QCPItemLine(this);
         lineX->start->setType(QCPItemPosition::ptPlotCoords);
         lineX->end->setType(QCPItemPosition::ptPlotCoords);
         lineX->start->setCoords(cx, my);
         lineX->end->setCoords(cx, cy);
         lineX->setPen(linePen);
 
-        QCPItemLine * lineY= new QCPItemLine(this);
+        QCPItemLine* lineY= new QCPItemLine(this);
         lineY->start->setType(QCPItemPosition::ptPlotCoords);
         lineY->end->setType(QCPItemPosition::ptPlotCoords);
         lineY->start->setCoords(mx, cy);
@@ -218,7 +231,7 @@ void Viewer1DCPLX::mouseDoublePress(QMouseEvent * event)
         lineY->setPen(linePen);
 
         // add the text label at the top:
-        QCPItemText *coordtextX = new QCPItemText(this);
+        QCPItemText* coordtextX = new QCPItemText(this);
         coordtextX->position->setType(QCPItemPosition::ptPlotCoords);
         coordtextX->setPositionAlignment(Qt::AlignLeft);
         coordtextX->position->setCoords(cx, my); // lower right corner of axis rect
@@ -228,7 +241,7 @@ void Viewer1DCPLX::mouseDoublePress(QMouseEvent * event)
         coordtextX->setFont(QFont(font().family(), 9));
         coordtextX->setPadding(QMargins(8, 0, 0, 0));
 
-        QCPItemText *coordtextY = new QCPItemText(this);
+        QCPItemText* coordtextY = new QCPItemText(this);
         coordtextY->position->setType(QCPItemPosition::ptPlotCoords);
         coordtextY->setPositionAlignment(Qt::AlignLeft|Qt::AlignBottom);
         coordtextY->position->setCoords(mx, cy); // lower right corner of axis rect
@@ -244,9 +257,9 @@ void Viewer1DCPLX::mouseDoublePress(QMouseEvent * event)
 void Viewer1DCPLX::slot_fit_ralpcprb()
 {
     QList<Curve2D_GainPhase> curves=getCurves();
-    QDoubleSpinBox *Ra,*L,*C,*Rb;
-    QCheckBox *fixedRa,*fixedL,*fixedC,*fixedRb;
-    QDialog * dialog=RaLpCpRb_cplx::createDialog(Ra,L,C,Rb,fixedRa,fixedL,fixedC,fixedRb);
+    QDoubleSpinBox* Ra,*L,*C,*Rb;
+    QCheckBox* fixedRa,*fixedL,*fixedC,*fixedRb;
+    QDialog* dialog=RaLpCpRb_cplx::createDialog(Ra,L,C,Rb,fixedRa,fixedL,fixedC,fixedRb);
     Ra->setValue(200);
     L->setValue(10);
     C->setValue(2);
@@ -254,15 +267,13 @@ void Viewer1DCPLX::slot_fit_ralpcprb()
 
     int result=dialog->exec();
 
-    if(result == QDialog::Accepted)
+    if (result == QDialog::Accepted)
     {
         RaLpCpRb_cplx rlpc_cplx(Ra->value(),L->value(),C->value(),Rb->value(),fixedRa->isChecked(),fixedL->isChecked(),fixedC->isChecked(),fixedRb->isChecked());
 
-        for(int i=0;i<curves.size();i++)
+        for (int i=0; i<curves.size(); i++)
         {
-            std::cout<<"fit..."<<std::endl;
             curves[i].fit(&rlpc_cplx);
-            std::cout<<"fit ok"<<std::endl;
 
             QVector<double> F=curves[i].getLinF(1000),G,P;
             rlpc_cplx.at(F,G,P);
@@ -277,20 +288,20 @@ void Viewer1DCPLX::slot_fit_ralpcprb()
 void Viewer1DCPLX::slot_fit_rlpc()
 {
     QList<Curve2D_GainPhase> curves=getCurves();
-    QDoubleSpinBox *R,*L,*C;
-    QCheckBox *fixedR,*fixedL,*fixedC;
-    QDialog * dialog=RLpC_cplx::createDialog(R,L,C,fixedR,fixedL,fixedC);
+    QDoubleSpinBox* R,*L,*C;
+    QCheckBox* fixedR,*fixedL,*fixedC;
+    QDialog* dialog=RLpC_cplx::createDialog(R,L,C,fixedR,fixedL,fixedC);
     R->setValue(200);
     L->setValue(10);
     C->setValue(2);
 
     int result=dialog->exec();
 
-    if(result == QDialog::Accepted)
+    if (result == QDialog::Accepted)
     {
         RLpC_cplx rlpc_cplx(R->value(),L->value(),C->value(),fixedR->isChecked(),fixedL->isChecked(),fixedC->isChecked());
 
-        for(int i=0;i<curves.size();i++)
+        for (int i=0; i<curves.size(); i++)
         {
             curves[i].fit(&rlpc_cplx);
             QVector<double> F=curves[i].getLinF(1000);
@@ -307,20 +318,20 @@ void Viewer1DCPLX::slot_fit_rlpc()
 void Viewer1DCPLX::slot_fit_rlc()
 {
     QList<Curve2D_GainPhase> curves=getCurves();
-    QDoubleSpinBox *R,*L,*C;
-    QCheckBox *fixedR,*fixedL,*fixedC;
+    QDoubleSpinBox* R,*L,*C;
+    QCheckBox* fixedR,*fixedL,*fixedC;
 
-    QDialog * dialog=RLC_cplx::createDialog(R,L,C,fixedR,fixedL,fixedC);
+    QDialog* dialog=RLC_cplx::createDialog(R,L,C,fixedR,fixedL,fixedC);
     R->setValue(200);
     L->setValue(10);
 
     int result=dialog->exec();
 
-    if(result == QDialog::Accepted)
+    if (result == QDialog::Accepted)
     {
         RLC_cplx rlc_cplx(R->value(),L->value(),C->value(),fixedR->isChecked(),fixedL->isChecked(),fixedC->isChecked());
 
-        for(int i=0;i<curves.size();i++)
+        for (int i=0; i<curves.size(); i++)
         {
             curves[i].fit(&rlc_cplx);
             QVector<double> F=curves[i].getLinF(1000);
@@ -337,9 +348,9 @@ void Viewer1DCPLX::slot_fit_rlc()
 void Viewer1DCPLX::slot_fit_rlcapcb()
 {
     QList<Curve2D_GainPhase> curves=getCurves();
-    QDoubleSpinBox *R,*L,*Ca,*Cb;
-    QCheckBox *fixedR,*fixedL,*fixedCa,*fixedCb;
-    QDialog * dialog=RLpCaCb_cplx::createDialog(R,L,Ca,Cb,fixedR,fixedL,fixedCa,fixedCb);
+    QDoubleSpinBox* R,*L,*Ca,*Cb;
+    QCheckBox* fixedR,*fixedL,*fixedCa,*fixedCb;
+    QDialog* dialog=RLpCaCb_cplx::createDialog(R,L,Ca,Cb,fixedR,fixedL,fixedCa,fixedCb);
     R->setValue(200);
     L->setValue(10);
     Ca->setValue(2);
@@ -347,15 +358,13 @@ void Viewer1DCPLX::slot_fit_rlcapcb()
 
     int result=dialog->exec();
 
-    if(result == QDialog::Accepted)
+    if (result == QDialog::Accepted)
     {
         RLpCaCb_cplx rlpcacb_cplx(R->value(),L->value(),Ca->value(),Cb->value(),fixedR->isChecked(),fixedL->isChecked(),fixedCa->isChecked(),fixedCb->isChecked());
 
-        for(int i=0;i<curves.size();i++)
+        for (int i=0; i<curves.size(); i++)
         {
-            std::cout<<"fit..."<<std::endl;
             curves[i].fit(&rlpcacb_cplx);
-            std::cout<<"fit ok"<<std::endl;
 
             QVector<double> F=curves[i].getLinF(1000),G,P;
             rlpcacb_cplx.at(F,G,P);
@@ -370,21 +379,20 @@ void Viewer1DCPLX::slot_fit_rlcapcb()
 void Viewer1DCPLX::slot_fit_rl()
 {
     QList<Curve2D_GainPhase> curves=getCurves();
-    QDoubleSpinBox *R,*L;
-    QCheckBox *fixedR,*fixedL;
+    QDoubleSpinBox* R,*L;
+    QCheckBox* fixedR,*fixedL;
 
-    QDialog * dialog=RL_cplx::createDialog(R,L,fixedR,fixedL);
+    QDialog* dialog=RL_cplx::createDialog(R,L,fixedR,fixedL);
     R->setValue(200);
     L->setValue(10);
 
-    std::cout<<"slot_fit_rlc3"<<std::endl;
     int result=dialog->exec();
 
-    if(result == QDialog::Accepted)
+    if (result == QDialog::Accepted)
     {
         RL_cplx rl_cplx(R->value(),L->value(),fixedR->isChecked(),fixedL->isChecked());
 
-        for(int i=0;i<curves.size();i++)
+        for (int i=0; i<curves.size(); i++)
         {
             curves[i].fit(&rl_cplx);
             QVector<double> F=curves[i].getLinF(1000);
@@ -403,28 +411,48 @@ void Viewer1DCPLX::slot_show_legend(bool value)
     legend->setVisible(value);
     replot();
 
-    if(value)
+    if (value)
     {
-        actLegendShow->setText("Hide");
+        actLegendShowHide->setText("Hide");
     }
     else
     {
-        actLegendShow->setText("Show");
+        actLegendShowHide->setText("Show");
     }
 }
 
 void Viewer1DCPLX::slot_top_legend(bool value)
 {
-    if(value)
+    if (value)
     {
-        this->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignTop|Qt::AlignRight);
-        actLegendTop->setText("Move bottom");
+        top_bottom=Qt::AlignTop;
+        actLegendTopBottom->setText("Move bottom");
     }
     else
     {
-        this->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignBottom|Qt::AlignRight);
-        actLegendTop->setText("Move top");
+        top_bottom=Qt::AlignBottom;
+        actLegendTopBottom->setText("Move top");
     }
+
+    this->axisRect()->insetLayout()->setInsetAlignment(0,left_right|top_bottom);
+
+    replot();
+}
+
+void Viewer1DCPLX::slot_left_legend(bool value)
+{
+    if (value)
+    {
+        left_right=Qt::AlignRight;
+        actLegendLeftRight->setText("Move left");
+    }
+    else
+    {
+        left_right=Qt::AlignLeft;
+        actLegendLeftRight->setText("Move right");
+    }
+
+    this->axisRect()->insetLayout()->setInsetAlignment(0,left_right|top_bottom);
 
     replot();
 }
@@ -433,7 +461,7 @@ void Viewer1DCPLX::slot_set_color()
 {
     QList<QCPGraph*> graphslist=this->selectedGraphs();
 
-    if(graphslist.size()>0)
+    if (graphslist.size()>0)
     {
         QColor color=QColorDialog::getColor(graphslist[0]->pen().color(),this,"Get Color");
 
@@ -445,11 +473,11 @@ void Viewer1DCPLX::slot_set_style()
 {
     QList<QCPGraph*> graphslist=this->selectedGraphs();
 
-    if(graphslist.size()>0)
+    if (graphslist.size()>0)
     {
-        QDialog * dialog=new QDialog;
+        QDialog* dialog=new QDialog;
 
-        QComboBox *itemLineStyleList = new QComboBox(dialog);
+        QComboBox* itemLineStyleList = new QComboBox(dialog);
         itemLineStyleList->addItem(QStringLiteral("lsNone"),        int(QCPGraph::LineStyle::lsNone));
         itemLineStyleList->addItem(QStringLiteral("lsLine"),        int(QCPGraph::LineStyle::lsLine));
         itemLineStyleList->addItem(QStringLiteral("lsStepLeft"),    int(QCPGraph::LineStyle::lsStepLeft));
@@ -458,7 +486,7 @@ void Viewer1DCPLX::slot_set_style()
         itemLineStyleList->addItem(QStringLiteral("lsImpulse"),     int(QCPGraph::LineStyle::lsImpulse));
         itemLineStyleList->setCurrentIndex(graphslist[0]->lineStyle());
 
-        QComboBox *itemScatterStyleList = new QComboBox(dialog);
+        QComboBox* itemScatterStyleList = new QComboBox(dialog);
         itemScatterStyleList->addItem(QStringLiteral("ssNone"),             int(QCPScatterStyle::ScatterShape::ssNone));
         itemScatterStyleList->addItem(QStringLiteral("ssDot"),              int(QCPScatterStyle::ScatterShape::ssDot));
         itemScatterStyleList->addItem(QStringLiteral("ssCross"),            int(QCPScatterStyle::ScatterShape::ssCross));
@@ -477,20 +505,20 @@ void Viewer1DCPLX::slot_set_style()
         itemScatterStyleList->addItem(QStringLiteral("ssPeace"),            int(QCPScatterStyle::ScatterShape::ssPeace));
         itemScatterStyleList->setCurrentIndex(graphslist[0]->scatterStyle().shape());
 
-        QPushButton * pb_color=new  QPushButton("Color",dialog);
+        QPushButton* pb_color=new  QPushButton("Color",dialog);
         QObject::connect(pb_color, SIGNAL(clicked()), this, SLOT(slot_set_color()));
 
         dialog->setLocale(QLocale("C"));
         dialog->setWindowTitle("Initials parameters");
-        QGridLayout * gbox = new QGridLayout();
+        QGridLayout* gbox = new QGridLayout();
 
 
         gbox->addWidget(itemLineStyleList,0,0);
         gbox->addWidget(itemScatterStyleList,1,0);
         gbox->addWidget(pb_color,2,0);
 
-        QDialogButtonBox * buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                            | QDialogButtonBox::Cancel);
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                           | QDialogButtonBox::Cancel);
 
         QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
         QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
@@ -501,7 +529,7 @@ void Viewer1DCPLX::slot_set_style()
 
         int result=dialog->exec();
 
-        if(result == QDialog::Accepted)
+        if (result == QDialog::Accepted)
         {
             graphslist[0]->setLineStyle( QCPGraph::LineStyle (itemLineStyleList->currentData().toInt()) );
             graphslist[0]->setScatterStyle( QCPScatterStyle::ScatterShape (itemScatterStyleList->currentData().toInt()) );
@@ -514,21 +542,21 @@ QList<Curve2D_GainPhase> Viewer1DCPLX::getCurves()
 {
     QList<Curve2D_GainPhase> curvelist;
 
-    for(int i=0;i<this->graphCount();i+=2)
+    for (int i=0; i<this->graphCount(); i+=2)
     {
         QVector<double> f,g,p;
 
-        QCPGraph * currentgraph_g,*currentgraph_p;
+        QCPGraph* currentgraph_g,*currentgraph_p;
 
         currentgraph_g=this->graph(i);
         currentgraph_p=this->graph(i+1);
 
-        if(currentgraph_g && currentgraph_p)
+        if (currentgraph_g && currentgraph_p)
         {
             auto itg =currentgraph_g->data()->begin();
             auto itp =currentgraph_p->data()->begin();
 
-            while(itg!=currentgraph_g->data()->end())
+            while (itg!=currentgraph_g->data()->end())
             {
                 f.push_back(itg->key);
                 g.push_back(itg->value);
@@ -550,17 +578,23 @@ void Viewer1DCPLX::slot_save_image()
     QFileInfo info(current_filename);
     QString where=info.path();
 
-    QDialog * dialog=new QDialog;
+    QDialog* dialog=new QDialog;
     dialog->setLocale(QLocale("C"));
     dialog->setWindowTitle("Resolution");
-    QGridLayout * gbox = new QGridLayout();
-    QSpinBox * getWidth=new QSpinBox(dialog);
-    QSpinBox * getHeight=new QSpinBox(dialog);
-    getWidth->setRange(32,1024);getWidth->setPrefix("Width=");getWidth->setSuffix(" px");getWidth->setValue(width());
-    getHeight->setRange(32,1024);getHeight->setPrefix("Height=");getHeight->setSuffix(" px");getHeight->setValue(height());
+    QGridLayout* gbox = new QGridLayout();
+    QSpinBox* getWidth=new QSpinBox(dialog);
+    QSpinBox* getHeight=new QSpinBox(dialog);
+    getWidth->setRange(32,1024);
+    getWidth->setPrefix("Width=");
+    getWidth->setSuffix(" px");
+    getWidth->setValue(width());
+    getHeight->setRange(32,1024);
+    getHeight->setPrefix("Height=");
+    getHeight->setSuffix(" px");
+    getHeight->setValue(height());
     gbox->addWidget(getWidth,0,0);
     gbox->addWidget(getHeight,0,1);
-    QDialogButtonBox * buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok| QDialogButtonBox::Cancel);
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok| QDialogButtonBox::Cancel);
     QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
     QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
     gbox->addWidget(buttonBox,4,0,2,1);
@@ -568,10 +602,10 @@ void Viewer1DCPLX::slot_save_image()
 
     int result=dialog->exec();
 
-    if(result == QDialog::Accepted)
+    if (result == QDialog::Accepted)
     {
         QString filename=QFileDialog::getSaveFileName(this,"Save Image",where,"(*.png)");
-        if(!filename.isEmpty())
+        if (!filename.isEmpty())
         {
             this->current_filename=filename;
 
@@ -586,4 +620,28 @@ void Viewer1DCPLX::slot_rescale()
 {
     this->rescaleAxes();
     this->replot();
+}
+
+void Viewer1DCPLX::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
+{
+    QMap<QString,QAction*> shortcuts_links;
+    shortcuts_links.insert(QString("Graph-ClearMarks"),actClearMarks);
+    shortcuts_links.insert(QString("Graph-Save"),actSave);
+    shortcuts_links.insert(QString("Graph-Rescale"),actRescale);
+    shortcuts_links.insert(QString("Graph-Color"),actColor);
+    shortcuts_links.insert(QString("Graph-Style"),actStyle);
+    shortcuts_links.insert(QString("Graph-Legend-Show/Hide"),actLegendShowHide);
+    shortcuts_links.insert(QString("Graph-Legend-Top/Bottom"),actLegendTopBottom);
+    shortcuts_links.insert(QString("Graph-Legend-Left/Right"),actLegendLeftRight);
+
+    QMapIterator<QString, QKeySequence> i(shortcuts_map);
+    while (i.hasNext())
+    {
+        i.next();
+
+        if (shortcuts_links.contains(i.key()))
+        {
+            shortcuts_links[i.key()]->setShortcut(i.value());
+        }
+    }
 }

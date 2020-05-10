@@ -5,9 +5,9 @@ Graph-ClearMarks;Alt+Space
 Graph-Color;Alt+*
 Graph-Copy;Alt+C
 Graph-Delete;Alt+Del
-Graph-Legend-Left/Right;Alt+Left
+Graph-Legend-Left/Right;Alt+Right
 Graph-Legend-Show/Hide;Alt+L
-Graph-Legend-Top/Bottom;Alt+Up
+Graph-Legend-Top/Bottom;Alt+Down
 Graph-Paste;Alt+V
 Graph-Rescale;Alt+R
 Graph-Save;Alt+S

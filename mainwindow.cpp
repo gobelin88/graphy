@@ -22,9 +22,9 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(ui->actionPlot_GraphY, &QAction::triggered,this,&MainWindow::slot_plot_y);
     connect(ui->actionPlot_GraphXY,&QAction::triggered,this,&MainWindow::slot_plot_graph_xy);
     connect(ui->actionPlot_CurveXY,&QAction::triggered,this,&MainWindow::slot_plot_curve_xy);
-    connect(ui->actionPlot_MapXYZ, &QAction::triggered,this,&MainWindow::slot_plot_xyz);
+    connect(ui->actionPlot_MapXYZ, &QAction::triggered,this,&MainWindow::slot_plot_map_2D);
     connect(ui->actionHistogram, &QAction::triggered,this,&MainWindow::slot_plot_histogram);
-    connect(ui->actionPlot_Cloud_XYZ,&QAction::triggered,this,&MainWindow::slot_plot_cloud_xys);
+    connect(ui->actionPlot_Cloud_XYZ,&QAction::triggered,this,&MainWindow::slot_plot_cloud_2D);
     connect(ui->actionPlot_Cloud_3D, &QAction::triggered,this,&MainWindow::slot_plot_cloud_3D);
     connect(ui->actionFFT, &QAction::triggered,this,&MainWindow::slot_plot_fft);
     connect(ui->actionPlot_Gain_Phase, &QAction::triggered,this,&MainWindow::slot_plot_gain_phase);
@@ -1193,7 +1193,7 @@ void MainWindow::slot_plot_curve_xy()
     }
 }
 
-void MainWindow::slot_plot_cloud_xys()
+void MainWindow::slot_plot_cloud_2D()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
@@ -1229,7 +1229,7 @@ void MainWindow::slot_plot_cloud_xys()
     }
 }
 
-void MainWindow::slot_plot_xyz()
+void MainWindow::slot_plot_map_2D()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
@@ -1345,24 +1345,23 @@ void MainWindow::slot_plot_gain_phase()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-
     if (id_list.size()%3==0 && id_list.size()>0)
     {
-        Viewer1DCPLX* viewer1d=new Viewer1DCPLX();
+        Viewer1DCPLX* viewer1d=new Viewer1DCPLX(shortcuts);
         viewer1d->setMinimumSize(600,400);
 
         for (int k=0; k<id_list.size(); k+=3)
         {
 
             QVector<double> data_f=getCol(id_list[k  ].column(),datatable);
-            QVector<double> data_gain=getCol(id_list[k+1].column(),datatable);
+            QVector<double> data_module=getCol(id_list[k+1].column(),datatable);
             QVector<double> data_phase=getCol(id_list[k+2].column(),datatable);
 
-            if (data_f.size()>0 && data_gain.size()>0 && data_phase.size()>0)
+            if (data_f.size()>0 && data_module.size()>0 && data_phase.size()>0)
             {
                 viewer1d->slot_add_data_graph(
-                    Curve2D_GainPhase(data_f,data_gain,data_phase,QString("Gain %2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column()))
-                                      ,QString("Phase %2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+2].column())))
+                    Curve2D_GainPhase(data_f,data_module,data_phase,QString("%2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column()))
+                                      ,QString("%2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+2].column())))
                 );
             }
         }
@@ -1375,7 +1374,7 @@ void MainWindow::slot_plot_gain_phase()
     }
     else
     {
-        QMessageBox::information(this,"Information","Please select 3k columns (k>1)");
+        QMessageBox::information(this,"Information","Please select 3k columns (f,module,phase)");
     }
 }
 

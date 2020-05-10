@@ -32,8 +32,6 @@ Viewer1D::Viewer1D(Curve2D* sharedBuf,const QMap<QString,QKeySequence>& shortcut
 
     top_bottom=Qt::AlignTop;
     left_right=Qt::AlignRight;
-
-    setFocusPolicy(Qt::StrongFocus);
 }
 
 Viewer1D::~Viewer1D()
@@ -152,6 +150,7 @@ void Viewer1D::createPopup()
 
     actCopy   = new QAction("Copy",  this);
     actPaste   = new QAction("Paste",  this);
+
     actClearMarks   = new QAction("Clear Marks",  this);
     actSave   = new QAction("Save",  this);
     actRescale= new QAction("Rescale",  this);
@@ -878,17 +877,6 @@ void Viewer1D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     shortcuts_links.insert(QString("Graph-Legend-Show/Hide"),actLegendShowHide);
     shortcuts_links.insert(QString("Graph-Legend-Top/Bottom"),actLegendTopBottom);
     shortcuts_links.insert(QString("Graph-Legend-Left/Right"),actLegendLeftRight);
-
-//    actCopy->setShortcut(QKeySequence("Ctrl+C"));
-//    actPaste->setShortcut(QKeySequence("Ctrl+V"));
-//    actClearMarks->setShortcut(QKeySequence("Space"));
-//    actSave->setShortcut(QKeySequence("S"));
-//    actRescale->setShortcut(QKeySequence("R"));
-//    actDelete->setShortcut(QKeySequence("Del"));
-//    actColor->setShortcut(QKeySequence("C"));
-//    actStyle->setShortcut(QKeySequence("!"));
-//    actLegendShow->setShortcut(QKeySequence("L"));
-//    actLegendTop->setShortcut(QKeySequence("Ctrl+L"));
 
     QMapIterator<QString, QKeySequence> i(shortcuts_map);
     while (i.hasNext())

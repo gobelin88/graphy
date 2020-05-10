@@ -72,15 +72,16 @@ public slots:
     void slot_plot_y();
     void slot_plot_graph_xy();
     void slot_plot_curve_xy();
-    void slot_plot_cloud_xys();
-    void slot_plot_xyz();
+    void slot_plot_fft();
     void slot_plot_histogram();
+
+    void slot_plot_cloud_2D();
+    void slot_plot_map_2D();
     void slot_plot_cloud_3D();
     void slot_plot_gain_phase();
-    void slot_plot_fft();
 
+    //Misc
     void slot_parameters();
-
 
 private:
 

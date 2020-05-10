@@ -13,23 +13,28 @@ class Viewer1DCPLX:public QCustomPlot
 {
     Q_OBJECT
 public:
-    Viewer1DCPLX();
+    Viewer1DCPLX(const QMap<QString,QKeySequence>& shortcuts_map);
     ~Viewer1DCPLX();
 
     void newGraph(QString name);
     void newSubGraph(QString name);
     void createPopup();
 
+    void applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
+
+
 public slots:
-    void mousePress(QMouseEvent * event);
-    void mouseDoublePress(QMouseEvent * event);
+    void mousePress(QMouseEvent* event);
+    void mouseDoublePress(QMouseEvent* event);
 
     void slot_save_image();
-    void slot_add_data_graph(const Curve2D_GainPhase & curve);
+    void slot_add_data_graph(const Curve2D_GainPhase& curve);
 
     void slot_rescale();
     void slot_show_legend(bool value);
     void slot_top_legend(bool value);
+    void slot_left_legend(bool value);
+
     void slot_fit_ralpcprb();
     void slot_fit_rlpc();
     void slot_fit_rl();
@@ -49,31 +54,33 @@ protected:
 
     QList<QColor> colors;
 
-    QMenu * popup_menu;
-    QAction * actSave;
-    QAction * actRescale;
-    QAction * actClearMarks;
+    QMenu* popup_menu;
+    QAction* actSave;
+    QAction* actRescale;
+    QAction* actClearMarks;
+    QAction* actLegendShowHide;
+    QAction* actLegendTopBottom;
+    QAction* actLegendLeftRight;
+    QAction* actColor;
+    QAction* actStyle;
 
-    QAction * actLegendShow;
-    QAction * actLegendTop;
+    QMenu* menu_legend;
+    QMenu* menu_fit;
 
-    QMenu * menu_legend;
-    QMenu * menu_fit;
-
-    QAction *actFitRaLpCpRb;
-    QAction *actFitRLpC;
-    QAction *actFitRL;
-    QAction *actFitRLC;
-    QAction *actFitRLCapCb;
-
-    QAction *actColor;
-    QAction *actStyle;
+    QAction* actFitRaLpCpRb;
+    QAction* actFitRLpC;
+    QAction* actFitRL;
+    QAction* actFitRLC;
+    QAction* actFitRLCapCb;
 
     QString current_filename;
 
     unsigned int getId();
 
     QPen pen_select;
+
+    Qt::AlignmentFlag left_right;
+    Qt::AlignmentFlag top_bottom;
 };
 
 #endif // VIEWER1D_H

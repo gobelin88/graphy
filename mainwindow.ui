@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1163</width>
+    <width>788</width>
     <height>629</height>
    </rect>
   </property>
@@ -68,12 +68,12 @@
    <addaction name="actionPlot_GraphY"/>
    <addaction name="actionPlot_GraphXY"/>
    <addaction name="actionPlot_CurveXY"/>
-   <addaction name="actionPlot_MapXYZ"/>
    <addaction name="actionHistogram"/>
-   <addaction name="actionPlot_Cloud_3D"/>
+   <addaction name="actionPlot_MapXYZ"/>
    <addaction name="actionPlot_Cloud_XYZ"/>
-   <addaction name="actionFFT"/>
+   <addaction name="actionPlot_Cloud_3D"/>
    <addaction name="actionPlot_Gain_Phase"/>
+   <addaction name="actionFFT"/>
   </widget>
   <action name="actionOpen">
    <property name="icon">
@@ -141,7 +141,7 @@
      <normaloff>:/img/icons/mapYX.png</normaloff>:/img/icons/mapYX.png</iconset>
    </property>
    <property name="text">
-    <string>Map XYZ</string>
+    <string>Map 2D</string>
    </property>
    <property name="shortcut">
     <string>F4</string>

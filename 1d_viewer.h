@@ -70,13 +70,13 @@ protected:
     QAction* actRescale;
     QAction* actDelete;
     QAction* actClearMarks;
-
     QAction* actCopy;
     QAction* actPaste;
-
     QAction* actLegendShowHide;
     QAction* actLegendTopBottom;
     QAction* actLegendLeftRight;
+    QAction* actColor;
+    QAction* actStyle;
 
     QMenu* menu_legend;
     QMenu* menu_fit;
@@ -86,8 +86,6 @@ protected:
     QAction* actFitGaussian;
     QAction* actFitSigmoid;
     QAction* actFitSinusoide;
-    QAction* actColor;
-    QAction* actStyle;
 
     QString current_filename;
 

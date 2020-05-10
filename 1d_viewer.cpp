@@ -202,26 +202,20 @@ void Viewer1D::createPopup()
     popup_menu->addAction(actClearMarks);
     popup_menu->addSeparator();
 
-    menu_fit=new QMenu("Fit",popup_menu);
-    menu_mathematics=new QMenu("Mathematics",menu_fit);
-    menu_electronics=new QMenu("Electronics",menu_fit);
-    menu_legend=new QMenu("Legend",menu_fit);
+    menu_fit=new QMenu("Fit",this);
+    menu_legend=new QMenu("Legend",this);
 
     actFitLinear= new QAction("Linear",  this);
-    actFitPolynome= new QAction("Polynome",  this);
+    actFitPolynomial= new QAction("Polynomial",  this);
     actFitGaussian= new QAction("Gaussian",  this);
     actFitSigmoid= new QAction("Sigmoid",  this);
-
-    actFitRLC= new QAction("RLC",  this);
     actFitSinusoide= new QAction("Sinusoide",  this);
 
-    menu_mathematics->addAction(actFitLinear);
-    menu_mathematics->addAction(actFitPolynome);
-    menu_mathematics->addAction(actFitGaussian);
-    menu_mathematics->addAction(actFitSigmoid);
-
-    menu_electronics->addAction(actFitRLC);
-    menu_electronics->addAction(actFitSinusoide);
+    menu_fit->addAction(actFitLinear);
+    menu_fit->addAction(actFitPolynomial);
+    menu_fit->addAction(actFitGaussian);
+    menu_fit->addAction(actFitSigmoid);
+    menu_fit->addAction(actFitSinusoide);
 
     menu_legend->addAction(actLegendShowHide);
     menu_legend->addAction(actLegendTopBottom);
@@ -230,14 +224,11 @@ void Viewer1D::createPopup()
 
     popup_menu->addMenu(menu_fit);
     popup_menu->addMenu(menu_legend);
-    menu_fit->addMenu(menu_mathematics);
-    menu_fit->addMenu(menu_electronics);
 
     connect(actSave,SIGNAL(triggered()),this,SLOT(slot_save_image()));
     connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_rescale()));
     connect(actFitLinear,SIGNAL(triggered()),this,SLOT(slot_fit_linear()));
-    connect(actFitPolynome,SIGNAL(triggered()),this,SLOT(slot_fit_polynome()));
-    connect(actFitRLC,SIGNAL(triggered()),this,SLOT(slot_fit_rlc()));
+    connect(actFitPolynomial,SIGNAL(triggered()),this,SLOT(slot_fit_polynomial()));
     connect(actFitGaussian,SIGNAL(triggered()),this,SLOT(slot_fit_gaussian()));
     connect(actFitSinusoide,SIGNAL(triggered()),this,SLOT(slot_fit_sinusoide()));
     connect(actFitSigmoid,SIGNAL(triggered()),this,SLOT(slot_fit_sigmoid()));
@@ -355,25 +346,21 @@ void Viewer1D::slot_fit_sinusoide()
 {
     QList<Curve2D> curves=getSelectedCurves();
 
-    QDoubleSpinBox* A,*F,*P;
-    QDialog* dialog=Sinusoide::createDialog(A,F,P);
-    A->setValue(0.0001);
-    F->setValue(0.0001);
-    int result=dialog->exec();
-
-    if (result == QDialog::Accepted)
+    if (curves.size()==1)
     {
-        Sinusoide sinusoide(A->value(),F->value(),P->value());
+        QDoubleSpinBox* A,*F,*P;
+        QDialog* dialog=Sinusoide::createDialog(A,F,P);
+        A->setValue(curves[0].getRms()*sqrt(2.0));
+        F->setValue(curves[0].guessMainFrequency());
+        int result=dialog->exec();
 
-        for (int i=0; i<curves.size(); i++)
+        if (result == QDialog::Accepted)
         {
-            curves[i].fit(&sinusoide);
-
+            Sinusoide sinusoide(A->value(),F->value(),P->value());
+            curves[0].fit(&sinusoide);
             sinusoide.regularized();
-
-            QVector<double> X=curves[i].getLinX(1000);
+            QVector<double> X=curves[0].getLinX(1000);
             QVector<double> Y=sinusoide.at(X);
-
             slot_add_data_graph(Curve2D(X,Y,QString("Fit A=%1 F=%2[Hz] P=%3[°]").arg(sinusoide.getA()).arg(sinusoide.getF()).arg(sinusoide.getP()*180/M_PI)) );
         }
     }
@@ -383,18 +370,17 @@ void Viewer1D::slot_fit_sigmoid()
 {
     QList<Curve2D> curves=getSelectedCurves();
 
-    QDoubleSpinBox* A,*B,*C,*P,*As;
-    QDialog* dialog=Sigmoid::createDialog(A,B,C,P,As);
+    QDoubleSpinBox* A,*B,*C,*P;
+    QDialog* dialog=Sigmoid::createDialog(A,B,C,P);
     A->setValue(-1);
     B->setValue(1);
     C->setValue(0);
     P->setValue(1);
-    As->setValue(0);
     int result=dialog->exec();
 
     if (result == QDialog::Accepted)
     {
-        Sigmoid sigmoid(A->value(),B->value(),C->value(),P->value(),As->value());
+        Sigmoid sigmoid(A->value(),B->value(),C->value(),P->value());
 
         for (int i=0; i<curves.size(); i++)
         {
@@ -403,7 +389,7 @@ void Viewer1D::slot_fit_sigmoid()
             QVector<double> X=curves[i].getLinX(1000);
             QVector<double> Y=sigmoid.at(X);
 
-            slot_add_data_graph(Curve2D(X,Y,QString("Fit A=%1 B=%2 C=%3 P=%4 As=%5").arg(sigmoid.getA()).arg(sigmoid.getB()).arg(sigmoid.getC()).arg(sigmoid.getP()).arg(sigmoid.getAsymp())) );
+            slot_add_data_graph(Curve2D(X,Y,QString("Fit A=%1 B=%2 C=%3 P=%4 ").arg(sigmoid.getA()).arg(sigmoid.getB()).arg(sigmoid.getC()).arg(sigmoid.getP())) );
         }
     }
 }
@@ -433,55 +419,58 @@ void Viewer1D::slot_fit_gaussian()
     }
 }
 
-void Viewer1D::slot_fit_rlc()
+void Viewer1D::slot_fit_polynomial()
 {
-    QList<Curve2D> curves=getSelectedCurves();
+    //------------------------------------------------Dialog
+    QDialog* dialog=new QDialog;
+    dialog->setLocale(QLocale("C"));
+    dialog->setWindowTitle("Polynomial : Initials parameters");
+    QGridLayout* gbox = new QGridLayout();
 
-    QDoubleSpinBox* R,*L,*C;
-    QCheckBox* fixedR,*fixedL,*fixedC;
+    QLabel* label_eqn=new QLabel(dialog);
+    label_eqn->setPixmap(QPixmap(":/eqn/eqn/polynome.gif"));
+    label_eqn->setAlignment(Qt::AlignHCenter);
 
-    QDialog* dialog=RLpC::createDialog(R,L,C,fixedR,fixedL,fixedC);
-    R->setValue(200);
-    L->setValue(10);
-    C->setValue(2);
+    QSpinBox* getOrder=new QSpinBox(dialog);
+    getOrder->setRange(2,10);
+    getOrder->setPrefix("Order=");
+
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                       | QDialogButtonBox::Cancel);
+
+    QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+    gbox->addWidget(label_eqn,0,0);
+    gbox->addWidget(getOrder,1,0);
+    gbox->addWidget(buttonBox,3,0);
+
+    dialog->setLayout(gbox);
+
+    //------------------------------------------------
     int result=dialog->exec();
-
     if (result == QDialog::Accepted)
     {
-        RLpC rlpc(R->value(),L->value(),C->value(),fixedR->isChecked(),fixedL->isChecked(),fixedC->isChecked());
+        int order=getOrder->value();
+        QList<Curve2D> curves=getSelectedCurves();
+
+        std::cout<<curves.size()<<std::endl;
 
         for (int i=0; i<curves.size(); i++)
         {
-            curves[i].fit(&rlpc);
+            Eigen::VectorXd C=curves[i].fit(order);
+
             QVector<double> X=curves[i].getLinX(1000);
-            QVector<double> Y=rlpc.at(X);
+            QVector<double> Y=curves[i].at(C,X);
 
-            slot_add_data_graph(Curve2D(X,Y,QString("Fit R=%1Ohm L=%2mH C=%3nF Fc=%4Hz").arg(rlpc.getR()).arg(rlpc.getL()).arg(rlpc.getC()).arg(rlpc.getFc())));
+            QString name("Fit Polynome Coeffs=");
+            for (int k=0; k<order; k++)
+            {
+                name+=QString("%1 ").arg(C[order-k-1]);
+            }
+
+            slot_add_data_graph(Curve2D(X,Y,name));
         }
-    }
-}
-
-void Viewer1D::slot_fit_polynome()
-{
-    int order=1+QInputDialog::getInt(this,"Order of the polynome","Order=",2,1,20,1);
-    QList<Curve2D> curves=getSelectedCurves();
-
-    std::cout<<curves.size()<<std::endl;
-
-    for (int i=0; i<curves.size(); i++)
-    {
-        Eigen::VectorXd C=curves[i].fit(order);
-
-        QVector<double> X=curves[i].getLinX(1000);
-        QVector<double> Y=curves[i].at(C,X);
-
-        QString name("Fit Polynome Coeffs=");
-        for (int k=0; k<order; k++)
-        {
-            name+=QString("%1 ").arg(C[order-k-1]);
-        }
-
-        slot_add_data_graph(Curve2D(X,Y,name));
     }
 }
 

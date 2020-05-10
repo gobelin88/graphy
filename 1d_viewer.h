@@ -30,17 +30,18 @@ public slots:
     void slot_add_data_cloud(const Curve2D& datacurve);
     void slot_add_data_curve(const Curve2D& datacurve);
     void slot_add_data_graph(const Curve2D& datacurve);
+
     void slot_fit_linear();
+    void slot_fit_polynomial();
+    void slot_fit_gaussian();
+    void slot_fit_sinusoide();
+    void slot_fit_sigmoid();
+
     void slot_rescale();
-    void slot_fit_polynome();
     void slot_delete();
     void slot_show_legend(bool value);
     void slot_top_legend(bool value);
     void slot_left_legend(bool value);
-    void slot_fit_gaussian();
-    void slot_fit_sinusoide();
-    void slot_fit_sigmoid();
-    void slot_fit_rlc();
     void slot_histogram(QVector<double> data,QString name,int nbbins);
 
     void slot_set_color();
@@ -79,14 +80,11 @@ protected:
 
     QMenu* menu_legend;
     QMenu* menu_fit;
-    QMenu* menu_mathematics;
-    QMenu* menu_electronics;
 
     QAction* actFitLinear;
-    QAction* actFitPolynome;
+    QAction* actFitPolynomial;
     QAction* actFitGaussian;
     QAction* actFitSigmoid;
-    QAction* actFitRLC;
     QAction* actFitSinusoide;
     QAction* actColor;
     QAction* actStyle;

@@ -2,9 +2,11 @@
 #define CURVE2D_H
 
 #include <Eigen/Dense>
+#include <unsupported/Eigen/FFT>
 #include <QVector>
 #include "ShapeFit.h"
 #include "qcustomplot.h"
+#include "FIR.h"
 
 class Curve2D
 {
@@ -22,7 +24,6 @@ public:
 
     //Fit a model
     void fit(Shape<Eigen::Vector2d>* model);
-    Eigen::Vector2d getBarycenter();
 
     //Fit a Polynome
     Eigen::VectorXd fit(unsigned int order);
@@ -34,8 +35,13 @@ public:
     void setName(QString legendname);
 
     //misc
+    Curve2D getFFT();
+    double getRms();
+    double guessMainFrequency();
+    uint getMaxIndex();
+    Eigen::Vector2d getBarycenter();
     QVector<double> getLinX(int n);
-    static QVector<double> buildXQVector(unsigned int sz);
+    static QVector<double> buildXQVector(int sz);
 
     void operator=(const Curve2D& other);
 private:

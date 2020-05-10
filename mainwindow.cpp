@@ -301,6 +301,8 @@ void MainWindow::direct_save(QString filename)
     QFile file(filename);
     if (file.open(QIODevice::WriteOnly | QIODevice::Text))
     {
+        setCurrentFilename(filename);
+
         QString textData;
         int rows = table->model()->rowCount();
         int columns = table->model()->columnCount();
@@ -696,7 +698,12 @@ bool MainWindow::custom_exp_parse(QString expression,int currentRow,QString& res
     if (args.size()>0)
     {
 
-        if (args[0]=="search" && args.size()>=5)
+        if (args[0]=="rand" && args.size()==1)
+        {
+            result=QString::number(2.0*(static_cast<double>(rand())/RAND_MAX-0.5));
+            return true;
+        }
+        else if (args[0]=="search" && args.size()>=5)
         {
             QString search_for_name;
             int index1=variables_names.indexOf(args[1]);
@@ -1106,12 +1113,12 @@ void MainWindow::slot_plot_y()
             }
         }
 
-        QMdiSubWindow* subWindow = new QMdiSubWindow(this);
+        QMdiSubWindow* subWindow = new QMdiSubWindow;
         subWindow->setWidget(viewer1d);
         subWindow->setAttribute(Qt::WA_DeleteOnClose);
         mdiArea->addSubWindow(subWindow);
-        subWindow->show();
-        //viewer1d->show();
+        //subWindow->show();
+        viewer1d->show();
     }
     else
     {
@@ -1265,41 +1272,12 @@ void MainWindow::slot_plot_fft()
 
         for (int k=0; k<id_list.size(); k++)
         {
-            std::vector<double> data_y=getCol(id_list[k].column(),datatable).toStdVector();
-
-            std::vector< double > time=std::vector< double >(data_y.size()/2, 0);
-            for (unsigned int i=0; i<time.size(); i++)
-            {
-                time[i]=i*1.0/data_y.size();
-            }
-
-            FIR win;
-            win.getHannCoef(uint(data_y.size()));
-
-            for (unsigned int i=0; i<uint(data_y.size()); i++)
-            {
-                data_y[i]*=win.at(i);
-            }
-
-            Eigen::FFT<double> fft;
-            fft.SetFlag(Eigen::FFT<double>::HalfSpectrum);
-            fft.SetFlag(Eigen::FFT<double>::Unscaled);
-
-            std::vector< std::complex<double> > fft_data_cplx;
-            fft.fwd(fft_data_cplx,data_y);
-            fft_data_cplx.pop_back();
-
-            std::vector< double > fft_data_module(fft_data_cplx.size());
-            for (unsigned int k=0; k<fft_data_cplx.size(); k++)
-            {
-                fft_data_module[k]=20*log10(std::abs(fft_data_cplx[k]));
-            }
-
-
+            QVector<double> data_y=getCol(id_list[k].column(),datatable);
+            Curve2D curve(data_y,QString("Graph %1").arg(getColName(id_list[k  ].column())));
 
             if (data_y.size()>0)
             {
-                viewer1d->slot_add_data_graph(Curve2D(QVector<double>::fromStdVector(time),QVector<double>::fromStdVector(fft_data_module),QString("FFT %1").arg(getColName(id_list[k  ].column()))));
+                viewer1d->slot_add_data_graph(curve.getFFT());
             }
         }
 

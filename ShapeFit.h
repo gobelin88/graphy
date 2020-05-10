@@ -7,6 +7,7 @@
 #include <QDoubleSpinBox>
 #include <QGridLayout>
 #include <QDialogButtonBox>
+#include <QLabel>
 
 #ifndef M_PI
 #define M_PI 3.14159265359
@@ -224,6 +225,10 @@ public:
         dialog->setWindowTitle("Initials parameters");
         QGridLayout* gbox = new QGridLayout();
 
+        QLabel* label_eqn=new QLabel(dialog);
+        label_eqn->setPixmap(QPixmap(":/eqn/eqn/sin.gif"));
+        label_eqn->setAlignment(Qt::AlignHCenter);
+
         getA=new QDoubleSpinBox(dialog);
         getA->setRange(0.0001,1e8);
         getA->setDecimals(4);
@@ -238,17 +243,17 @@ public:
         getP->setPrefix("Phi=");
         getP->setValue(0.0);
 
-        gbox->addWidget(getA,0,0);
-        gbox->addWidget(getF,1,0);
-        gbox->addWidget(getP,2,0);
-
         QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
                                                            | QDialogButtonBox::Cancel);
 
         QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
         QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
-        gbox->addWidget(buttonBox,3,0);
+        gbox->addWidget(label_eqn,0,0);
+        gbox->addWidget(getA,1,0);
+        gbox->addWidget(getF,2,0);
+        gbox->addWidget(getP,3,0);
+        gbox->addWidget(buttonBox,4,0);
 
         dialog->setLayout(gbox);
 
@@ -353,26 +358,28 @@ class Sigmoid: public Shape<Eigen::Vector2d>
 {
 public:
 
-    Sigmoid(double A,double B,double C,double P,double Asymp)
+    Sigmoid(double A,double B,double C,double P)
     {
-        p.resize(5);
+        p.resize(4);
         setA(A);
         setB(B);
         setC(C);
         setP(P);
-        setAsymp(Asymp);
     }
 
     static QDialog* createDialog(QDoubleSpinBox*& getA,
                                  QDoubleSpinBox*& getB,
                                  QDoubleSpinBox*& getC,
-                                 QDoubleSpinBox*& getP,
-                                 QDoubleSpinBox*& getAsymp)
+                                 QDoubleSpinBox*& getP)
     {
         QDialog* dialog=new QDialog;
         dialog->setLocale(QLocale("C"));
-        dialog->setWindowTitle("Initials parameters");
+        dialog->setWindowTitle("Sigmoid : Initials parameters");
         QGridLayout* gbox = new QGridLayout();
+
+        QLabel* label_eqn=new QLabel(dialog);
+        label_eqn->setPixmap(QPixmap(":/eqn/eqn/sigmoid.gif"));
+        label_eqn->setAlignment(Qt::AlignHCenter);
 
         getA=new QDoubleSpinBox(dialog);
         getA->setRange(-1e8,1e8);
@@ -390,17 +397,7 @@ public:
         getP->setRange(-1e8,1e8);
         getP->setDecimals(4);
         getP->setPrefix("Phi=");
-        getAsymp=new QDoubleSpinBox(dialog);
-        getAsymp->setRange(-1e8,1e8);
-        getAsymp->setDecimals(4);
-        getAsymp->setPrefix("Asymp=");
 
-
-        gbox->addWidget(getA,0,0);
-        gbox->addWidget(getB,1,0);
-        gbox->addWidget(getC,2,0);
-        gbox->addWidget(getP,3,0);
-        gbox->addWidget(getAsymp,4,0);
 
         QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
                                                            | QDialogButtonBox::Cancel);
@@ -408,7 +405,13 @@ public:
         QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
         QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
-        gbox->addWidget(buttonBox,5,0);
+
+        gbox->addWidget(label_eqn,0,0);
+        gbox->addWidget(getA,1,0);
+        gbox->addWidget(getB,2,0);
+        gbox->addWidget(getC,3,0);
+        gbox->addWidget(getP,4,0);
+        gbox->addWidget(buttonBox,6,0);
 
         dialog->setLayout(gbox);
 
@@ -436,10 +439,6 @@ public:
     {
         return p[3];
     }
-    double getAsymp()const
-    {
-        return p[4];
-    }
 
     void  setA(double A)
     {
@@ -457,10 +456,6 @@ public:
     {
         p[3]=P;
     }
-    void  setAsymp(double Asymp)
-    {
-        p[4]=Asymp;
-    }
 
     double at(double t)const
     {
@@ -468,9 +463,8 @@ public:
         double B=getB();
         double C=getC();
         double P=getP();
-        double Asymp=getAsymp();
 
-        return ((B-A)/(1+std::exp((C-t)*P*(B-A)))+A)*(std::abs(Asymp*(C-t))+1);//
+        return ((B-A)/(1+std::exp((C-t)*P*(B-A)))+A);//
     }
 
     QVector<double> at(QVector<double> t)
@@ -522,23 +516,24 @@ public:
     {
         QDialog* dialog=new QDialog;
         dialog->setLocale(QLocale("C"));
-        dialog->setWindowTitle("Initials parameters");
+        dialog->setWindowTitle("Gaussian : Initials parameters");
         QGridLayout* gbox = new QGridLayout();
+
+        QLabel* label_eqn=new QLabel(dialog);
+        label_eqn->setPixmap(QPixmap(":/eqn/eqn/gaussian.gif"));
+        label_eqn->setAlignment(Qt::AlignHCenter);
 
         getS=new QDoubleSpinBox(dialog);
         getS->setRange(0.001,1e8);
         getS->setPrefix("Sigma=");
         getM=new QDoubleSpinBox(dialog);
         getM->setRange(0.001,1e8);
-        getM->setPrefix("Mean=");
+        getM->setPrefix("M=");
         getK=new QDoubleSpinBox(dialog);
         getK->setRange(0.001,1e8);
         getK->setPrefix("K=");
         getK->setValue(1.0);
 
-        gbox->addWidget(getS,0,0);
-        gbox->addWidget(getM,1,0);
-        gbox->addWidget(getK,2,0);
 
         QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
                                                            | QDialogButtonBox::Cancel);
@@ -546,7 +541,12 @@ public:
         QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
         QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
-        gbox->addWidget(buttonBox,3,0);
+
+        gbox->addWidget(label_eqn,0,0);
+        gbox->addWidget(getS,1,0);
+        gbox->addWidget(getM,2,0);
+        gbox->addWidget(getK,3,0);
+        gbox->addWidget(buttonBox,4,0);
 
         dialog->setLayout(gbox);
 

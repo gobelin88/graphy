@@ -18,4 +18,11 @@
         <file>icons/save.png</file>
         <file>icons/parametres.png</file>
     </qresource>
+    <qresource prefix="/eqn">
+        <file>eqn/sin.gif</file>
+        <file>eqn/gaussian.gif</file>
+        <file>eqn/linear.gif</file>
+        <file>eqn/polynome.gif</file>
+        <file>eqn/sigmoid.gif</file>
+    </qresource>
 </RCC>

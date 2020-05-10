@@ -39,7 +39,7 @@ QVector<double> Curve2D::getScalarField()const
     return s;
 }
 
-QVector<double> Curve2D::buildXQVector(unsigned int sz)
+QVector<double> Curve2D::buildXQVector(int sz)
 {
     QVector<double> qv(sz,0.0);
     for (int i=0; i<sz; i++)
@@ -99,6 +99,22 @@ void Curve2D::fit(Shape<Eigen::Vector2d>* model)
 }
 
 
+double Curve2D::getRms()
+{
+    double sum_squares=0.0;
+    for (int i=0; i<y.size(); i++)
+    {
+        sum_squares+=y[i]*y[i];
+    }
+    return sqrt(sum_squares/y.size());
+}
+
+double Curve2D::guessMainFrequency()
+{
+    Curve2D fft=getFFT();
+    return fft.getX()[fft.getMaxIndex()];
+}
+
 Eigen::Vector2d Curve2D::getBarycenter()
 {
     double xm=0.0,ym=0.0;
@@ -108,6 +124,45 @@ Eigen::Vector2d Curve2D::getBarycenter()
         ym+=y[i];
     }
     return Eigen::Vector2d(xm/x.size(),ym/y.size());
+}
+
+uint Curve2D::getMaxIndex()
+{
+    return std::distance(y.constBegin(),std::max_element(y.constBegin(), y.constEnd()));
+}
+
+Curve2D Curve2D::getFFT()
+{
+    std::vector<double> data_y=y.toStdVector();
+    std::vector< double > time=std::vector< double >(data_y.size()/2, 0);
+    for (unsigned int i=0; i<time.size(); i++)
+    {
+        time[i]=i*1.0/data_y.size();
+    }
+
+    FIR win;
+    win.getHannCoef(uint(data_y.size()));
+
+    for (unsigned int i=0; i<uint(data_y.size()); i++)
+    {
+        data_y[i]*=win.at(i);
+    }
+
+    Eigen::FFT<double> fft;
+    fft.SetFlag(Eigen::FFT<double>::HalfSpectrum);
+    fft.SetFlag(Eigen::FFT<double>::Unscaled);
+
+    std::vector< std::complex<double> > fft_data_cplx;
+    fft.fwd(fft_data_cplx,data_y);
+    fft_data_cplx.pop_back();
+
+    std::vector< double > fft_data_module(fft_data_cplx.size());
+    for (unsigned int k=0; k<fft_data_cplx.size(); k++)
+    {
+        fft_data_module[k]=20*log10(std::abs(fft_data_cplx[k]));
+    }
+
+    return Curve2D(QVector<double>::fromStdVector(time),QVector<double>::fromStdVector(fft_data_module),QString("FFT %1").arg(name()));
 }
 
 double Curve2D::at(const Eigen::VectorXd& A,double value)

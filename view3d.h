@@ -58,14 +58,14 @@ public:
     void addMultiObj(QStringList filenames, QPosAtt posatt, float scale, QList<QColor> color);
     void addMultiObj(QStringList filenames, QPosAtt posatt,float scale,QColor color);
     void addObj(QString filename, QPosAtt posatt,float scale,QColor color);
-    void setObjPosAtt(int id,const QPosAtt& T);
-    void setObjColor(int id,QColor color);
+    void setObjPosAtt(unsigned int id, const QPosAtt& T);
+    void setObjColor(unsigned int id, QColor color);
 
     CustomViewContainer* getContainer();
 
-    int size()
+    int nbTransforms()
     {
-        return transforms.size();
+        return static_cast<int>(transforms.size());
     }
 
 
@@ -83,7 +83,7 @@ private:
     Qt3DCore::QEntity* rootEntity;
     std::vector<Qt3DCore::QTransform*> transforms;
     std::vector<Qt3DExtras::QPhongMaterial*> materials;
-    double xp,yp;
+    float xp,yp;
 
     struct CameraParams
     {
@@ -168,7 +168,7 @@ private:
 
         void reset()
         {
-            moveTo(M_PI*0.25+M_PI,-M_PI*0.10,4*boundingRadius);
+            moveTo(float(M_PI*0.25+M_PI),-float(M_PI*0.10),4*boundingRadius);
         }
 
         Qt3DRender::QCamera* entity()

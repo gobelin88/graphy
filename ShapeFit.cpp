@@ -102,7 +102,7 @@ void testShapeFit()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-Circle::Circle()
+Circle3D::Circle3D()
 {
     p.resize(6);
     p[0]=0;
@@ -113,7 +113,7 @@ Circle::Circle()
     p[5]=0.5;
 }
 
-Circle::Circle(Eigen::Vector3d center,double radius)
+Circle3D::Circle3D(Eigen::Vector3d center,double radius)
 {
     p.resize(6);
     p[0]=0;
@@ -124,21 +124,21 @@ Circle::Circle(Eigen::Vector3d center,double radius)
     p[5]=radius;
 }
 
-Eigen::Vector3d Circle::delta(const Eigen::Vector3d & pt) const
+Eigen::Vector3d Circle3D::delta(const Eigen::Vector3d & pt) const
 {
     Eigen::Vector3d u=pt-getCenter();
     return  Eigen::Vector3d( u.dot(getNormal()), (u-u.dot(getNormal())*getNormal()).norm()-getRadius() , 0 );
 }
 
-int Circle::nb_params()
+int Circle3D::nb_params()
 {
     return 6;
 }
-void Circle::setParams(const Eigen::VectorXd & p)
+void Circle3D::setParams(const Eigen::VectorXd & p)
 {
     this->p=p;
 }
-const Eigen::VectorXd & Circle::getParams()
+const Eigen::VectorXd & Circle3D::getParams()
 {
     return p;
 }

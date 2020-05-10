@@ -13,11 +13,13 @@ class Viewer1D:public QCustomPlot
 {
     Q_OBJECT
 public:
-    Viewer1D(Curve2D* sharedBuf);
+    Viewer1D(Curve2D* sharedBuf, const QMap<QString, QKeySequence>& shortcuts_map, QWidget* parent);
     ~Viewer1D();
 
     void newGraph(QString name);
     void createPopup();
+
+    void applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
 
 public slots:
     void mousePress(QMouseEvent* event);
@@ -34,11 +36,12 @@ public slots:
     void slot_delete();
     void slot_show_legend(bool value);
     void slot_top_legend(bool value);
+    void slot_left_legend(bool value);
     void slot_fit_gaussian();
     void slot_fit_sinusoide();
     void slot_fit_sigmoid();
     void slot_fit_rlc();
-    void slot_histogram(QVector<double> data,QString name);
+    void slot_histogram(QVector<double> data,QString name,int nbbins);
 
     void slot_set_color();
     void slot_set_style();
@@ -70,8 +73,9 @@ protected:
     QAction* actCopy;
     QAction* actPaste;
 
-    QAction* actLegendShow;
-    QAction* actLegendTop;
+    QAction* actLegendShowHide;
+    QAction* actLegendTopBottom;
+    QAction* actLegendLeftRight;
 
     QMenu* menu_legend;
     QMenu* menu_fit;
@@ -93,6 +97,9 @@ protected:
 
     Curve2D* sharedBuf;
     QPen pen_select;
+
+    Qt::AlignmentFlag left_right;
+    Qt::AlignmentFlag top_bottom;
 };
 
 #endif // VIEWER1D_H

@@ -17,6 +17,8 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(ui->actionOpen, &QAction::triggered,this,&MainWindow::slot_open);
     connect(ui->actionSave, &QAction::triggered,this,&MainWindow::slot_save);
     connect(ui->actionExport, &QAction::triggered,this,&MainWindow::slot_export);
+    connect(ui->actionParameters, &QAction::triggered,this,&MainWindow::slot_parameters);
+
     connect(ui->actionPlot_GraphY, &QAction::triggered,this,&MainWindow::slot_plot_y);
     connect(ui->actionPlot_GraphXY,&QAction::triggered,this,&MainWindow::slot_plot_graph_xy);
     connect(ui->actionPlot_CurveXY,&QAction::triggered,this,&MainWindow::slot_plot_curve_xy);
@@ -25,7 +27,6 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(ui->actionPlot_Cloud_XYZ,&QAction::triggered,this,&MainWindow::slot_plot_cloud_xys);
     connect(ui->actionPlot_Cloud_3D, &QAction::triggered,this,&MainWindow::slot_plot_cloud_3D);
     connect(ui->actionFFT, &QAction::triggered,this,&MainWindow::slot_plot_fft);
-
     connect(ui->actionPlot_Gain_Phase, &QAction::triggered,this,&MainWindow::slot_plot_gain_phase);
 
 //    connect(ui->actionTile,&QAction::triggered,mdiArea,&QMdiArea::tileSubWindows);
@@ -39,16 +40,9 @@ MainWindow::MainWindow(QWidget* parent) :
 
     //Action Edition----------------------------------------------------------------
     a_updateColumns=new QAction(this);
-    a_updateColumns->setShortcut(QKeySequence("Space"));
-
     a_newColumn=new QAction(this);
-    a_newColumn->setShortcut(QKeySequence("Ins"));
-
     a_newRow=new QAction(this);
-    a_newRow->setShortcut(QKeySequence("PgDown"));
-
     a_delete=new QAction(this);
-    a_delete->setShortcut(QKeySequence("Del"));
 
     this->addAction(a_newColumn);
     this->addAction(a_newRow);
@@ -72,10 +66,7 @@ MainWindow::MainWindow(QWidget* parent) :
     direct_new(10,10);
 
 
-    QActionGroup* actionGroup=new QActionGroup(this);
-    actionGroup->addAction(ui->actionPoints);
-    actionGroup->addAction(ui->actionLines);
-    ui->actionPoints->setChecked(true);
+    loadShortcuts();
 }
 
 MainWindow::~MainWindow()
@@ -122,7 +113,7 @@ void MainWindow::slot_new()
 
 void MainWindow::slot_open()
 {
-    QString filename=QFileDialog::getOpenFileName(this,"Open data CSV",current_filename,tr("Data file (*.csv *.graphy)"));
+    QString filename=QFileDialog::getOpenFileName(this,"Open data",current_filename,tr("Data file (*.csv *.graphy)"));
 
     if (!filename.isEmpty())
     {
@@ -218,7 +209,7 @@ void MainWindow::direct_open(QString filename)
 
 void MainWindow::slot_save()
 {
-    QString filename=QFileDialog::getSaveFileName(this,"Save data CSV",current_filename,"*.csv");
+    QString filename=QFileDialog::getSaveFileName(this,"Save data",current_filename,"*.csv");
 
     if (!filename.isEmpty())
     {
@@ -229,7 +220,7 @@ void MainWindow::slot_save()
 void MainWindow::slot_export()
 {
     QFileInfo info(current_filename);
-    QString filename=QFileDialog::getSaveFileName(this,"Export data tex",info.path()+"/"+info.baseName()+".tex","*.tex");
+    QString filename=QFileDialog::getSaveFileName(this,"Export data",info.path()+"/"+info.baseName()+".tex","*.tex");
 
     if (!filename.isEmpty())
     {
@@ -373,7 +364,7 @@ bool MainWindow::isValidExpression(QString variableExpression)
 
         if (!ok)
         {
-            QMessageBox::information(this,"Erreur",QString("Erreur dans l'expression : ")+variableExpression);
+            QMessageBox::information(this,"Error",QString("Invalid formula : ")+variableExpression);
         }
 
         return ok;
@@ -389,13 +380,13 @@ bool MainWindow::isValidVariable(QString variableName,int currentIndex)
 
     if (variableName.begin()->isDigit())
     {
-        QMessageBox::information(this,"Erreur",QString("Un nom valide ne commence pas par un chiffre"));
+        QMessageBox::information(this,"Error",QString("Variables names can't start with a number"));
         return false;
     }
 
     if (variableName.contains(" "))
     {
-        QMessageBox::information(this,"Erreur",QString("Un nom valide ne contient pas d'espace"));
+        QMessageBox::information(this,"Error",QString("Variables names can't have any space"));
         return false;
     }
 
@@ -407,7 +398,7 @@ bool MainWindow::isValidVariable(QString variableName,int currentIndex)
 
     if (remainder.contains(variableName))
     {
-        QMessageBox::information(this,"Erreur",QString("Ce nom existe deja"));
+        QMessageBox::information(this,"Error",QString("This variable name is already used"));
         return false;
     }
 
@@ -416,7 +407,6 @@ bool MainWindow::isValidVariable(QString variableName,int currentIndex)
 
 bool MainWindow::editVariableAndExpression(int currentIndex)
 {
-    std::cout<<"editVariableAndExpression 1"<<std::endl;
     QString currentName,currentExpression;
     QString newName,newExpression;
 
@@ -436,7 +426,7 @@ bool MainWindow::editVariableAndExpression(int currentIndex)
 
     QDialog* dialog=new QDialog;
     dialog->setLocale(QLocale("C"));
-    dialog->setWindowTitle((currentName.isEmpty())?"Modification d'une variable":"Edition d'une variable");
+    dialog->setWindowTitle((currentName.isEmpty())?"Add variable":"Edit variable");
 
     dialog->setMinimumWidth(400);
     QGridLayout* gbox = new QGridLayout();
@@ -448,8 +438,8 @@ bool MainWindow::editVariableAndExpression(int currentIndex)
 
     gbox->addWidget(le_variableName,0,1);
     gbox->addWidget(le_variableExpression,1,1);
-    gbox->addWidget(new QLabel("Nom de la variable"),0,0);
-    gbox->addWidget(new QLabel("Expression"),1,0);
+    gbox->addWidget(new QLabel("Variable name"),0,0);
+    gbox->addWidget(new QLabel("Variable formula"),1,0);
     gbox->addWidget(buttonBox,2,0,1,2);
 
     dialog->setLayout(gbox);
@@ -495,13 +485,10 @@ void MainWindow::registerClear()
 
 void MainWindow::registerNewVariable(QString varname,QString varexpr)
 {
-    std::cout<<"registerNewVariable 1"<<std::endl;
-
     variables.push_back(0.0);
     variables_names.push_back(varname);
     variables_expressions.push_back(varexpr);
     symbolsTable.add_variable(varname.toStdString(),variables.last());
-    std::cout<<"registerNewVariable 2"<<std::endl;
 }
 
 void MainWindow::registerDelVariable(QString varname)
@@ -838,6 +825,8 @@ bool MainWindow::custom_exp_parse(QString expression,int currentRow,QString& res
         std::cout<<"Bad custom expression "<<expression.toLocal8Bit().data()<<std::endl;
         return false;
     }
+
+    return false;
 }
 
 QVector<double> toDouble(QVector<QString> vec_col_str)
@@ -965,6 +954,7 @@ void MainWindow::setCurrentFilename(QString filename)
 
 void MainWindow::resizeEvent(QResizeEvent* event)
 {
+    Q_UNUSED(event)
     table->hide();
     table->show();
 }
@@ -1014,6 +1004,8 @@ void MainWindow::updateTable()
 
 void MainWindow::updateTable(const QModelIndex& indexA,const QModelIndex& indexB)
 {
+    Q_UNUSED(indexB)
+
     int i=indexA.row();
     int j=indexA.column();
     double value=table->model()->data(table->model()->index(i,j)).toDouble();
@@ -1054,6 +1046,7 @@ int MainWindow::getColId(QString colName)
             return i;
         }
     }
+    return -1;
 }
 
 QVector<double> MainWindow::getCol(int id,const TableData& tableData)
@@ -1100,7 +1093,7 @@ void MainWindow::slot_plot_y()
 
     if (id_list.size()>0)
     {
-        Viewer1D* viewer1d=new Viewer1D(&shared);
+        Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
         viewer1d->setMinimumSize(600,400);
 
         for (int k=0; k<id_list.size(); k++)
@@ -1113,11 +1106,12 @@ void MainWindow::slot_plot_y()
             }
         }
 
-        QMdiSubWindow* subWindow = new QMdiSubWindow;
+        QMdiSubWindow* subWindow = new QMdiSubWindow(this);
         subWindow->setWidget(viewer1d);
         subWindow->setAttribute(Qt::WA_DeleteOnClose);
         mdiArea->addSubWindow(subWindow);
-        viewer1d->show();
+        subWindow->show();
+        //viewer1d->show();
     }
     else
     {
@@ -1132,7 +1126,7 @@ void MainWindow::slot_plot_graph_xy()
 
     if (id_list.size()%2==0 && id_list.size()>0)
     {
-        Viewer1D* viewer1d=new Viewer1D(&shared);
+        Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
         viewer1d->setMinimumSize(600,400);
 
         for (int k=0; k<id_list.size(); k+=2)
@@ -1165,7 +1159,7 @@ void MainWindow::slot_plot_curve_xy()
 
     if (id_list.size()%2==0 && id_list.size()>0)
     {
-        Viewer1D* viewer1d=new Viewer1D(&shared);
+        Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
         viewer1d->setMinimumSize(600,400);
 
         for (int k=0; k<id_list.size(); k+=2)
@@ -1198,7 +1192,7 @@ void MainWindow::slot_plot_cloud_xys()
 
     if (id_list.size()%3==0 && id_list.size()>0)
     {
-        Viewer1D* viewer1d=new Viewer1D(&shared);
+        Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
         viewer1d->setMinimumSize(600,400);
 
         for (int k=0; k<id_list.size(); k+=3)
@@ -1248,11 +1242,10 @@ void MainWindow::slot_plot_xyz()
             subWindow->setAttribute(Qt::WA_DeleteOnClose);
             mdiArea->addSubWindow(subWindow);
             viewer2d->show();
-
-            viewer2d->slot_set_data(datatable,BoxPlot(512,512,
-                                                      id_list[0].column(),
-                                                      id_list[1].column(),
-                                                      id_list[2].column()),5);
+            viewer2d->slot_setData(datatable,BoxPlot(512,512,
+                                                     static_cast<unsigned int>(id_list[0].column()),
+                                                     static_cast<unsigned int>(id_list[1].column()),
+                                                     static_cast<unsigned int>(id_list[2].column())));
         }
     }
     else
@@ -1267,23 +1260,23 @@ void MainWindow::slot_plot_fft()
 
     if (id_list.size()>0)
     {
-        Viewer1D* viewer1d=new Viewer1D(&shared);
+        Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
         viewer1d->setMinimumSize(600,400);
 
         for (int k=0; k<id_list.size(); k++)
         {
-            QVector<double> data_y=getCol(id_list[k].column(),datatable);
+            std::vector<double> data_y=getCol(id_list[k].column(),datatable).toStdVector();
 
-            std::vector< double > time=std::vector< double >(data_y.size()/2.0, 0);
+            std::vector< double > time=std::vector< double >(data_y.size()/2, 0);
             for (unsigned int i=0; i<time.size(); i++)
             {
                 time[i]=i*1.0/data_y.size();
             }
 
             FIR win;
-            win.getHannCoef(data_y.size());
+            win.getHannCoef(uint(data_y.size()));
 
-            for (int i=0; i<data_y.size(); i++)
+            for (unsigned int i=0; i<uint(data_y.size()); i++)
             {
                 data_y[i]*=win.at(i);
             }
@@ -1293,7 +1286,7 @@ void MainWindow::slot_plot_fft()
             fft.SetFlag(Eigen::FFT<double>::Unscaled);
 
             std::vector< std::complex<double> > fft_data_cplx;
-            fft.fwd(fft_data_cplx,data_y.toStdVector());
+            fft.fwd(fft_data_cplx,data_y);
             fft_data_cplx.pop_back();
 
             std::vector< double > fft_data_module(fft_data_cplx.size());
@@ -1414,7 +1407,7 @@ void MainWindow::slot_plot_histogram()
 
     if (id_list.size()>0)
     {
-        Viewer1D* viewer1d=new Viewer1D(&shared);
+        Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
         viewer1d->setMinimumSize(600,400);
 
         for (int k=0; k<id_list.size(); k++)
@@ -1423,19 +1416,162 @@ void MainWindow::slot_plot_histogram()
 
             if (data_y.size()>0)
             {
-                viewer1d->slot_histogram(data_y,QString("Curve Histogram %1").arg(getColName(id_list[k  ].column())));
+                bool ok;
+                int nbbins=QInputDialog::getInt(this,"Number of bins","Nb bins=",100,2,10000,1,&ok);
+                if (ok)
+                {
+                    viewer1d->slot_histogram(data_y,QString("Curve Histogram %1").arg(getColName(id_list[k  ].column())),nbbins);
+                    QMdiSubWindow* subWindow = new QMdiSubWindow;
+                    subWindow->setWidget(viewer1d);
+                    subWindow->setAttribute(Qt::WA_DeleteOnClose);
+                    mdiArea->addSubWindow(subWindow);
+                    viewer1d->show();
+                }
             }
         }
 
-        QMdiSubWindow* subWindow = new QMdiSubWindow;
-        subWindow->setWidget(viewer1d);
-        subWindow->setAttribute(Qt::WA_DeleteOnClose);
-        mdiArea->addSubWindow(subWindow);
-        viewer1d->show();
     }
     else
     {
         QMessageBox::information(this,"Information","Please select k columns (k>1)");
     }
 
+}
+
+void MainWindow::slot_parameters()
+{
+    QDialog* dialog=new QDialog;
+    dialog->setLocale(QLocale("C"));
+    dialog->setWindowTitle("Parameters");
+    dialog->setMinimumWidth(400);
+
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+    //Table shortcuts
+    QTableView* tableShortcuts=new QTableView();
+    QMapIterator<QString, QKeySequence> i(shortcuts);
+    QStandardItemModel* modelParameters = new QStandardItemModel;
+    int line=0;
+    while (i.hasNext())
+    {
+        i.next();
+        QStandardItem* itemA=new QStandardItem(i.key());
+        QStandardItem* itemB=new QStandardItem(i.value().toString());
+        itemA->setEditable(false);
+        itemB->setEditable(true);
+        modelParameters->setItem(line,0,itemA);
+        modelParameters->setItem(line,1,itemB);
+        line++;
+    }
+    tableShortcuts->setModel(modelParameters);
+
+    QTabWidget* tab=new QTabWidget(dialog);
+    tab->addTab(tableShortcuts,"Shortcuts");
+
+    QGridLayout* gbox = new QGridLayout();
+    gbox->addWidget(tab,0,0);
+    gbox->addWidget(buttonBox,1,0);
+    dialog->setLayout(gbox);
+
+    int result=dialog->exec();
+    if (result == QDialog::Accepted)
+    {
+        //Shortcuts apply
+        shortcuts.clear();
+        for (int i=0; i<modelParameters->rowCount(); i++)
+        {
+            std::cout<<modelParameters->item(i,0)->text().toLocal8Bit().data()<<" "<<modelParameters->item(i,1)->text().toLocal8Bit().data()<<std::endl;
+            shortcuts.insert(modelParameters->item(i,0)->text(),QKeySequence(modelParameters->item(i,1)->text()));
+        }
+        applyShortcuts(shortcuts);
+        saveShortcuts(shortcuts);
+    }
+
+}
+
+bool MainWindow::loadShortcuts()
+{
+    QString shorcuts_cfg=QCoreApplication::applicationDirPath()+QString("/shortcuts.csv");
+    QFile file(shorcuts_cfg);
+
+    if (file.open(QIODevice::Text | QIODevice::ReadOnly))
+    {
+        while (!file.atEnd())
+        {
+            QString lineraw=file.readLine();
+            if (lineraw.endsWith("\n"))
+            {
+                lineraw.chop(1);
+            }
+            QStringList line=QString(lineraw).split(";");
+
+            if (line.size()>=2)
+            {
+                shortcuts.insert(line[0],QKeySequence(line[1]));
+            }
+            else
+            {
+                QMessageBox::information(this,"Error",QString("Bad line in shortcut configuration file : ")+lineraw);
+            }
+        }
+        file.close();
+    }
+    else
+    {
+        QMessageBox::critical(this,"Error",QString("Can't find shorcuts configuration file : ")+shorcuts_cfg);
+    }
+
+    applyShortcuts(shortcuts);
+    return true;
+}
+
+void MainWindow::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
+{
+    QMap<QString,QAction*> shortcuts_links;
+    shortcuts_links.insert(QString("New"),ui->actionNew);
+    shortcuts_links.insert(QString("Save"),ui->actionSave);
+    shortcuts_links.insert(QString("Open"),ui->actionOpen);
+    shortcuts_links.insert(QString("Export"),ui->actionExport);
+    shortcuts_links.insert(QString("Parameters"),ui->actionParameters);
+    shortcuts_links.insert(QString("Update"),a_updateColumns);
+    shortcuts_links.insert(QString("Edit/Add-variable"),a_newColumn);
+    shortcuts_links.insert(QString("New-row"),a_newRow);
+    shortcuts_links.insert(QString("Delete"),a_delete);
+
+    QMapIterator<QString, QKeySequence> i(shortcuts_map);
+    while (i.hasNext())
+    {
+        i.next();
+
+        if (shortcuts_links.contains(i.key()))
+        {
+            shortcuts_links[i.key()]->setShortcut(i.value());
+        }
+    }
+}
+
+void MainWindow::saveShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
+{
+    QString shorcuts_cfg=QCoreApplication::applicationDirPath()+QString("/shortcuts.csv");
+    QFile file(shorcuts_cfg);
+
+    if (file.open(QIODevice::Text | QIODevice::WriteOnly))
+    {
+        QTextStream ts(&file);
+        QMapIterator<QString, QKeySequence> i(shortcuts_map);
+        while (i.hasNext())
+        {
+            i.next();
+            ts<<i.key()<<";"<<i.value().toString()<<"\n";
+        }
+        file.close();
+    }
+    else
+    {
+        QMessageBox::critical(this,"Error",QString("Can't find shorcuts configuration file : ")+shorcuts_cfg);
+    }
+
+    applyShortcuts(shortcuts);
 }

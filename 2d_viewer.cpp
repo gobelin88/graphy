@@ -13,7 +13,7 @@ Viewer2D::Viewer2D()
     this->plotLayout()->addElement(0, 1, colorScale);
     colorScale->setType(QCPAxis::atRight);
     colorMap->setColorScale(colorScale);
-    colorMap->setGradient(QCPColorGradient::gpPolar);
+    slot_setGradient(QCPColorGradient::gpPolar);
 
     marginGroup = new QCPMarginGroup(this);
     this->axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
@@ -30,6 +30,10 @@ Viewer2D::Viewer2D()
 
     std::cout<<this->xAxis->range().lower<<std::endl;
     std::cout<<this->xAxis->range().upper<<std::endl;
+
+    //default param
+    mode=MODE_NEAREST;
+    knn=5;
 }
 
 Viewer2D::~Viewer2D()
@@ -39,10 +43,10 @@ Viewer2D::~Viewer2D()
 
 QVector<double> Viewer2D::extract(std::vector<QVector<double>> v,int id)
 {
-    QVector<double> v_out(v.size());
-    for(unsigned int i=0;i<v.size();i++)
+    QVector<double> v_out(static_cast<int>(v.size()));
+    for (unsigned int i=0; i<v.size(); i++)
     {
-        v_out[i]=v[i][id];
+        v_out[static_cast<int>(i)]=v[i][id];
     }
     return v_out;
 }
@@ -55,33 +59,98 @@ void Viewer2D::createPopup()
     actSave->setShortcut(QKeySequence("S"));
     actRescale= new QAction("Rescale",  this);
     actRescale->setShortcut(QKeySequence("R"));
+    actParameters= new QAction("Parameters",  this);
+    actParameters->setShortcut(QKeySequence("!"));
 
     this->addAction(actSave);
+    this->addAction(actParameters);
     this->addAction(actRescale);
 
-    popup_menu->addAction(actRescale);
     popup_menu->addAction(actSave);
-    connect(actSave,SIGNAL(triggered()),this,SLOT(slot_save_image()));
+    popup_menu->addAction(actRescale);
+    popup_menu->addAction(actParameters);
+
+    connect(actSave,SIGNAL(triggered()),this,SLOT(slot_saveImage()));
     connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_rescale()));
+    connect(actParameters,SIGNAL(triggered()),this,SLOT(slot_setParameters()));
 }
 
-//void Viewer2D::mousePressEvent(QMouseEvent * event)
-//{
-//    if(event->button() == Qt::RightButton)
-//    {
-//        popup_menu->exec(mapToGlobal(event->pos()));
-//    }
-//}
-
-void Viewer2D::setGradient(int preset)
+void Viewer2D::mousePressEvent(QMouseEvent* event)
 {
-    colorMap->setGradient((QCPColorGradient::GradientPreset)preset);
+    QCustomPlot::mousePressEvent(event);
+    if (event->button() == Qt::RightButton)
+    {
+        popup_menu->exec(mapToGlobal(event->pos()));
+    }
+}
+
+void Viewer2D::slot_setGradient(int preset)
+{
+    colorMap->setGradient(static_cast<QCPColorGradient::GradientPreset>(preset));
     this->replot();
+    this->currentgradient=static_cast<QCPColorGradient::GradientPreset>(preset);
 }
 
 void Viewer2D::slot_rescale()
 {
     resetRange();
+}
+
+void Viewer2D::slot_setParameters()
+{
+    QDialog* dialog=new QDialog;
+    dialog->setLocale(QLocale("C"));
+    dialog->setWindowTitle("Style Parameters");
+    QGridLayout* gbox = new QGridLayout();
+
+    QComboBox* c_mode=new QComboBox(dialog);
+    c_mode->addItem("NEAREST",MODE_NEAREST);
+    c_mode->addItem("WEIGHTED",MODE_WEIGHTED);
+    c_mode->setCurrentIndex(mode);
+
+    QSpinBox* sb_knn=new QSpinBox(dialog);
+    sb_knn->setRange(1,10000);
+    sb_knn->setValue(knn);
+
+    QComboBox* c_gradient=new QComboBox(dialog);
+    c_gradient->addItem("gpGrayscale",QCPColorGradient::GradientPreset::gpGrayscale);
+    c_gradient->addItem("gpHot",QCPColorGradient::GradientPreset::gpHot);
+    c_gradient->addItem("gpCold",QCPColorGradient::GradientPreset::gpCold);
+    c_gradient->addItem("gpNight",QCPColorGradient::GradientPreset::gpNight);
+    c_gradient->addItem("gpCandy",QCPColorGradient::GradientPreset::gpCandy);
+    c_gradient->addItem("gpGeography",QCPColorGradient::GradientPreset::gpGeography);
+    c_gradient->addItem("gpIon",QCPColorGradient::GradientPreset::gpIon);
+    c_gradient->addItem("gpThermal",QCPColorGradient::GradientPreset::gpThermal);
+    c_gradient->addItem("gpPolar",QCPColorGradient::GradientPreset::gpPolar);
+    c_gradient->addItem("gpSpectrum",QCPColorGradient::GradientPreset::gpSpectrum);
+    c_gradient->addItem("gpJet",QCPColorGradient::GradientPreset::gpJet);
+    c_gradient->addItem("gpHues",QCPColorGradient::GradientPreset::gpHues);
+    c_gradient->setCurrentIndex(static_cast<int>(currentgradient));
+
+    QObject::connect(sb_knn, SIGNAL(valueChanged(int)), this, SLOT(slot_setKnn(int)));
+    QObject::connect(c_mode, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setMode(int)));
+    QObject::connect(c_gradient, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setGradient(int)));
+
+
+    gbox->addWidget(c_mode,0,0);
+    gbox->addWidget(sb_knn,0,1);
+    gbox->addWidget(c_gradient,1,0,1,2);
+
+    dialog->setLayout(gbox);
+
+    int result=dialog->exec();
+}
+
+void Viewer2D::slot_setKnn(int value)
+{
+    this->knn=value;
+    slot_updateData();
+}
+
+void Viewer2D::slot_setMode(int mode)
+{
+    this->mode=static_cast<InterpolationMode>(mode);
+    slot_updateData();
 }
 
 void Viewer2D::setRange(QCPRange range_x, QCPRange range_y)
@@ -102,31 +171,30 @@ void Viewer2D::resetRange()
     this->replot();
 }
 
-void Viewer2D::slot_set_data(const TableData & data,const BoxPlot & box,int knn)
+void Viewer2D::slot_setData(const TableData& data,const BoxPlot& box)
 {
-    std::cout<<box.pX_res<<" "<<box.pY_res<<" "<<
-               getRange(data,box.idX).lower<<" "<<
-               getRange(data,box.idX).upper<<" "<<
-               getRange(data,box.idY).lower<<" "<<
-               getRange(data,box.idY).upper<<std::endl;
+    this->data=data;
+    this->box=box;
+    slot_updateData();
+}
 
+void Viewer2D::slot_updateData()
+{
     colorMap->data()->clear();
     colorMap->data()->setSize(box.pX_res,box.pY_res);
     setRange(getRange(data,box.idX),getRange(data,box.idY));
-
-    interpolate(data,box,colorMap,knn);
-
+    interpolate(data,box,colorMap,knn,mode);
     resetRange();
 }
 
-void Viewer2D::slot_save_image()
+void Viewer2D::slot_saveImage()
 {
     QFileInfo info(current_filename);
     QString where=info.path();
 
     QString filename=QFileDialog::getSaveFileName(this,"Save Image",where,"(*.png)");
 
-    if(!filename.isEmpty())
+    if (!filename.isEmpty())
     {
         this->current_filename=filename;
 

@@ -79,6 +79,9 @@ public slots:
     void slot_plot_gain_phase();
     void slot_plot_fft();
 
+    void slot_parameters();
+
+
 private:
 
     bool isValidExpression(QString variableExpression);
@@ -126,6 +129,11 @@ private:
     double activeRow;
 
     bool custom_exp_parse(QString expression, int currentRow, QString& result);
+
+    QMap<QString,QKeySequence> shortcuts;
+    void applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
+    bool loadShortcuts();
+    void saveShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
 };
 
 #endif // MAINWINDOW_H

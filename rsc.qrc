@@ -16,5 +16,6 @@
         <file>icons/open.png</file>
         <file>icons/paste.png</file>
         <file>icons/save.png</file>
+        <file>icons/parametres.png</file>
     </qresource>
 </RCC>

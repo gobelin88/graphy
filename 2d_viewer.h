@@ -27,24 +27,38 @@ public:
     void resetRange();
 
 public slots:
-    void slot_set_data(const TableData & data, const BoxPlot &box, int knn);
-    void slot_save_image();
-    void setGradient(int preset);
+    void slot_setData(const TableData& data, const BoxPlot& box);
+    void slot_saveImage();
+    void slot_setGradient(int preset);
     void slot_rescale();
+    void slot_setParameters();
+    void slot_updateData();
+
+    void slot_setKnn(int value);
+    void slot_setMode(int mode);
 
 protected:
     QVector<double> extract(std::vector<QVector<double>> v,int id);
 
-    //void mousePressEvent(QMouseEvent * event);
+    void mousePressEvent(QMouseEvent* event);
 
-    QCPMarginGroup * marginGroup;
-    QCPColorScale * colorScale;
-    QCPColorMap * colorMap;
+    QCPMarginGroup* marginGroup;
+    QCPColorScale* colorScale;
+    QCPColorMap* colorMap;
 
     QString current_filename;
-    QMenu * popup_menu;
-    QAction * actSave;
-    QAction * actRescale;
+    QMenu* popup_menu;
+    QAction* actSave;
+    QAction* actRescale;
+    QAction* actParameters;
+
+
+    InterpolationMode mode;
+    int knn;
+
+    TableData data;
+    BoxPlot box;
+    QCPColorGradient::GradientPreset currentgradient;
 };
 
 #endif // IMAGE_VIEWER_H

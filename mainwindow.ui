@@ -44,6 +44,7 @@
    <addaction name="actionSave"/>
    <addaction name="actionOpen"/>
    <addaction name="actionExport"/>
+   <addaction name="actionParameters"/>
   </widget>
   <widget class="QToolBar" name="toolbar_graph">
    <property name="windowTitle">
@@ -120,19 +121,6 @@
    </property>
    <property name="shortcut">
     <string>F2</string>
-   </property>
-  </action>
-  <action name="actionMulti_Plot_y">
-   <property name="text">
-    <string>Multi Plot Y</string>
-   </property>
-   <property name="shortcut">
-    <string>F4</string>
-   </property>
-  </action>
-  <action name="actionRand">
-   <property name="text">
-    <string>Rand</string>
    </property>
   </action>
   <action name="actionHistogram">
@@ -212,27 +200,6 @@
     <string>Cloud 3D</string>
    </property>
   </action>
-  <action name="actionPlot_Surface_3D">
-   <property name="text">
-    <string>Plot Surface 3D</string>
-   </property>
-  </action>
-  <action name="actionPoints">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Points</string>
-   </property>
-  </action>
-  <action name="actionLines">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Lines</string>
-   </property>
-  </action>
   <action name="actionPlot_Gain_Phase">
    <property name="icon">
     <iconset resource="rsc.qrc">
@@ -282,6 +249,15 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="actionParameters">
+   <property name="icon">
+    <iconset resource="rsc.qrc">
+     <normaloff>:/img/icons/parametres.png</normaloff>:/img/icons/parametres.png</iconset>
+   </property>
+   <property name="text">
+    <string>Parameters</string>
    </property>
   </action>
  </widget>

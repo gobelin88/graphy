@@ -2,7 +2,7 @@
 #include <QApplication>
 #include <iostream>
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     QApplication a(argc, argv);
 
@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
     QStringList args=a.arguments();
 
     MainWindow w;
-    if(args.size()==2)
+    if (args.size()==2)
     {
         w.direct_open(args[1]);
     }

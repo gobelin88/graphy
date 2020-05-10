@@ -1,6 +1,6 @@
 #include "1d_viewer.h"
 
-Viewer1D::Viewer1D(Curve2D* sharedBuf)
+Viewer1D::Viewer1D(Curve2D* sharedBuf,const QMap<QString,QKeySequence>& shortcuts_map,QWidget* parent):QCustomPlot(parent)
 {
     this->sharedBuf=sharedBuf;
 
@@ -27,6 +27,13 @@ Viewer1D::Viewer1D(Curve2D* sharedBuf)
     pen_select.setStyle(Qt::SolidLine);
 
     colorScale=nullptr;
+
+    applyShortcuts(shortcuts_map);
+
+    top_bottom=Qt::AlignTop;
+    left_right=Qt::AlignRight;
+
+    setFocusPolicy(Qt::StrongFocus);
 }
 
 Viewer1D::~Viewer1D()
@@ -144,44 +151,47 @@ void Viewer1D::createPopup()
     popup_menu=new QMenu(this);
 
     actCopy   = new QAction("Copy",  this);
-    actCopy->setShortcut(QKeySequence("Ctrl+C"));
     actPaste   = new QAction("Paste",  this);
-    actPaste->setShortcut(QKeySequence("Ctrl+V"));
-
     actClearMarks   = new QAction("Clear Marks",  this);
-    actClearMarks->setShortcut(QKeySequence("Space"));
-
     actSave   = new QAction("Save",  this);
-    actSave->setShortcut(QKeySequence("S"));
     actRescale= new QAction("Rescale",  this);
-    actRescale->setShortcut(QKeySequence("R"));
     actDelete= new QAction("Delete",  this);
-    actDelete->setShortcut(QKeySequence("Del"));
     actColor= new QAction("Color",  this);
-    actColor->setShortcut(QKeySequence("C"));
     actStyle= new QAction("Style",  this);
-    actStyle->setShortcut(QKeySequence("!"));
+    actLegendShowHide= new QAction("Hide",  this);
+    actLegendTopBottom= new QAction("Move bottom",  this);
+    actLegendLeftRight= new QAction("Move left",  this);
 
-    actLegendShow= new QAction("Hide",  this);
-    actLegendShow->setCheckable(true);
-    actLegendShow->setChecked(true);
-    actLegendShow->setShortcut(QKeySequence("L"));
+    actCopy->setShortcutVisibleInContextMenu(true);
+    actPaste->setShortcutVisibleInContextMenu(true);
+    actClearMarks->setShortcutVisibleInContextMenu(true);
+    actSave->setShortcutVisibleInContextMenu(true);
+    actRescale->setShortcutVisibleInContextMenu(true);
+    actDelete->setShortcutVisibleInContextMenu(true);
+    actColor->setShortcutVisibleInContextMenu(true);
+    actStyle->setShortcutVisibleInContextMenu(true);
+    actLegendShowHide->setShortcutVisibleInContextMenu(true);
+    actLegendTopBottom->setShortcutVisibleInContextMenu(true);
+    actLegendLeftRight->setShortcutVisibleInContextMenu(true);
 
-    actLegendTop= new QAction("Move bottom",  this);
-    actLegendTop->setShortcut(QKeySequence("Ctrl+L"));
-    actLegendTop->setCheckable(true);
-    actLegendTop->setChecked(true);
+    actLegendShowHide->setCheckable(true);
+    actLegendShowHide->setChecked(true);
+    actLegendTopBottom->setCheckable(true);
+    actLegendTopBottom->setChecked(true);
+    actLegendLeftRight->setCheckable(true);
+    actLegendLeftRight->setChecked(true);
 
     this->addAction(actCopy);
     this->addAction(actPaste);
     this->addAction(actSave);
     this->addAction(actRescale);
     this->addAction(actDelete);
-    this->addAction(actLegendShow);
+    this->addAction(actLegendShowHide);
     this->addAction(actClearMarks);
     this->addAction(actColor);
     this->addAction(actStyle);
-    this->addAction(actLegendTop);
+    this->addAction(actLegendTopBottom);
+    this->addAction(actLegendLeftRight);
 
     popup_menu->addAction(actCopy);
     popup_menu->addAction(actPaste);
@@ -213,8 +223,9 @@ void Viewer1D::createPopup()
     menu_electronics->addAction(actFitRLC);
     menu_electronics->addAction(actFitSinusoide);
 
-    menu_legend->addAction(actLegendShow);
-    menu_legend->addAction(actLegendTop);
+    menu_legend->addAction(actLegendShowHide);
+    menu_legend->addAction(actLegendTopBottom);
+    menu_legend->addAction(actLegendLeftRight);
     menu_legend->addAction(actStyle);
 
     popup_menu->addMenu(menu_fit);
@@ -236,8 +247,9 @@ void Viewer1D::createPopup()
     connect(actPaste,SIGNAL(triggered()),this,SLOT(slot_paste()));
 
     connect(actDelete,SIGNAL(triggered()),this,SLOT(slot_delete()));
-    connect(actLegendShow,SIGNAL(toggled(bool)),this,SLOT(slot_show_legend(bool)));
-    connect(actLegendTop,SIGNAL(toggled(bool)),this,SLOT(slot_top_legend(bool)));
+    connect(actLegendShowHide,SIGNAL(toggled(bool)),this,SLOT(slot_show_legend(bool)));
+    connect(actLegendTopBottom,SIGNAL(toggled(bool)),this,SLOT(slot_top_legend(bool)));
+    connect(actLegendLeftRight,SIGNAL(toggled(bool)),this,SLOT(slot_left_legend(bool)));
     connect(actClearMarks,SIGNAL(triggered()),this,SLOT(slot_clear_marks()));
     connect(actStyle,SIGNAL(triggered()),this,SLOT(slot_set_style()));
 }
@@ -480,11 +492,11 @@ void Viewer1D::slot_show_legend(bool value)
 
     if (value)
     {
-        actLegendShow->setText("Hide");
+        actLegendShowHide->setText("Hide");
     }
     else
     {
-        actLegendShow->setText("Show");
+        actLegendShowHide->setText("Show");
     }
 }
 
@@ -492,14 +504,34 @@ void Viewer1D::slot_top_legend(bool value)
 {
     if (value)
     {
-        this->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignTop|Qt::AlignRight);
-        actLegendTop->setText("Move bottom");
+        top_bottom=Qt::AlignTop;
+        actLegendTopBottom->setText("Move bottom");
     }
     else
     {
-        this->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignBottom|Qt::AlignRight);
-        actLegendTop->setText("Move top");
+        top_bottom=Qt::AlignBottom;
+        actLegendTopBottom->setText("Move top");
     }
+
+    this->axisRect()->insetLayout()->setInsetAlignment(0,left_right|top_bottom);
+
+    replot();
+}
+
+void Viewer1D::slot_left_legend(bool value)
+{
+    if (value)
+    {
+        left_right=Qt::AlignRight;
+        actLegendLeftRight->setText("Move left");
+    }
+    else
+    {
+        left_right=Qt::AlignLeft;
+        actLegendLeftRight->setText("Move right");
+    }
+
+    this->axisRect()->insetLayout()->setInsetAlignment(0,left_right|top_bottom);
 
     replot();
 }
@@ -616,9 +648,8 @@ void Viewer1D::slot_set_style()
     }
 }
 
-void Viewer1D::slot_histogram(QVector<double> data,QString name)
+void Viewer1D::slot_histogram(QVector<double> data,QString name,int nbbins)
 {
-    int nbbins=QInputDialog::getInt(this,"Number of bins","Nb bins=",100,2,10000,1);
     QVector<double> labels;
     QVector<double> hist;
     labels.resize(nbbins);
@@ -631,9 +662,9 @@ void Viewer1D::slot_histogram(QVector<double> data,QString name)
 
     for (int k=0; k<data.size(); k++)
     {
-        unsigned int index=std::round((data[k]-min)/delta);
+        int index=static_cast<int>(std::round((data[k]-min)/delta));
 
-        if (index>0 && index<data.size())
+        if (index>=0 && index<data.size())
         {
             hist[index]+=1;
         }
@@ -842,4 +873,42 @@ void Viewer1D::slot_paste()
         }
     }
     slot_rescale();
+}
+
+void Viewer1D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
+{
+    QMap<QString,QAction*> shortcuts_links;
+    shortcuts_links.insert(QString("Graph-Copy"),actCopy);
+    shortcuts_links.insert(QString("Graph-Paste"),actPaste);
+    shortcuts_links.insert(QString("Graph-ClearMarks"),actClearMarks);
+    shortcuts_links.insert(QString("Graph-Save"),actSave);
+    shortcuts_links.insert(QString("Graph-Rescale"),actRescale);
+    shortcuts_links.insert(QString("Graph-Delete"),actDelete);
+    shortcuts_links.insert(QString("Graph-Color"),actColor);
+    shortcuts_links.insert(QString("Graph-Style"),actStyle);
+    shortcuts_links.insert(QString("Graph-Legend-Show/Hide"),actLegendShowHide);
+    shortcuts_links.insert(QString("Graph-Legend-Top/Bottom"),actLegendTopBottom);
+    shortcuts_links.insert(QString("Graph-Legend-Left/Right"),actLegendLeftRight);
+
+//    actCopy->setShortcut(QKeySequence("Ctrl+C"));
+//    actPaste->setShortcut(QKeySequence("Ctrl+V"));
+//    actClearMarks->setShortcut(QKeySequence("Space"));
+//    actSave->setShortcut(QKeySequence("S"));
+//    actRescale->setShortcut(QKeySequence("R"));
+//    actDelete->setShortcut(QKeySequence("Del"));
+//    actColor->setShortcut(QKeySequence("C"));
+//    actStyle->setShortcut(QKeySequence("!"));
+//    actLegendShow->setShortcut(QKeySequence("L"));
+//    actLegendTop->setShortcut(QKeySequence("Ctrl+L"));
+
+    QMapIterator<QString, QKeySequence> i(shortcuts_map);
+    while (i.hasNext())
+    {
+        i.next();
+
+        if (shortcuts_links.contains(i.key()))
+        {
+            shortcuts_links[i.key()]->setShortcut(i.value());
+        }
+    }
 }

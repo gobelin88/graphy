@@ -49,14 +49,12 @@ void View3D::slot_save_image()
 
 QQuaternion toQQuaternion(Eigen::Quaterniond q)
 {
-    return QQuaternion(q.w(),q.x(),q.y(),q.z());
+    return QQuaternion(float(q.w()),float(q.x()),float(q.y()),float(q.z()));
 }
 QVector3D toQVector3D(Eigen::Vector3d v)
 {
-    return QVector3D(v.x(),v.y(),v.z());
+    return QVector3D(float(v.x()),float(v.y()),float(v.z()));
 }
-
-
 
 View3D::View3D()
 {
@@ -570,7 +568,7 @@ void View3D::addObj(QString filename, QPosAtt posatt,float scale,QColor color)
     materials.push_back(mat_obj);
 }
 
-void View3D::setObjColor(int id,QColor color)
+void View3D::setObjColor(unsigned int id,QColor color)
 {
     if (id<materials.size())
     {
@@ -578,11 +576,11 @@ void View3D::setObjColor(int id,QColor color)
     }
 }
 
-void View3D::setObjPosAtt(int id,const QPosAtt& T)
+void View3D::setObjPosAtt(unsigned int id,const QPosAtt& T)
 {
     if (id<transforms.size())
     {
-        transforms[id]->setTranslation(toQVector3D(T.P)*1e-3);
+        transforms[id]->setTranslation(toQVector3D(T.P)*1e-3f);
         transforms[id]->setRotation(toQQuaternion(T.Q));
     }
 }
@@ -596,8 +594,8 @@ void View3D::mouseMoveEvent(QMouseEvent* event)
 {
     if (event->buttons()==Qt::LeftButton)
     {
-        double dx=xp-event->x();
-        double dy=yp-event->y();
+        float dx=xp-event->x();
+        float dy=yp-event->y();
 
         camera_params->move(dx,dy);
 

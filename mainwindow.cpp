@@ -956,7 +956,7 @@ void MainWindow::direct_new(int sx,int sy)
 void MainWindow::setCurrentFilename(QString filename)
 {
     current_filename=filename;
-    this->setWindowTitle(QString("Graphy v1.0 : %1").arg(current_filename));
+    this->setWindowTitle(QString("Graphy v2.0 : %1").arg(current_filename));
 }
 
 void MainWindow::resizeEvent(QResizeEvent* event)

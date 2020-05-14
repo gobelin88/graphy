@@ -624,186 +624,6 @@ private:
 /**
  * @class RLpC
  */
-class RLpC: public Shape<Eigen::Vector2d>
-{
-public:
-
-    RLpC(double R,double L,double C,bool fixedR,bool fixedL,bool fixedC)
-    {
-        fixed[0]=fixedR;
-        fixed[1]=fixedL;
-        fixed[2]=fixedC;
-
-        p.resize(3-(int(fixedR)+int(fixedL)+int(fixedC)));
-
-        idr=0;
-        idl=(fixed[0])?0:1;
-        idc=(fixed[1])?0:idl+1;
-
-        std::cout<<idr<<" "<<idl<<" "<<idc<<" "<<p.size()<<std::endl;
-
-        setR(R);
-        setL(L);
-        setC(C);
-
-        std::cout<<idr<<" "<<idl<<" "<<idc<<std::endl;
-    }
-
-    static QDialog* createDialog(QDoubleSpinBox*& getR,
-                                 QDoubleSpinBox*& getL,
-                                 QDoubleSpinBox*& getC,
-                                 QCheckBox*& fixedR,
-                                 QCheckBox*& fixedL,
-                                 QCheckBox*& fixedC)
-    {
-        QDialog* dialog=new QDialog;
-        dialog->setLocale(QLocale("C"));
-        dialog->setWindowTitle("Initials parameters");
-        QGridLayout* gbox = new QGridLayout();
-
-        getR=new QDoubleSpinBox(dialog);
-        getR->setRange(0.001,1e8);
-        getR->setDecimals(4);
-        getR->setPrefix("R=");
-        getR->setSuffix("Ohm");
-        getL=new QDoubleSpinBox(dialog);
-        getL->setRange(0.001,1e8);
-        getL->setDecimals(4);
-        getL->setPrefix("L=");
-        getL->setSuffix("mH");
-        getC=new QDoubleSpinBox(dialog);
-        getC->setRange(0.001,1e8);
-        getC->setDecimals(4);
-        getC->setPrefix("C=");
-        getC->setSuffix("nF");
-        fixedR=new QCheckBox("fixed?");
-        fixedL=new QCheckBox("fixed?");
-        fixedC=new QCheckBox("fixed?");
-
-        gbox->addWidget(getR,0,0);
-        gbox->addWidget(getL,1,0);
-        gbox->addWidget(getC,2,0);
-
-        gbox->addWidget(fixedR,0,1);
-        gbox->addWidget(fixedL,1,1);
-        gbox->addWidget(fixedC,2,1);
-
-        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                           | QDialogButtonBox::Cancel);
-
-        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
-        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
-
-        gbox->addWidget(buttonBox,4,0,2,1);
-
-        dialog->setLayout(gbox);
-
-        return dialog;
-    }
-
-    double getFc()const
-    {
-        return 1.0/(2*M_PI*std::sqrt(getL()*getC()*1e-12));
-    }
-
-    Eigen::Vector2d delta(const Eigen::Vector2d& pt)const
-    {
-        return Eigen::Vector2d (pt[1]-at(pt[0]),pt[1]-at(pt[0]));
-    }
-
-    double getR()const
-    {
-        return (fixed[0])? fixedvalue[0]: p[idr];
-    }
-    double getL()const
-    {
-        return (fixed[1])? fixedvalue[1]: p[idl];
-    }
-    double getC()const
-    {
-        return (fixed[2])? fixedvalue[2]: p[idc];
-    }
-
-    void  setR(double R)
-    {
-        if (fixed[0])
-        {
-            fixedvalue[0]=R;
-        }
-        else
-        {
-            p[idr]=R;
-        }
-    }
-    void  setL(double L)
-    {
-        if (fixed[1])
-        {
-            fixedvalue[1]=L;
-        }
-        else
-        {
-            p[idl]=L;
-        }
-    }
-    void  setC(double C)
-    {
-        if (fixed[2])
-        {
-            fixedvalue[2]=C;
-        }
-        else
-        {
-            p[idc]=C;
-        }
-    }
-
-    double at(double f)const
-    {
-        double w=2*M_PI*f;//
-
-        double R=getR();
-        double L=getL()*1e-3;
-        double C=getC()*1e-9;
-
-        return std::sqrt(R*R+L*L*w*w)/std::sqrt( (1-L*C*w*w)*(1-L*C*w*w)+(R*C*w)*(R*C*w) );
-    }
-
-    QVector<double> at(QVector<double> f)
-    {
-        QVector<double> y(f.size());
-
-        for (int i=0; i<f.size(); i++)
-        {
-            y[i]=at(f[i]);
-        }
-        return y;
-    }
-
-    int nb_params()
-    {
-        return p.rows();
-    }
-    void setParams(const Eigen::VectorXd& p)
-    {
-        this->p=p;
-    }
-    const Eigen::VectorXd& getParams()
-    {
-        return p;
-    }
-
-private:
-    Eigen::VectorXd p;
-    bool fixed[3];
-    double fixedvalue[3];
-
-    int idr,idl,idc;
-};
-
-/**
- * @class RLpC
- */
 class RLpC_cplx: public Shape<Eigen::Vector3d>
 {
 public:
@@ -834,8 +654,12 @@ public:
     {
         QDialog* dialog=new QDialog;
         dialog->setLocale(QLocale("C"));
-        dialog->setWindowTitle("Initials parameters");
+        dialog->setWindowTitle("R+L+C : Initials parameters");
         QGridLayout* gbox = new QGridLayout();
+
+        QLabel* label_eqn=new QLabel(dialog);
+        label_eqn->setPixmap(QPixmap(":/imp/imp/(R+L)-C.png"));
+        label_eqn->setAlignment(Qt::AlignHCenter);
 
         getR=new QDoubleSpinBox(dialog);
         getR->setRange(0.001,1e8);
@@ -870,6 +694,7 @@ public:
         QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
         QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
+        gbox->addWidget(label_eqn,0,2,4,1);
         gbox->addWidget(buttonBox,4,0,2,1);
 
         dialog->setLayout(gbox);
@@ -989,190 +814,7 @@ private:
     int idr,idl,idc;
 };
 
-class RLC_cplx: public Shape<Eigen::Vector3d>
-{
-public:
 
-    RLC_cplx(double R,double L,double C,bool fixedR,bool fixedL,bool fixedC)
-    {
-        fixed[0]=fixedR;
-        fixed[1]=fixedL;
-        fixed[2]=fixedC;
-
-        p.resize(3-(int(fixedR)+int(fixedL)+int(fixedC)));
-
-        idr=0;
-        idl=(fixed[0])?0:1;
-        idc=(fixed[1])?0:idl+1;
-
-        setR(R);
-        setL(L);
-        setC(C);
-    }
-
-    static QDialog* createDialog(QDoubleSpinBox*& getR,
-                                 QDoubleSpinBox*& getL,
-                                 QDoubleSpinBox*& getC,
-                                 QCheckBox*& fixedR,
-                                 QCheckBox*& fixedL,
-                                 QCheckBox*& fixedC)
-    {
-        QDialog* dialog=new QDialog;
-        dialog->setLocale(QLocale("C"));
-        dialog->setWindowTitle("Initials parameters");
-        QGridLayout* gbox = new QGridLayout();
-
-        getR=new QDoubleSpinBox(dialog);
-        getR->setRange(0.001,1e8);
-        getR->setDecimals(4);
-        getR->setPrefix("R=");
-        getR->setSuffix("Ohm");
-        getL=new QDoubleSpinBox(dialog);
-        getL->setRange(0.001,1e8);
-        getL->setDecimals(4);
-        getL->setPrefix("L=");
-        getL->setSuffix("mH");
-        getC=new QDoubleSpinBox(dialog);
-        getC->setRange(0.001,1e8);
-        getC->setDecimals(4);
-        getC->setPrefix("C=");
-        getC->setSuffix("nF");
-        fixedR=new QCheckBox("fixed?");
-        fixedL=new QCheckBox("fixed?");
-        fixedC=new QCheckBox("fixed?");
-
-        gbox->addWidget(getR,0,0);
-        gbox->addWidget(getL,1,0);
-        gbox->addWidget(getC,2,0);
-
-        gbox->addWidget(fixedR,0,1);
-        gbox->addWidget(fixedL,1,1);
-        gbox->addWidget(fixedC,2,1);
-
-        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                           | QDialogButtonBox::Cancel);
-
-        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
-        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
-
-        gbox->addWidget(buttonBox,4,0,2,1);
-
-        dialog->setLayout(gbox);
-
-        return dialog;
-    }
-
-    double getFc()const
-    {
-        return 1.0/(2*M_PI*std::sqrt(getL()*getC()*1e-12));
-    }
-
-    Eigen::Vector3d delta(const Eigen::Vector3d& pt)const
-    {
-        Eigen::Vector2d res=at(pt[0]);
-
-//            std::complex<double> Zt(res[0]*cos(res[1]*M_PI/180),res[0]*sin(res[1]*M_PI/180));
-//            std::complex<double> Zm(pt[1]*cos(pt[2]*M_PI/180),pt[1]*sin(pt[2]*M_PI/180));
-//            return Eigen::Vector3d (Zt.real()-Zm.real(),Zt.imag()-Zm.imag(),0);
-
-        return Eigen::Vector3d (pt[1]-res[0],pt[2]-res[1],0);
-    }
-
-    double getR()const
-    {
-        return (fixed[0])? fixedvalue[0]: p[idr];
-    }
-    double getL()const
-    {
-        return (fixed[1])? fixedvalue[1]: p[idl];
-    }
-    double getC()const
-    {
-        return (fixed[2])? fixedvalue[2]: p[idc];
-    }
-
-    void  setR(double R)
-    {
-        if (fixed[0])
-        {
-            fixedvalue[0]=R;
-        }
-        else
-        {
-            p[idr]=R;
-        }
-    }
-    void  setL(double L)
-    {
-        if (fixed[1])
-        {
-            fixedvalue[1]=L;
-        }
-        else
-        {
-            p[idl]=L;
-        }
-    }
-    void  setC(double C)
-    {
-        if (fixed[2])
-        {
-            fixedvalue[2]=C;
-        }
-        else
-        {
-            p[idc]=C;
-        }
-    }
-
-    Eigen::Vector2d at(double f)const
-    {
-        double w=2*M_PI*f;//
-
-        std::complex<double> R(getR(),0.0);
-        std::complex<double> Lp(0.0,w*getL()*1e-3);
-        std::complex<double> Cp(0.0,w*getC()*1e-9);
-        std::complex<double> G=(R+Lp+1.0/Cp);
-
-        return Eigen::Vector2d(std::abs(G), std::arg(G)*180.0/M_PI );
-    }
-
-    void at(QVector<double> f,QVector<double>& g,QVector<double>& p)
-    {
-        g.resize(f.size());
-        p.resize(f.size());
-
-        for (int i=0; i<f.size(); i++)
-        {
-            Eigen::Vector2d res=at(f[i]);
-            g[i]=res[0];
-            p[i]=res[1];
-        }
-    }
-
-    int nb_params()
-    {
-        return int(p.rows());
-    }
-    void setParams(const Eigen::VectorXd& p)
-    {
-        for (int i=0; i<p.rows(); i++)
-        {
-            this->p[i]=std::abs(p[i]);
-        }
-    }
-    const Eigen::VectorXd& getParams()
-    {
-        return p;
-    }
-
-private:
-    Eigen::VectorXd p;
-    bool fixed[3];
-    double fixedvalue[3];
-
-    int idr,idl,idc;
-};
 
 
 /**
@@ -1216,13 +858,17 @@ public:
     {
         QDialog* dialog=new QDialog;
         dialog->setLocale(QLocale("C"));
-        dialog->setWindowTitle("Initials parameters");
+        dialog->setWindowTitle("(Ra+L)|C|Rb : Initials parameters");
         QGridLayout* gbox = new QGridLayout();
+
+        QLabel* label_eqn=new QLabel(dialog);
+        label_eqn->setPixmap(QPixmap(":/imp/imp/(Ra+L)-C-Rb.png"));
+        label_eqn->setAlignment(Qt::AlignHCenter);
 
         getRa=new QDoubleSpinBox(dialog);
         getRa->setRange(0.001,1e8);
         getRa->setDecimals(4);
-        getRa->setPrefix("R=");
+        getRa->setPrefix("Ra=");
         getRa->setSuffix("Ohm");
         getL=new QDoubleSpinBox(dialog);
         getL->setRange(0.001,1e8);
@@ -1237,7 +883,7 @@ public:
         getRb=new QDoubleSpinBox(dialog);
         getRb->setRange(0.001,1e8);
         getRb->setDecimals(4);
-        getRb->setPrefix("R=");
+        getRb->setPrefix("Rb=");
         getRb->setSuffix("kOhm");
         fixedRa=new QCheckBox("fixed?");
         fixedL=new QCheckBox("fixed?");
@@ -1260,7 +906,8 @@ public:
         QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
         QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
-        gbox->addWidget(buttonBox,4,0,2,1);
+        gbox->addWidget(label_eqn,0,2,5,1);
+        gbox->addWidget(buttonBox,5,0,3,1);
 
         dialog->setLayout(gbox);
 
@@ -1430,8 +1077,12 @@ public:
     {
         QDialog* dialog=new QDialog;
         dialog->setLocale(QLocale("C"));
-        dialog->setWindowTitle("Initials parameters");
+        dialog->setWindowTitle("(R+L)|Ca+Cb : Initials parameters");
         QGridLayout* gbox = new QGridLayout();
+
+        QLabel* label_eqn=new QLabel(dialog);
+        label_eqn->setPixmap(QPixmap(":/imp/imp/(R+L)-Ca+Cb.png"));
+        label_eqn->setAlignment(Qt::AlignHCenter);
 
         getR=new QDoubleSpinBox(dialog);
         getR->setRange(0.001,1e8);
@@ -1474,7 +1125,8 @@ public:
         QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
         QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
-        gbox->addWidget(buttonBox,4,0,2,1);
+        gbox->addWidget(label_eqn,0,2,5,1);
+        gbox->addWidget(buttonBox,5,0,2,1);
 
         dialog->setLayout(gbox);
 
@@ -1631,8 +1283,12 @@ public:
     {
         QDialog* dialog=new QDialog;
         dialog->setLocale(QLocale("C"));
-        dialog->setWindowTitle("Initials parameters");
+        dialog->setWindowTitle("R+L : Initials parameters");
         QGridLayout* gbox = new QGridLayout();
+
+        QLabel* label_eqn=new QLabel(dialog);
+        label_eqn->setPixmap(QPixmap(":/imp/imp/R+L.png"));
+        label_eqn->setAlignment(Qt::AlignHCenter);
 
         getR=new QDoubleSpinBox(dialog);
         getR->setRange(0.001,1e8);
@@ -1647,19 +1303,19 @@ public:
         fixedR=new QCheckBox("fixed?");
         fixedL=new QCheckBox("fixed?");
 
-        gbox->addWidget(getR,0,0);
-        gbox->addWidget(getL,1,0);
-
-        gbox->addWidget(fixedR,0,1);
-        gbox->addWidget(fixedL,1,1);
-
         QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
                                                            | QDialogButtonBox::Cancel);
 
         QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
         QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
-        gbox->addWidget(buttonBox,4,0,2,1);
+        gbox->addWidget(label_eqn,0,0,1,2);
+        gbox->addWidget(getR,1,0);
+        gbox->addWidget(getL,2,0);
+        gbox->addWidget(fixedR,1,1);
+        gbox->addWidget(fixedL,2,1);
+        gbox->addWidget(buttonBox,3,0,1,2);
+
 
         dialog->setLayout(gbox);
 
@@ -1756,6 +1412,195 @@ private:
     double fixedvalue[2];
 
     int idr,idl;
+};
+
+class RLC_cplx: public Shape<Eigen::Vector3d>
+{
+public:
+
+    RLC_cplx(double R,double L,double C,bool fixedR,bool fixedL,bool fixedC)
+    {
+        fixed[0]=fixedR;
+        fixed[1]=fixedL;
+        fixed[2]=fixedC;
+
+        p.resize(3-(int(fixedR)+int(fixedL)+int(fixedC)));
+
+        idr=0;
+        idl=(fixed[0])?0:1;
+        idc=(fixed[1])?0:idl+1;
+
+        setR(R);
+        setL(L);
+        setC(C);
+    }
+
+    static QDialog* createDialog(QDoubleSpinBox*& getR,
+                                 QDoubleSpinBox*& getL,
+                                 QDoubleSpinBox*& getC,
+                                 QCheckBox*& fixedR,
+                                 QCheckBox*& fixedL,
+                                 QCheckBox*& fixedC)
+    {
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("Initials parameters");
+        QGridLayout* gbox = new QGridLayout();
+
+        QLabel* label_eqn=new QLabel(dialog);
+        label_eqn->setPixmap(QPixmap(":/imp/imp/R+L+C.png"));
+        label_eqn->setAlignment(Qt::AlignHCenter);
+
+        getR=new QDoubleSpinBox(dialog);
+        getR->setRange(0.001,1e8);
+        getR->setDecimals(4);
+        getR->setPrefix("R=");
+        getR->setSuffix("Ohm");
+        getL=new QDoubleSpinBox(dialog);
+        getL->setRange(0.001,1e8);
+        getL->setDecimals(4);
+        getL->setPrefix("L=");
+        getL->setSuffix("mH");
+        getC=new QDoubleSpinBox(dialog);
+        getC->setRange(0.001,1e8);
+        getC->setDecimals(4);
+        getC->setPrefix("C=");
+        getC->setSuffix("nF");
+        fixedR=new QCheckBox("fixed?");
+        fixedL=new QCheckBox("fixed?");
+        fixedC=new QCheckBox("fixed?");
+
+
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                           | QDialogButtonBox::Cancel);
+
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+        gbox->addWidget(label_eqn,0,0,1,2);
+        gbox->addWidget(getR,1,0);
+        gbox->addWidget(getL,2,0);
+        gbox->addWidget(getC,3,0);
+        gbox->addWidget(fixedR,1,1);
+        gbox->addWidget(fixedL,2,1);
+        gbox->addWidget(fixedC,3,1);
+        gbox->addWidget(buttonBox,4,0,1,2);
+
+        dialog->setLayout(gbox);
+
+        return dialog;
+    }
+
+    double getFc()const
+    {
+        return 1.0/(2*M_PI*std::sqrt(getL()*getC()*1e-12));
+    }
+
+    Eigen::Vector3d delta(const Eigen::Vector3d& pt)const
+    {
+        Eigen::Vector2d res=at(pt[0]);
+
+//            std::complex<double> Zt(res[0]*cos(res[1]*M_PI/180),res[0]*sin(res[1]*M_PI/180));
+//            std::complex<double> Zm(pt[1]*cos(pt[2]*M_PI/180),pt[1]*sin(pt[2]*M_PI/180));
+//            return Eigen::Vector3d (Zt.real()-Zm.real(),Zt.imag()-Zm.imag(),0);
+
+        return Eigen::Vector3d (pt[1]-res[0],pt[2]-res[1],0);
+    }
+
+    double getR()const
+    {
+        return (fixed[0])? fixedvalue[0]: p[idr];
+    }
+    double getL()const
+    {
+        return (fixed[1])? fixedvalue[1]: p[idl];
+    }
+    double getC()const
+    {
+        return (fixed[2])? fixedvalue[2]: p[idc];
+    }
+
+    void  setR(double R)
+    {
+        if (fixed[0])
+        {
+            fixedvalue[0]=R;
+        }
+        else
+        {
+            p[idr]=R;
+        }
+    }
+    void  setL(double L)
+    {
+        if (fixed[1])
+        {
+            fixedvalue[1]=L;
+        }
+        else
+        {
+            p[idl]=L;
+        }
+    }
+    void  setC(double C)
+    {
+        if (fixed[2])
+        {
+            fixedvalue[2]=C;
+        }
+        else
+        {
+            p[idc]=C;
+        }
+    }
+
+    Eigen::Vector2d at(double f)const
+    {
+        double w=2*M_PI*f;//
+
+        std::complex<double> R(getR(),0.0);
+        std::complex<double> Lp(0.0,w*getL()*1e-3);
+        std::complex<double> Cp(0.0,w*getC()*1e-9);
+        std::complex<double> G=(R+Lp+1.0/Cp);
+
+        return Eigen::Vector2d(std::abs(G), std::arg(G)*180.0/M_PI );
+    }
+
+    void at(QVector<double> f,QVector<double>& g,QVector<double>& p)
+    {
+        g.resize(f.size());
+        p.resize(f.size());
+
+        for (int i=0; i<f.size(); i++)
+        {
+            Eigen::Vector2d res=at(f[i]);
+            g[i]=res[0];
+            p[i]=res[1];
+        }
+    }
+
+    int nb_params()
+    {
+        return int(p.rows());
+    }
+    void setParams(const Eigen::VectorXd& p)
+    {
+        for (int i=0; i<p.rows(); i++)
+        {
+            this->p[i]=std::abs(p[i]);
+        }
+    }
+    const Eigen::VectorXd& getParams()
+    {
+        return p;
+    }
+
+private:
+    Eigen::VectorXd p;
+    bool fixed[3];
+    double fixedvalue[3];
+
+    int idr,idl,idc;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////

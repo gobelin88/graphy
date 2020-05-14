@@ -33,6 +33,7 @@ public slots:
 
     void slot_fit_linear();
     void slot_fit_polynomial();
+    void slot_fit_2var_polynomial();
     void slot_fit_gaussian();
     void slot_fit_sinusoide();
     void slot_fit_sigmoid();
@@ -83,6 +84,7 @@ protected:
 
     QAction* actFitLinear;
     QAction* actFitPolynomial;
+    QAction* actFitPolynomial2V;
     QAction* actFitGaussian;
     QAction* actFitSigmoid;
     QAction* actFitSinusoide;

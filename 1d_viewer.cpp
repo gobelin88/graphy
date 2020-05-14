@@ -79,9 +79,9 @@ void Viewer1D::colorScaleChanged(const QCPRange& range)
 {
     QList<QCPCurve*> listcurves=getQCPCurves();
 
-    if (listcurves.size()>0)
+    for (int i=0; i<listcurves.size(); i++)
     {
-        listcurves[0]->setGradientRange(range);
+        listcurves[i]->setGradientRange(range);
     }
 }
 
@@ -206,12 +206,14 @@ void Viewer1D::createPopup()
 
     actFitLinear= new QAction("Linear",  this);
     actFitPolynomial= new QAction("Polynomial",  this);
+    actFitPolynomial2V= new QAction("Polynomial XY",  this);
     actFitGaussian= new QAction("Gaussian",  this);
     actFitSigmoid= new QAction("Sigmoid",  this);
     actFitSinusoide= new QAction("Sinusoide",  this);
 
     menu_fit->addAction(actFitLinear);
     menu_fit->addAction(actFitPolynomial);
+    menu_fit->addAction(actFitPolynomial2V);
     menu_fit->addAction(actFitGaussian);
     menu_fit->addAction(actFitSigmoid);
     menu_fit->addAction(actFitSinusoide);
@@ -228,6 +230,7 @@ void Viewer1D::createPopup()
     connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_rescale()));
     connect(actFitLinear,SIGNAL(triggered()),this,SLOT(slot_fit_linear()));
     connect(actFitPolynomial,SIGNAL(triggered()),this,SLOT(slot_fit_polynomial()));
+    connect(actFitPolynomial2V,SIGNAL(triggered()),this,SLOT(slot_fit_2var_polynomial()));
     connect(actFitGaussian,SIGNAL(triggered()),this,SLOT(slot_fit_gaussian()));
     connect(actFitSinusoide,SIGNAL(triggered()),this,SLOT(slot_fit_sinusoide()));
     connect(actFitSigmoid,SIGNAL(triggered()),this,SLOT(slot_fit_sigmoid()));
@@ -418,59 +421,125 @@ void Viewer1D::slot_fit_gaussian()
     }
 }
 
-void Viewer1D::slot_fit_polynomial()
+void Viewer1D::slot_fit_2var_polynomial()
 {
-    //------------------------------------------------Dialog
-    QDialog* dialog=new QDialog;
-    dialog->setLocale(QLocale("C"));
-    dialog->setWindowTitle("Polynomial : Initials parameters");
-    QGridLayout* gbox = new QGridLayout();
-
-    QLabel* label_eqn=new QLabel(dialog);
-    label_eqn->setPixmap(QPixmap(":/eqn/eqn/polynome.gif"));
-    label_eqn->setAlignment(Qt::AlignHCenter);
-
-    QSpinBox* getOrder=new QSpinBox(dialog);
-    getOrder->setRange(2,10);
-    getOrder->setPrefix("Order=");
-
-    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                       | QDialogButtonBox::Cancel);
-
-    QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
-    QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
-
-    gbox->addWidget(label_eqn,0,0);
-    gbox->addWidget(getOrder,1,0);
-    gbox->addWidget(buttonBox,3,0);
-
-    dialog->setLayout(gbox);
-
-    //------------------------------------------------
-    int result=dialog->exec();
-    if (result == QDialog::Accepted)
+    QList<Curve2D> curves=getSelectedCurves();
+    if (curves.size()>0)
     {
-        int order=getOrder->value();
-        QList<Curve2D> curves=getSelectedCurves();
-
-        std::cout<<curves.size()<<std::endl;
-
-        for (int i=0; i<curves.size(); i++)
+        if (curves[0].getScalarField().size()>0)
         {
-            Eigen::VectorXd C=curves[i].fit(order);
+            //------------------------------------------------Dialog
+            QDialog* dialog=new QDialog;
+            dialog->setLocale(QLocale("C"));
+            dialog->setWindowTitle("Polynomial of 2 Variables on scalar field: Initials parameters");
+            QGridLayout* gbox = new QGridLayout();
 
-            QVector<double> X=curves[i].getLinX(1000);
-            QVector<double> Y=curves[i].at(C,X);
+            QLabel* label_eqn=new QLabel(dialog);
+            label_eqn->setPixmap(QPixmap(":/eqn/eqn/polynome_2var.gif"));
+            label_eqn->setAlignment(Qt::AlignHCenter);
 
-            QString name("Fit Polynome Coeffs=");
-            for (int k=0; k<order; k++)
+            QSpinBox* getOrder=new QSpinBox(dialog);
+            getOrder->setRange(2,10);
+            getOrder->setPrefix("Order=");
+
+            QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                               | QDialogButtonBox::Cancel);
+
+            QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+            QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+            gbox->addWidget(label_eqn,0,0);
+            gbox->addWidget(getOrder,1,0);
+            gbox->addWidget(buttonBox,3,0);
+
+            dialog->setLayout(gbox);
+
+            //------------------------------------------------
+            int result=dialog->exec();
+            if (result == QDialog::Accepted)
             {
-                name+=QString("%1 ").arg(C[order-k-1]);
-            }
+                unsigned int order=static_cast<unsigned int>(getOrder->value());
+                Eigen::VectorXd C=curves[0].fit2d(order);
+                QVector<double> X,Y,S;
+                curves[0].getLinXY(100,X,Y);
+                S=curves[0].at(C,X,Y,order);
 
-            slot_add_data_graph(Curve2D(X,Y,name));
+                QString name=QString("Fit Polynome Coeffs=%1").arg(Curve2D::getTname(C,order));
+
+                Curve2D curve(X,Y,name);
+                curve.setScalarField(S);
+                slot_add_data_cloud(curve);
+            }
+        }
+        else
+        {
+            QMessageBox::information(this,"Oups","Selected curve must have scalar field");
         }
     }
+    else
+    {
+        QMessageBox::information(this,"Oups","Please select a curve");
+    }
+}
+
+void Viewer1D::slot_fit_polynomial()
+{
+    QList<Curve2D> curves=getSelectedCurves();
+    if (curves.size()>0)
+    {
+        //------------------------------------------------Dialog
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("Polynomial : Initials parameters");
+        QGridLayout* gbox = new QGridLayout();
+
+        QLabel* label_eqn=new QLabel(dialog);
+        label_eqn->setPixmap(QPixmap(":/eqn/eqn/polynome.gif"));
+        label_eqn->setAlignment(Qt::AlignHCenter);
+
+        QSpinBox* getOrder=new QSpinBox(dialog);
+        getOrder->setRange(2,10);
+        getOrder->setPrefix("Order=");
+
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                           | QDialogButtonBox::Cancel);
+
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+        gbox->addWidget(label_eqn,0,0);
+        gbox->addWidget(getOrder,1,0);
+        gbox->addWidget(buttonBox,3,0);
+
+        dialog->setLayout(gbox);
+
+        //------------------------------------------------
+        int result=dialog->exec();
+        if (result == QDialog::Accepted)
+        {
+            int order=getOrder->value();
+            for (int i=0; i<curves.size(); i++)
+            {
+                Eigen::VectorXd C=curves[i].fit(order);
+
+                QVector<double> X=curves[i].getLinX(1000);
+                QVector<double> Y=curves[i].at(C,X);
+
+                QString name("Fit Polynome Coeffs=");
+                for (int k=0; k<order; k++)
+                {
+                    name+=QString("%1 ").arg(C[order-k-1]);
+                }
+
+                slot_add_data_graph(Curve2D(X,Y,name));
+            }
+        }
+    }
+    else
+    {
+        QMessageBox::information(this,"Oups","Please select a curve");
+    }
+
 }
 
 void Viewer1D::slot_show_legend(bool value)
@@ -751,7 +820,9 @@ QList<Curve2D> Viewer1D::getSelectedCurves()
                 y.push_back(it->value);
                 it++;
             }
-            curvelist.push_back(Curve2D(x,y,currentcurve->name()));
+            Curve2D curve(x,y,currentcurve->name());
+            curve.setScalarField(currentcurve->getScalarField());
+            curvelist.push_back(curve);
             id++;
         }
 

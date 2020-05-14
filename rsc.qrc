@@ -24,5 +24,14 @@
         <file>eqn/linear.gif</file>
         <file>eqn/polynome.gif</file>
         <file>eqn/sigmoid.gif</file>
+        <file>eqn/polynome_2var.gif</file>
+    </qresource>
+    <qresource prefix="/imp">
+        <file>imp/(R+L)-C.png</file>
+        <file>imp/(R+L)-Ca+Cb.png</file>
+        <file>imp/(Ra+L)-C-Rb.png</file>
+        <file>imp/R+C.png</file>
+        <file>imp/R+L.png</file>
+        <file>imp/R+L+C.png</file>
     </qresource>
 </RCC>

@@ -19,7 +19,7 @@ public:
     QVector<double> getY()const;
 
     //Optional scalar field
-    void setScalarField(QVector<double>& scalarField);
+    void setScalarField(const QVector<double>& scalarField);
     QVector<double> getScalarField()const;
 
     //Fit a model
@@ -27,8 +27,14 @@ public:
 
     //Fit a Polynome
     Eigen::VectorXd fit(unsigned int order);
-    double at(const Eigen::VectorXd& A,double x);
+    double at(const Eigen::VectorXd& A,double valuex);
     QVector<double> at(const Eigen::VectorXd& A,QVector<double> values);
+
+    //Fit a 2d Polynome
+    Eigen::VectorXd fit2d(unsigned int order);
+    double at(const Eigen::VectorXd& C,double valuex,double valuey,unsigned int order);
+    QVector<double> at(const Eigen::VectorXd& C,QVector<double> valuex,QVector<double> valuey,unsigned int order);
+    static QString getTname(const Eigen::VectorXd& C,unsigned int order);
 
     //Legend name
     QString name()const;
@@ -41,6 +47,8 @@ public:
     uint getMaxIndex();
     Eigen::Vector2d getBarycenter();
     QVector<double> getLinX(int n);
+    void getLinXY(int n,QVector<double>& valuesX,QVector<double>& valuesY);
+
     static QVector<double> buildXQVector(int sz);
 
     void operator=(const Curve2D& other);

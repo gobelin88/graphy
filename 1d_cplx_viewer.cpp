@@ -149,16 +149,16 @@ void Viewer1DCPLX::createPopup()
     menu_fit=new QMenu("Fit",popup_menu);
     menu_legend=new QMenu("Legend",menu_fit);
 
-    actFitRaLpCpRb= new QAction("RaL|C|Rb",  this);
-    actFitRLpC= new QAction("RL|C",  this);
-    actFitRL= new QAction("RL",  this);
-    actFitRLC= new QAction("RLC",  this);
-    actFitRLCapCb= new QAction("RL|CaCb",  this);
+    actFitRL= new QAction("R+L",  this);
+    actFitRLC= new QAction("R+L+C",  this);
+    actFitRLpC= new QAction("(R+L)|C",  this);
+    actFitRaLpCpRb= new QAction("(Ra+L)|C|Rb",  this);
+    actFitRLCapCb= new QAction("(R+L)|Ca+Cb",  this);
 
     menu_fit->addAction(actFitRL);
+    menu_fit->addAction(actFitRLC);
     menu_fit->addAction(actFitRLpC);
     menu_fit->addAction(actFitRaLpCpRb);
-    menu_fit->addAction(actFitRLC);
     menu_fit->addAction(actFitRLCapCb);
 
     menu_legend->addAction(actLegendShowHide);
@@ -172,10 +172,10 @@ void Viewer1DCPLX::createPopup()
     connect(actSave,SIGNAL(triggered()),this,SLOT(slot_save_image()));
     connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_rescale()));
 
-    connect(actFitRLpC,SIGNAL(triggered()),this,SLOT(slot_fit_rlpc()));
-    connect(actFitRaLpCpRb,SIGNAL(triggered()),this,SLOT(slot_fit_ralpcprb()));
     connect(actFitRL,SIGNAL(triggered()),this,SLOT(slot_fit_rl()));
     connect(actFitRLC,SIGNAL(triggered()),this,SLOT(slot_fit_rlc()));
+    connect(actFitRLpC,SIGNAL(triggered()),this,SLOT(slot_fit_rlpc()));
+    connect(actFitRaLpCpRb,SIGNAL(triggered()),this,SLOT(slot_fit_ralpcprb()));
     connect(actFitRLCapCb,SIGNAL(triggered()),this,SLOT(slot_fit_rlcapcb()));
 
     connect(actColor,SIGNAL(triggered()),this,SLOT(slot_set_color()));

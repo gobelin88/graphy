@@ -69,11 +69,15 @@
    <addaction name="actionPlot_GraphXY"/>
    <addaction name="actionPlot_CurveXY"/>
    <addaction name="actionHistogram"/>
-   <addaction name="actionPlot_MapXYZ"/>
    <addaction name="actionPlot_Cloud_XYZ"/>
-   <addaction name="actionPlot_Cloud_3D"/>
-   <addaction name="actionPlot_Gain_Phase"/>
    <addaction name="actionFFT"/>
+   <addaction name="separator"/>
+   <addaction name="actionPlot_MapXYZ"/>
+   <addaction name="separator"/>
+   <addaction name="actionPlot_Cloud_3D"/>
+   <addaction name="separator"/>
+   <addaction name="actionPlot_Gain_Phase"/>
+   <addaction name="separator"/>
   </widget>
   <action name="actionOpen">
    <property name="icon">

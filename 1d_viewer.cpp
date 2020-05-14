@@ -26,8 +26,6 @@ Viewer1D::Viewer1D(Curve2D* sharedBuf,const QMap<QString,QKeySequence>& shortcut
     pen_select.setColor(colors[2]);
     pen_select.setStyle(Qt::SolidLine);
 
-    colorScale=nullptr;
-
     applyShortcuts(shortcuts_map);
 
     top_bottom=Qt::AlignTop;
@@ -75,15 +73,15 @@ void Viewer1D::slot_add_data_graph(const Curve2D& datacurve)
     replot();
 }
 
-void Viewer1D::colorScaleChanged(const QCPRange& range)
-{
-    QList<QCPCurve*> listcurves=getQCPCurves();
+//void Viewer1D::colorScaleChanged(const QCPRange& range)
+//{
+//    QList<QCPCurve*> listcurves=getQCPCurves();
 
-    for (int i=0; i<listcurves.size(); i++)
-    {
-        listcurves[i]->setGradientRange(range);
-    }
-}
+//    for (int i=0; i<listcurves.size(); i++)
+//    {
+//        listcurves[i]->setGradientRange(range);
+//    }
+//}
 
 void Viewer1D::slot_add_data_cloud(const Curve2D& datacurve)
 {
@@ -104,19 +102,18 @@ void Viewer1D::slot_add_data_cloud(const Curve2D& datacurve)
     newCurve->setSelectionDecorator(decorator_select);
     legend->setVisible(true);
 
-    colorScale = new QCPColorScale(this);
-    this->plotLayout()->addElement(0, 1, colorScale);
-    colorScale->setType(QCPAxis::atRight);
-    colorScale->setDataRange(newCurve->getScalarFieldRange());
-    colorScale->setGradient(newCurve->getGradient());
+    newCurve->setColorScale(new QCPColorScale(this));
+
+    this->plotLayout()->addElement(0, this->plotLayout()->columnCount(), newCurve->getColorScale());
+    newCurve->getColorScale()->setType(QCPAxis::atRight);
+    newCurve->getColorScale()->setDataRange(newCurve->getScalarFieldRange());
+    newCurve->getColorScale()->setGradient(newCurve->getGradient());
     //colorScale->setRangeDrag(false);
     //colorScale->setRangeZoom(false);
 
-    connect(colorScale,SIGNAL(dataRangeChanged(const QCPRange&)),this,SLOT(colorScaleChanged(const QCPRange&)));
-
     QCPMarginGroup* marginGroup = new QCPMarginGroup(this);
     this->axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
-    colorScale->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
+    newCurve->getColorScale()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
 
     axisRect()->setupFullAxesBox();
     rescaleAxes();
@@ -744,6 +741,18 @@ void Viewer1D::slot_delete()
     for (int i=0; i<plottableslist.size(); i++)
     {
         this->removePlottable(plottableslist[i]);
+
+//        QCPCurve* curve=dynamic_cast<QCPCurve*>(plottableslist[i]);
+//        std::cout<<"delete :"<<curve<<std::endl;
+//        if (curve)
+//        {
+//            if (curve->getColorScale())
+//            {
+//                this->plotLayout()->simplify();//remove(curve->getColorScale());
+//                //delete curve->getColorScale();
+//            }
+//        }
+        this->plotLayout()->simplify();
     }
 
     this->replot();
@@ -892,12 +901,12 @@ void Viewer1D::slot_save_image()
 
 void Viewer1D::slot_rescale()
 {
-    if (colorScale)
+    QList<QCPCurve*> listcurves=getQCPCurves();
+    for (int i=0; i<listcurves.size(); i++)
     {
-        QList<QCPCurve*> listcurves=getQCPCurves();
-        if (listcurves.size()>0)
+        if (listcurves[i]->getColorScale())
         {
-            colorScale->setDataRange(listcurves[0]->getScalarFieldRange());
+            listcurves[i]->getColorScale()->setDataRange(listcurves[0]->getScalarFieldRange());
         }
     }
 
@@ -928,6 +937,10 @@ void Viewer1D::slot_paste()
             else if (sharedBuf->name().contains("Curve"))
             {
                 slot_add_data_curve(*sharedBuf);
+            }
+            else if (sharedBuf->name().contains("Cloud"))
+            {
+                slot_add_data_cloud(*sharedBuf);
             }
         }
     }

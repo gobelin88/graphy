@@ -1211,7 +1211,7 @@ void MainWindow::slot_plot_cloud_2D()
 
             if (data_x.size()>0 && data_y.size()>0)
             {
-                Curve2D curve(data_x,data_y,QString("Curve (%2,%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())));
+                Curve2D curve(data_x,data_y,QString("Cloud (%2,%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())));
                 curve.setScalarField(data_s);
                 viewer1d->slot_add_data_cloud(curve);
             }

@@ -6430,11 +6430,6 @@ public:
         setGradientRange(getScalarFieldRange());
     }
 
-    void setGradientRange(QCPRange range)
-    {
-        gradient.colorize(scalarFieldData.data(),range,scalarFieldColors.data(),scalarFieldColors.size());
-    }
-
     QVector<double> getScalarField()
     {
         return scalarFieldData;
@@ -6444,6 +6439,18 @@ public:
         return gradient;
     }
 
+    void setColorScale(QCPColorScale* scale)
+    {
+        this->scale=scale;
+        connect(scale,SIGNAL(dataRangeChanged(const QCPRange&)),this,SLOT(setGradientRange(const QCPRange&)));
+    }
+
+    QCPColorScale* getColorScale()
+    {
+        return scale;
+    }
+
+    QCPColorScale* scale;
     QVector<QRgb> scalarFieldColors;
     QVector<double> scalarFieldData;
     QCPColorGradient gradient;
@@ -6478,6 +6485,13 @@ protected:
 
     friend class QCustomPlot;
     friend class QCPLegend;
+
+public slots:
+    void setGradientRange(const QCPRange& range)
+    {
+        gradient.colorize(scalarFieldData.data(),range,scalarFieldColors.data(),scalarFieldColors.size());
+    }
+
 };
 Q_DECLARE_METATYPE(QCPCurve::LineStyle)
 

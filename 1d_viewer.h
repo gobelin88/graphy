@@ -26,7 +26,7 @@ public slots:
     void mouseDoublePress(QMouseEvent* event);
 
     void slot_save_image();
-    void colorScaleChanged(const QCPRange& range);
+    //void colorScaleChanged(const QCPRange& range);
     void slot_add_data_cloud(const Curve2D& datacurve);
     void slot_add_data_curve(const Curve2D& datacurve);
     void slot_add_data_graph(const Curve2D& datacurve);
@@ -57,8 +57,6 @@ signals:
     void pick(double p0);
 
 protected:
-    QCPColorScale* colorScale;
-
     QList<QCPCurve*> getQCPCurves();
     QList<QCPCurve*> getSelectedQCPCurves();
     QList<Curve2D> getSelectedCurves();

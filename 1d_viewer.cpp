@@ -132,6 +132,7 @@ void Viewer1D::createPopup()
     actLegendTopBottom= new QAction("Move bottom",  this);
     actLegendLeftRight= new QAction("Move left",  this);
 
+
     actCopy->setShortcutVisibleInContextMenu(true);
     actPaste->setShortcutVisibleInContextMenu(true);
     actClearMarks->setShortcutVisibleInContextMenu(true);
@@ -174,6 +175,8 @@ void Viewer1D::createPopup()
 
     menu_fit=new QMenu("Fit",this);
     menu_legend=new QMenu("Legend",this);
+    menu_scalarField=new QMenu("Scalar Field",this);
+    menu_scalarField_fit=new QMenu("Fit",this);
 
     actFitPolynomial= new QAction("Polynomial",  this);
     actFitGaussian= new QAction("Gaussian",  this);
@@ -183,7 +186,6 @@ void Viewer1D::createPopup()
     actFitPolynomial2V= new QAction("Polynomial XY",  this);
 
     menu_fit->addAction(actFitPolynomial);
-    menu_fit->addAction(actFitPolynomial2V);
     menu_fit->addAction(actFitGaussian);
     menu_fit->addAction(actFitSigmoid);
     menu_fit->addAction(actFitSinusoide);
@@ -193,7 +195,12 @@ void Viewer1D::createPopup()
     menu_legend->addAction(actLegendLeftRight);
     menu_legend->addAction(actStyle);
 
+    menu_scalarField->addMenu(menu_scalarField_fit);
+
+    menu_scalarField_fit->addAction(actFitPolynomial2V);
+
     popup_menu->addMenu(menu_fit);
+    popup_menu->addMenu(menu_scalarField);
     popup_menu->addMenu(menu_legend);
 
     connect(actSave,SIGNAL(triggered()),this,SLOT(slot_save_image()));
@@ -292,7 +299,7 @@ void Viewer1D::mouseDoublePress(QMouseEvent* event)
         double cx=this->xAxis->pixelToCoord(event->x());
         double cy=this->yAxis->pixelToCoord(event->y());
 
-        QString str=QInputDialog::getText(this,"Text input","Text=");
+        QString str=QInputDialog::getText(this,"Add Mark","Text=");
         addMark(cx,cy,str);
     }
 }
@@ -431,7 +438,7 @@ void Viewer1D::slot_fit_2var_polynomial()
 
                 QString result_str=Curve2D::getPolynome2VString(C,order);
 
-                Curve2D fit_curve(X,Y,QString("Fit Polynome : %1").arg(result_str),Curve2D::GRAPH);
+                Curve2D fit_curve(X,Y,QString("Fit Polynome : %1").arg(result_str),Curve2D::CURVE);
                 fit_curve.setScalarField(S);
                 slot_add_data(fit_curve);
             }
@@ -631,7 +638,7 @@ void Viewer1D::slot_set_style()
     QObject::connect(pb_color, SIGNAL(clicked()), this, SLOT(slot_set_color()));
 
     dialog->setLocale(QLocale("C"));
-    dialog->setWindowTitle("Initials parameters");
+    dialog->setWindowTitle("Style Options");
     QGridLayout* gbox = new QGridLayout();
 
 
@@ -889,6 +896,16 @@ void Viewer1D::slot_paste()
         }
     }
     slot_rescale();
+}
+
+void Viewer1D::slot_statistiques()
+{
+    QList<Curve2D> curves=getSelectedCurves();
+
+    for (int i=0; i<curves.size(); i++)
+    {
+        //todo
+    }
 }
 
 void Viewer1D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)

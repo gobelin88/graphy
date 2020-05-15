@@ -207,7 +207,7 @@ QString Curve2D::getPolynome2VString(const Eigen::VectorXd& C,unsigned int order
                 }
                 else if (C[id]>0)
                 {
-                    name+= QString("+ %1 %2").arg(C[id]).arg(monome);
+                    name+= QString("+%1 %2").arg(C[id]).arg(monome);
                 }
 
                 id++;
@@ -411,7 +411,7 @@ QString Curve2D::getPolynomeString(const Eigen::VectorXd& C,unsigned int order)
         }
         else if (C[i]>0)
         {
-            name+= QString("+ %1").arg(C[i]).arg(monome);
+            name+= QString("+%1 %2").arg(C[i]).arg(monome);
         }
     }
     return name;

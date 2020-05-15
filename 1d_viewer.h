@@ -44,6 +44,7 @@ public slots:
     void slot_histogram(QVector<double> data,QString name,int nbbins);
     void slot_copy();
     void slot_paste();
+    void slot_statistiques();
 
     void slot_set_color();
     void slot_set_style();
@@ -77,6 +78,8 @@ protected:
 
     QMenu* menu_legend;
     QMenu* menu_fit;
+    QMenu* menu_scalarField;
+    QMenu* menu_scalarField_fit;
 
     QAction* actFitPolynomial;
     QAction* actFitPolynomial2V;

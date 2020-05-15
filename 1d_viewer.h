@@ -16,42 +16,40 @@ public:
     Viewer1D(Curve2D* sharedBuf, const QMap<QString, QKeySequence>& shortcuts_map, QWidget* parent);
     ~Viewer1D();
 
-    void newGraph(QString name);
+    QCPGraph* newGraph(const Curve2D& datacurve);
+    QCPCurve* newCurve(const Curve2D& datacurve);
+
     void createPopup();
 
     void applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
 
 public slots:
+    void slot_add_data(const Curve2D& datacurve);
+
     void mousePress(QMouseEvent* event);
     void mouseDoublePress(QMouseEvent* event);
 
-    void slot_save_image();
-    //void colorScaleChanged(const QCPRange& range);
-    void slot_add_data_cloud(const Curve2D& datacurve);
-    void slot_add_data_curve(const Curve2D& datacurve);
-    void slot_add_data_graph(const Curve2D& datacurve);
-
-    void slot_fit_linear();
     void slot_fit_polynomial();
     void slot_fit_2var_polynomial();
     void slot_fit_gaussian();
     void slot_fit_sinusoide();
     void slot_fit_sigmoid();
 
+    void slot_save_image();
     void slot_rescale();
     void slot_delete();
     void slot_show_legend(bool value);
     void slot_top_legend(bool value);
     void slot_left_legend(bool value);
     void slot_histogram(QVector<double> data,QString name,int nbbins);
+    void slot_copy();
+    void slot_paste();
 
     void slot_set_color();
     void slot_set_style();
     void slot_clear_marks();
     void addMark(double cx,double cy,QString markstr);
 
-    void slot_copy();
-    void slot_paste();
 
 signals:
     void pick(double p0);
@@ -80,7 +78,6 @@ protected:
     QMenu* menu_legend;
     QMenu* menu_fit;
 
-    QAction* actFitLinear;
     QAction* actFitPolynomial;
     QAction* actFitPolynomial2V;
     QAction* actFitGaussian;

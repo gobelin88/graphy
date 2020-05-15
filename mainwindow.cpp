@@ -1109,7 +1109,9 @@ void MainWindow::slot_plot_y()
 
             if (data_y.size()>0)
             {
-                viewer1d->slot_add_data_graph(Curve2D(data_y,QString("Graph %1").arg(getColName(id_list[k  ].column()))));
+                viewer1d->slot_add_data(Curve2D(data_y,
+                                                getColName(id_list[k  ].column()),
+                                                Curve2D::GRAPH));
             }
         }
 
@@ -1144,7 +1146,10 @@ void MainWindow::slot_plot_graph_xy()
 
             if (data_x.size()>0 && data_y.size()>0)
             {
-                viewer1d->slot_add_data_graph(Curve2D(data_x,data_y,QString("Graph %2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column()))));
+                viewer1d->slot_add_data(Curve2D(data_x,
+                                                data_y,
+                                                QString("%2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),
+                                                Curve2D::GRAPH));
             }
         }
 
@@ -1177,7 +1182,10 @@ void MainWindow::slot_plot_curve_xy()
 
             if (data_x.size()>0 && data_y.size()>0)
             {
-                viewer1d->slot_add_data_curve(Curve2D(data_x,data_y,QString("Curve (%2,%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column()))));
+                viewer1d->slot_add_data(Curve2D(data_x,
+                                                data_y,
+                                                QString("(%1,%2)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),
+                                                Curve2D::CURVE));
             }
         }
 
@@ -1204,16 +1212,18 @@ void MainWindow::slot_plot_cloud_2D()
 
         for (int k=0; k<id_list.size(); k+=3)
         {
-
             QVector<double> data_x=getCol(id_list[k  ].column(),datatable);
             QVector<double> data_y=getCol(id_list[k+1].column(),datatable);
             QVector<double> data_s=getCol(id_list[k+2].column(),datatable);
 
             if (data_x.size()>0 && data_y.size()>0)
             {
-                Curve2D curve(data_x,data_y,QString("Cloud (%2,%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())));
+                Curve2D curve(data_x,
+                              data_y,
+                              QString("(%1,%2)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),
+                              Curve2D::CURVE);
                 curve.setScalarField(data_s);
-                viewer1d->slot_add_data_cloud(curve);
+                viewer1d->slot_add_data(curve);
             }
         }
 
@@ -1273,11 +1283,11 @@ void MainWindow::slot_plot_fft()
         for (int k=0; k<id_list.size(); k++)
         {
             QVector<double> data_y=getCol(id_list[k].column(),datatable);
-            Curve2D curve(data_y,QString("Graph %1").arg(getColName(id_list[k  ].column())));
+            Curve2D curve(data_y,QString("%1").arg(getColName(id_list[k  ].column())),Curve2D::GRAPH);
 
             if (data_y.size()>0)
             {
-                viewer1d->slot_add_data_graph(curve.getFFT());
+                viewer1d->slot_add_data(curve.getFFT());
             }
         }
 
@@ -1397,7 +1407,7 @@ void MainWindow::slot_plot_histogram()
                 int nbbins=QInputDialog::getInt(this,"Number of bins","Nb bins=",100,2,10000,1,&ok);
                 if (ok)
                 {
-                    viewer1d->slot_histogram(data_y,QString("Curve Histogram %1").arg(getColName(id_list[k  ].column())),nbbins);
+                    viewer1d->slot_histogram(data_y,QString("Histogram %1").arg(getColName(id_list[k  ].column())),nbbins);
                     QMdiSubWindow* subWindow = new QMdiSubWindow;
                     subWindow->setWidget(viewer1d);
                     subWindow->setAttribute(Qt::WA_DeleteOnClose);

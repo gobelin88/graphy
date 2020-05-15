@@ -43,7 +43,7 @@ unsigned int Viewer1D::getId()
     return id;
 }
 
-void Viewer1D::newGraph(QString name)
+QCPGraph* Viewer1D::newGraph(const Curve2D& datacurve)
 {
     this->addGraph();
     QPen pen_model(colors[getId()]);
@@ -60,86 +60,60 @@ void Viewer1D::newGraph(QString name)
     QCPSelectionDecorator* decorator_select=new QCPSelectionDecorator;
     decorator_select->setPen(pen_select);
     this->graph()->setSelectionDecorator(decorator_select);
-    graph()->setName(name);
-}
-
-void Viewer1D::slot_add_data_graph(const Curve2D& datacurve)
-{
-    newGraph(datacurve.name());
-
+    graph()->setName(datacurve.getLegend());
     graph()->setData(datacurve.getX(), datacurve.getY());
 
-    rescaleAxes();
-    replot();
+    return this->graph();
 }
 
-//void Viewer1D::colorScaleChanged(const QCPRange& range)
-//{
-//    QList<QCPCurve*> listcurves=getQCPCurves();
-
-//    for (int i=0; i<listcurves.size(); i++)
-//    {
-//        listcurves[i]->setGradientRange(range);
-//    }
-//}
-
-void Viewer1D::slot_add_data_cloud(const Curve2D& datacurve)
+QCPCurve* Viewer1D::newCurve(const Curve2D& datacurve)
 {
-    QCPCurve* newCurve = new QCPCurve(this->xAxis, this->yAxis);
+    QCPCurve* pcurve = new QCPCurve(this->xAxis, this->yAxis);
 
-    newCurve->setScalarField(datacurve.getScalarField());
+    pcurve->setScalarField(datacurve.getScalarField());
 
-    newCurve->setName(datacurve.name());
-    newCurve->setData(datacurve.getX(), datacurve.getY());
+    pcurve->setName(datacurve.getLegend());
+    pcurve->setData(datacurve.getX(), datacurve.getY());
     QPen pen_model(colors[getId()]);
     pen_model.setStyle(Qt::SolidLine);
-    newCurve->setPen(pen_model);
-    newCurve->setLineStyle(QCPCurve::lsNone);
-    newCurve->setScatterStyle(QCPScatterStyle::ScatterShape::ssDisc);
+    pcurve->setPen(pen_model);
 
     QCPSelectionDecorator* decorator_select=new QCPSelectionDecorator;
     decorator_select->setPen(pen_select);
-    newCurve->setSelectionDecorator(decorator_select);
+    pcurve->setSelectionDecorator(decorator_select);
     legend->setVisible(true);
 
-    newCurve->setColorScale(new QCPColorScale(this));
+    if (datacurve.getScalarField().size()>0)
+    {
+        pcurve->setColorScale(new QCPColorScale(this));
+        pcurve->getColorScale()->setType(QCPAxis::atRight);
+        pcurve->getColorScale()->setDataRange(pcurve->getScalarFieldRange());
+        pcurve->getColorScale()->setGradient(pcurve->getGradient());
 
-    this->plotLayout()->addElement(0, this->plotLayout()->columnCount(), newCurve->getColorScale());
-    newCurve->getColorScale()->setType(QCPAxis::atRight);
-    newCurve->getColorScale()->setDataRange(newCurve->getScalarFieldRange());
-    newCurve->getColorScale()->setGradient(newCurve->getGradient());
-    //colorScale->setRangeDrag(false);
-    //colorScale->setRangeZoom(false);
+        pcurve->setLineStyle(QCPCurve::lsNone);
+        pcurve->setScatterStyle(QCPScatterStyle::ScatterShape::ssDisc);
 
-    QCPMarginGroup* marginGroup = new QCPMarginGroup(this);
-    this->axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
-    newCurve->getColorScale()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
+        this->plotLayout()->addElement(0, this->plotLayout()->columnCount(), pcurve->getColorScale());
+    }
 
-    axisRect()->setupFullAxesBox();
-    rescaleAxes();
-    replot();
+    return pcurve;
 }
 
-void Viewer1D::slot_add_data_curve(const Curve2D& datacurve)
+void Viewer1D::slot_add_data(const Curve2D& datacurve)
 {
-    QCPCurve* newCurve = new QCPCurve(this->xAxis, this->yAxis);
+    if (datacurve.getType()==Curve2D::GRAPH)
+    {
+        newGraph(datacurve);
+    }
+    else
+    {
+        newCurve(datacurve);
+        axisRect()->setupFullAxesBox();
+    }
 
-    newCurve->setName(datacurve.name());
-    newCurve->setData(datacurve.getX(), datacurve.getY());
-    QPen pen_model(colors[getId()]);
-    pen_model.setStyle(Qt::SolidLine);
-    newCurve->setPen(pen_model);
-
-    QCPSelectionDecorator* decorator_select=new QCPSelectionDecorator;
-    decorator_select->setPen(pen_select);
-    newCurve->setSelectionDecorator(decorator_select);
-    legend->setVisible(true);
-
-    axisRect()->setupFullAxesBox();
     rescaleAxes();
     replot();
 }
-
 
 void Viewer1D::createPopup()
 {
@@ -201,14 +175,13 @@ void Viewer1D::createPopup()
     menu_fit=new QMenu("Fit",this);
     menu_legend=new QMenu("Legend",this);
 
-    actFitLinear= new QAction("Linear",  this);
     actFitPolynomial= new QAction("Polynomial",  this);
-    actFitPolynomial2V= new QAction("Polynomial XY",  this);
     actFitGaussian= new QAction("Gaussian",  this);
     actFitSigmoid= new QAction("Sigmoid",  this);
     actFitSinusoide= new QAction("Sinusoide",  this);
 
-    menu_fit->addAction(actFitLinear);
+    actFitPolynomial2V= new QAction("Polynomial XY",  this);
+
     menu_fit->addAction(actFitPolynomial);
     menu_fit->addAction(actFitPolynomial2V);
     menu_fit->addAction(actFitGaussian);
@@ -225,7 +198,6 @@ void Viewer1D::createPopup()
 
     connect(actSave,SIGNAL(triggered()),this,SLOT(slot_save_image()));
     connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_rescale()));
-    connect(actFitLinear,SIGNAL(triggered()),this,SLOT(slot_fit_linear()));
     connect(actFitPolynomial,SIGNAL(triggered()),this,SLOT(slot_fit_polynomial()));
     connect(actFitPolynomial2V,SIGNAL(triggered()),this,SLOT(slot_fit_2var_polynomial()));
     connect(actFitGaussian,SIGNAL(triggered()),this,SLOT(slot_fit_gaussian()));
@@ -325,22 +297,6 @@ void Viewer1D::mouseDoublePress(QMouseEvent* event)
     }
 }
 
-
-void Viewer1D::slot_fit_linear()
-{
-    QList<Curve2D> curves=getSelectedCurves();
-
-    for (int i=0; i<curves.size(); i++)
-    {
-        Eigen::VectorXd C=curves[i].fit(2);
-
-        QVector<double> X=curves[i].getX();
-        QVector<double> Y=curves[i].at(C,X);
-
-        slot_add_data_graph(Curve2D(X,Y,QString("Fit Linear Y=%1 X + %2").arg(C[1]).arg(C[0])));
-    }
-}
-
 void Viewer1D::slot_fit_sinusoide()
 {
     QList<Curve2D> curves=getSelectedCurves();
@@ -360,7 +316,12 @@ void Viewer1D::slot_fit_sinusoide()
             sinusoide.regularized();
             QVector<double> X=curves[0].getLinX(1000);
             QVector<double> Y=sinusoide.at(X);
-            slot_add_data_graph(Curve2D(X,Y,QString("Fit A=%1 F=%2[Hz] P=%3[°]").arg(sinusoide.getA()).arg(sinusoide.getF()).arg(sinusoide.getP()*180/M_PI)) );
+
+            QString result_str=QString("A=%1 F=%2[Hz] P=%3[°]").arg(sinusoide.getA()).arg(sinusoide.getF()).arg(sinusoide.getP()*180/M_PI);
+
+            Curve2D fit_curve(X,Y,QString("Fit Sinusoid : %1").arg(result_str),Curve2D::GRAPH);
+
+            slot_add_data(fit_curve);
         }
     }
 }
@@ -388,7 +349,10 @@ void Viewer1D::slot_fit_sigmoid()
             QVector<double> X=curves[i].getLinX(1000);
             QVector<double> Y=sigmoid.at(X);
 
-            slot_add_data_graph(Curve2D(X,Y,QString("Fit A=%1 B=%2 C=%3 P=%4 ").arg(sigmoid.getA()).arg(sigmoid.getB()).arg(sigmoid.getC()).arg(sigmoid.getP())) );
+            QString result_str=QString("A=%1 B=%2 C=%3 P=%4 ").arg(sigmoid.getA()).arg(sigmoid.getB()).arg(sigmoid.getC()).arg(sigmoid.getP());
+            Curve2D fit_curve(X,Y,QString("Fit Sigmoid : %1").arg(result_str),Curve2D::GRAPH);
+
+            slot_add_data(fit_curve);
         }
     }
 }
@@ -413,7 +377,11 @@ void Viewer1D::slot_fit_gaussian()
             QVector<double> X=curves[i].getLinX(1000);
             QVector<double> Y=gaussian.at(X);
 
-            slot_add_data_graph(Curve2D(X,Y,QString("Fit Sigma=%1 Mean=%2 K=%3").arg(gaussian.getS()).arg(gaussian.getM()).arg(gaussian.getK())));
+            QString result_str=QString("Sigma=%1 Mean=%2 K=%3").arg(gaussian.getS()).arg(gaussian.getM()).arg(gaussian.getK());
+
+            Curve2D fit_curve(X,Y,QString("Fit Gaussian : %1").arg(result_str),Curve2D::GRAPH);
+
+            slot_add_data(fit_curve);
         }
     }
 }
@@ -461,11 +429,11 @@ void Viewer1D::slot_fit_2var_polynomial()
                 curves[0].getLinXY(100,X,Y);
                 S=curves[0].at(C,X,Y,order);
 
-                QString name=QString("Fit Polynome Coeffs=%1").arg(Curve2D::getTname(C,order));
+                QString result_str=Curve2D::getPolynome2VString(C,order);
 
-                Curve2D curve(X,Y,name);
-                curve.setScalarField(S);
-                slot_add_data_cloud(curve);
+                Curve2D fit_curve(X,Y,QString("Fit Polynome : %1").arg(result_str),Curve2D::GRAPH);
+                fit_curve.setScalarField(S);
+                slot_add_data(fit_curve);
             }
         }
         else
@@ -518,17 +486,15 @@ void Viewer1D::slot_fit_polynomial()
             for (int i=0; i<curves.size(); i++)
             {
                 Eigen::VectorXd C=curves[i].fit(order);
-
                 QVector<double> X=curves[i].getLinX(1000);
                 QVector<double> Y=curves[i].at(C,X);
 
-                QString name("Fit Polynome Coeffs=");
-                for (int k=0; k<order; k++)
-                {
-                    name+=QString("%1 ").arg(C[order-k-1]);
-                }
 
-                slot_add_data_graph(Curve2D(X,Y,name));
+                QString result_str=Curve2D::getPolynomeString(C,order);
+
+                Curve2D fit_curve(X,Y,QString("Fit Polynome : %1").arg(result_str),Curve2D::GRAPH);
+
+                slot_add_data(fit_curve);
             }
         }
     }
@@ -729,9 +695,9 @@ void Viewer1D::slot_histogram(QVector<double> data,QString name,int nbbins)
         labels[i]=delta*i+min;
     }
 
-    std::cout<<"slot_set_data_graph "<<labels.size()<<" "<<hist.size()<<std::endl;
+    Curve2D hist_curve(labels,hist,name,Curve2D::GRAPH);
 
-    slot_add_data_graph(Curve2D(labels,hist,name));
+    slot_add_data(hist_curve);
 }
 
 void Viewer1D::slot_delete()
@@ -741,17 +707,6 @@ void Viewer1D::slot_delete()
     for (int i=0; i<plottableslist.size(); i++)
     {
         this->removePlottable(plottableslist[i]);
-
-//        QCPCurve* curve=dynamic_cast<QCPCurve*>(plottableslist[i]);
-//        std::cout<<"delete :"<<curve<<std::endl;
-//        if (curve)
-//        {
-//            if (curve->getColorScale())
-//            {
-//                this->plotLayout()->simplify();//remove(curve->getColorScale());
-//                //delete curve->getColorScale();
-//            }
-//        }
         this->plotLayout()->simplify();
     }
 
@@ -829,7 +784,7 @@ QList<Curve2D> Viewer1D::getSelectedCurves()
                 y.push_back(it->value);
                 it++;
             }
-            Curve2D curve(x,y,currentcurve->name());
+            Curve2D curve(x,y,currentcurve->name(),Curve2D::CURVE);
             curve.setScalarField(currentcurve->getScalarField());
             curvelist.push_back(curve);
             id++;
@@ -846,7 +801,7 @@ QList<Curve2D> Viewer1D::getSelectedCurves()
                 y.push_back(it->value);
                 it++;
             }
-            curvelist.push_back(Curve2D(x,y,currentgraph->name()));
+            curvelist.push_back(Curve2D(x,y,currentgraph->name(),Curve2D::GRAPH));
             id++;
         }
 
@@ -930,18 +885,7 @@ void Viewer1D::slot_paste()
     {
         if (sharedBuf->getX().size()>0)
         {
-            if (sharedBuf->name().contains("Graph"))
-            {
-                slot_add_data_graph(*sharedBuf);
-            }
-            else if (sharedBuf->name().contains("Curve"))
-            {
-                slot_add_data_curve(*sharedBuf);
-            }
-            else if (sharedBuf->name().contains("Cloud"))
-            {
-                slot_add_data_cloud(*sharedBuf);
-            }
+            slot_add_data(*sharedBuf);
         }
     }
     slot_rescale();

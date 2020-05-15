@@ -4,21 +4,42 @@ Curve2D::Curve2D()
 {
     this->x.clear();
     this->y.clear();
-    this->legendname="no name";
+    this->legendname="none";
+    this->type=GRAPH;
 }
 
-Curve2D::Curve2D(const QVector<double>& y, QString legendname)
+Curve2D::Curve2D(const QVector<double>& y,
+                 QString legendname,
+                 CurveType type)
 {
     this->x=buildXQVector(y.size());
     this->y=y;
     this->legendname=legendname;
+    this->type=type;
 }
 
-Curve2D::Curve2D(const QVector<double>& x, const QVector<double>& y, QString legendname)
+Curve2D::Curve2D(const QVector<double>& x,
+                 const QVector<double>& y,
+                 QString legendname,
+                 CurveType type)
 {
     this->x=x;
     this->y=y;
     this->legendname=legendname;
+    this->type=type;
+}
+
+Curve2D::Curve2D(const QVector<double>& x,
+                 const QVector<double>& y,
+                 const QVector<double>& s,
+                 QString legendname,
+                 CurveType type)
+{
+    this->x=x;
+    this->y=y;
+    this->s=s;
+    this->legendname=legendname;
+    this->type=type;
 }
 
 QVector<double> Curve2D::getX()const
@@ -30,9 +51,9 @@ QVector<double> Curve2D::getY()const
     return y;
 }
 
-void Curve2D::setScalarField(const QVector<double>& scalarField)
+void Curve2D::setScalarField(const QVector<double>& s)
 {
-    this->s=scalarField;
+    this->s=s;
 }
 QVector<double> Curve2D::getScalarField()const
 {
@@ -120,7 +141,7 @@ VectorXd getT(double x,double y,unsigned int order)
     return V;
 }
 
-QString Curve2D::getTname(const Eigen::VectorXd& C,unsigned int order)
+QString Curve2D::getPolynome2VString(const Eigen::VectorXd& C,unsigned int order)
 {
     QString name;
     unsigned int id=0;
@@ -243,9 +264,9 @@ QVector<double> Curve2D::at(const Eigen::VectorXd& C,QVector<double> valuex,QVec
 
 Eigen::VectorXd Curve2D::fit(unsigned int order)
 {
-    Eigen::MatrixXd X=Eigen::MatrixXd::Zero(x.size(),order);
+    Eigen::MatrixXd X=Eigen::MatrixXd::Zero(x.size(),order+1);
 
-    for (unsigned int n=0; n<order; ++n)
+    for (unsigned int n=0; n<order+1; ++n)
     {
         for (int m=0; m<x.size(); ++m)
         {
@@ -337,7 +358,9 @@ Curve2D Curve2D::getFFT()
         fft_data_module[k]=20*log10(std::abs(fft_data_cplx[k]));
     }
 
-    return Curve2D(QVector<double>::fromStdVector(time),QVector<double>::fromStdVector(fft_data_module),QString("FFT %1").arg(name()));
+    return Curve2D(QVector<double>::fromStdVector(time),
+                   QVector<double>::fromStdVector(fft_data_module),
+                   QString("FFT %1").arg(getLegend()),Curve2D::GRAPH);
 }
 
 double Curve2D::at(const Eigen::VectorXd& A, double valuex)
@@ -362,19 +385,58 @@ QVector<double> Curve2D::at(const Eigen::VectorXd& A,QVector<double> values)
     return y;
 }
 
+QString Curve2D::getPolynomeString(const Eigen::VectorXd& C,unsigned int order)
+{
+    QString name;
+    for (unsigned int i=0; i<=order; i++)
+    {
+        QString monome;
+
+        if (i==1)
+        {
+            monome=QString("X");
+        }
+        else
+        {
+            monome=QString("X^%1").arg(i);
+        }
+
+        if (i==0)
+        {
+            name+= QString("%1").arg(C[i]);
+        }
+        else if (C[i]<0)
+        {
+            name+= QString("%1 %2").arg(C[i]).arg(monome);
+        }
+        else if (C[i]>0)
+        {
+            name+= QString("+ %1").arg(C[i]).arg(monome);
+        }
+    }
+    return name;
+}
+
 void Curve2D::operator=(const Curve2D& other)
 {
     this->x=other.x;
     this->y=other.y;
     this->s=other.s;
     this->legendname=other.legendname;
+    this->type=other.type;
 }
 
-QString Curve2D::name()const
+QString Curve2D::getLegend() const
 {
     return legendname;
 }
-void Curve2D::setName(QString legendname)
+
+void Curve2D::setLegend(QString legendname)
 {
     this->legendname=legendname;
+}
+
+Curve2D::CurveType Curve2D::getType()const
+{
+    return type;
 }

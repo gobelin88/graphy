@@ -142,7 +142,7 @@ ViewerScatter3D::ViewerScatter3D()
     QObject::connect(sb_zmax,SIGNAL(valueChanged(double)), modifier,SLOT(setZMax(double)));
 }
 
-void ViewerScatter3D::set_data(const CloudScalar& cloud)
+void ViewerScatter3D::setCloudScalar(const CloudScalar& cloud)
 {
     modifier->setData(cloud);
 

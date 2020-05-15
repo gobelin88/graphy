@@ -1337,6 +1337,7 @@ void MainWindow::slot_plot_cloud_3D()
         if (cloud)
         {
             view3d->setCloudScalar(cloud,View3D::PrimitiveMode::MODE_POINTS);
+            //view3d->setCloudScalar(*cloud);
         }
 
 //        mdiArea->addSubWindow(view3d->getContainer());

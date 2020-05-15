@@ -92,7 +92,7 @@ QVector<QRgb>& CloudScalar::getColors()
     return colors;
 }
 
-const QVector<QVector3D>& CloudScalar::data()const
+const QVector<QVector3D>& CloudScalar::positions()const
 {
     return pts;
 }

@@ -36,6 +36,12 @@ ScatterDataModifier::ScatterDataModifier(Q3DScatter* scatter)
     series->setMeshSmooth(m_smooth);
     m_graph->addSeries(series);
 
+    QLinearGradient fieldGradient(0, 0, 16, 1024);
+    fieldGradient.setColorAt(0.0, Qt::black);
+    fieldGradient.setColorAt(1.0, Qt::white);
+    series->setBaseGradient(fieldGradient);
+    series->setColorStyle(Q3DTheme::ColorStyleRangeGradient);
+
     scatter->setAspectRatio(1.0);
     scatter->setHorizontalAspectRatio(1.0);
 }
@@ -58,12 +64,12 @@ void ScatterDataModifier::setData(const CloudScalar& cloud)
     m_graph->axisZ()->setTitle("Z");
 
     QScatterDataArray* dataArray = new QScatterDataArray;
-    dataArray->resize(cloud.data().size());
+    dataArray->resize(cloud.positions().size());
     QScatterDataItem* ptrToDataArray = &dataArray->first();
 
-    for (int k=0; k<cloud.data().size(); k++)
+    for (int k=0; k<cloud.positions().size(); k++)
     {
-        ptrToDataArray->setPosition(cloud.data()[k]);
+        ptrToDataArray->setPosition(cloud.positions()[k]);
         ptrToDataArray++;
     }
 

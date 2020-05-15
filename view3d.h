@@ -47,30 +47,22 @@ public:
 
     View3D();
 
-    void drawLine(const QVector3D& start, const QVector3D& end, const QColor& color);
-
     void addGrid(CloudScalar* cloud,unsigned int N,QColor color);
-
     void addLabel(QString text, QVector3D coord, double scale, double anglex, double angley,double anglez);
 
     void setCloudScalar(CloudScalar* cloud, PrimitiveMode primitiveMode);
 
-    void addMultiObj(QStringList filenames, QPosAtt posatt, float scale, QList<QColor> color);
-    void addMultiObj(QStringList filenames, QPosAtt posatt,float scale,QColor color);
     void addObj(QString filename, QPosAtt posatt,float scale,QColor color);
     void setObjPosAtt(unsigned int id, const QPosAtt& T);
     void setObjColor(unsigned int id, QColor color);
 
     CustomViewContainer* getContainer();
 
-    int nbTransforms()
-    {
-        return static_cast<int>(transforms.size());
-    }
-
-
 public slots:
-    void slot_save_image();
+    void slot_saveImage();
+    void slot_setPointSize(double value);
+    void slot_setPrimitiveType(int type);
+    void slot_parameters();
 
 protected:
     void mouseMoveEvent(QMouseEvent* event);
@@ -78,12 +70,7 @@ protected:
     void mousePressEvent(QMouseEvent* event);
     void wheelEvent(QWheelEvent* event);
 
-
 private:
-    Qt3DCore::QEntity* rootEntity;
-    std::vector<Qt3DCore::QTransform*> transforms;
-    std::vector<Qt3DExtras::QPhongMaterial*> materials;
-    float xp,yp;
 
     struct CameraParams
     {
@@ -186,14 +173,31 @@ private:
 
     CameraParams* camera_params;
 
-
-
     CustomViewContainer* customContainer;
 
+    //Menu
     void createPopup();
     QMenu* popup_menu;
     QAction* actSave;
+    QAction* actParameters;
 
+    //Misc
     QString current_filename;
+    float xp,yp;
+
+    //3D
+    void init3D();
+    PrimitiveMode mode;
+    Qt3DExtras::QPerVertexColorMaterial* material;
+    Qt3DRender::QGeometryRenderer* primitives;
+    Qt3DRender::QPointSize* pointSize;
+    Qt3DCore::QEntity* primitivesEntity;
+    Qt3DRender::QGeometry* geometry;
+    Qt3DRender::QBuffer* buf;
+    Qt3DRender::QAttribute* positionAttribute;
+    Qt3DRender::QAttribute* colorsAttribute;
+    Qt3DCore::QEntity* rootEntity;
+    std::vector<Qt3DCore::QTransform*> transforms;
+    std::vector<Qt3DExtras::QPhongMaterial*> materials;
 };
 #endif // VIEW3D_H

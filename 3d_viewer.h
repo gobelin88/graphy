@@ -18,7 +18,7 @@ class ViewerScatter3D:public QWidget
 public:
     ViewerScatter3D();
 
-    void set_data(const CloudScalar& cloud);
+    void setCloudScalar(const CloudScalar& cloud);
 
 private:
     ScatterDataModifier* modifier;

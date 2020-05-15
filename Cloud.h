@@ -29,7 +29,7 @@ public:
                 QString labelS);
 
     void operator=(const CloudScalar& other);
-    const QVector<QVector3D>& data()const;
+    const QVector<QVector3D>& positions()const;
 
     QCPRange getXRange();
     QCPRange getYRange();

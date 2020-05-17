@@ -1,15 +1,15 @@
 #include "Cloud.h"
 
-CloudScalar::CloudScalar(const QVector<double>& x,
-                         const QVector<double>& y,
-                         const QVector<double>& z,
-                         QString labelX,
-                         QString labelY,
-                         QString labelZ)
+Cloud::Cloud(const Eigen::VectorXd& x,
+             const Eigen::VectorXd& y,
+             const Eigen::VectorXd& z,
+             QString labelX,
+             QString labelY,
+             QString labelZ)
 {
     for (int i=0; i<x.size(); i++)
     {
-        pts.push_back(QVector3D(x[i],y[i],z[i]));
+        pts.push_back(Eigen::Vector3d(x[i],y[i],z[i]));
     }
     scalarField.resize(x.size());
     scalarField.fill(0.0);
@@ -31,18 +31,18 @@ CloudScalar::CloudScalar(const QVector<double>& x,
     calcBarycenterAndBoundingRadius();
 }
 
-CloudScalar::CloudScalar(const QVector<double>& x,
-                         const QVector<double>& y,
-                         const QVector<double>& z,
-                         const QVector<double>& s,
-                         QString labelX,
-                         QString labelY,
-                         QString labelZ,
-                         QString labelS)
+Cloud::Cloud(const Eigen::VectorXd& x,
+             const Eigen::VectorXd& y,
+             const Eigen::VectorXd& z,
+             const Eigen::VectorXd& s,
+             QString labelX,
+             QString labelY,
+             QString labelZ,
+             QString labelS)
 {
     for (int i=0; i<x.size(); i++)
     {
-        pts.push_back(QVector3D(x[i],y[i],z[i]));
+        pts.push_back(Eigen::Vector3d(x[i],y[i],z[i]));
     }
     scalarField=s;
 
@@ -63,95 +63,107 @@ CloudScalar::CloudScalar(const QVector<double>& x,
     calcBarycenterAndBoundingRadius();
 }
 
-QCPRange CloudScalar::getRange(const QVector<double>& v)
+QCPRange Cloud::getRange(const Eigen::VectorXd& v)
 {
-    double min = *std::min_element(v.constBegin(), v.constEnd());
-    double max = *std::max_element(v.constBegin(), v.constEnd());
-    return QCPRange(min,max);
+    return QCPRange(v.minCoeff(),v.maxCoeff());
 }
 
-QCPRange CloudScalar::getXRange()
+QCPRange Cloud::getXRange()
 {
     return rangeX;
 }
-QCPRange CloudScalar::getYRange()
+QCPRange Cloud::getYRange()
 {
     return rangeY;
 }
-QCPRange CloudScalar::getZRange()
+QCPRange Cloud::getZRange()
 {
     return rangeZ;
 }
-QCPRange CloudScalar::getScalarFieldRange()
+QCPRange Cloud::getScalarFieldRange()
 {
     return rangeS;
 }
 
-QVector<QRgb>& CloudScalar::getColors()
+std::vector<QRgb>& Cloud::getColors()
 {
     return colors;
 }
 
-const QVector<QVector3D>& CloudScalar::positions()const
+const std::vector<Eigen::Vector3d>& Cloud::positions()const
 {
     return pts;
 }
 
-void CloudScalar::operator=(const CloudScalar& other)
+void Cloud::operator=(const Cloud& other)
 {
     this->pts=other.pts;
 }
 
-QVector3D CloudScalar::getBarycenter()
+Eigen::Vector3d Cloud::getBarycenter()
 {
     return Barycenter;
 }
 
-void CloudScalar::calcBarycenterAndBoundingRadius()
+void Cloud::calcBarycenterAndBoundingRadius()
 {
-    Barycenter=QVector3D(0,0,0);
-    for (int i=0; i<pts.size(); i++)
-    {
-        Barycenter+=pts[i];
-    }
-    Barycenter/=pts.size();
-
+    Barycenter=Eigen::Vector3d(0,0,0);
     boundingRadius=0.0;
 
-    for (int i=0; i<pts.size(); i++)
+    if (pts.size()>0)
     {
-        float radius=pts[i].distanceToPoint(Barycenter);
-
-        if (radius>boundingRadius)
+        for (int i=0; i<pts.size(); i++)
         {
-            boundingRadius=radius;
+            Barycenter+=pts[i];
+        }
+        Barycenter/=pts.size();
+
+
+        for (int i=0; i<pts.size(); i++)
+        {
+            double radius=(pts[i]-Barycenter).norm();
+
+            if (radius>boundingRadius)
+            {
+                boundingRadius=radius;
+            }
         }
     }
 }
 
-float CloudScalar::getBoundingRadius()
+float Cloud::getBoundingRadius()
 {
     return boundingRadius;
 }
 
-QCPColorGradient CloudScalar::getGradient()
+QCPColorGradient Cloud::getGradient()
 {
     return gradient;
 }
 
-QString CloudScalar::getLabelX()
+QString Cloud::getLabelX()
 {
     return labelX;
 }
-QString CloudScalar::getLabelY()
+QString Cloud::getLabelY()
 {
     return labelY;
 }
-QString CloudScalar::getLabelZ()
+QString Cloud::getLabelZ()
 {
     return labelZ;
 }
-QString CloudScalar::getLabelS()
+QString Cloud::getLabelS()
 {
     return labelS;
+}
+
+QVector3D Cloud::toQVec3D(Eigen::Vector3d p)
+{
+    return QVector3D(p[0],p[1],p[2]);
+}
+
+void Cloud::fit(Shape<Eigen::Vector3d>* model)
+{
+    model->fit(pts,10000);
 }

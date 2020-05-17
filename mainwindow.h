@@ -40,16 +40,11 @@ public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
-    QVector<double> getCol(int id,const TableData& table);
     QString getColName(int id);
     int getColId(QString colName);
 
 public slots:
     //underlying table
-    void addRowTable(QVector<double> dataRow);
-    void addColTable(QVector<double> dataCol);
-    void delColTable(int id);
-    void delRowTable(int id);
     void updateTable();
     void updateTable(const QModelIndex& indexA, const QModelIndex& indexB);
 
@@ -99,7 +94,7 @@ private:
     QMdiArea* mdiArea;
     QStandardItemModel* model;
     bool hasheader;
-    TableData datatable;
+    Eigen::MatrixXd datatable;
     Curve2D shared;
 
     QAction* a_newColumn;
@@ -109,8 +104,9 @@ private:
 
     //Col/row
     void setColumn(int idCol,const QVector<QString>& vec_col);
-    void addRow(const QStringList& str_row);
-    void addRow(const QVector<double>& vec_row);
+
+    void addModelRow(const QStringList& str_row);
+    void addModelRow(const QVector<double>& vec_row);
 
     //expr
     QVector<QString> evalColumn(int colId);

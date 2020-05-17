@@ -323,9 +323,9 @@ public:
         return A*std::sin(2*M_PI*F*t+P);
     }
 
-    QVector<double> at(QVector<double> f)
+    Eigen::VectorXd at(Eigen::VectorXd f)
     {
-        QVector<double> y(f.size());
+        Eigen::VectorXd y(f.size());
 
         for (int i=0; i<f.size(); i++)
         {
@@ -467,9 +467,9 @@ public:
         return ((B-A)/(1+std::exp((C-t)*P*(B-A)))+A);//
     }
 
-    QVector<double> at(QVector<double> t)
+    Eigen::VectorXd at(Eigen::VectorXd t)
     {
-        QVector<double> y(t.size());
+        Eigen::VectorXd y(t.size());
 
         for (int i=0; i<t.size(); i++)
         {
@@ -593,9 +593,9 @@ public:
         return K/(S*sqrt(2*M_PI))*exp(-0.5*I*I);
     }
 
-    QVector<double> at(QVector<double> f)
+    Eigen::VectorXd at(Eigen::VectorXd f)
     {
-        QVector<double> y(f.size());
+        Eigen::VectorXd y(f.size());
 
         for (int i=0; i<f.size(); i++)
         {
@@ -777,7 +777,7 @@ public:
         return Eigen::Vector2d(std::abs(G), std::arg(G)*180.0/M_PI );
     }
 
-    void at(QVector<double> f,QVector<double>& g,QVector<double>& p)
+    void at(Eigen::VectorXd f,Eigen::VectorXd& g,Eigen::VectorXd& p)
     {
         g.resize(f.size());
         p.resize(f.size());
@@ -999,7 +999,7 @@ public:
         return Eigen::Vector2d(std::abs(G), std::arg(G)*180.0/M_PI );
     }
 
-    void at(QVector<double> f,QVector<double>& g,QVector<double>& phi)
+    void at(Eigen::VectorXd f,Eigen::VectorXd& g,Eigen::VectorXd& phi)
     {
         g.resize(f.size());
         phi.resize(f.size());
@@ -1218,7 +1218,7 @@ public:
         return Eigen::Vector2d(std::abs(G), std::arg(G)*180.0/M_PI );
     }
 
-    void at(QVector<double> f,QVector<double>& g,QVector<double>& phi)
+    void at(Eigen::VectorXd f,Eigen::VectorXd& g,Eigen::VectorXd& phi)
     {
         g.resize(f.size());
         phi.resize(f.size());
@@ -1377,7 +1377,7 @@ public:
         return Eigen::Vector2d(std::abs(G), std::arg(G)*180.0/M_PI );
     }
 
-    void at(QVector<double> f,QVector<double>& g,QVector<double>& p)
+    void at(Eigen::VectorXd f,Eigen::VectorXd& g,Eigen::VectorXd& p)
     {
         g.resize(f.size());
         p.resize(f.size());
@@ -1566,7 +1566,7 @@ public:
         return Eigen::Vector2d(std::abs(G), std::arg(G)*180.0/M_PI );
     }
 
-    void at(QVector<double> f,QVector<double>& g,QVector<double>& p)
+    void at(Eigen::VectorXd f,Eigen::VectorXd& g,Eigen::VectorXd& p)
     {
         g.resize(f.size());
         p.resize(f.size());

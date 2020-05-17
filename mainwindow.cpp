@@ -179,7 +179,7 @@ void MainWindow::direct_open(QString filename)
             else
             {
                 QStringList dataToken = extractToken(dataLine);
-                addRow(dataToken);
+                addModelRow(dataToken);
                 lineindex++;
             }
         }
@@ -535,10 +535,9 @@ void MainWindow::slot_newRow()
     }
     model->appendRow(items);
 
-    std::cout<<datatable.size()<<" "<<datatable[0].size()<<std::endl;
-    addRowTable(QVector<double>(items.size(),0));
 
-    std::cout<<datatable.size()<<" "<<datatable[0].size()<<std::endl;
+    addRow(datatable,Eigen::VectorXd::Zero(items.size()));
+
 
     table->setModel(model);
 }
@@ -586,7 +585,7 @@ void MainWindow::slot_delete()
             int index=id_list_cols[i].column()-i;
             registerDelVariable(variables_names[index]);
             model->removeColumn(index);
-            delColTable(index);
+            removeColumn(datatable,index);
         }
         table->setModel(model);
     }
@@ -597,7 +596,7 @@ void MainWindow::slot_delete()
         {
             int index=id_list_rows[i].row()-i;
             model->removeRow(index);
-            delRowTable(index);
+            removeRow(datatable,index);
         }
         table->setModel(model);
     }
@@ -636,9 +635,9 @@ QVector<QString> MainWindow::evalColumn(int colId)
             {
                 activeRow=i;
                 //std::cout<<float(i)/nbRows<<std::endl;
-                for (int j=0; j<datatable.size(); j++)
+                for (int j=0; j<datatable.cols(); j++)
                 {
-                    *(variables.begin()+j)=datatable[j][i];
+                    *(variables.begin()+j)=datatable(i,j);
                 }
                 colResults[i]=QString::number(compiled_expression.value());
             }
@@ -649,9 +648,9 @@ QVector<QString> MainWindow::evalColumn(int colId)
             {
                 activeRow=i;
                 //std::cout<<float(i)/nbRows<<std::endl;
-                for (int j=0; j<datatable.size(); j++)
+                for (int j=0; j<datatable.cols(); j++)
                 {
-                    *(variables.begin()+j)=datatable[j][i];
+                    *(variables.begin()+j)=datatable(i,j);
                 }
                 custom_exp_parse(variables_expressions[colId],i,colResults[i]);
             }
@@ -836,9 +835,9 @@ bool MainWindow::custom_exp_parse(QString expression,int currentRow,QString& res
     return false;
 }
 
-QVector<double> toDouble(QVector<QString> vec_col_str)
+Eigen::VectorXd toDouble(QVector<QString> vec_col_str)
 {
-    QVector<double> vec_col(vec_col_str.size());
+    Eigen::VectorXd vec_col(vec_col_str.size());
 
     for (int i=0; i<vec_col.size(); i++)
     {
@@ -867,7 +866,7 @@ void MainWindow::setColumn(int idCol,const QVector<QString>& vec_col)
                     model->item(i,idCol)->setText(vec_col[i]);
                 }
             }
-            datatable[idCol]=toDouble(vec_col);
+            datatable.col(idCol)=toDouble(vec_col);
         }
         std::cout<<"setColumn 2 end"<<std::endl;
     }
@@ -880,7 +879,7 @@ void MainWindow::setColumn(int idCol,const QVector<QString>& vec_col)
             {
                 items.append(new QStandardItem());
             }
-            datatable.push_back(QVector<double>(nbRows,0.0));
+            addColumn(datatable,Eigen::VectorXd::Zero(nbRows));
             model->appendColumn(items);
         }
         else
@@ -889,7 +888,7 @@ void MainWindow::setColumn(int idCol,const QVector<QString>& vec_col)
             {
                 items.append(new QStandardItem(vec_col[i]));
             }
-            datatable.push_back(toDouble(vec_col));
+            addColumn(datatable,toDouble(vec_col));
             model->appendColumn(items);
         }
     }
@@ -898,7 +897,7 @@ void MainWindow::setColumn(int idCol,const QVector<QString>& vec_col)
     std::cout<<"setColumn end "<<std::endl;
 }
 
-void MainWindow::addRow(const QStringList& str_row)
+void MainWindow::addModelRow(const QStringList& str_row)
 {
     QList<QStandardItem*> items;
     items.reserve(str_row.size());
@@ -909,7 +908,7 @@ void MainWindow::addRow(const QStringList& str_row)
     model->appendRow(items);
 }
 
-void MainWindow::addRow(const QVector<double>& vec_row)
+void MainWindow::addModelRow(const QVector<double>& vec_row)
 {
     QList<QStandardItem*> items;
     items.reserve(vec_row.size());
@@ -966,46 +965,19 @@ void MainWindow::resizeEvent(QResizeEvent* event)
     table->show();
 }
 
-void MainWindow::addRowTable(QVector<double> dataRow)
-{
-    for (int i=0; i<datatable.size(); i++)
-    {
-        datatable[i].push_back(dataRow[i]);
-    }
-}
-
-void MainWindow::delColTable(int id)
-{
-    datatable.removeAt(id);
-}
-
-void MainWindow::delRowTable(int id)
-{
-    for (int i=0; i<datatable.size(); i++)
-    {
-        datatable[i].removeAt(id);
-    }
-}
-
-void MainWindow::addColTable(QVector<double> dataCol)
-{
-    datatable.push_back(dataCol);
-}
-
 void MainWindow::updateTable()
 {
-    datatable.clear();
     int rows = table->model()->rowCount();
     int columns = table->model()->columnCount();
 
+    datatable=Eigen::MatrixXd(rows,columns);
+
     for (int j = 0; j < columns; j++)
     {
-        QVector<double> coli;
         for (int i = 0; i < rows; i++)
         {
-            coli.push_back( table->model()->data(table->model()->index(i,j)).toDouble() );
+            datatable(i,j)=table->model()->data(table->model()->index(i,j)).toDouble();
         }
-        datatable.push_back(coli);
     }
 }
 
@@ -1018,12 +990,9 @@ void MainWindow::updateTable(const QModelIndex& indexA,const QModelIndex& indexB
     double value=table->model()->data(table->model()->index(i,j)).toDouble();
     std::cout<<"updateTable at ("<<i<<" "<<j<<")="<<value<<std::endl;
 
-    if (j<datatable.size())
+    if (i<datatable.rows() && j<datatable.cols())
     {
-        if (i<datatable[j].size())
-        {
-            datatable[j][i]=value;
-        }
+        datatable(i,j)=value;
     }
     std::cout<<"updateTable end"<<std::endl;
 }
@@ -1056,44 +1025,6 @@ int MainWindow::getColId(QString colName)
     return -1;
 }
 
-QVector<double> MainWindow::getCol(int id,const TableData& tableData)
-{
-    if (tableData.size()>id)
-    {
-        return tableData[id];
-    }
-    else
-    {
-        std::cout<<id<<" "<<tableData.size()<<std::endl;
-        return QVector<double>();
-    }
-}
-
-double getMin(QVector<double> data)
-{
-    double min=DBL_MAX;
-    foreach (double d,data)
-    {
-        if (d<min)
-        {
-            min=d;
-        }
-    }
-    return min;
-}
-double getMax(QVector<double> data)
-{
-    double max=DBL_MIN;
-    foreach (double d,data)
-    {
-        if (d>max)
-        {
-            max=d;
-        }
-    }
-    return max;
-}
-
 void MainWindow::slot_plot_y()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
@@ -1105,7 +1036,7 @@ void MainWindow::slot_plot_y()
 
         for (int k=0; k<id_list.size(); k++)
         {
-            QVector<double> data_y=getCol(id_list[k].column(),datatable);
+            Eigen::VectorXd data_y=datatable.col(id_list[k].column()); //getCol(id_list[k].column(),datatable);
 
             if (data_y.size()>0)
             {
@@ -1140,9 +1071,8 @@ void MainWindow::slot_plot_graph_xy()
 
         for (int k=0; k<id_list.size(); k+=2)
         {
-
-            QVector<double> data_x=getCol(id_list[k  ].column(),datatable);
-            QVector<double> data_y=getCol(id_list[k+1].column(),datatable);
+            Eigen::VectorXd data_x=datatable.col(id_list[k  ].column());
+            Eigen::VectorXd data_y=datatable.col(id_list[k+1].column());
 
             if (data_x.size()>0 && data_y.size()>0)
             {
@@ -1176,9 +1106,8 @@ void MainWindow::slot_plot_curve_xy()
 
         for (int k=0; k<id_list.size(); k+=2)
         {
-
-            QVector<double> data_x=getCol(id_list[k  ].column(),datatable);
-            QVector<double> data_y=getCol(id_list[k+1].column(),datatable);
+            Eigen::VectorXd data_x=datatable.col(id_list[k  ].column());
+            Eigen::VectorXd data_y=datatable.col(id_list[k+1].column());
 
             if (data_x.size()>0 && data_y.size()>0)
             {
@@ -1212,9 +1141,9 @@ void MainWindow::slot_plot_cloud_2D()
 
         for (int k=0; k<id_list.size(); k+=3)
         {
-            QVector<double> data_x=getCol(id_list[k  ].column(),datatable);
-            QVector<double> data_y=getCol(id_list[k+1].column(),datatable);
-            QVector<double> data_s=getCol(id_list[k+2].column(),datatable);
+            Eigen::VectorXd data_x=datatable.col(id_list[k  ].column());
+            Eigen::VectorXd data_y=datatable.col(id_list[k+1].column());
+            Eigen::VectorXd data_s=datatable.col(id_list[k+2].column());
 
             if (data_x.size()>0 && data_y.size()>0)
             {
@@ -1245,9 +1174,9 @@ void MainWindow::slot_plot_map_2D()
 
     if (id_list.size()==3)
     {
-        QVector<double> data_x=getCol(id_list[0].column(),datatable);
-        QVector<double> data_y=getCol(id_list[1].column(),datatable);
-        QVector<double> data_z=getCol(id_list[2].column(),datatable);
+        Eigen::VectorXd data_x=datatable.col(id_list[0].column());
+        Eigen::VectorXd data_y=datatable.col(id_list[1].column());
+        Eigen::VectorXd data_z=datatable.col(id_list[2].column());
 
         if (data_x.size()>0 && data_y.size()>0 && data_z.size()>0)
         {
@@ -1282,7 +1211,7 @@ void MainWindow::slot_plot_fft()
 
         for (int k=0; k<id_list.size(); k++)
         {
-            QVector<double> data_y=getCol(id_list[k].column(),datatable);
+            Eigen::VectorXd data_y=datatable.col(id_list[k  ].column());
             Curve2D curve(data_y,QString("%1").arg(getColName(id_list[k  ].column())),Curve2D::GRAPH);
 
             if (data_y.size()>0)
@@ -1310,28 +1239,28 @@ void MainWindow::slot_plot_cloud_3D()
     if (id_list.size()==3 || id_list.size()==4)
     {
         View3D* view3d=new View3D;
-        QVector<double> data_x=getCol(id_list[0].column(),datatable);
-        QVector<double> data_y=getCol(id_list[1].column(),datatable);
-        QVector<double> data_z=getCol(id_list[2].column(),datatable);
+        Eigen::VectorXd data_x=datatable.col(id_list[0].column());
+        Eigen::VectorXd data_y=datatable.col(id_list[1].column());
+        Eigen::VectorXd data_z=datatable.col(id_list[2].column());
 
-        CloudScalar* cloud=nullptr;
+        Cloud* cloud=nullptr;
 
         if (id_list.size()==3)
         {
-            cloud=new CloudScalar(data_x,data_y,data_z,
-                                  getColName(id_list[0].column()),
-                                  getColName(id_list[1].column()),
-                                  getColName(id_list[2].column()));
+            cloud=new Cloud(data_x,data_y,data_z,
+                            getColName(id_list[0].column()),
+                            getColName(id_list[1].column()),
+                            getColName(id_list[2].column()));
 
         }
         else if (id_list.size()==4)
         {
-            QVector<double> data_s=getCol(id_list[3].column(),datatable);
-            cloud=new CloudScalar(data_x,data_y,data_z,data_s,
-                                  getColName(id_list[0].column()),
-                                  getColName(id_list[1].column()),
-                                  getColName(id_list[2].column()),
-                                  getColName(id_list[3].column()));
+            Eigen::VectorXd data_s=datatable.col(id_list[3].column());
+            cloud=new Cloud(data_x,data_y,data_z,data_s,
+                            getColName(id_list[0].column()),
+                            getColName(id_list[1].column()),
+                            getColName(id_list[2].column()),
+                            getColName(id_list[3].column()));
         }
 
         if (cloud)
@@ -1363,10 +1292,9 @@ void MainWindow::slot_plot_gain_phase()
 
         for (int k=0; k<id_list.size(); k+=3)
         {
-
-            QVector<double> data_f=getCol(id_list[k  ].column(),datatable);
-            QVector<double> data_module=getCol(id_list[k+1].column(),datatable);
-            QVector<double> data_phase=getCol(id_list[k+2].column(),datatable);
+            Eigen::VectorXd data_f=datatable.col(id_list[k].column());
+            Eigen::VectorXd data_module=datatable.col(id_list[k+1].column());
+            Eigen::VectorXd data_phase=datatable.col(id_list[k+2].column());
 
             if (data_f.size()>0 && data_module.size()>0 && data_phase.size()>0)
             {
@@ -1400,7 +1328,7 @@ void MainWindow::slot_plot_histogram()
 
         for (int k=0; k<id_list.size(); k++)
         {
-            QVector<double> data_y=getCol(id_list[k].column(),datatable);
+            Eigen::VectorXd data_y=datatable.col(id_list[k].column());
 
             if (data_y.size()>0)
             {

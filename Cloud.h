@@ -4,40 +4,41 @@
 #include <Eigen/Dense>
 
 #include "qcustomplot.h"
+#include "ShapeFit.h"
 
 #ifndef CLOUD_H
 #define CLOUD_H
 
 /////////////////////////////////////////////////////////////////////////////////////////////
-class CloudScalar
+class Cloud
 {
 public:
-    CloudScalar(const QVector<double>& x,
-                const QVector<double>& y,
-                const QVector<double>& z,
-                QString labelX,
-                QString labelY,
-                QString labelZ);
+    Cloud(const Eigen::VectorXd& x,
+          const Eigen::VectorXd& y,
+          const Eigen::VectorXd& z,
+          QString labelX,
+          QString labelY,
+          QString labelZ);
 
-    CloudScalar(const QVector<double>& x,
-                const QVector<double>& y,
-                const QVector<double>& z,
-                const QVector<double>& scalarField,
-                QString labelX,
-                QString labelY,
-                QString labelZ,
-                QString labelS);
+    Cloud(const Eigen::VectorXd& x,
+          const Eigen::VectorXd& y,
+          const Eigen::VectorXd& z,
+          const Eigen::VectorXd& scalarField,
+          QString labelX,
+          QString labelY,
+          QString labelZ,
+          QString labelS);
 
-    void operator=(const CloudScalar& other);
-    const QVector<QVector3D>& positions()const;
+    void operator=(const Cloud& other);
+    const std::vector<Eigen::Vector3d>& positions()const;
 
     QCPRange getXRange();
     QCPRange getYRange();
     QCPRange getZRange();
     QCPRange getScalarFieldRange();
-    QVector<QRgb>& getColors();
+    std::vector<QRgb>& getColors();
 
-    QVector3D getBarycenter();
+    Eigen::Vector3d getBarycenter();
     float getBoundingRadius();
 
     QCPColorGradient getGradient();
@@ -47,14 +48,19 @@ public:
     QString getLabelZ();
     QString getLabelS();
 
+    static QVector3D toQVec3D(Eigen::Vector3d p);
+
+    //Fit a model
+    void fit(Shape<Eigen::Vector3d>* model);
+
 private:
     void calcBarycenterAndBoundingRadius();
 
-    QCPRange getRange(const QVector<double>& v);
+    QCPRange getRange(const Eigen::VectorXd& v);
 
-    QVector<QVector3D> pts;
-    QVector<double> scalarField;
-    QVector<QRgb> colors;
+    std::vector<Eigen::Vector3d> pts;
+    Eigen::VectorXd scalarField;
+    std::vector<QRgb> colors;
 
     QCPColorGradient gradient;
 
@@ -64,8 +70,8 @@ private:
     QString labelZ ;
     QString labelS ;
 
-    QVector3D Barycenter;
-    float boundingRadius;
+    Eigen::Vector3d Barycenter;
+    double boundingRadius;
 };
 
 #endif

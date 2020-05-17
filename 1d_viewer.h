@@ -4,6 +4,7 @@
 
 #include "box.h"
 #include "curve2d.h"
+#include "tabledata.h"
 
 #ifndef VIEWER1D_H
 #define VIEWER1D_H
@@ -41,7 +42,7 @@ public slots:
     void slot_show_legend(bool value);
     void slot_top_legend(bool value);
     void slot_left_legend(bool value);
-    void slot_histogram(QVector<double> data,QString name,int nbbins);
+    void slot_histogram(Eigen::VectorXd data, QString name, int nbbins);
     void slot_copy();
     void slot_paste();
     void slot_statistiques();

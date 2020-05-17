@@ -15,13 +15,20 @@ enum InterpolationMode
     MODE_WEIGHTED
 };
 
-typedef QVector< QVector<double> > TableData;
+void removeRow(Eigen::MatrixXd& matrix, unsigned int rowToRemove);
+void removeColumn(Eigen::MatrixXd& matrix, unsigned int colToRemove);
+void addRow(Eigen::MatrixXd& matrix, Eigen::VectorXd rowToAdd);
+void addColumn(Eigen::MatrixXd& matrix, Eigen::VectorXd colToAdd);
 
-void create(TableData& data, uint nbC, uint nbL);
+void interpolate(const Eigen::MatrixXd& data,const BoxPlot& box,QCPColorMap* map,size_t knn,InterpolationMode mode);
+double getMin(const Eigen::MatrixXd& data,int id);
+double getMax(const Eigen::MatrixXd& data,int id);
+QCPRange getRange(const Eigen::MatrixXd& data,int id);
 
-void interpolate(const TableData& data,const BoxPlot& box,QCPColorMap* map,size_t knn,InterpolationMode mode);
-double getMin(const TableData& data,int id);
-double getMax(const TableData& data,int id);
-QCPRange getRange(const TableData& data,int id);
+std::vector<double> toStdVector(const Eigen::VectorXd& v);
+QVector<double> toQVector(const Eigen::VectorXd& v);
+
+Eigen::VectorXd fromStdVector(const std::vector<double>& v_std);
+Eigen::VectorXd fromQVector(const QVector<double>& v);
 
 #endif // TABLEDATA_H

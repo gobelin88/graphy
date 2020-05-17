@@ -18,7 +18,7 @@ public:
     explicit SurfaceDataModifier(Q3DSurface* scatter);
     ~SurfaceDataModifier();
 
-    void setData(const CloudScalar& cloud);
+    void setData(const Cloud& cloud);
 
     void changeStyle();
     void changePresetCamera();

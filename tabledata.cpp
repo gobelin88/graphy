@@ -1,21 +1,63 @@
 #include "tabledata.h"
 
-void create(TableData& data,uint nbC,uint nbL)
+void create(Eigen::MatrixXd& data, uint nbL,uint nbC)
 {
-    data=QVector< QVector<double> > (int(nbC),QVector<double>(int(nbL)));
+    data=Eigen::MatrixXd(nbL,nbC);
 }
 
-void interpolate(const TableData& data,const BoxPlot& box,QCPColorMap* map,size_t knn,InterpolationMode mode)
+void removeRow(Eigen::MatrixXd& matrix, unsigned int rowToRemove)
 {
-    Eigen::MatrixXd datapoints(2,data[box.idX].size());
+    unsigned int numRows = matrix.rows()-1;
+    unsigned int numCols = matrix.cols();
 
-    for (int i=0; i<data[box.idX].size(); i++)
+    if ( rowToRemove < numRows )
     {
-        datapoints(0,i)=data[box.idX][i];
-        datapoints(1,i)=data[box.idY][i];
+        matrix.block(rowToRemove,0,numRows-rowToRemove,numCols) = matrix.block(rowToRemove+1,0,numRows-rowToRemove,numCols);
     }
 
-    std::cout<<"data[box.idX].size()="<<data[box.idX].size()<<std::endl;
+    matrix.conservativeResize(numRows,numCols);
+}
+
+void removeColumn(Eigen::MatrixXd& matrix, unsigned int colToRemove)
+{
+    unsigned int numRows = matrix.rows();
+    unsigned int numCols = matrix.cols()-1;
+
+    if ( colToRemove < numCols )
+    {
+        matrix.block(0,colToRemove,numRows,numCols-colToRemove) = matrix.block(0,colToRemove+1,numRows,numCols-colToRemove);
+    }
+
+    matrix.conservativeResize(numRows,numCols);
+}
+
+void addRow(Eigen::MatrixXd& matrix, Eigen::VectorXd rowToAdd)
+{
+    unsigned int numRows = matrix.rows()+1;
+    unsigned int numCols = matrix.cols();
+    matrix.conservativeResize(numRows,numCols);
+    matrix.row(numRows-1)=rowToAdd;
+}
+
+void addColumn(Eigen::MatrixXd& matrix, Eigen::VectorXd colToAdd)
+{
+    unsigned int numRows = matrix.rows();
+    unsigned int numCols = matrix.cols()+1;
+    matrix.conservativeResize(numRows,numCols);
+    matrix.col(numCols-1)=colToAdd;
+}
+
+void interpolate(const Eigen::MatrixXd& data,const BoxPlot& box,QCPColorMap* map,size_t knn,InterpolationMode mode)
+{
+    Eigen::MatrixXd datapoints(2,data.col(box.idX).size());
+
+    for (int i=0; i<datapoints.cols(); i++)
+    {
+        datapoints(0,i)=data.col(box.idX)[i];
+        datapoints(1,i)=data.col(box.idY)[i];
+    }
+
+    std::cout<<"data[box.idX].size()="<<datapoints.cols()<<std::endl;
     std::cout<<datapoints.transpose()<<std::endl;
 
     kdt::KDTreed kdtree(datapoints);
@@ -40,7 +82,7 @@ void interpolate(const TableData& data,const BoxPlot& box,QCPColorMap* map,size_
                 {
                     if (idx(k,0)>=0)
                     {
-                        value+=(1.0/dists(k,0))* data[box.idZ][idx(k,0)];
+                        value+=(1.0/dists(k,0))* data.col(box.idZ)[idx(k,0)];
                         weight_sum+=(1.0/dists(k,0));
                     }
                 }
@@ -51,7 +93,7 @@ void interpolate(const TableData& data,const BoxPlot& box,QCPColorMap* map,size_
                 kdtree.query(queryPoints, 1, idx, dists);
                 if (idx(0,0)>=0)
                 {
-                    value=data[box.idZ][idx(0,0)];
+                    value=data.col(box.idZ)[idx(0,0)];
                 }
             }
 
@@ -60,19 +102,47 @@ void interpolate(const TableData& data,const BoxPlot& box,QCPColorMap* map,size_
     }
 }
 
-double getMin(const TableData& data,int id)
+double getMin(const Eigen::MatrixXd& data,int id)
 {
-    return  *std::min_element(data[id].constBegin(), data[id].constEnd());
+    return  data.col(id).minCoeff();
 }
 
-double getMax(const TableData& data,int id)
+double getMax(const Eigen::MatrixXd& data,int id)
 {
-    return  *std::max_element(data[id].constBegin(), data[id].constEnd());
+    return  data.col(id).maxCoeff();
 }
 
-QCPRange getRange(const TableData& data,int id)
+QCPRange getRange(const Eigen::MatrixXd& data, int id)
 {
     std::cout<<getMin(data,id)<<" "<<getMax(data,id)<<std::endl;
 
     return  QCPRange(getMin(data,id),getMax(data,id));
+}
+
+std::vector<double> toStdVector(const Eigen::VectorXd& v)
+{
+    std::vector<double> v_std(v.size());
+    memcpy(v_std.data(),v.data(),v_std.size()*sizeof(double));
+    return v_std;
+}
+
+QVector<double> toQVector(const Eigen::VectorXd& v)
+{
+    QVector<double> v_q(v.size());
+    memcpy(v_q.data(),v.data(),v_q.size()*sizeof(double));
+    return v_q;
+}
+
+Eigen::VectorXd fromStdVector(const std::vector<double>& v_std)
+{
+    Eigen::VectorXd v(v_std.size());
+    memcpy(v.data(),v_std.data(),v.size()*sizeof(double));
+    return v;
+}
+
+Eigen::VectorXd fromQVector(const QVector<double>& v_q)
+{
+    Eigen::VectorXd v(v_q.size());
+    memcpy(v.data(),v_q.data(),v.size()*sizeof(double));
+    return v;
 }

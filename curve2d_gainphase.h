@@ -4,27 +4,52 @@
 #include <Eigen/Dense>
 #include <QVector>
 #include "ShapeFit.h"
+#include "tabledata.h"
 
 class Curve2D_GainPhase
 {
 public:
     Curve2D_GainPhase();
-    Curve2D_GainPhase(const QVector<double> & f,const QVector<double> & g,const QVector<double> & p,QString legendpname="no name",QString legendgname="no name");
+    Curve2D_GainPhase(const Eigen::VectorXd& f,
+                      const Eigen::VectorXd& g,
+                      const Eigen::VectorXd& p,
+                      QString legendpname="no name",
+                      QString legendgname="no name");
 
-    QVector<double> getF()const {return f;}
-    QVector<double> getG()const {return g;}
-    QVector<double> getP()const {return p;}
+    Eigen::VectorXd getF()const
+    {
+        return f;
+    }
+    Eigen::VectorXd getG()const
+    {
+        return g;
+    }
+    Eigen::VectorXd getP()const
+    {
+        return p;
+    }
 
-    QVector<double> getLinF(int n)const
+    QVector<double> getQF()const
+    {
+        return toQVector(f);
+    }
+    QVector<double> getQG()const
+    {
+        return toQVector(g);
+    }
+    QVector<double> getQP()const
+    {
+        return toQVector(p);
+    }
+
+    Eigen::VectorXd getLinF(int n)const
     {
         double min=f[0];
         double max=f[f.size()-1];
 
-        std::cout<<max<<" "<<min<<std::endl;
+        Eigen::VectorXd flin(n);
 
-        QVector<double> flin(n);
-
-        for(int i=0;i<n;i++)
+        for (int i=0; i<n; i++)
         {
             flin[i]=i*(max-min)/n+min;
         }
@@ -32,22 +57,34 @@ public:
         return flin;
     }
 
-    void fit(Shape<Eigen::Vector3d> * model);
+    void fit(Shape<Eigen::Vector3d>* model);
 
-    QVector<double> at(const Eigen::VectorXd & A,QVector<double> values);
+    QVector<double> at(const Eigen::VectorXd& A,QVector<double> values);
 
-    QString gname()const {return legendgname;}
-    void setgName(QString legendgname){this->legendgname=legendgname;}
+    QString gname()const
+    {
+        return legendgname;
+    }
+    void setgName(QString legendgname)
+    {
+        this->legendgname=legendgname;
+    }
 
-    QString pname()const {return legendpname;}
-    void setpName(QString legendpname){this->legendpname=legendpname;}
+    QString pname()const
+    {
+        return legendpname;
+    }
+    void setpName(QString legendpname)
+    {
+        this->legendpname=legendpname;
+    }
 
-    void operator=(const Curve2D_GainPhase & other);
+    void operator=(const Curve2D_GainPhase& other);
 
-    static QVector<double> buildFQVector(unsigned int sz);
+    static Eigen::VectorXd buildFQVector(unsigned int sz);
 
 private:
-    QVector<double> f,g,p;
+    Eigen::VectorXd f,g,p;
     QString legendgname;
     QString legendpname;
 };

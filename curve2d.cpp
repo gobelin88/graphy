@@ -2,24 +2,22 @@
 
 Curve2D::Curve2D()
 {
-    this->x.clear();
-    this->y.clear();
     this->legendname="none";
     this->type=GRAPH;
 }
 
-Curve2D::Curve2D(const QVector<double>& y,
+Curve2D::Curve2D(const Eigen::VectorXd& y,
                  QString legendname,
                  CurveType type)
 {
-    this->x=buildXQVector(y.size());
+    this->x=buildX(y.size());
     this->y=y;
     this->legendname=legendname;
     this->type=type;
 }
 
-Curve2D::Curve2D(const QVector<double>& x,
-                 const QVector<double>& y,
+Curve2D::Curve2D(const Eigen::VectorXd& x,
+                 const Eigen::VectorXd& y,
                  QString legendname,
                  CurveType type)
 {
@@ -29,9 +27,9 @@ Curve2D::Curve2D(const QVector<double>& x,
     this->type=type;
 }
 
-Curve2D::Curve2D(const QVector<double>& x,
-                 const QVector<double>& y,
-                 const QVector<double>& s,
+Curve2D::Curve2D(const Eigen::VectorXd& x,
+                 const Eigen::VectorXd& y,
+                 const Eigen::VectorXd& s,
                  QString legendname,
                  CurveType type)
 {
@@ -42,40 +40,53 @@ Curve2D::Curve2D(const QVector<double>& x,
     this->type=type;
 }
 
-QVector<double> Curve2D::getX()const
+Eigen::VectorXd Curve2D::getX()const
 {
     return x;
 }
-QVector<double> Curve2D::getY()const
+Eigen::VectorXd Curve2D::getY()const
 {
     return y;
 }
+QVector<double> Curve2D::getQX()const
+{
+    return toQVector(x);
+}
 
-void Curve2D::setScalarField(const QVector<double>& s)
+QVector<double> Curve2D::getQY()const
+{
+    return toQVector(y);
+}
+
+void Curve2D::setScalarField(const Eigen::VectorXd& s)
 {
     this->s=s;
 }
-QVector<double> Curve2D::getScalarField()const
+Eigen::VectorXd Curve2D::getScalarField()const
 {
     return s;
 }
-
-QVector<double> Curve2D::buildXQVector(int sz)
+QVector<double> Curve2D::getQScalarField()const
 {
-    QVector<double> qv(sz,0.0);
+    return toQVector(s);
+}
+
+Eigen::VectorXd Curve2D::buildX(int sz)
+{
+    Eigen::VectorXd qv(sz);
     for (int i=0; i<sz; i++)
     {
-        qv[i]=(double)i;
+        qv[i]=static_cast<double>(i);
     }
     return qv;
 }
 
-QVector<double> Curve2D::getLinX(int n)
+Eigen::VectorXd Curve2D::getLinX(int n)
 {
-    double min=*std::min_element(x.constBegin(), x.constEnd());
-    double max=*std::max_element(x.constBegin(), x.constEnd());
+    double min=x.minCoeff();
+    double max=x.maxCoeff();
 
-    QVector<double> xlin(n);
+    Eigen::VectorXd xlin(n);
 
     for (int i=0; i<n; i++)
     {
@@ -85,12 +96,12 @@ QVector<double> Curve2D::getLinX(int n)
     return xlin;
 }
 
-void Curve2D::getLinXY(int n,QVector<double>& valuesX,QVector<double>& valuesY)
+void Curve2D::getLinXY(int n,Eigen::VectorXd& valuesX,Eigen::VectorXd& valuesY)
 {
-    double minX=*std::min_element(x.constBegin(), x.constEnd());
-    double maxX=*std::max_element(x.constBegin(), x.constEnd());
-    double minY=*std::min_element(x.constBegin(), x.constEnd());
-    double maxY=*std::max_element(x.constBegin(), x.constEnd());
+    double minX=x.minCoeff();
+    double maxX=x.maxCoeff();
+    double minY=y.minCoeff();
+    double maxY=y.maxCoeff();
 
     valuesX.resize(n*n);
     valuesY.resize(n*n);
@@ -250,9 +261,9 @@ double Curve2D::at(const Eigen::VectorXd& C,double valuex,double valuey,unsigned
     return C.dot(getT(valuex,valuey,order));
 }
 
-QVector<double> Curve2D::at(const Eigen::VectorXd& C,QVector<double> valuex,QVector<double> valuey,unsigned int order)
+Eigen::VectorXd Curve2D::at(const Eigen::VectorXd& C,Eigen::VectorXd valuex,Eigen::VectorXd valuey,unsigned int order)
 {
-    QVector<double> valuesScalar(valuex.size());
+    Eigen::VectorXd valuesScalar(valuex.size());
 
     for (int i=0; i<valuex.size(); i++)
     {
@@ -324,12 +335,14 @@ Eigen::Vector2d Curve2D::getBarycenter()
 
 uint Curve2D::getMaxIndex()
 {
-    return std::distance(y.constBegin(),std::max_element(y.constBegin(), y.constEnd()));
+    uint index;
+    y.maxCoeff(&index);
+    return index;
 }
 
 Curve2D Curve2D::getFFT()
 {
-    std::vector<double> data_y=y.toStdVector();
+    std::vector<double> data_y=toStdVector(y);
     std::vector< double > time=std::vector< double >(data_y.size()/2, 0);
     for (unsigned int i=0; i<time.size(); i++)
     {
@@ -358,8 +371,8 @@ Curve2D Curve2D::getFFT()
         fft_data_module[k]=20*log10(std::abs(fft_data_cplx[k]));
     }
 
-    return Curve2D(QVector<double>::fromStdVector(time),
-                   QVector<double>::fromStdVector(fft_data_module),
+    return Curve2D(fromStdVector(time),
+                   fromStdVector(fft_data_module),
                    QString("FFT %1").arg(getLegend()),Curve2D::GRAPH);
 }
 
@@ -375,9 +388,9 @@ double Curve2D::at(const Eigen::VectorXd& A, double valuex)
     return val;
 }
 
-QVector<double> Curve2D::at(const Eigen::VectorXd& A,QVector<double> values)
+Eigen::VectorXd Curve2D::at(const Eigen::VectorXd& A, Eigen::VectorXd values)
 {
-    QVector<double> y(values.size());
+    Eigen::VectorXd y(values.size());
     for (int i=0; i<y.size(); i++)
     {
         y[i]=at(A,values[i]);

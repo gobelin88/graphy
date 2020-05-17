@@ -93,10 +93,10 @@ void Viewer1DCPLX::slot_add_data_graph(const Curve2D_GainPhase& curve)
     std::cout<<"slot_add_data_graph1"<<std::endl;
 
     newGraph(curve.gname());
-    graph()->setData(curve.getF(), curve.getG());
+    graph()->setData(curve.getQF(), curve.getQG());
 
     newSubGraph(curve.pname());
-    graph()->setData(curve.getF(), curve.getP());
+    graph()->setData(curve.getQF(), curve.getQP());
 
     rescaleAxes();
     replot();
@@ -275,7 +275,7 @@ void Viewer1DCPLX::slot_fit_ralpcprb()
         {
             curves[i].fit(&rlpc_cplx);
 
-            QVector<double> F=curves[i].getLinF(1000),G,P;
+            Eigen::VectorXd F=curves[i].getLinF(1000),G,P;
             rlpc_cplx.at(F,G,P);
 
             slot_add_data_graph(Curve2D_GainPhase(F,G,P,
@@ -304,8 +304,8 @@ void Viewer1DCPLX::slot_fit_rlpc()
         for (int i=0; i<curves.size(); i++)
         {
             curves[i].fit(&rlpc_cplx);
-            QVector<double> F=curves[i].getLinF(1000);
-            QVector<double> G,P;
+            Eigen::VectorXd F=curves[i].getLinF(1000);
+            Eigen::VectorXd G,P;
             rlpc_cplx.at(F,G,P);
 
             slot_add_data_graph(Curve2D_GainPhase(F,G,P,
@@ -334,8 +334,8 @@ void Viewer1DCPLX::slot_fit_rlc()
         for (int i=0; i<curves.size(); i++)
         {
             curves[i].fit(&rlc_cplx);
-            QVector<double> F=curves[i].getLinF(1000);
-            QVector<double> G,P;
+            Eigen::VectorXd F=curves[i].getLinF(1000);
+            Eigen::VectorXd G,P;
             rlc_cplx.at(F,G,P);
 
             slot_add_data_graph(Curve2D_GainPhase(F,G,P,
@@ -366,7 +366,7 @@ void Viewer1DCPLX::slot_fit_rlcapcb()
         {
             curves[i].fit(&rlpcacb_cplx);
 
-            QVector<double> F=curves[i].getLinF(1000),G,P;
+            Eigen::VectorXd F=curves[i].getLinF(1000),G,P;
             rlpcacb_cplx.at(F,G,P);
 
             slot_add_data_graph(Curve2D_GainPhase(F,G,P,
@@ -395,8 +395,8 @@ void Viewer1DCPLX::slot_fit_rl()
         for (int i=0; i<curves.size(); i++)
         {
             curves[i].fit(&rl_cplx);
-            QVector<double> F=curves[i].getLinF(1000);
-            QVector<double> G,P;
+            Eigen::VectorXd F=curves[i].getLinF(1000);
+            Eigen::VectorXd G,P;
             rl_cplx.at(F,G,P);
 
             slot_add_data_graph(Curve2D_GainPhase(F,G,P,
@@ -564,7 +564,11 @@ QList<Curve2D_GainPhase> Viewer1DCPLX::getCurves()
                 itg++;
                 itp++;
             }
-            curvelist.push_back(Curve2D_GainPhase(f,g,p,currentgraph_g->name(),currentgraph_p->name()));
+            curvelist.push_back(Curve2D_GainPhase(fromQVector(f),
+                                                  fromQVector(g),
+                                                  fromQVector(p),
+                                                  currentgraph_g->name(),
+                                                  currentgraph_p->name()));
         }
 
     }

@@ -2,16 +2,13 @@
 
 Curve2D_GainPhase::Curve2D_GainPhase()
 {
-    this->f.clear();
-    this->g.clear();
-    this->p.clear();
     this->legendgname="no name";
     this->legendpname="no name";
 }
 
-Curve2D_GainPhase::Curve2D_GainPhase(const QVector<double> & f,
-                                     const QVector<double> & g,
-                                     const QVector<double> & p,
+Curve2D_GainPhase::Curve2D_GainPhase(const Eigen::VectorXd& f,
+                                     const Eigen::VectorXd& g,
+                                     const Eigen::VectorXd& p,
                                      QString legendgname,
                                      QString legendpname)
 {
@@ -22,10 +19,10 @@ Curve2D_GainPhase::Curve2D_GainPhase(const QVector<double> & f,
     this->legendpname=legendpname;
 }
 
-QVector<double> Curve2D_GainPhase::buildFQVector(unsigned int sz)
+Eigen::VectorXd Curve2D_GainPhase::buildFQVector(unsigned int sz)
 {
-    QVector<double> qv(sz,0.0);
-    for(int i=0;i<sz;i++)
+    Eigen::VectorXd qv(sz);
+    for (int i=0; i<sz; i++)
     {
         qv[i]=(double)i;
     }
@@ -33,10 +30,10 @@ QVector<double> Curve2D_GainPhase::buildFQVector(unsigned int sz)
 }
 
 
-void Curve2D_GainPhase::fit(Shape<Eigen::Vector3d> * model)
+void Curve2D_GainPhase::fit(Shape<Eigen::Vector3d>* model)
 {
     std::vector<Eigen::Vector3d> points;
-    for(int m=0;m<f.size();++m)
+    for (int m=0; m<f.size(); ++m)
     {
         points.push_back(Eigen::Vector3d(f[m],g[m],p[m]));
     }
@@ -44,7 +41,7 @@ void Curve2D_GainPhase::fit(Shape<Eigen::Vector3d> * model)
     model->fit(points,10000);
 }
 
-void Curve2D_GainPhase::operator=(const Curve2D_GainPhase & other)
+void Curve2D_GainPhase::operator=(const Curve2D_GainPhase& other)
 {
     this->f=other.f;
     this->g=other.g;

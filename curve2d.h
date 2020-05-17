@@ -7,6 +7,7 @@
 #include "ShapeFit.h"
 #include "qcustomplot.h"
 #include "FIR.h"
+#include "tabledata.h"
 
 class Curve2D
 {
@@ -19,27 +20,30 @@ public:
 
     Curve2D();
 
-    Curve2D(const QVector<double>& y,
+    Curve2D(const Eigen::VectorXd& y,
             QString legendname,
             CurveType type);
 
-    Curve2D(const QVector<double>& x,
-            const QVector<double>& y,
+    Curve2D(const Eigen::VectorXd& x,
+            const Eigen::VectorXd& y,
             QString legendname,
             CurveType type);
 
-    Curve2D(const QVector<double>& x,
-            const QVector<double>& y,
-            const QVector<double>& s,
+    Curve2D(const Eigen::VectorXd& x,
+            const Eigen::VectorXd& y,
+            const Eigen::VectorXd& s,
             QString legendname,
             CurveType type);
 
-    QVector<double> getX()const;
-    QVector<double> getY()const;
+    Eigen::VectorXd getX()const;
+    Eigen::VectorXd getY()const;
+    QVector<double> getQX()const;
+    QVector<double> getQY()const;
 
     //Optional scalar field
-    void setScalarField(const QVector<double>& s);
-    QVector<double> getScalarField()const;
+    void setScalarField(const Eigen::VectorXd& s);
+    Eigen::VectorXd getScalarField()const;
+    QVector<double> getQScalarField()const;
 
     //Fit a model
     void fit(Shape<Eigen::Vector2d>* model);
@@ -47,13 +51,13 @@ public:
     //Fit a Polynome
     Eigen::VectorXd fit(unsigned int order);
     double at(const Eigen::VectorXd& A,double valuex);
-    QVector<double> at(const Eigen::VectorXd& A,QVector<double> values);
+    Eigen::VectorXd at(const Eigen::VectorXd& A,Eigen::VectorXd values);
     static QString getPolynomeString(const Eigen::VectorXd& C,unsigned int order);
 
     //Fit a 2d Polynome
     Eigen::VectorXd fit2d(unsigned int order);
     double at(const Eigen::VectorXd& C,double valuex,double valuey,unsigned int order);
-    QVector<double> at(const Eigen::VectorXd& C,QVector<double> valuex,QVector<double> valuey,unsigned int order);
+    Eigen::VectorXd at(const Eigen::VectorXd& C, Eigen::VectorXd valuex, Eigen::VectorXd valuey, unsigned int order);
     static QString getPolynome2VString(const Eigen::VectorXd& C,unsigned int order);
 
     //Legend name
@@ -69,16 +73,16 @@ public:
     double guessMainFrequency();
     uint getMaxIndex();
     Eigen::Vector2d getBarycenter();
-    QVector<double> getLinX(int n);
-    void getLinXY(int n,QVector<double>& valuesX,QVector<double>& valuesY);
+    Eigen::VectorXd getLinX(int n);
+    void getLinXY(int n, Eigen::VectorXd& valuesX, Eigen::VectorXd& valuesY);
 
-    static QVector<double> buildXQVector(int sz);
+    static Eigen::VectorXd buildX(int sz);
 
     void operator=(const Curve2D& other);
 private:
-    QVector<double> x;
-    QVector<double> y;
-    QVector<double> s;
+    Eigen::VectorXd x;
+    Eigen::VectorXd y;
+    Eigen::VectorXd s;
     QString legendname;
     CurveType type;
 };

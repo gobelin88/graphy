@@ -54,7 +54,7 @@ SurfaceDataModifier::~SurfaceDataModifier()
     delete m_graph;
 }
 
-void SurfaceDataModifier::setData(const CloudScalar& cloud)
+void SurfaceDataModifier::setData(const Cloud& cloud)
 {
     //fillSqrtSinProxy();
     Eigen::MatrixXd surface(100,100);//=cloud.getExtrapolated();

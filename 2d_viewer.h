@@ -27,7 +27,7 @@ public:
     void resetRange();
 
 public slots:
-    void slot_setData(const TableData& data, const BoxPlot& box);
+    void slot_setData(const Eigen::MatrixXd& data, const BoxPlot& box);
     void slot_saveImage();
     void slot_setGradient(int preset);
     void slot_rescale();
@@ -56,7 +56,7 @@ protected:
     InterpolationMode mode;
     int knn;
 
-    TableData data;
+    Eigen::MatrixXd data;
     BoxPlot box;
     QCPColorGradient::GradientPreset currentgradient;
 };

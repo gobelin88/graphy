@@ -16,7 +16,7 @@ public:
     explicit ScatterDataModifier(Q3DScatter* scatter);
     ~ScatterDataModifier();
 
-    void setData(const CloudScalar& cloud);
+    void setData(const Cloud& cloud);
 
     void changeStyle();
     void changePresetCamera();

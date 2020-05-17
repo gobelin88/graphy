@@ -56,7 +56,7 @@ void ScatterDataModifier::setGradient(int preset)
     gradient.loadPreset((QCPColorGradient::GradientPreset)preset);
 }
 
-void ScatterDataModifier::setData(const CloudScalar& cloud)
+void ScatterDataModifier::setData(const Cloud& cloud)
 {
     // Configure the axes according to the data
     m_graph->axisX()->setTitle("X");
@@ -69,7 +69,7 @@ void ScatterDataModifier::setData(const CloudScalar& cloud)
 
     for (int k=0; k<cloud.positions().size(); k++)
     {
-        ptrToDataArray->setPosition(cloud.positions()[k]);
+        ptrToDataArray->setPosition(Cloud::toQVec3D(cloud.positions()[k]));
         ptrToDataArray++;
     }
 

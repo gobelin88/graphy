@@ -171,7 +171,7 @@ void Viewer2D::resetRange()
     this->replot();
 }
 
-void Viewer2D::slot_setData(const TableData& data,const BoxPlot& box)
+void Viewer2D::slot_setData(const Eigen::MatrixXd& data, const BoxPlot& box)
 {
     this->data=data;
     this->box=box;

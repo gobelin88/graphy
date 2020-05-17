@@ -39,7 +39,7 @@ public:
     std::vector<QRgb>& getColors();
 
     Eigen::Vector3d getBarycenter();
-    float getBoundingRadius();
+    double getBoundingRadius();
 
     QCPColorGradient getGradient();
 

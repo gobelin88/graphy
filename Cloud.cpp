@@ -131,7 +131,7 @@ void Cloud::calcBarycenterAndBoundingRadius()
     }
 }
 
-float Cloud::getBoundingRadius()
+double Cloud::getBoundingRadius()
 {
     return boundingRadius;
 }

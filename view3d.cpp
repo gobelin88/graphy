@@ -21,6 +21,7 @@ void View3D::createPopup()
 
     menuFit= new QMenu("Fit");
     actFitSphere= new QAction("Sphere",  this);
+    actFitPlan= new QAction("Plan",  this);
     actFitMesh= new QAction("Custom Mesh",  this);
 
     menuParameters= new QMenu("Parameters");
@@ -51,6 +52,7 @@ void View3D::createPopup()
     popup_menu->addAction(actSave);
     popup_menu->addMenu(menuFit);
     menuFit->addAction(actFitSphere);
+    menuFit->addAction(actFitPlan);
     menuFit->addAction(actFitMesh);
     popup_menu->addMenu(menuParameters);
     menuParameters->addAction(actWidget);
@@ -59,7 +61,8 @@ void View3D::createPopup()
     QObject::connect(sb_size, SIGNAL(valueChanged(double)), this, SLOT(slot_setPointSize(double)));
     QObject::connect(cb_mode, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setPrimitiveType(int)));
 
-    QObject::connect(actFitSphere, SIGNAL(triggered() ), this, SLOT(slot_firSphere()));
+    QObject::connect(actFitSphere, SIGNAL(triggered() ), this, SLOT(slot_fitSphere()));
+    QObject::connect(actFitPlan, SIGNAL(triggered() ), this, SLOT(slot_fitPlan()));
     QObject::connect(actFitMesh, SIGNAL(triggered() ), this, SLOT(slot_fitCustomMesh()));
 }
 
@@ -110,12 +113,36 @@ void View3D::slot_saveImage()
 
 }
 
-void View3D::slot_firSphere()
+void View3D::slot_fitSphere()
 {
     Sphere sphere;
     cloud->fit(&sphere);
 
-    addSphere(QPosAtt(sphere.getCenter(),Eigen::Quaterniond()),1.0,QColor(128,128,128),sphere.getRadius());
+    Eigen::Vector3d C=sphere.getCenter();
+
+    addSphere(QPosAtt(C,Eigen::Quaterniond()),1.0,QColor(64,64,64),sphere.getRadius());
+
+    emit sig_displayResults( QString("Sphere Fit :\nCenter=(%1 , %2 , %3) Radius=%4\nRms=%5\n").arg(C[0]).arg(C[1]).arg(C[2]).arg(sphere.getRadius()).arg(sphere.getRMS()) );
+    emit sig_newColumn("ScalarErr(Sphere)",sphere.getErrNorm());
+}
+
+void View3D::slot_fitPlan()
+{
+    Plan plan;
+    cloud->fit(&plan);
+
+    Eigen::Vector3d N=plan.getNormal();
+
+    addPlan(QPosAtt( cloud->getBarycenter(),
+                     Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),N)),1.0,QColor(64,64,64),
+            2*cloud->getBoundingRadius(),2*cloud->getBoundingRadius());
+    addPlan(QPosAtt( cloud->getBarycenter(),
+                     Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),-N)),1.0,QColor(64,64,64),
+            2*cloud->getBoundingRadius(),2*cloud->getBoundingRadius());
+
+
+    emit sig_displayResults( QString("Plan Fit :\nNormal=+-(%1 , %2 , %3)\nRms=%4\n").arg(N[0]).arg(N[1]).arg(N[2]).arg(plan.getRMS()));
+    emit sig_newColumn("ScalarErr(Plan)",plan.getErrNorm());
 }
 
 void View3D::slot_fitCustomMesh()
@@ -137,6 +164,7 @@ QVector3D toQVector3D(Eigen::Vector3d v)
 View3D::View3D()
 {
     cloud=nullptr;
+
 
     current_filename.clear();
 
@@ -168,10 +196,7 @@ View3D::View3D()
     ///////////////////////////////////////////////////////////////////////////
 
     //Culling
-//    Qt3DRender::QRenderPass *renderPass = new Qt3DRender::QRenderPass();
-//    Qt3DRender::QCullFace *face = new Qt3DRender::QCullFace();
-//    face->setMode(Qt3DRender::QCullFace::NoCulling);
-//    renderPass->addRenderState(face);
+
 
     //Camera controler
     //        Qt3DExtras::QOrbitCameraController *camController = new Qt3DExtras::QOrbitCameraController(rootEntity);
@@ -184,7 +209,7 @@ View3D::View3D()
     light_a->setIntensity(1);
     lightEntity_a->addComponent(light_a);
     Qt3DCore::QTransform* lightTransform_a = new Qt3DCore::QTransform(lightEntity_a);
-    lightTransform_a->setTranslation(QVector3D(0.5,0.5,-0.5));
+    lightTransform_a->setTranslation(QVector3D(5,5,-5));
     lightEntity_a->addComponent(lightTransform_a);
 
     Qt3DCore::QEntity* lightEntity_b = new Qt3DCore::QEntity(rootEntity);
@@ -193,7 +218,7 @@ View3D::View3D()
     light_b->setIntensity(1);
     lightEntity_b->addComponent(light_b);
     Qt3DCore::QTransform* lightTransform_b = new Qt3DCore::QTransform(lightEntity_b);
-    lightTransform_b->setTranslation(QVector3D(0.5,0.5,0.5));
+    lightTransform_b->setTranslation(QVector3D(5,5,5));
     lightEntity_b->addComponent(lightTransform_b);
 
     Qt3DCore::QEntity* lightEntity_c = new Qt3DCore::QEntity(rootEntity);
@@ -202,8 +227,9 @@ View3D::View3D()
     light_c->setIntensity(1);
     lightEntity_c->addComponent(light_c);
     Qt3DCore::QTransform* lightTransform_c = new Qt3DCore::QTransform(lightEntity_c);
-    lightTransform_c->setTranslation(QVector3D(0,0.5,0));
+    lightTransform_c->setTranslation(QVector3D(0,5,0));
     lightEntity_c->addComponent(lightTransform_c);
+
 
     init3D();
     createPopup();
@@ -277,12 +303,12 @@ void View3D::addGrid(Cloud* cloud,
         addLabel(QString("%1").arg( (i)*stepX+cloud->getXRange().lower,0,'g',2),
                  QVector3D(i*stepX+cloud->getXRange().lower,
                            cloud->getYRange().lower,
-                           cloud->getZRange().upper+stepZ+dec),scale*0.5,0,90,0);
+                           cloud->getZRange().upper+stepZ+dec),scale*0.5,-90,90,0);
 
         addLabel(QString("%1").arg( (i)*stepZ+cloud->getZRange().lower,0,'g',2),
                  QVector3D(cloud->getXRange().upper+stepX,
                            cloud->getYRange().lower,
-                           (i)*stepZ+cloud->getZRange().lower),scale*0.5,0,0,0);
+                           (i)*stepZ+cloud->getZRange().lower),scale*0.5,-90,0,0);
 
         addLabel(QString("%1").arg( (i)*stepY+cloud->getYRange().lower,0,'g',2),
                  QVector3D(cloud->getXRange().upper+stepX,
@@ -402,6 +428,8 @@ void View3D::addGrid(Cloud* cloud,
 
 void View3D::init3D()
 {
+    mode=MODE_POINTS;
+
     cloudGeometry = new Qt3DRender::QGeometry(rootEntity);
     cloudBuf = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer,cloudGeometry);
 
@@ -435,9 +463,9 @@ void View3D::init3D()
 
     pointSize = new Qt3DRender::QPointSize();
     pointSize->setSizeMode(Qt3DRender::QPointSize::SizeMode::Fixed);
-    pointSize->setValue(1.0f);
+    pointSize->setValue(4.0f);
     lineWidth = new Qt3DRender::QLineWidth();
-    lineWidth->setValue(1.0f);
+    lineWidth->setValue(4.0f);
 }
 
 void View3D::setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode)
@@ -537,7 +565,28 @@ void View3D::addSphere(QPosAtt posatt,float scale,QColor color,double radius)
     auto* mat_obj = new Qt3DExtras::QPhongMaterial();
     mat_obj->setDiffuse(color);
 
-    //    Qt3DExtras::QPerVertexColorMaterial * mat_obj = new Qt3DExtras::QPerVertexColorMaterial();
+    auto* m_objEntity = new Qt3DCore::QEntity(rootEntity);
+    m_objEntity->addComponent(m_obj);
+    m_objEntity->addComponent(mat_obj);
+    m_objEntity->addComponent(t_obj);
+
+    transforms.push_back(t_obj);
+    materials.push_back(mat_obj);
+}
+
+void View3D::addPlan(QPosAtt posatt,float scale,QColor color,double width,double height)
+{
+    auto* m_obj = new Qt3DExtras::QPlaneMesh();
+    m_obj->setWidth(width);
+    m_obj->setHeight(height);
+
+    auto* t_obj = new Qt3DCore::QTransform();
+    t_obj->setScale(scale);
+    t_obj->setRotation(toQQuaternion(posatt.Q));
+    t_obj->setTranslation(toQVector3D(posatt.P));
+
+    auto* mat_obj = new Qt3DExtras::QPhongMaterial();
+    mat_obj->setDiffuse(color);
 
     auto* m_objEntity = new Qt3DCore::QEntity(rootEntity);
     m_objEntity->addComponent(m_obj);

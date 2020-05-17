@@ -27,6 +27,7 @@ QCPRange getRange(const Eigen::MatrixXd& data,int id);
 
 std::vector<double> toStdVector(const Eigen::VectorXd& v);
 QVector<double> toQVector(const Eigen::VectorXd& v);
+QVector<QString> toQVectorStr(const Eigen::VectorXd& v);
 
 Eigen::VectorXd fromStdVector(const std::vector<double>& v_std);
 Eigen::VectorXd fromQVector(const QVector<double>& v);

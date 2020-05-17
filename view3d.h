@@ -57,6 +57,7 @@ public:
     void setObjColor(unsigned int id, QColor color);
 
     void addSphere(QPosAtt posatt,float scale,QColor color,double radius);
+    void addPlan(QPosAtt posatt,float scale,QColor color,double width,double height);
 
     CustomViewContainer* getContainer();
 
@@ -64,8 +65,13 @@ public slots:
     void slot_saveImage();
     void slot_setPointSize(double value);
     void slot_setPrimitiveType(int type);
-    void slot_firSphere();
+    void slot_fitSphere();
+    void slot_fitPlan();
     void slot_fitCustomMesh();
+
+signals:
+    void sig_newColumn(QString varName,Eigen::VectorXd data);
+    void sig_displayResults(QString results);
 
 protected:
     void mouseMoveEvent(QMouseEvent* event);
@@ -184,6 +190,7 @@ private:
     QMenu* menuParameters;
     QMenu* menuFit;
     QAction* actFitSphere;
+    QAction* actFitPlan;
     QAction* actFitMesh;
 
     //Misc

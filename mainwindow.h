@@ -52,6 +52,7 @@ public slots:
     void slot_delete();
     void slot_newRow();
     void slot_updateColumns();
+    void slot_newColumn(QString name,Eigen::VectorXd data);
 
     //IO
     void slot_new();
@@ -77,6 +78,7 @@ public slots:
 
     //Misc
     void slot_parameters();
+    void slot_results(QString results);
 
 private:
 
@@ -104,9 +106,7 @@ private:
 
     //Col/row
     void setColumn(int idCol,const QVector<QString>& vec_col);
-
     void addModelRow(const QStringList& str_row);
-    void addModelRow(const QVector<double>& vec_row);
 
     //expr
     QVector<QString> evalColumn(int colId);
@@ -131,6 +131,9 @@ private:
     void applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
     bool loadShortcuts();
     void saveShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
+
+    //Results
+    QTextEdit* te_results;
 };
 
 #endif // MAINWINDOW_H

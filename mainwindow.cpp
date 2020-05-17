@@ -55,7 +55,11 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(a_updateColumns,&QAction::triggered,this,&MainWindow::slot_updateColumns);
     //------------------------------------------------------------------------------
 
-    mdiArea->setViewport(table);
+    te_results=new QTextEdit;
+    QTabWidget* te_widget=new QTabWidget();
+    te_widget->addTab(table,"Data");
+    te_widget->addTab(te_results,"Results");
+    mdiArea->setViewport(te_widget);
 
     //mdiArea->viewport()->stackUnder(table);
 
@@ -67,6 +71,7 @@ MainWindow::MainWindow(QWidget* parent) :
 
 
     loadShortcuts();
+
 }
 
 MainWindow::~MainWindow()
@@ -575,6 +580,21 @@ void MainWindow::slot_updateColumns()
     }
 }
 
+void MainWindow::slot_newColumn(QString name,Eigen::VectorXd data)
+{
+    int index=datatable.cols();
+    registerNewVariable(name,"");
+    setColumn(index,toQVectorStr(data));
+    model->setHorizontalHeaderItem(index, new QStandardItem(name));
+    table->setModel(model);
+}
+
+void MainWindow::slot_results(QString results)
+{
+    te_results->append("------------------------");
+    te_results->append(results);
+}
+
 void MainWindow::slot_delete()
 {
     QModelIndexList id_list_cols=table->selectionModel()->selectedColumns();
@@ -908,19 +928,6 @@ void MainWindow::addModelRow(const QStringList& str_row)
     model->appendRow(items);
 }
 
-void MainWindow::addModelRow(const QVector<double>& vec_row)
-{
-    QList<QStandardItem*> items;
-    items.reserve(vec_row.size());
-    for (int i=0; i<vec_row.size(); i++)
-    {
-        items.append(new QStandardItem(QString::number(vec_row[i])));
-    }
-    model->appendRow(items);
-}
-
-
-
 void MainWindow::direct_new(int sx,int sy)
 {
     registerClear();
@@ -1239,6 +1246,10 @@ void MainWindow::slot_plot_cloud_3D()
     if (id_list.size()==3 || id_list.size()==4)
     {
         View3D* view3d=new View3D;
+
+        QObject::connect(view3d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
+        QObject::connect(view3d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
+
         Eigen::VectorXd data_x=datatable.col(id_list[0].column());
         Eigen::VectorXd data_y=datatable.col(id_list[1].column());
         Eigen::VectorXd data_z=datatable.col(id_list[2].column());

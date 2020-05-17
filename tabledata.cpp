@@ -133,6 +133,16 @@ QVector<double> toQVector(const Eigen::VectorXd& v)
     return v_q;
 }
 
+QVector<QString> toQVectorStr(const Eigen::VectorXd& v)
+{
+    QVector<QString> v_str(v.size());
+    for (int i=0; i<v.size(); i++)
+    {
+        v_str[i]=QString::number(v[i]);
+    }
+    return v_str;
+}
+
 Eigen::VectorXd fromStdVector(const std::vector<double>& v_std)
 {
     Eigen::VectorXd v(v_std.size());

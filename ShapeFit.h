@@ -110,6 +110,16 @@ public:
         return err_dist;
     }
 
+    Eigen::VectorXd getErrNorm()
+    {
+        Eigen::VectorXd err_dist(points.size());
+        for (unsigned int i=0; i< points.size(); i++)
+        {
+            err_dist[i]=this->delta(points[i]).norm();
+        }
+        return err_dist;
+    }
+
 private:
     std::vector<T> points;
 };

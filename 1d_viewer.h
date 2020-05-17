@@ -31,10 +31,11 @@ public slots:
     void mouseDoublePress(QMouseEvent* event);
 
     void slot_fit_polynomial();
-    void slot_fit_2var_polynomial();
     void slot_fit_gaussian();
     void slot_fit_sinusoide();
     void slot_fit_sigmoid();
+
+    void slot_fit_2var_polynomial();
 
     void slot_save_image();
     void slot_rescale();
@@ -55,6 +56,8 @@ public slots:
 
 signals:
     void pick(double p0);
+    void sig_displayResults(QString results);
+    void sig_newColumn(QString varName,Eigen::VectorXd data);
 
 protected:
     QList<QCPCurve*> getQCPCurves();

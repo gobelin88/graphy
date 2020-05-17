@@ -122,8 +122,8 @@ void View3D::slot_fitSphere()
 
     addSphere(QPosAtt(C,Eigen::Quaterniond()),1.0,QColor(64,64,64),sphere.getRadius());
 
-    emit sig_displayResults( QString("Sphere Fit :\nCenter=(%1 , %2 , %3) Radius=%4\nRms=%5\n").arg(C[0]).arg(C[1]).arg(C[2]).arg(sphere.getRadius()).arg(sphere.getRMS()) );
-    emit sig_newColumn("ScalarErr(Sphere)",sphere.getErrNorm());
+    emit sig_displayResults( QString("Fit Sphere:\nCenter=(%1 , %2 , %3) Radius=%4\nRms=%5\n").arg(C[0]).arg(C[1]).arg(C[2]).arg(sphere.getRadius()).arg(sphere.getRMS()) );
+    emit sig_newColumn("Err(Sphere)",sphere.getErrNorm());
 }
 
 void View3D::slot_fitPlan()
@@ -141,8 +141,8 @@ void View3D::slot_fitPlan()
             2*cloud->getBoundingRadius(),2*cloud->getBoundingRadius());
 
 
-    emit sig_displayResults( QString("Plan Fit :\nNormal=+-(%1 , %2 , %3)\nRms=%4\n").arg(N[0]).arg(N[1]).arg(N[2]).arg(plan.getRMS()));
-    emit sig_newColumn("ScalarErr(Plan)",plan.getErrNorm());
+    emit sig_displayResults( QString("Fit Plan:\nNormal=+-(%1 , %2 , %3)\nRms=%4\n").arg(N[0]).arg(N[1]).arg(N[2]).arg(plan.getRMS()));
+    emit sig_newColumn("Err(Plan)",plan.getErrNorm());
 }
 
 void View3D::slot_fitCustomMesh()

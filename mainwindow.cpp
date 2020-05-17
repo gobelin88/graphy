@@ -582,11 +582,14 @@ void MainWindow::slot_updateColumns()
 
 void MainWindow::slot_newColumn(QString name,Eigen::VectorXd data)
 {
-    int index=datatable.cols();
-    registerNewVariable(name,"");
-    setColumn(index,toQVectorStr(data));
-    model->setHorizontalHeaderItem(index, new QStandardItem(name));
-    table->setModel(model);
+    if (data.size()==datatable.rows())
+    {
+        int index=datatable.cols();
+        registerNewVariable(name,"");
+        setColumn(index,toQVectorStr(data));
+        model->setHorizontalHeaderItem(index, new QStandardItem(name));
+        table->setModel(model);
+    }
 }
 
 void MainWindow::slot_results(QString results)
@@ -1039,6 +1042,10 @@ void MainWindow::slot_plot_y()
     if (id_list.size()>0)
     {
         Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
+        QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
+        QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
+
+
         viewer1d->setMinimumSize(600,400);
 
         for (int k=0; k<id_list.size(); k++)
@@ -1074,6 +1081,9 @@ void MainWindow::slot_plot_graph_xy()
     if (id_list.size()%2==0 && id_list.size()>0)
     {
         Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
+        QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
+        QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
+
         viewer1d->setMinimumSize(600,400);
 
         for (int k=0; k<id_list.size(); k+=2)
@@ -1109,6 +1119,9 @@ void MainWindow::slot_plot_curve_xy()
     if (id_list.size()%2==0 && id_list.size()>0)
     {
         Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
+        QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
+        QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
+
         viewer1d->setMinimumSize(600,400);
 
         for (int k=0; k<id_list.size(); k+=2)
@@ -1144,6 +1157,9 @@ void MainWindow::slot_plot_cloud_2D()
     if (id_list.size()%3==0 && id_list.size()>0)
     {
         Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
+        QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
+        QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
+
         viewer1d->setMinimumSize(600,400);
 
         for (int k=0; k<id_list.size(); k+=3)
@@ -1214,6 +1230,8 @@ void MainWindow::slot_plot_fft()
     if (id_list.size()>0)
     {
         Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
+        QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
+        QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
         viewer1d->setMinimumSize(600,400);
 
         for (int k=0; k<id_list.size(); k++)
@@ -1335,6 +1353,9 @@ void MainWindow::slot_plot_histogram()
     if (id_list.size()>0)
     {
         Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
+        QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
+        QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
+
         viewer1d->setMinimumSize(600,400);
 
         for (int k=0; k<id_list.size(); k++)

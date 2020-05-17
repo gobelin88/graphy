@@ -325,10 +325,13 @@ void Viewer1D::slot_fit_sinusoide()
             Eigen::VectorXd Y=sinusoide.at(X);
 
             QString result_str=QString("A=%1 F=%2[Hz] P=%3[°]").arg(sinusoide.getA()).arg(sinusoide.getF()).arg(sinusoide.getP()*180/M_PI);
-
+            QString expression=QString("%1*sin(2*pi*%2*X+%3)").arg(sinusoide.getA()).arg(sinusoide.getF()).arg(sinusoide.getP());
             Curve2D fit_curve(X,Y,QString("Fit Sinusoid : %1").arg(result_str),Curve2D::GRAPH);
 
             slot_add_data(fit_curve);
+
+            emit sig_displayResults(QString("Fit Sinusoid :\n%1\nF(X)=%2\nRms=%3").arg(result_str).arg(expression).arg(sinusoide.getRMS()));
+            emit sig_newColumn(QString("Err(Sinusoid)"),sinusoide.getErrNorm());
         }
     }
 }
@@ -359,7 +362,12 @@ void Viewer1D::slot_fit_sigmoid()
             QString result_str=QString("A=%1 B=%2 C=%3 P=%4 ").arg(sigmoid.getA()).arg(sigmoid.getB()).arg(sigmoid.getC()).arg(sigmoid.getP());
             Curve2D fit_curve(X,Y,QString("Fit Sigmoid : %1").arg(result_str),Curve2D::GRAPH);
 
+            QString expression=QString("(%2-%1)/(1+exp((%3-X)*%4*(%2-%1)))+%1").arg(sigmoid.getA()).arg(sigmoid.getB()).arg(sigmoid.getC()).arg(sigmoid.getP());
+
             slot_add_data(fit_curve);
+
+            emit sig_displayResults(QString("Fit Sigmoid :\n%1\nF(X)=%2\nRms=%3").arg(result_str).arg(expression).arg(sigmoid.getRMS()));
+            emit sig_newColumn(QString("Err(Sigmoid)"),sigmoid.getErrNorm());
         }
     }
 }
@@ -389,6 +397,11 @@ void Viewer1D::slot_fit_gaussian()
             Curve2D fit_curve(X,Y,QString("Fit Gaussian : %1").arg(result_str),Curve2D::GRAPH);
 
             slot_add_data(fit_curve);
+
+            QString expression=QString("%3/(%1*sqrt(2*pi))*exp(-0.5*((X-%2)/%1)^2)").arg(gaussian.getS()).arg(gaussian.getM()).arg(gaussian.getK());
+
+            emit sig_displayResults(QString("Fit Gaussian :\n%1 \nF(X)==%2 \n").arg(result_str).arg(expression));
+            emit sig_newColumn(QString("Err(Gaussian)"),gaussian.getErrNorm());
         }
     }
 }
@@ -496,12 +509,18 @@ void Viewer1D::slot_fit_polynomial()
                 Eigen::VectorXd X=curves[i].getLinX(1000);
                 Eigen::VectorXd Y=curves[i].at(C,X);
 
+                Eigen::VectorXd Yhat=curves[i].at(C,curves[i].getX());
 
                 QString result_str=Curve2D::getPolynomeString(C,order);
 
                 Curve2D fit_curve(X,Y,QString("Fit Polynome : %1").arg(result_str),Curve2D::GRAPH);
 
+                Eigen::VectorXd E=curves[i].getY()-Yhat;
+                double rms=sqrt(E.dot(E)/E.size());
+
                 slot_add_data(fit_curve);
+                emit sig_displayResults(QString("Fit Polynome :\nP(X)=%1\nRms=%2").arg(result_str).arg(rms));
+                emit sig_newColumn(QString("Err(Polynome)"),E);
             }
         }
     }

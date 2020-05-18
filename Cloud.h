@@ -37,11 +37,15 @@ public:
     QCPRange getZRange();
     QCPRange getScalarFieldRange();
     std::vector<QRgb>& getColors();
+    void setGradientPreset(QCPColorGradient::GradientPreset preset);
+    void setScalarFieldRange(QCPRange rangeS);
+    const QCPColorGradient& getGradient();
+    QCPColorGradient::GradientPreset getGradientPreset();
 
     Eigen::Vector3d getBarycenter();
     double getBoundingRadius();
 
-    QCPColorGradient getGradient();
+    QByteArray getBuffer();
 
     QString getLabelX();
     QString getLabelY();
@@ -55,6 +59,7 @@ public:
 
 private:
     void calcBarycenterAndBoundingRadius();
+    void updateColors();
 
     QCPRange getRange(const Eigen::VectorXd& v);
 
@@ -72,6 +77,7 @@ private:
 
     Eigen::Vector3d Barycenter;
     double boundingRadius;
+    QCPColorGradient::GradientPreset gradientPreset;
 };
 
 #endif

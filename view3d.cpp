@@ -6,6 +6,18 @@ CustomViewContainer::CustomViewContainer(QWidget* container)
     QGridLayout* glayout=new QGridLayout(this);
     glayout->addWidget(container,0,0);
 
+    plot=new QCustomPlot(this);
+    scale=new QCPColorScale(plot);
+    scale->setRangeDrag(true);
+    scale->setRangeZoom(true);
+    plot->setInteractions(QCP::iRangeDrag|QCP::iRangeZoom);
+
+    plot->plotLayout()->clear();
+    plot->plotLayout()->addElement(scale);
+
+    glayout->addWidget(container,0,0);
+    glayout->addWidget(plot,0,1);
+
     this->container=container;
 }
 
@@ -33,18 +45,31 @@ void View3D::createPopup()
 
     QGridLayout* gbox = new QGridLayout();
 
-    QDoubleSpinBox* sb_size=new QDoubleSpinBox;
+    sb_size=new QDoubleSpinBox;
     sb_size->setRange(0.1,100);
     sb_size->setSingleStep(1.0);
-    sb_size->setValue(static_cast<double>(pointSize->value()));
 
-    QComboBox* cb_mode=new QComboBox;
+    cb_mode=new QComboBox;
     cb_mode->addItem("POINTS");
     cb_mode->addItem("LINES");
-    cb_mode->setCurrentIndex(static_cast<int>(mode));
 
-    gbox->addWidget(sb_size,0,0);
-    gbox->addWidget(cb_mode,1,0);
+    c_gradient=new QComboBox;
+    c_gradient->addItem("gpGrayscale",QCPColorGradient::GradientPreset::gpGrayscale);
+    c_gradient->addItem("gpHot",QCPColorGradient::GradientPreset::gpHot);
+    c_gradient->addItem("gpCold",QCPColorGradient::GradientPreset::gpCold);
+    c_gradient->addItem("gpNight",QCPColorGradient::GradientPreset::gpNight);
+    c_gradient->addItem("gpCandy",QCPColorGradient::GradientPreset::gpCandy);
+    c_gradient->addItem("gpGeography",QCPColorGradient::GradientPreset::gpGeography);
+    c_gradient->addItem("gpIon",QCPColorGradient::GradientPreset::gpIon);
+    c_gradient->addItem("gpThermal",QCPColorGradient::GradientPreset::gpThermal);
+    c_gradient->addItem("gpPolar",QCPColorGradient::GradientPreset::gpPolar);
+    c_gradient->addItem("gpSpectrum",QCPColorGradient::GradientPreset::gpSpectrum);
+    c_gradient->addItem("gpJet",QCPColorGradient::GradientPreset::gpJet);
+    c_gradient->addItem("gpHues",QCPColorGradient::GradientPreset::gpHues);
+
+    gbox->addWidget(cb_mode,0,0);
+    gbox->addWidget(sb_size,0,1);
+    gbox->addWidget(c_gradient,1,0);
 
     widget->setLayout(gbox);
 
@@ -64,41 +89,11 @@ void View3D::createPopup()
     QObject::connect(actFitSphere, SIGNAL(triggered() ), this, SLOT(slot_fitSphere()));
     QObject::connect(actFitPlan, SIGNAL(triggered() ), this, SLOT(slot_fitPlan()));
     QObject::connect(actFitMesh, SIGNAL(triggered() ), this, SLOT(slot_fitCustomMesh()));
+    QObject::connect(c_gradient, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setGradient(int)));
 }
-
-//void View3D::slot_parameters()
-//{
-//    QDialog* dialog=new QDialog;
-//    dialog->setLocale(QLocale("C"));
-//    dialog->setWindowTitle("Style Parameters");
-//    QGridLayout* gbox = new QGridLayout();
-//    dialog->setMinimumWidth(200);
-
-//    QDoubleSpinBox* sb_pointSize=new QDoubleSpinBox(dialog);
-//    sb_pointSize->setRange(0.1,100);
-//    sb_pointSize->setSingleStep(0.1);
-//    sb_pointSize->setValue(pointSize->value());
-//    sb_pointSize->setPrefix("Point size=");
-
-//    QComboBox* cb_mode=new QComboBox(dialog);
-//    cb_mode->addItem("POINTS");
-//    cb_mode->addItem("LINES");
-//    cb_mode->setCurrentIndex(static_cast<int>(mode));
-
-//    QObject::connect(sb_pointSize, SIGNAL(valueChanged(double)), this, SLOT(slot_setPointSize(double)));
-//    QObject::connect(cb_mode, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setPrimitiveType(int)));
-
-//    gbox->addWidget(sb_pointSize,0,0);
-//    gbox->addWidget(cb_mode,1,0);
-
-//    dialog->setLayout(gbox);
-
-//    int result=dialog->exec();
-//}
 
 void View3D::slot_saveImage()
 {
-
     Qt3DRender::QRenderCapture renderCapture(rootEntity);
 
     QFileInfo info(current_filename);
@@ -234,7 +229,7 @@ View3D::View3D()
     init3D();
     createPopup();
 
-
+    connect(customContainer->getColorScale(),SIGNAL(dataRangeChanged(const QCPRange&)),this,SLOT(slot_ColorScaleChanged(const QCPRange&)));
     //addSphere(QPosAtt(Eigen::Vector3d(0.05,0.05,0.05),Eigen::Quaterniond(1,0,0,0)),1.0,QColor(128,128,128),0.01);
 }
 
@@ -468,28 +463,37 @@ void View3D::init3D()
     lineWidth->setValue(4.0f);
 }
 
+void View3D::slot_ColorScaleChanged(const QCPRange& range)
+{
+    if (cloud && cloudBuf)
+    {
+        cloud->setScalarFieldRange(range);
+        cloudBuf->setData(cloud->getBuffer());
+    }
+}
+
+void View3D::slot_setGradient(int preset)
+{
+    if (cloud && cloudBuf)
+    {
+        cloud->setGradientPreset(static_cast<QCPColorGradient::GradientPreset>(preset));
+        customContainer->getColorScale()->setGradient(cloud->getGradient());
+        cloudBuf->setData(cloud->getBuffer());
+        customContainer->getColorScalePlot()->rescaleAxes();
+        customContainer->getColorScalePlot()->replot();
+    }
+}
+
 void View3D::setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode)
 {
+    this->cloud=cloud;
+
     addGrid(cloud,10,QColor(128,128,128));
     camera_params->setBarycenter( Cloud::toQVec3D(cloud->getBarycenter()) );
     camera_params->setBoundingRadius( cloud->getBoundingRadius() );
 
     //Set Data Buffers
-    QByteArray bufferBytes;
-    bufferBytes.resize(2 * 3 * ( cloud->positions().size() ) * sizeof(float));
-    float* vertices = reinterpret_cast<float*>(bufferBytes.data());
-
-    for (int i=0; i<cloud->positions().size(); i++)
-    {
-        *vertices++ = cloud->positions()[i][0];
-        *vertices++ = cloud->positions()[i][1];
-        *vertices++ = cloud->positions()[i][2];
-
-        *vertices++ = qRed  (cloud->getColors()[i])/255.0;
-        *vertices++ = qGreen(cloud->getColors()[i])/255.0;
-        *vertices++ = qBlue (cloud->getColors()[i])/255.0;
-    }
-    cloudBuf->setData(bufferBytes);
+    //cloudBuf->setData(cloud->getBuffer());
     cloudPositionAttribute->setCount(cloud->positions().size());
     cloudColorsAttribute->setCount(cloud->positions().size());
 
@@ -518,8 +522,11 @@ void View3D::setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode)
     mode=primitiveMode;
     camera_params->reset();
 
-    //Keep a pointer to data
-    this->cloud=cloud;
+    customContainer->getColorScale()->axis()->setLabel(cloud->getLabelS());
+    customContainer->getColorScale()->setGradient(cloud->getGradient());
+    customContainer->getColorScale()->setDataRange(cloud->getScalarFieldRange());
+    customContainer->getColorScalePlot()->rescaleAxes();
+    customContainer->getColorScalePlot()->replot();
 }
 
 void View3D::slot_setPointSize(double value)
@@ -675,6 +682,9 @@ void View3D::mousePressEvent(QMouseEvent* event)
 
     if (event->button() == Qt::RightButton)
     {
+        sb_size->setValue(static_cast<double>(pointSize->value()));
+        cb_mode->setCurrentIndex(static_cast<int>(mode));
+        c_gradient->setCurrentIndex(static_cast<int>(cloud->getGradientPreset()));
         popup_menu->exec(mapToGlobal(event->pos()));
     }
 }

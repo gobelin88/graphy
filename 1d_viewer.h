@@ -53,6 +53,9 @@ public slots:
     void slot_clear_marks();
     void addMark(double cx,double cy,QString markstr);
 
+    void slot_setAxisXType(int mode);
+    void slot_setAxisYType(int mode);
+
 
 signals:
     void pick(double p0);
@@ -80,10 +83,11 @@ protected:
     QAction* actColor;
     QAction* actStyle;
 
-    QMenu* menu_legend;
-    QMenu* menu_fit;
-    QMenu* menu_scalarField;
-    QMenu* menu_scalarField_fit;
+    QMenu* menuParameters;
+    QMenu* menuLegend;
+    QMenu* menuFit;
+    QMenu* menuScalarField;
+    QMenu* menuScalarFieldFit;
 
     QAction* actFitPolynomial;
     QAction* actFitPolynomial2V;

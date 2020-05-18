@@ -173,10 +173,39 @@ void Viewer1D::createPopup()
     popup_menu->addAction(actClearMarks);
     popup_menu->addSeparator();
 
-    menu_fit=new QMenu("Fit",this);
-    menu_legend=new QMenu("Legend",this);
-    menu_scalarField=new QMenu("Scalar Field",this);
-    menu_scalarField_fit=new QMenu("Fit",this);
+    menuFit=new QMenu("Fit",this);
+    menuLegend=new QMenu("Legend",this);
+    menuScalarField=new QMenu("Scalar Field",this);
+    menuScalarFieldFit=new QMenu("Fit",this);
+    menuParameters=new QMenu("Parameters",this);
+
+    ///////////////////////////////////////////////
+    QWidgetAction* actWidget=new QWidgetAction(popup_menu);
+    QWidget* widget=new QWidget;
+    actWidget->setDefaultWidget(widget);
+
+    QGridLayout* gbox = new QGridLayout();
+
+    QComboBox* cb_scale_mode_x=new QComboBox;
+    cb_scale_mode_x->addItem("Linear");
+    cb_scale_mode_x->addItem("Logarithmic");
+    cb_scale_mode_x->setCurrentIndex(0);
+    QComboBox* cb_scale_mode_y=new QComboBox;
+    cb_scale_mode_y->addItem("Linear");
+    cb_scale_mode_y->addItem("Logarithmic");
+    cb_scale_mode_y->setCurrentIndex(0);
+
+    gbox->addWidget(new QLabel("X Axis"),0,0);
+    gbox->addWidget(cb_scale_mode_x,0,1);
+    gbox->addWidget(new QLabel("Y Axis"),1,0);
+    gbox->addWidget(cb_scale_mode_y,1,1);
+
+    widget->setLayout(gbox);
+
+    QObject::connect(cb_scale_mode_x, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setAxisXType(int)));
+    QObject::connect(cb_scale_mode_y, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setAxisYType(int)));
+
+    ///////////////////////////////////////////////
 
     actFitPolynomial= new QAction("Polynomial",  this);
     actFitGaussian= new QAction("Gaussian",  this);
@@ -185,23 +214,25 @@ void Viewer1D::createPopup()
 
     actFitPolynomial2V= new QAction("Polynomial XY",  this);
 
-    menu_fit->addAction(actFitPolynomial);
-    menu_fit->addAction(actFitGaussian);
-    menu_fit->addAction(actFitSigmoid);
-    menu_fit->addAction(actFitSinusoide);
+    menuFit->addAction(actFitPolynomial);
+    menuFit->addAction(actFitGaussian);
+    menuFit->addAction(actFitSigmoid);
+    menuFit->addAction(actFitSinusoide);
 
-    menu_legend->addAction(actLegendShowHide);
-    menu_legend->addAction(actLegendTopBottom);
-    menu_legend->addAction(actLegendLeftRight);
-    menu_legend->addAction(actStyle);
+    menuLegend->addAction(actLegendShowHide);
+    menuLegend->addAction(actLegendTopBottom);
+    menuLegend->addAction(actLegendLeftRight);
+    menuLegend->addAction(actStyle);
 
-    menu_scalarField->addMenu(menu_scalarField_fit);
+    menuScalarField->addMenu(menuScalarFieldFit);
 
-    menu_scalarField_fit->addAction(actFitPolynomial2V);
+    menuScalarFieldFit->addAction(actFitPolynomial2V);
 
-    popup_menu->addMenu(menu_fit);
-    popup_menu->addMenu(menu_scalarField);
-    popup_menu->addMenu(menu_legend);
+    popup_menu->addMenu(menuFit);
+    popup_menu->addMenu(menuScalarField);
+    popup_menu->addMenu(menuLegend);
+    popup_menu->addMenu(menuParameters);
+    menuParameters->addAction(actWidget);
 
     connect(actSave,SIGNAL(triggered()),this,SLOT(slot_save_image()));
     connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_rescale()));
@@ -952,4 +983,32 @@ void Viewer1D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
             shortcuts_links[i.key()]->setShortcut(i.value());
         }
     }
+}
+
+void Viewer1D::slot_setAxisXType(int mode)
+{
+    if (mode==1)
+    {
+        this->xAxis->setScaleType(QCPAxis::stLogarithmic);
+    }
+    else
+    {
+        this->xAxis->setScaleType(QCPAxis::stLinear);
+    }
+    rescaleAxes();
+    replot();
+}
+
+void Viewer1D::slot_setAxisYType(int mode)
+{
+    if (mode==1)
+    {
+        this->yAxis->setScaleType(QCPAxis::stLogarithmic);
+    }
+    else
+    {
+        this->yAxis->setScaleType(QCPAxis::stLinear);
+    }
+    rescaleAxes();
+    replot();
 }

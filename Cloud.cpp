@@ -19,9 +19,7 @@ Cloud::Cloud(const Eigen::VectorXd& x,
     rangeZ=getRange(z);
     rangeS=getRange(scalarField);
 
-    gradient.loadPreset(QCPColorGradient::gpPolar);
-    colors.resize(scalarField.size());
-    gradient.colorize(scalarField.data(),rangeS,colors.data(),scalarField.size());
+    setGradientPreset(QCPColorGradient::gpPolar);
 
     this->labelX =labelX;
     this->labelY =labelY;
@@ -51,9 +49,7 @@ Cloud::Cloud(const Eigen::VectorXd& x,
     rangeZ=getRange(z);
     rangeS=getRange(s);
 
-    gradient.loadPreset(QCPColorGradient::gpPolar);
-    colors.resize(scalarField.size());
-    gradient.colorize(scalarField.data(),rangeS,colors.data(),scalarField.size());
+    setGradientPreset(QCPColorGradient::gpPolar);
 
     this->labelX =labelX;
     this->labelY =labelY;
@@ -61,6 +57,35 @@ Cloud::Cloud(const Eigen::VectorXd& x,
     this->labelS =labelS;
 
     calcBarycenterAndBoundingRadius();
+}
+
+void Cloud::setGradientPreset(QCPColorGradient::GradientPreset preset)
+{
+    this->gradientPreset=preset;
+    gradient.loadPreset(gradientPreset);
+    updateColors();
+}
+
+QCPColorGradient::GradientPreset Cloud::getGradientPreset()
+{
+    return gradientPreset;
+}
+
+const QCPColorGradient& Cloud::getGradient()
+{
+    return gradient;
+}
+
+void Cloud::setScalarFieldRange(QCPRange rangeS)
+{
+    this->rangeS=rangeS;
+    updateColors();
+}
+
+void Cloud::updateColors()
+{
+    colors.resize(scalarField.size());
+    gradient.colorize(scalarField.data(),rangeS,colors.data(),scalarField.size());
 }
 
 QCPRange Cloud::getRange(const Eigen::VectorXd& v)
@@ -136,11 +161,6 @@ double Cloud::getBoundingRadius()
     return boundingRadius;
 }
 
-QCPColorGradient Cloud::getGradient()
-{
-    return gradient;
-}
-
 QString Cloud::getLabelX()
 {
     return labelX;
@@ -166,4 +186,26 @@ QVector3D Cloud::toQVec3D(Eigen::Vector3d p)
 void Cloud::fit(Shape<Eigen::Vector3d>* model)
 {
     model->fit(pts,10000);
+}
+
+QByteArray Cloud::getBuffer()
+{
+    std::cout<<"getBuffer 1"<<std::endl;
+    QByteArray bufferBytes;
+    bufferBytes.resize(2 * 3 * ( pts.size() ) * sizeof(float));
+    float* vertices = reinterpret_cast<float*>(bufferBytes.data());
+
+    for (int i=0; i<pts.size(); i++)
+    {
+        *vertices++ = pts[i][0];
+        *vertices++ = pts[i][1];
+        *vertices++ = pts[i][2];
+
+        *vertices++ = qRed  (colors[i])/255.0;
+        *vertices++ = qGreen(colors[i])/255.0;
+        *vertices++ = qBlue (colors[i])/255.0;
+    }
+    std::cout<<"getBuffer 2"<<std::endl;
+
+    return bufferBytes;
 }

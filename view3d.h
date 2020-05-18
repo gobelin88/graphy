@@ -29,9 +29,20 @@ public:
     CustomViewContainer(QWidget* container);
 
     QWidget* getContainer();
+    QCPColorScale* getColorScale()
+    {
+        return scale;
+    }
+    QCustomPlot* getColorScalePlot()
+    {
+        return plot;
+    }
 
 private:
     QWidget* container;
+
+    QCustomPlot* plot;
+    QCPColorScale* scale;
 };
 
 
@@ -68,6 +79,8 @@ public slots:
     void slot_fitSphere();
     void slot_fitPlan();
     void slot_fitCustomMesh();
+    void slot_ColorScaleChanged(const QCPRange& range);
+    void slot_setGradient(int preset);
 
 signals:
     void sig_newColumn(QString varName,Eigen::VectorXd data);
@@ -215,5 +228,9 @@ private:
 
     //Data
     Cloud* cloud;
+
+    QComboBox* c_gradient;
+    QDoubleSpinBox* sb_size;
+    QComboBox* cb_mode;
 };
 #endif // VIEW3D_H

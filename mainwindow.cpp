@@ -1298,7 +1298,7 @@ void MainWindow::slot_plot_cloud_3D()
             //view3d->setCloudScalar(*cloud);
         }
 
-//        mdiArea->addSubWindow(view3d->getContainer());
+        mdiArea->addSubWindow(view3d->getContainer());
         view3d->getContainer()->show();
 
 //        view3d->show();

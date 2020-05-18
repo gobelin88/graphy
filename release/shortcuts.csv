@@ -1,7 +1,7 @@
 Delete;Del
 Edit/Add-variable;Ins
 Export;Ctrl+E
-Graph-ClearMarks;Alt+M
+Graph-ClearMarks;Backspace
 Graph-Color;Alt+*
 Graph-Copy;Alt+C
 Graph-Delete;Alt+Del

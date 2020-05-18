@@ -727,10 +727,8 @@ void Viewer1D::slot_set_style()
 
 void Viewer1D::slot_histogram(Eigen::VectorXd data,QString name,int nbbins)
 {
-    Eigen::VectorXd labels;
-    Eigen::VectorXd hist;
-    labels.resize(nbbins);
-    hist.resize(nbbins);
+    Eigen::VectorXd labels=Eigen::VectorXd::Zero(nbbins);
+    Eigen::VectorXd hist=Eigen::VectorXd::Zero(nbbins);
 
     double min=data.minCoeff();
     double max=data.maxCoeff();

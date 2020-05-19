@@ -95,6 +95,8 @@ protected:
     QAction* actFitSigmoid;
     QAction* actFitSinusoide;
 
+    QAction* actStatistiques;
+
     QString current_filename;
 
     unsigned int getId();

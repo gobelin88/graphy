@@ -73,7 +73,7 @@ HEADERS += \
 FORMS += \
         mainwindow.ui
 
-INCLUDEPATH += D:/Eigen335
+INCLUDEPATH += D:/Eigen337
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

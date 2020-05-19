@@ -131,6 +131,7 @@ void Viewer1D::createPopup()
     actLegendShowHide= new QAction("Hide",  this);
     actLegendTopBottom= new QAction("Move bottom",  this);
     actLegendLeftRight= new QAction("Move left",  this);
+    actStatistiques= new QAction("Statistiques",  this);
 
 
     actCopy->setShortcutVisibleInContextMenu(true);
@@ -164,6 +165,7 @@ void Viewer1D::createPopup()
     this->addAction(actLegendTopBottom);
     this->addAction(actLegendLeftRight);
 
+    popup_menu->addAction(actStatistiques);
     popup_menu->addAction(actCopy);
     popup_menu->addAction(actPaste);
     popup_menu->addAction(actSave);
@@ -228,12 +230,14 @@ void Viewer1D::createPopup()
 
     menuScalarFieldFit->addAction(actFitPolynomial2V);
 
+    popup_menu->addAction(actStatistiques);
     popup_menu->addMenu(menuFit);
     popup_menu->addMenu(menuScalarField);
     popup_menu->addMenu(menuLegend);
     popup_menu->addMenu(menuParameters);
     menuParameters->addAction(actWidget);
 
+    connect(actStatistiques,SIGNAL(triggered()),this,SLOT(slot_statistiques()));
     connect(actSave,SIGNAL(triggered()),this,SLOT(slot_save_image()));
     connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_rescale()));
     connect(actFitPolynomial,SIGNAL(triggered()),this,SLOT(slot_fit_polynomial()));
@@ -952,7 +956,34 @@ void Viewer1D::slot_statistiques()
 
     for (int i=0; i<curves.size(); i++)
     {
-        //todo
+        double mean=curves[i].getY().mean();
+
+        Eigen::VectorXd Ysorted=(curves[i].getY()-Eigen::VectorXd::Constant(curves[i].getY().size(),mean)).cwiseAbs();
+        std::sort(Ysorted.data(), Ysorted.data()+Ysorted.size());
+
+        QString CIstr;
+        int rate_prev=0;
+        for (int k=0; k<Ysorted.size(); k++)
+        {
+            int rate=static_cast<int>(floor(double(k)/Ysorted.size()*100.0));
+
+            if ( rate%5==0 && rate_prev!=rate)
+            {
+                rate_prev=rate;
+                CIstr+=QString("CI%2%=%1\n").arg(Ysorted[k]).arg(rate);
+            }
+        }
+
+        QString stat_str=QString("Statistiques : %1\nMin=%2\nMax=%3\nMean=%4\nStandard-Deviation=%5\nRoot-Mean-Squares=%6\n%7")
+                         .arg(curves[i].getLegend())
+                         .arg(curves[i].getY().minCoeff())
+                         .arg(curves[i].getY().maxCoeff())
+                         .arg(mean)
+                         .arg( (curves[i].getY()-Eigen::VectorXd::Constant(curves[i].getY().size(),mean)).cwiseAbs2().mean() )
+                         .arg(curves[i].getY().cwiseAbs2().mean())
+                         .arg(CIstr);
+
+        emit sig_displayResults(stat_str);
     }
 }
 

@@ -41,6 +41,7 @@ SOURCES += \
         curve2d_gainphase.cpp \
         main.cpp \
         mainwindow.cpp \
+        obj.cpp \
         qcustomplot.cpp \
         tabledata.cpp \
         view3d.cpp \
@@ -62,6 +63,7 @@ HEADERS += \
         curve2d.h \
         curve2d_gainphase.h \
         mainwindow.h \
+        obj.h \
         qcustomplot.h \
         tabledata.h \
         view3d.h \

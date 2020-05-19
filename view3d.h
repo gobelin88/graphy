@@ -7,7 +7,7 @@
 #include <QCullFace>
 #include <iostream>
 #include <Qt3DRender/QRenderCaptureReply>
-
+#include <obj.h>
 
 #include <QMenu>
 #include <QAction>
@@ -16,6 +16,7 @@
 #include "qPosAtt.h"
 #include "Cloud.h"
 #include "qcustomplot.h"
+#include "obj.h"
 
 /**
 @class View3D
@@ -63,7 +64,7 @@ public:
 
     void setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode);
 
-    void addObj(QString filename, QPosAtt posatt,float scale,QColor color);
+    void addObj(Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor color);
     void setObjPosAtt(unsigned int id, const QPosAtt& T);
     void setObjColor(unsigned int id, QColor color);
 

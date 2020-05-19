@@ -29,18 +29,18 @@ public:
     Eigen::Vector3d P;
     Eigen::Quaterniond Q;
 
-    void operator=(const QPosAtt & other)
+    void operator=(const QPosAtt& other)
     {
         this->P=other.P;
         this->Q=other.Q;
     }
 
-    QPosAtt compose(const QPosAtt & other) const
+    QPosAtt compose(const QPosAtt& other) const
     {
         return QPosAtt(other.Q._transformVector(P)+other.P,other.Q*Q);
-    }    
+    }
 
-    Eigen::Vector3d apply(const Eigen::Vector3d & v) const
+    Eigen::Vector3d apply(const Eigen::Vector3d& v) const
     {
         return Q._transformVector(v)+P;
     }
@@ -53,15 +53,27 @@ public:
         return pos_att_inverse;
     }
 
-    Eigen::Matrix4d toMatrice()
+    Eigen::Matrix4d toMatrice(double scale=1.0)
     {
         Eigen::Matrix4d M;
-        Eigen::Matrix3d R=Q.toRotationMatrix();
+        Eigen::Matrix3d R=scale*Q.toRotationMatrix();
 
-        M(0,0)=R(0,0); M(0,1)=R(0,1); M(0,2)=R(0,2); M(0,3)=P[0];
-        M(1,0)=R(1,0); M(1,1)=R(1,1); M(1,2)=R(1,2); M(1,3)=P[1];
-        M(2,0)=R(2,0); M(2,1)=R(2,1); M(2,2)=R(2,2); M(2,3)=P[2];
-        M(3,0)=0     ; M(3,1)=0     ; M(3,2)=0;      M(3,3)=1;
+        M(0,0)=R(0,0);
+        M(0,1)=R(0,1);
+        M(0,2)=R(0,2);
+        M(0,3)=P[0];
+        M(1,0)=R(1,0);
+        M(1,1)=R(1,1);
+        M(1,2)=R(1,2);
+        M(1,3)=P[1];
+        M(2,0)=R(2,0);
+        M(2,1)=R(2,1);
+        M(2,2)=R(2,2);
+        M(2,3)=P[2];
+        M(3,0)=0     ;
+        M(3,1)=0     ;
+        M(3,2)=0;
+        M(3,3)=1;
 
         return M;
     }
@@ -84,10 +96,10 @@ public:
 typedef std::vector<QPosAtt> QPosAttList;
 typedef std::vector<Eigen::Vector3d> QPosList;
 
-bool loadPosAttList(QString filename,QPosAttList & list);
-bool loadPosList(QString filename,QPosList & list);
-QPosList extractPos(QPosAttList & list);
+bool loadPosAttList(QString filename,QPosAttList& list);
+bool loadPosList(QString filename,QPosList& list);
+QPosList extractPos(QPosAttList& list);
 
-Eigen::MatrixXd toEigenMatXd(const QPosList & ptlist);
+Eigen::MatrixXd toEigenMatXd(const QPosList& ptlist);
 
 #endif // QPOSATT_H

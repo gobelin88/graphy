@@ -18,6 +18,7 @@ CustomViewContainer::CustomViewContainer(QWidget* container)
     glayout->addWidget(container,0,0);
     glayout->addWidget(plot,0,1);
 
+    plot->setMaximumWidth(100);
     this->container=container;
 }
 
@@ -131,10 +132,6 @@ void View3D::slot_fitPlan()
     addPlan(QPosAtt( cloud->getBarycenter(),
                      Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),N)),1.0,QColor(64,64,64),
             2*cloud->getBoundingRadius(),2*cloud->getBoundingRadius());
-    addPlan(QPosAtt( cloud->getBarycenter(),
-                     Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),-N)),1.0,QColor(64,64,64),
-            2*cloud->getBoundingRadius(),2*cloud->getBoundingRadius());
-
 
     emit sig_displayResults( QString("Fit Plan:\nNormal=+-(%1 , %2 , %3)\nRms=%4\n").arg(N[0]).arg(N[1]).arg(N[2]).arg(plan.getRMS()));
     emit sig_newColumn("Err(Plan)",plan.getErrNorm());
@@ -142,7 +139,32 @@ void View3D::slot_fitPlan()
 
 void View3D::slot_fitCustomMesh()
 {
+    QString filename=QFileDialog::getOpenFileName(nullptr,"3D Mesh","./obj","Object (*.obj)");
 
+    QElapsedTimer timer;
+    timer.start();
+
+    auto* m_obj = new Qt3DRender::QMesh();
+    m_obj->setSource(QUrl(QString("file:///")+filename));
+
+    Object obj(filename,1.0,QPosAtt());
+
+    obj.setScalePosAtt(cloud->getBoundingRadius()/obj.getRadius(),
+                       QPosAtt(cloud->getBarycenter()-obj.getBox().middle(),Eigen::Quaterniond(1,0,0,0)));
+
+
+    cloud->fit(&obj);
+
+    addObj(m_obj,obj.getPosAtt(),obj.getScale(),QColor(64,64,64));
+
+    emit sig_displayResults( QString("Fit Mesh :\nScale=%1\nPosition=(%2,%3,%4)\nQ=(%5,%6,%7,%8)\nRms=%9\ndt=%10 ms")
+                             .arg(obj.getScale())
+                             .arg(obj.getPosAtt().P[0]).arg(obj.getPosAtt().P[1]).arg(obj.getPosAtt().P[2])
+                             .arg(obj.getPosAtt().Q.w()).arg(obj.getPosAtt().Q.x()).arg(obj.getPosAtt().Q.y()).arg(obj.getPosAtt().Q.w())
+                             .arg(obj.getRMS())
+                             .arg(timer.nsecsElapsed()*1e-6));
+
+    emit sig_newColumn("Err(Mesh)",obj.getErrNorm());
 }
 
 //----------------------------
@@ -564,21 +586,7 @@ void View3D::addSphere(QPosAtt posatt,float scale,QColor color,double radius)
     auto* m_obj = new Qt3DExtras::QSphereMesh();
     m_obj->setRadius(radius);
 
-    auto* t_obj = new Qt3DCore::QTransform();
-    t_obj->setScale(scale);
-    t_obj->setRotation(toQQuaternion(posatt.Q));
-    t_obj->setTranslation(toQVector3D(posatt.P));
-
-    auto* mat_obj = new Qt3DExtras::QPhongMaterial();
-    mat_obj->setDiffuse(color);
-
-    auto* m_objEntity = new Qt3DCore::QEntity(rootEntity);
-    m_objEntity->addComponent(m_obj);
-    m_objEntity->addComponent(mat_obj);
-    m_objEntity->addComponent(t_obj);
-
-    transforms.push_back(t_obj);
-    materials.push_back(mat_obj);
+    addObj(reinterpret_cast<Qt3DRender::QMesh*>(m_obj),posatt,scale,color);
 }
 
 void View3D::addPlan(QPosAtt posatt,float scale,QColor color,double width,double height)
@@ -587,28 +595,11 @@ void View3D::addPlan(QPosAtt posatt,float scale,QColor color,double width,double
     m_obj->setWidth(width);
     m_obj->setHeight(height);
 
-    auto* t_obj = new Qt3DCore::QTransform();
-    t_obj->setScale(scale);
-    t_obj->setRotation(toQQuaternion(posatt.Q));
-    t_obj->setTranslation(toQVector3D(posatt.P));
-
-    auto* mat_obj = new Qt3DExtras::QPhongMaterial();
-    mat_obj->setDiffuse(color);
-
-    auto* m_objEntity = new Qt3DCore::QEntity(rootEntity);
-    m_objEntity->addComponent(m_obj);
-    m_objEntity->addComponent(mat_obj);
-    m_objEntity->addComponent(t_obj);
-
-    transforms.push_back(t_obj);
-    materials.push_back(mat_obj);
+    addObj(reinterpret_cast<Qt3DRender::QMesh*>(m_obj),posatt,scale,color);
 }
 
-void View3D::addObj(QString filename, QPosAtt posatt,float scale,QColor color)
+void View3D::addObj(Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor color)
 {
-    auto* m_obj = new Qt3DRender::QMesh();
-    m_obj->setSource(QUrl(QString("file:///")+filename));
-
     auto* t_obj = new Qt3DCore::QTransform();
     t_obj->setScale(scale);
     t_obj->setRotation(toQQuaternion(posatt.Q));
@@ -623,6 +614,17 @@ void View3D::addObj(QString filename, QPosAtt posatt,float scale,QColor color)
     m_objEntity->addComponent(m_obj);
     m_objEntity->addComponent(mat_obj);
     m_objEntity->addComponent(t_obj);
+
+    Qt3DRender::QCullFace* culling = new Qt3DRender::QCullFace();
+    culling->setMode(Qt3DRender::QCullFace::NoCulling);
+    auto effect = mat_obj->effect();
+    for (auto t : effect->techniques())
+    {
+        for (auto rp : t->renderPasses())
+        {
+            rp->addRenderState(culling);
+        }
+    }
 
     transforms.push_back(t_obj);
     materials.push_back(mat_obj);

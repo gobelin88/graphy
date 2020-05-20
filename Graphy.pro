@@ -37,6 +37,7 @@ SOURCES += \
         ScatterModifier.cpp \
         SurfaceModifier.cpp \
         ShapeFit.cpp \
+        color_wheel.cpp \
         curve2d.cpp \
         curve2d_gainphase.cpp \
         main.cpp \
@@ -60,6 +61,7 @@ HEADERS += \
         ShapeFit.h \
         box.h \
         boxplot.h \
+        color_wheel.hpp \
         curve2d.h \
         curve2d_gainphase.h \
         mainwindow.h \

@@ -5,6 +5,7 @@
 #include "box.h"
 #include "curve2d.h"
 #include "tabledata.h"
+#include "color_wheel.hpp"
 
 #ifndef VIEWER1D_H
 #define VIEWER1D_H
@@ -48,14 +49,16 @@ public slots:
     void slot_paste();
     void slot_statistiques();
 
-    void slot_set_color();
-    void slot_set_style();
     void slot_clear_marks();
     void addMark(double cx,double cy,QString markstr);
 
     void slot_setAxisXType(int mode);
     void slot_setAxisYType(int mode);
-
+    void slot_setBrushColor(QColor color);
+    void slot_setPenColor(QColor color);
+    void slot_setStyle(int style);
+    void slot_setScatter(int style);
+    void slot_setPenStyle(int style);
 
 signals:
     void pick(double p0);
@@ -80,8 +83,6 @@ protected:
     QAction* actLegendShowHide;
     QAction* actLegendTopBottom;
     QAction* actLegendLeftRight;
-    QAction* actColor;
-    QAction* actStyle;
 
     QMenu* menuParameters;
     QMenu* menuLegend;

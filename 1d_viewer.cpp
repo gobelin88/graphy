@@ -23,13 +23,17 @@ Viewer1D::Viewer1D(Curve2D* sharedBuf,const QMap<QString,QKeySequence>& shortcut
     connect(this, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(mousePress(QMouseEvent*)));
     connect(this, SIGNAL(mouseDoubleClick(QMouseEvent*)), this, SLOT(mouseDoublePress(QMouseEvent*)));
 
-    pen_select.setColor(colors[2]);
-    pen_select.setStyle(Qt::SolidLine);
+    connect(this, SIGNAL(axisDoubleClick(QCPAxis*,QCPAxis::SelectablePart,QMouseEvent*)), this, SLOT(slot_axisLabelDoubleClick(QCPAxis*,QCPAxis::SelectablePart)));
+    connect(this, SIGNAL(legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*,QMouseEvent*)), this, SLOT(slot_legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*)));
+    connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(selectionChanged()));
 
     applyShortcuts(shortcuts_map);
 
     top_bottom=Qt::AlignTop;
     left_right=Qt::AlignRight;
+
+    modifiers=Qt::NoModifier;
+    label.clear();
 }
 
 Viewer1D::~Viewer1D()
@@ -57,14 +61,38 @@ QCPGraph* Viewer1D::newGraph(const Curve2D& datacurve)
 
     this->graph()->setSelectable(QCP::stWhole);
 
-    QCPSelectionDecorator* decorator_select=new QCPSelectionDecorator;
-    decorator_select->setPen(pen_select);
-    this->graph()->setSelectionDecorator(decorator_select);
+    this->graph()->setSelectionDecorator(nullptr);
 
     graph()->setName(datacurve.getLegend());
     graph()->setData(toQVector(datacurve.getX()),toQVector(datacurve.getY()));
 
     return this->graph();
+}
+
+void Viewer1D::selectionChanged()
+{
+    for (int i=0; i<plottableCount(); ++i)
+    {
+        auto* ptr_plottable = plottable(i);
+        QCPPlottableLegendItem* item = legend->itemWithPlottable(ptr_plottable);
+        if (item->selected() || ptr_plottable->selected())
+        {
+            item->setSelected(true);
+
+            QCPGraph* ptr_graph=dynamic_cast<QCPGraph*>(ptr_plottable);
+            if (ptr_graph)
+            {
+                ptr_graph->setSelection(QCPDataSelection(ptr_graph->data()->dataRange()));
+            }
+            QCPCurve* ptr_curve=dynamic_cast<QCPCurve*>(ptr_plottable);
+            if (ptr_curve)
+            {
+                ptr_curve->setSelection(QCPDataSelection(ptr_curve->data()->dataRange()));
+            }
+        }
+    }
+
+
 }
 
 QCPCurve* Viewer1D::newCurve(const Curve2D& datacurve)
@@ -79,9 +107,7 @@ QCPCurve* Viewer1D::newCurve(const Curve2D& datacurve)
     pen_model.setStyle(Qt::SolidLine);
     pcurve->setPen(pen_model);
 
-    QCPSelectionDecorator* decorator_select=new QCPSelectionDecorator;
-    decorator_select->setPen(pen_select);
-    pcurve->setSelectionDecorator(decorator_select);
+    pcurve->setSelectionDecorator(nullptr);
 
     legend->setVisible(true);
 
@@ -115,6 +141,37 @@ void Viewer1D::slot_add_data(const Curve2D& datacurve)
 
     rescaleAxes();
     replot();
+}
+
+void Viewer1D::configurePopup()
+{
+    QList<QCPAbstractPlottable*> plottables=selectedPlottables();
+
+    if (plottables.size()>0)
+    {
+        QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(plottables[0]);
+        QCPGraph* currentgraph=dynamic_cast<QCPGraph*>(plottables[0]);
+
+        if (currentcurve)
+        {
+            cb_itemLineStyleList->setCurrentIndex(currentcurve->lineStyle());
+            cb_itemScatterStyleList->setCurrentIndex(static_cast<int>(currentcurve->scatterStyle().shape()));
+        }
+        else if (currentgraph)
+        {
+            cb_itemLineStyleList->setCurrentIndex(currentgraph->lineStyle());
+            cb_itemScatterStyleList->setCurrentIndex(static_cast<int>(currentgraph->scatterStyle().shape()));
+        }
+
+
+        s_pen_alpha->setValue(plottables[0]->pen().color().alphaF());
+        s_brush_alpha->setValue(plottables[0]->brush().color().alphaF());
+        cb_brushstyle->setCurrentIndex(plottables[0]->brush().style());
+        cb_penstyle->setCurrentIndex(plottables[0]->pen().style()-1);
+        cw_pen_color->setColor(plottables[0]->pen().color());
+        cw_brush_color->setColor(plottables[0]->brush().color());
+        sb_pen_width->setValue(plottables[0]->pen().widthF());
+    }
 }
 
 void Viewer1D::createPopup()
@@ -184,22 +241,25 @@ void Viewer1D::createPopup()
 
     QGridLayout* gbox = new QGridLayout();
 
-    QComboBox* cb_scale_mode_x=new QComboBox;
+    cb_scale_mode_x=new QComboBox;
     cb_scale_mode_x->addItem("Linear");
     cb_scale_mode_x->addItem("Logarithmic");
     cb_scale_mode_x->setCurrentIndex(0);
-    QComboBox* cb_scale_mode_y=new QComboBox;
+
+    cb_scale_mode_y=new QComboBox;
     cb_scale_mode_y->addItem("Linear");
     cb_scale_mode_y->addItem("Logarithmic");
     cb_scale_mode_y->setCurrentIndex(0);
-    QComboBox* cb_itemLineStyleList = new QComboBox;
+
+    cb_itemLineStyleList = new QComboBox;
     cb_itemLineStyleList->addItem(QStringLiteral("lsNone"),        int(QCPGraph::LineStyle::lsNone));
     cb_itemLineStyleList->addItem(QStringLiteral("lsLine"),        int(QCPGraph::LineStyle::lsLine));
     cb_itemLineStyleList->addItem(QStringLiteral("lsStepLeft"),    int(QCPGraph::LineStyle::lsStepLeft));
     cb_itemLineStyleList->addItem(QStringLiteral("lsStepRight"),   int(QCPGraph::LineStyle::lsStepRight));
     cb_itemLineStyleList->addItem(QStringLiteral("lsStepCenter"),  int(QCPGraph::LineStyle::lsStepCenter));
     cb_itemLineStyleList->addItem(QStringLiteral("lsImpulse"),     int(QCPGraph::LineStyle::lsImpulse));
-    QComboBox* cb_itemScatterStyleList = new QComboBox;
+
+    cb_itemScatterStyleList = new QComboBox;
     cb_itemScatterStyleList->addItem(QStringLiteral("ssNone"),             int(QCPScatterStyle::ScatterShape::ssNone));
     cb_itemScatterStyleList->addItem(QStringLiteral("ssDot"),              int(QCPScatterStyle::ScatterShape::ssDot));
     cb_itemScatterStyleList->addItem(QStringLiteral("ssCross"),            int(QCPScatterStyle::ScatterShape::ssCross));
@@ -217,7 +277,7 @@ void Viewer1D::createPopup()
     cb_itemScatterStyleList->addItem(QStringLiteral("ssPlusCircle"),       int(QCPScatterStyle::ScatterShape::ssPlusCircle));
     cb_itemScatterStyleList->addItem(QStringLiteral("ssPeace"),            int(QCPScatterStyle::ScatterShape::ssPeace));
 
-    QComboBox* cb_penstyle = new QComboBox;
+    cb_penstyle = new QComboBox;
     cb_penstyle->addItem(QStringLiteral("SolidLine"));
     cb_penstyle->addItem(QStringLiteral("DashLine"));
     cb_penstyle->addItem(QStringLiteral("DotLine"));
@@ -225,32 +285,87 @@ void Viewer1D::createPopup()
     cb_penstyle->addItem(QStringLiteral("DashDotDotLine"));
     cb_penstyle->addItem(QStringLiteral("CustomDashLine"));
 
+    cb_brushstyle = new QComboBox;
+    cb_brushstyle->addItem(QStringLiteral("NoBrush"));
+    cb_brushstyle->addItem(QStringLiteral("SolidPattern"));
+    cb_brushstyle->addItem(QStringLiteral("Dense1Pattern"));
+    cb_brushstyle->addItem(QStringLiteral("Dense2Pattern"));
+    cb_brushstyle->addItem(QStringLiteral("Dense3Pattern"));
+    cb_brushstyle->addItem(QStringLiteral("Dense4Pattern"));
+    cb_brushstyle->addItem(QStringLiteral("Dense5Pattern"));
+    cb_brushstyle->addItem(QStringLiteral("Dense6Pattern"));
+    cb_brushstyle->addItem(QStringLiteral("Dense7Pattern"));
+    cb_brushstyle->addItem(QStringLiteral("HorPattern"));
+    cb_brushstyle->addItem(QStringLiteral("VerPattern"));
+    cb_brushstyle->addItem(QStringLiteral("CrossPattern"));
+    cb_brushstyle->addItem(QStringLiteral("BDiagPattern"));
+    cb_brushstyle->addItem(QStringLiteral("DiagCrossPattern"));
+
     //QPushButton* pb_pen_color=new  QPushButton("Pen");
-    Color_Wheel* cw_pen_color = new Color_Wheel;
-    Color_Wheel* cw_brush_color = new Color_Wheel;
+    cw_pen_color = new Color_Wheel;
+    cw_brush_color = new Color_Wheel;
     //cd_pen_color->setOptions(QColorDialog::DontUseNativeDialog| QColorDialog::NoButtons);
 
+    sb_pen_width=new QDoubleSpinBox();
+    s_pen_alpha=new QDoubleSpinBox();
+    s_pen_alpha->setRange(0,1.0);
+    s_pen_alpha->setSingleStep(0.1);
+    s_pen_alpha->setPrefix("alpha=");
+    s_brush_alpha=new QDoubleSpinBox();
+    s_brush_alpha->setRange(0,1.0);
+    s_brush_alpha->setSingleStep(0.1);
+    s_brush_alpha->setPrefix("alpha=");
+
     QGridLayout* g_style = new QGridLayout();
-    QGroupBox* gb_style=new QGroupBox("Style");
+    QGroupBox* gb_style=new QGroupBox("Graphic Style");
     gb_style->setLayout(g_style);
 
-    g_style->addWidget(cb_itemLineStyleList,0,0);
-    g_style->addWidget(cb_itemScatterStyleList,0,1);
-    g_style->addWidget(cw_pen_color,1,0);
-    g_style->addWidget(cw_brush_color,1,1);
-    g_style->addWidget(cb_penstyle,2,0);
+    g_style->addWidget(new QLabel("Scatter style : "),0,0);
+    g_style->addWidget(new QLabel("Line style : "),1,0);
+    g_style->addWidget(new QLabel("Pen style : "),2,0);
+    g_style->addWidget(new QLabel("Pen width : "),3,0);
+    g_style->addWidget(new QLabel("Brush style : "),4,0);
 
-    gbox->addWidget(new QLabel("X Axis"),0,0);
-    gbox->addWidget(new QLabel("Y Axis"),1,0);
-    gbox->addWidget(cb_scale_mode_x,0,1);
-    gbox->addWidget(cb_scale_mode_y,1,1);
-    gbox->addWidget(gb_style,2,0,1,2);
+    g_style->addWidget(cb_itemScatterStyleList,0,1);
+    g_style->addWidget(cb_itemLineStyleList,1,1);
+    g_style->addWidget(cb_penstyle,2,1);
+    g_style->addWidget(sb_pen_width,3,1);
+    g_style->addWidget(cb_brushstyle,4,1);
+
+    QLabel* l_pen_color=new QLabel("Pen color");
+    QLabel* l_brush_color=new QLabel("Brush color");
+    l_pen_color->setAlignment(Qt::AlignHCenter);
+    l_brush_color->setAlignment(Qt::AlignHCenter);
+
+    g_style->addWidget(l_pen_color,5,0);
+    g_style->addWidget(l_brush_color,5,1);
+    g_style->addWidget(cw_pen_color,6,0);
+    g_style->addWidget(cw_brush_color,6,1);
+    g_style->addWidget(s_pen_alpha,7,0);
+    g_style->addWidget(s_brush_alpha,7,1);
+
+    QGridLayout* g_axis = new QGridLayout();
+    QGroupBox* gb_axis=new QGroupBox("Axis");
+    gb_axis->setLayout(g_axis);
+
+    g_axis->addWidget(new QLabel("X Type"),0,0);
+    g_axis->addWidget(new QLabel("Y Type"),1,0);
+    g_axis->addWidget(cb_scale_mode_x,0,1);
+    g_axis->addWidget(cb_scale_mode_y,1,1);
+
+    gbox->addWidget(gb_axis,0,0);
+    gbox->addWidget(gb_style,1,0);
 
     widget->setLayout(gbox);
 
+    QObject::connect(s_pen_alpha, SIGNAL(valueChanged(double)), this, SLOT(slot_setPenAlpha(double)));
+    QObject::connect(s_brush_alpha, SIGNAL(valueChanged(double)), this, SLOT(slot_setBrushAlpha(double)));
+
     QObject::connect(cw_brush_color, SIGNAL(colorChanged(QColor)), this, SLOT(slot_setBrushColor(QColor)));
+    QObject::connect(sb_pen_width, SIGNAL(valueChanged(double)), this, SLOT(slot_setPenWidth(double)));
     QObject::connect(cw_pen_color, SIGNAL(colorChanged(QColor)), this, SLOT(slot_setPenColor(QColor)));
     QObject::connect(cb_penstyle, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setPenStyle(int)));
+    QObject::connect(cb_brushstyle, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setBrushStyle(int)));
     QObject::connect(cb_itemScatterStyleList, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setScatter(int)));
     QObject::connect(cb_itemLineStyleList, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setStyle(int)));
     QObject::connect(cb_scale_mode_x, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setAxisXType(int)));
@@ -345,7 +460,7 @@ void Viewer1D::slot_clear_marks()
     this->replot();
 }
 
-void Viewer1D::addMark(double cx,double cy,QString markstr)
+void Viewer1D::addLabel(double cx, double cy)
 {
     double mx=this->xAxis->range().lower;
     double my=this->yAxis->range().lower;
@@ -386,6 +501,12 @@ void Viewer1D::addMark(double cx,double cy,QString markstr)
     coordtextY->setFont(QFont(font().family(), 9));
     coordtextY->setPadding(QMargins(8, 0, 0, 0));
 
+    this->replot();
+}
+
+void Viewer1D::addTextLabel(double cx,double cy,QString markstr)
+{
+    // add the text label at the top:
     QCPItemText* coordtextStr = new QCPItemText(this);
     coordtextStr->position->setType(QCPItemPosition::ptPlotCoords);
     coordtextStr->setPositionAlignment(Qt::AlignLeft|Qt::AlignBottom);
@@ -398,23 +519,77 @@ void Viewer1D::addMark(double cx,double cy,QString markstr)
     this->replot();
 }
 
+void Viewer1D::keyPressEvent(QKeyEvent* event)
+{
+    QCustomPlot::keyPressEvent(event);
+    modifiers |= event->modifiers();
+
+    if (modifiers&Qt::ControlModifier && event->key()==Qt::Key_L)
+    {
+        label = QInputDialog::getText(this, "New label", "New label :", QLineEdit::Normal,"");
+    }
+}
+
+void Viewer1D::keyReleaseEvent(QKeyEvent* event)
+{
+    QCustomPlot::keyReleaseEvent(event);
+    modifiers &= event->modifiers();
+}
+
 void Viewer1D::mousePress(QMouseEvent* event)
 {
     if (event->button() == Qt::RightButton)
     {
+        configurePopup();
         popup_menu->exec(mapToGlobal(event->pos()));
     }
-}
 
-void Viewer1D::mouseDoublePress(QMouseEvent* event)
-{
-    if (event->button() == Qt::LeftButton)
+    if (modifiers&Qt::ControlModifier && event->button() == Qt::LeftButton)
     {
         double cx=this->xAxis->pixelToCoord(event->x());
         double cy=this->yAxis->pixelToCoord(event->y());
+        addLabel(cx,cy);
+        modifiers=Qt::NoModifier;
+    }
+    if (!label.isEmpty() && event->button() == Qt::LeftButton)
+    {
+        double cx=this->xAxis->pixelToCoord(event->x());
+        double cy=this->yAxis->pixelToCoord(event->y());
+        addTextLabel(cx,cy,label);
+        modifiers=Qt::NoModifier;
+        label.clear();
+    }
+}
 
-        QString str=QInputDialog::getText(this,"Add Mark","Text=");
-        addMark(cx,cy,str);
+void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart part)
+{
+    // Set an axis label by double clicking on it
+    if (part == QCPAxis::spAxisLabel) // only react when the actual axis label is clicked, not tick label or axis backbone
+    {
+        bool ok;
+        QString newLabel = QInputDialog::getText(this, "Set legend", "New axis label:", QLineEdit::Normal, axis->label(), &ok);
+        if (ok)
+        {
+            axis->setLabel(newLabel);
+            replot();
+        }
+    }
+}
+
+void Viewer1D::slot_legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* item)
+{
+    // Rename a graph by double clicking on its legend item
+    Q_UNUSED(legend)
+    if (item) // only react if item was clicked (user could have clicked on border padding of legend where there is no item, then item is 0)
+    {
+        QCPPlottableLegendItem* plItem = qobject_cast<QCPPlottableLegendItem*>(item);
+        bool ok;
+        QString newName = QInputDialog::getText(this,"Set legend", "New graph name:", QLineEdit::Normal, plItem->plottable()->name(), &ok);
+        if (ok)
+        {
+            plItem->plottable()->setName(newName);
+            replot();
+        }
     }
 }
 
@@ -698,52 +873,99 @@ void Viewer1D::slot_left_legend(bool value)
 
 void Viewer1D::slot_setBrushColor(QColor color)
 {
-    QList<QCPGraph*> graphslist=this->selectedGraphs();
-    QList<QCPCurve*> curveslist=this->getSelectedQCPCurves();
+    QList<QCPAbstractPlottable*> plottables=selectedPlottables();
 
-    for (int i=0; i<graphslist.size(); i++)
+    for (int i=0; i<plottables.size(); i++)
     {
-        graphslist[i]->setBrush(QBrush(color));
+        QBrush brush=plottables[i]->brush();
+        color.setAlphaF(brush.color().alphaF());
+        brush.setColor(color);
+        plottables[i]->setBrush(brush);
     }
-    for (int i=0; i<curveslist.size(); i++)
-    {
-        curveslist[i]->setBrush(QBrush(color));
-    }
+
     replot();
 }
 
 void Viewer1D::slot_setPenColor(QColor color)
 {
-    QList<QCPGraph*> graphslist=this->selectedGraphs();
-    QList<QCPCurve*> curveslist=this->getSelectedQCPCurves();
+    QList<QCPAbstractPlottable*> plottables=this->selectedPlottables();
 
-    for (int i=0; i<graphslist.size(); i++)
+    for (int i=0; i<plottables.size(); i++)
     {
-        graphslist[i]->setPen(QPen(color));
+        QPen pen=plottables[i]->pen();
+        color.setAlphaF(pen.color().alphaF());
+        pen.setColor(color);
+        plottables[i]->setPen(pen);
     }
-    for (int i=0; i<curveslist.size(); i++)
+
+    replot();
+}
+
+void Viewer1D::slot_setPenWidth(double width)
+{
+    QList<QCPAbstractPlottable*> plottables=this->selectedPlottables();
+
+    for (int i=0; i<plottables.size(); i++)
     {
-        curveslist[i]->setPen(QPen(color));
+        QPen pen=plottables[i]->pen();
+        pen.setWidthF(width);
+        plottables[i]->setPen(pen);
+    }
+    replot();
+}
+
+void Viewer1D::slot_setPenAlpha(double alpha)
+{
+    QList<QCPAbstractPlottable*> plottables=this->selectedPlottables();
+
+    for (int i=0; i<plottables.size(); i++)
+    {
+        QPen pen=plottables[i]->pen();
+        QColor color=pen.color();
+        color.setAlphaF(alpha);
+        pen.setColor(color);
+        plottables[i]->setPen(pen);
+    }
+    replot();
+}
+
+void Viewer1D::slot_setBrushAlpha(double alpha)
+{
+    QList<QCPAbstractPlottable*> plottables=this->selectedPlottables();
+
+    for (int i=0; i<plottables.size(); i++)
+    {
+        QBrush brush=plottables[i]->brush();
+        QColor color=brush.color();
+        color.setAlphaF(alpha);
+        brush.setColor(color);
+        plottables[i]->setBrush(brush);
     }
     replot();
 }
 
 void Viewer1D::slot_setPenStyle(int style)
 {
-    QList<QCPGraph*> graphslist=this->selectedGraphs();
-    QList<QCPCurve*> curveslist=this->getSelectedQCPCurves();
+    QList<QCPAbstractPlottable*> plottables=this->selectedPlottables();
 
-    for (int i=0; i<graphslist.size(); i++)
+    for (int i=0; i<plottables.size(); i++)
     {
-        QPen pen=graphslist[i]->pen();
+        QPen pen=plottables[i]->pen();
         pen.setStyle(Qt::PenStyle(style+1));
-        graphslist[i]->setPen(pen);
+        plottables[i]->setPen(pen);
     }
-    for (int i=0; i<curveslist.size(); i++)
+    replot();
+}
+
+void Viewer1D::slot_setBrushStyle(int style)
+{
+    QList<QCPAbstractPlottable*> plottables=this->selectedPlottables();
+
+    for (int i=0; i<plottables.size(); i++)
     {
-        QPen pen=graphslist[i]->pen();
-        pen.setStyle(Qt::PenStyle(style+1));
-        curveslist[i]->setPen(pen);
+        QBrush brush=plottables[i]->brush();
+        brush.setStyle(Qt::BrushStyle(style));
+        plottables[i]->setBrush(brush);
     }
     replot();
 }

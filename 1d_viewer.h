@@ -28,9 +28,11 @@ public:
 public slots:
     void slot_add_data(const Curve2D& datacurve);
 
-    void keyPressEvent(QKeyEvent* event);
-    void keyReleaseEvent(QKeyEvent* event);
-    void mousePress(QMouseEvent* event);
+    //void keyPressEvent(QKeyEvent* event);
+    //void keyReleaseEvent(QKeyEvent* event);
+
+    void mousePressEvent(QMouseEvent* event);
+    void mouseMoveEvent(QMouseEvent* event);
     //void mouseDoublePress(QMouseEvent* event);
 
     void slot_fit_polynomial();
@@ -51,7 +53,6 @@ public slots:
     void slot_paste();
     void slot_statistiques();
 
-    void slot_clear_marks();
     void addLabel(double cx,double cy);
     void addTextLabel(double cx,double cy,QString markstr);
 
@@ -70,6 +71,11 @@ public slots:
     void slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart part);
     void slot_legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* item);
     void selectionChanged();
+
+    void slot_clear_marks();
+    void slot_gadgetMark();
+    void slot_gadgetText();
+    void slot_gadgetArrow();
 
 signals:
     void pick(double p0);
@@ -91,7 +97,8 @@ protected:
     Qt::AlignmentFlag left_right;
     Qt::AlignmentFlag top_bottom;
     Qt::KeyboardModifiers modifiers;
-    QString label;
+    QString state_label,state_arrow,state_mark;
+    QCPItemCurve* arrowItem;
 
     //Popup
     void createPopup();
@@ -100,7 +107,6 @@ protected:
     QAction* actSave;
     QAction* actRescale;
     QAction* actDelete;
-    QAction* actClearMarks;
     QAction* actCopy;
     QAction* actPaste;
     QAction* actLegendShowHide;
@@ -117,6 +123,12 @@ protected:
     QAction* actFitSigmoid;
     QAction* actFitSinusoide;
     QAction* actStatistiques;
+    QMenu* menuGadgets;
+    QAction* actClearGadgets;
+    QAction* actGadgetArrow;
+    QAction* actGadgetText;
+    QAction* actGadgetMark;
+    QWidgetAction* createParametersWidget();
 
     QComboBox* cb_scale_mode_x;
     QComboBox* cb_scale_mode_y;

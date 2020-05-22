@@ -20,9 +20,6 @@ Viewer1D::Viewer1D(Curve2D* sharedBuf,const QMap<QString,QKeySequence>& shortcut
     this->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
                           QCP::iSelectLegend | QCP::iSelectPlottables);
 
-    connect(this, SIGNAL(mousePress(QMouseEvent*)), this, SLOT(mousePress(QMouseEvent*)));
-    connect(this, SIGNAL(mouseDoubleClick(QMouseEvent*)), this, SLOT(mouseDoublePress(QMouseEvent*)));
-
     connect(this, SIGNAL(axisDoubleClick(QCPAxis*,QCPAxis::SelectablePart,QMouseEvent*)), this, SLOT(slot_axisLabelDoubleClick(QCPAxis*,QCPAxis::SelectablePart)));
     connect(this, SIGNAL(legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*,QMouseEvent*)), this, SLOT(slot_legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*)));
     connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(selectionChanged()));
@@ -33,7 +30,10 @@ Viewer1D::Viewer1D(Curve2D* sharedBuf,const QMap<QString,QKeySequence>& shortcut
     left_right=Qt::AlignRight;
 
     modifiers=Qt::NoModifier;
-    label.clear();
+    state_label.clear();
+    state_arrow.clear();
+    state_mark.clear();
+    arrowItem=nullptr;
 }
 
 Viewer1D::~Viewer1D()
@@ -174,67 +174,8 @@ void Viewer1D::configurePopup()
     }
 }
 
-void Viewer1D::createPopup()
+QWidgetAction* Viewer1D::createParametersWidget()
 {
-    popup_menu=new QMenu(this);
-
-    actCopy   = new QAction("Copy",  this);
-    actPaste   = new QAction("Paste",  this);
-
-    actClearMarks   = new QAction("Clear Marks",  this);
-    actSave   = new QAction("Save",  this);
-    actRescale= new QAction("Rescale",  this);
-    actDelete= new QAction("Delete",  this);
-    actLegendShowHide= new QAction("Hide",  this);
-    actLegendTopBottom= new QAction("Move bottom",  this);
-    actLegendLeftRight= new QAction("Move left",  this);
-    actStatistiques= new QAction("Statistiques",  this);
-
-
-    actCopy->setShortcutVisibleInContextMenu(true);
-    actPaste->setShortcutVisibleInContextMenu(true);
-    actClearMarks->setShortcutVisibleInContextMenu(true);
-    actSave->setShortcutVisibleInContextMenu(true);
-    actRescale->setShortcutVisibleInContextMenu(true);
-    actDelete->setShortcutVisibleInContextMenu(true);
-    actLegendShowHide->setShortcutVisibleInContextMenu(true);
-    actLegendTopBottom->setShortcutVisibleInContextMenu(true);
-    actLegendLeftRight->setShortcutVisibleInContextMenu(true);
-
-    actLegendShowHide->setCheckable(true);
-    actLegendShowHide->setChecked(true);
-    actLegendTopBottom->setCheckable(true);
-    actLegendTopBottom->setChecked(true);
-    actLegendLeftRight->setCheckable(true);
-    actLegendLeftRight->setChecked(true);
-
-    this->addAction(actCopy);
-    this->addAction(actPaste);
-    this->addAction(actSave);
-    this->addAction(actRescale);
-    this->addAction(actDelete);
-    this->addAction(actLegendShowHide);
-    this->addAction(actClearMarks);
-    this->addAction(actLegendTopBottom);
-    this->addAction(actLegendLeftRight);
-
-    popup_menu->addAction(actStatistiques);
-    popup_menu->addAction(actCopy);
-    popup_menu->addAction(actPaste);
-    popup_menu->addAction(actSave);
-    popup_menu->addAction(actDelete);
-    popup_menu->addSeparator();
-    popup_menu->addAction(actRescale);
-    popup_menu->addAction(actClearMarks);
-    popup_menu->addSeparator();
-
-    menuFit=new QMenu("Fit",this);
-    menuLegend=new QMenu("Legend",this);
-    menuScalarField=new QMenu("Scalar Field",this);
-    menuScalarFieldFit=new QMenu("Fit",this);
-    menuParameters=new QMenu("Parameters",this);
-
-    ///////////////////////////////////////////////
     QWidgetAction* actWidget=new QWidgetAction(popup_menu);
     QWidget* widget=new QWidget;
     actWidget->setDefaultWidget(widget);
@@ -371,14 +312,91 @@ void Viewer1D::createPopup()
     QObject::connect(cb_scale_mode_x, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setAxisXType(int)));
     QObject::connect(cb_scale_mode_y, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setAxisYType(int)));
 
-    ///////////////////////////////////////////////
+    return actWidget;
+}
 
+void Viewer1D::createPopup()
+{
+    popup_menu=new QMenu(this);
+    menuGadgets=new QMenu("Gadgets",this);
+    menuFit=new QMenu("Fit",this);
+    menuLegend=new QMenu("Legend",this);
+    menuScalarField=new QMenu("Scalar Field",this);
+    menuScalarFieldFit=new QMenu("Fit",this);
+    menuParameters=new QMenu("Parameters",this);
+
+    actCopy   = new QAction("Copy",  this);
+    actPaste   = new QAction("Paste",  this);
+    actSave   = new QAction("Save",  this);
+    actRescale= new QAction("Rescale",  this);
+    actDelete= new QAction("Delete",  this);
+    actClearGadgets   = new QAction("Clear Gadgets",  this);
+    actGadgetArrow= new QAction("Arrow",  this);
+    actGadgetText= new QAction("Text",  this);
+    actGadgetMark= new QAction("Mark",  this);
+    actLegendShowHide= new QAction("Hide",  this);
+    actLegendTopBottom= new QAction("Move bottom",  this);
+    actLegendLeftRight= new QAction("Move left",  this);
+    actStatistiques= new QAction("Statistiques",  this);
     actFitPolynomial= new QAction("Polynomial",  this);
     actFitGaussian= new QAction("Gaussian",  this);
     actFitSigmoid= new QAction("Sigmoid",  this);
     actFitSinusoide= new QAction("Sinusoide",  this);
-
     actFitPolynomial2V= new QAction("Polynomial XY",  this);
+
+    this->addAction(actCopy);
+    this->addAction(actPaste);
+    this->addAction(actSave);
+    this->addAction(actRescale);
+    this->addAction(actDelete);
+    this->addAction(actClearGadgets);
+    this->addAction(actGadgetArrow);
+    this->addAction(actGadgetText);
+    this->addAction(actGadgetMark);
+    this->addAction(actLegendShowHide);
+    this->addAction(actLegendTopBottom);
+    this->addAction(actLegendLeftRight);
+    this->addAction(actStatistiques);
+
+    actCopy->setShortcutVisibleInContextMenu(true);
+    actPaste->setShortcutVisibleInContextMenu(true);
+    actSave->setShortcutVisibleInContextMenu(true);
+    actRescale->setShortcutVisibleInContextMenu(true);
+    actDelete->setShortcutVisibleInContextMenu(true);
+    actClearGadgets->setShortcutVisibleInContextMenu(true);
+    actGadgetArrow->setShortcutVisibleInContextMenu(true);
+    actGadgetText->setShortcutVisibleInContextMenu(true);
+    actGadgetMark->setShortcutVisibleInContextMenu(true);
+    actLegendShowHide->setShortcutVisibleInContextMenu(true);
+    actLegendTopBottom->setShortcutVisibleInContextMenu(true);
+    actLegendLeftRight->setShortcutVisibleInContextMenu(true);
+
+    actLegendShowHide->setCheckable(true);
+    actLegendShowHide->setChecked(true);
+    actLegendTopBottom->setCheckable(true);
+    actLegendTopBottom->setChecked(true);
+    actLegendLeftRight->setCheckable(true);
+    actLegendLeftRight->setChecked(true);
+
+    popup_menu->addAction(actSave);
+    popup_menu->addAction(actCopy);
+    popup_menu->addAction(actPaste);
+    popup_menu->addAction(actDelete);
+    popup_menu->addAction(actRescale);
+    popup_menu->addSeparator();
+    popup_menu->addAction(actStatistiques);
+    popup_menu->addMenu(menuFit);
+    popup_menu->addMenu(menuScalarField);
+    popup_menu->addSeparator();
+    popup_menu->addMenu(menuGadgets);
+    popup_menu->addSeparator();
+    popup_menu->addMenu(menuParameters);
+
+    menuGadgets->addAction(actGadgetMark);
+    menuGadgets->addAction(actGadgetText);
+    menuGadgets->addAction(actGadgetArrow);
+    menuGadgets->addSeparator();
+    menuGadgets->addAction(actClearGadgets);
 
     menuFit->addAction(actFitPolynomial);
     menuFit->addAction(actFitGaussian);
@@ -390,16 +408,16 @@ void Viewer1D::createPopup()
     menuLegend->addAction(actLegendLeftRight);
 
     menuScalarField->addMenu(menuScalarFieldFit);
-
     menuScalarFieldFit->addAction(actFitPolynomial2V);
 
-    popup_menu->addAction(actStatistiques);
-    popup_menu->addMenu(menuFit);
-    popup_menu->addMenu(menuScalarField);
-    popup_menu->addMenu(menuLegend);
-    popup_menu->addMenu(menuParameters);
-    menuParameters->addAction(actWidget);
+    menuParameters->addMenu(menuLegend);
+    menuParameters->addAction(createParametersWidget());
 
+
+    connect(actGadgetMark,SIGNAL(triggered()),this,SLOT(slot_gadgetMark()));
+    connect(actGadgetText,SIGNAL(triggered()),this,SLOT(slot_gadgetText()));
+    connect(actGadgetArrow,SIGNAL(triggered()),this,SLOT(slot_gadgetArrow()));
+    connect(actClearGadgets,SIGNAL(triggered()),this,SLOT(slot_clear_marks()));
     connect(actStatistiques,SIGNAL(triggered()),this,SLOT(slot_statistiques()));
     connect(actSave,SIGNAL(triggered()),this,SLOT(slot_save_image()));
     connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_rescale()));
@@ -408,15 +426,12 @@ void Viewer1D::createPopup()
     connect(actFitGaussian,SIGNAL(triggered()),this,SLOT(slot_fit_gaussian()));
     connect(actFitSinusoide,SIGNAL(triggered()),this,SLOT(slot_fit_sinusoide()));
     connect(actFitSigmoid,SIGNAL(triggered()),this,SLOT(slot_fit_sigmoid()));
-
     connect(actCopy,SIGNAL(triggered()),this,SLOT(slot_copy()));
     connect(actPaste,SIGNAL(triggered()),this,SLOT(slot_paste()));
-
     connect(actDelete,SIGNAL(triggered()),this,SLOT(slot_delete()));
     connect(actLegendShowHide,SIGNAL(toggled(bool)),this,SLOT(slot_show_legend(bool)));
     connect(actLegendTopBottom,SIGNAL(toggled(bool)),this,SLOT(slot_top_legend(bool)));
     connect(actLegendLeftRight,SIGNAL(toggled(bool)),this,SLOT(slot_left_legend(bool)));
-    connect(actClearMarks,SIGNAL(triggered()),this,SLOT(slot_clear_marks()));
 }
 
 void Viewer1D::slot_setStyle(int style)
@@ -458,6 +473,24 @@ void Viewer1D::slot_clear_marks()
     this->clearItems();
 
     this->replot();
+}
+
+void Viewer1D::slot_gadgetMark()
+{
+    state_mark = QString("mark");
+    this->setCursor(Qt::PointingHandCursor);
+}
+
+void Viewer1D::slot_gadgetText()
+{
+    state_label = QInputDialog::getText(this, "New label", "New label :", QLineEdit::Normal,"");
+    this->setCursor(Qt::PointingHandCursor);
+}
+
+void Viewer1D::slot_gadgetArrow()
+{
+    state_arrow = QString("first");
+    this->setCursor(Qt::PointingHandCursor);
 }
 
 void Viewer1D::addLabel(double cx, double cy)
@@ -519,24 +552,63 @@ void Viewer1D::addTextLabel(double cx,double cy,QString markstr)
     this->replot();
 }
 
-void Viewer1D::keyPressEvent(QKeyEvent* event)
-{
-    QCustomPlot::keyPressEvent(event);
-    modifiers |= event->modifiers();
+//void Viewer1D::keyPressEvent(QKeyEvent* event)
+//{
+//    QCustomPlot::keyPressEvent(event);
+//    modifiers |= event->modifiers();
 
-    if (modifiers&Qt::ControlModifier && event->key()==Qt::Key_L)
+//    if (modifiers&Qt::ControlModifier && event->key()==Qt::Key_M)
+//    {
+//        state_mark = QString("mark");
+//        this->setCursor(Qt::PointingHandCursor);
+//    }
+
+//    if (modifiers&Qt::ControlModifier && event->key()==Qt::Key_L)
+//    {
+//        state_label = QInputDialog::getText(this, "New label", "New label :", QLineEdit::Normal,"");
+//        this->setCursor(Qt::PointingHandCursor);
+//    }
+
+//    if (modifiers&Qt::ControlModifier && event->key()==Qt::Key_F)
+//    {
+//        state_arrow = QString("first");
+//        this->setCursor(Qt::PointingHandCursor);
+//    }
+//}
+
+//void Viewer1D::keyReleaseEvent(QKeyEvent* event)
+//{
+//    QCustomPlot::keyReleaseEvent(event);
+//    modifiers &= event->modifiers();
+//}
+
+void Viewer1D::mouseMoveEvent(QMouseEvent* event)
+{
+    double cx=this->xAxis->pixelToCoord(event->x());
+    double cy=this->yAxis->pixelToCoord(event->y());
+
+    if (arrowItem)
     {
-        label = QInputDialog::getText(this, "New label", "New label :", QLineEdit::Normal,"");
+        if (state_arrow=="second")
+        {
+            arrowItem->startDir->setCoords(cx, cy);
+            arrowItem->endDir->setCoords(cx, cy);
+            arrowItem->end->setCoords(cx, cy);
+        }
+        else if (state_arrow=="third")
+        {
+            arrowItem->endDir->setCoords(cx, cy);
+            arrowItem->end->setCoords(cx, cy);
+        }
+        else if (state_arrow=="four")
+        {
+            arrowItem->end->setCoords(cx, cy);
+        }
+        replot();
     }
 }
 
-void Viewer1D::keyReleaseEvent(QKeyEvent* event)
-{
-    QCustomPlot::keyReleaseEvent(event);
-    modifiers &= event->modifiers();
-}
-
-void Viewer1D::mousePress(QMouseEvent* event)
+void Viewer1D::mousePressEvent(QMouseEvent* event)
 {
     if (event->button() == Qt::RightButton)
     {
@@ -544,22 +616,64 @@ void Viewer1D::mousePress(QMouseEvent* event)
         popup_menu->exec(mapToGlobal(event->pos()));
     }
 
-    if (modifiers&Qt::ControlModifier && event->button() == Qt::LeftButton)
+    double cx=this->xAxis->pixelToCoord(event->x());
+    double cy=this->yAxis->pixelToCoord(event->y());
+
+    if (!state_mark.isEmpty() && event->button() == Qt::LeftButton)
     {
-        double cx=this->xAxis->pixelToCoord(event->x());
-        double cy=this->yAxis->pixelToCoord(event->y());
         addLabel(cx,cy);
-        modifiers=Qt::NoModifier;
+        state_mark.clear();
+        this->setCursor(Qt::ArrowCursor);
+        replot();
     }
-    if (!label.isEmpty() && event->button() == Qt::LeftButton)
+
+    if (!state_label.isEmpty() && event->button() == Qt::LeftButton)
     {
-        double cx=this->xAxis->pixelToCoord(event->x());
-        double cy=this->yAxis->pixelToCoord(event->y());
-        addTextLabel(cx,cy,label);
-        modifiers=Qt::NoModifier;
-        label.clear();
+        addTextLabel(cx,cy,state_label);
+        state_label.clear();
+        this->setCursor(Qt::ArrowCursor);
+        replot();
+    }
+
+    if (!state_arrow.isEmpty() && event->button() == Qt::LeftButton)
+    {
+        if (state_arrow=="first")
+        {
+            arrowItem = new QCPItemCurve(this);
+            arrowItem->start->setCoords(cx, cy);
+            arrowItem->startDir->setCoords(cx, cy);
+            arrowItem->endDir->setCoords(cx, cy);
+            arrowItem->end->setCoords(cx, cy);
+            state_arrow=QString("second");
+            replot();
+        }
+        else if (state_arrow=="second")
+        {
+            arrowItem->startDir->setCoords(cx, cy);
+            arrowItem->endDir->setCoords(cx, cy);
+            arrowItem->end->setCoords(cx, cy);
+            state_arrow=QString("third");
+            replot();
+        }
+        else if (state_arrow=="third")
+        {
+            arrowItem->endDir->setCoords(cx, cy);
+            arrowItem->end->setCoords(cx, cy);
+            state_arrow=QString("four");
+            arrowItem->setHead(QCPLineEnding::esSpikeArrow);
+            replot();
+        }
+        else if (state_arrow=="four")
+        {
+            arrowItem->end->setCoords(cx, cy);
+            arrowItem=nullptr;
+            state_arrow.clear();
+            this->setCursor(Qt::ArrowCursor);
+            replot();
+        }
     }
 }
+
 
 void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart part)
 {
@@ -1233,7 +1347,10 @@ void Viewer1D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     QMap<QString,QAction*> shortcuts_links;
     shortcuts_links.insert(QString("Graph-Copy"),actCopy);
     shortcuts_links.insert(QString("Graph-Paste"),actPaste);
-    shortcuts_links.insert(QString("Graph-ClearMarks"),actClearMarks);
+    shortcuts_links.insert(QString("Graph-ClearGadgets"),actClearGadgets);
+    shortcuts_links.insert(QString("Graph-GadgetText"),actGadgetText);
+    shortcuts_links.insert(QString("Graph-GadgetArrow"),actGadgetArrow);
+    shortcuts_links.insert(QString("Graph-GadgetMark"),actGadgetMark);
     shortcuts_links.insert(QString("Graph-Save"),actSave);
     shortcuts_links.insert(QString("Graph-Rescale"),actRescale);
     shortcuts_links.insert(QString("Graph-Delete"),actDelete);

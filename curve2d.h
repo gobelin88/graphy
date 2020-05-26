@@ -83,6 +83,12 @@ public:
     static Eigen::VectorXd buildX(int sz);
 
     void operator=(const Curve2D& other);
+    void fromQCP(const QCPCurve* other);
+    void fromQCP(const QCPGraph* other);
+
+    QCPGraph* toQCPGraph(QCustomPlot* plot) const;
+    QCPCurve* toQCPCurve(QCustomPlot* plot) const;
+
 private:
     Eigen::VectorXd x;
     Eigen::VectorXd y;
@@ -90,6 +96,25 @@ private:
     QVector<QString> l;
     QString legendname;
     CurveType type;
+
+    struct QCPData
+    {
+        QCPData()
+        {
+            brush.setStyle(Qt::BrushStyle::NoBrush);
+            pen.setColor(QColor(0,0,0));
+            pen.setStyle(Qt::SolidLine);
+            mLineStyle=QCPGraph::lsLine;
+            mScatterStyle=QCPScatterStyle::ssNone;
+        }
+
+        QPen pen;
+        QBrush brush;
+        int mLineStyle;
+        int mScatterStyle;
+    };
+
+    QCPData qcpData;
 };
 
 #endif // CURVE2D_H

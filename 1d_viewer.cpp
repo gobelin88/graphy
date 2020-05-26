@@ -34,6 +34,8 @@ Viewer1D::Viewer1D(Curve2D* sharedBuf,const QMap<QString,QKeySequence>& shortcut
     state_arrow.clear();
     state_mark.clear();
     arrowItem=nullptr;
+
+    legend->setVisible(true);
 }
 
 Viewer1D::~Viewer1D()
@@ -47,37 +49,7 @@ unsigned int Viewer1D::getId()
     return id;
 }
 
-QCPGraph* Viewer1D::newGraph(const Curve2D& datacurve)
-{
-    this->addGraph();
-    QPen pen_model(colors[getId()]);
 
-    pen_model.setStyle(Qt::SolidLine);
-    this->graph()->setPen(pen_model);
-    this->graph()->setLineStyle(QCPGraph::lsLine);
-    this->graph()->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssNone, 10));
-    this->rescaleAxes();
-    legend->setVisible(true);
-
-    this->graph()->setSelectable(QCP::stWhole);
-
-    this->graph()->setSelectionDecorator(nullptr);
-
-    graph()->setName(datacurve.getLegend());
-    graph()->setData(toQVector(datacurve.getX()),toQVector(datacurve.getY()));
-
-    if (datacurve.getLabelsField().size()>0)
-    {
-        datacurve.buildX(datacurve.getY().size());
-        QSharedPointer<QCPAxisTickerText> textTicker(new QCPAxisTickerText);
-        textTicker->addTicks(datacurve.getQX(), datacurve.getLabelsField() );
-        xAxis->setTicker(textTicker);
-        xAxis->setTickLabelColor(Qt::black);
-        xAxis->setLabelColor(Qt::black);
-    }
-
-    return this->graph();
-}
 
 void Viewer1D::selectionChanged()
 {
@@ -101,51 +73,31 @@ void Viewer1D::selectionChanged()
             }
         }
     }
-
-
 }
 
-QCPCurve* Viewer1D::newCurve(const Curve2D& datacurve)
-{
-    QCPCurve* pcurve = new QCPCurve(this->xAxis, this->yAxis);
+//QCPGraph* Viewer1D::newGraph(const Curve2D& datacurve)
+//{
 
-    pcurve->setScalarField(datacurve.getQScalarField());
+//    this->rescaleAxes();
+//    return pgraph;
+//}
 
-    pcurve->setName(datacurve.getLegend());
-    pcurve->setData(datacurve.getQX(), datacurve.getQY());
-    QPen pen_model(colors[getId()]);
-    pen_model.setStyle(Qt::SolidLine);
-    pcurve->setPen(pen_model);
-
-    pcurve->setSelectionDecorator(nullptr);
-
-    legend->setVisible(true);
-
-    if (datacurve.getScalarField().size()>0)
-    {
-        pcurve->setColorScale(new QCPColorScale(this));
-        pcurve->getColorScale()->setType(QCPAxis::atRight);
-        pcurve->getColorScale()->setDataRange(pcurve->getScalarFieldRange());
-        pcurve->getColorScale()->setGradient(pcurve->getGradient());
-
-        pcurve->setLineStyle(QCPCurve::lsNone);
-        pcurve->setScatterStyle(QCPScatterStyle::ScatterShape::ssDisc);
-
-        this->plotLayout()->addElement(0, this->plotLayout()->columnCount(), pcurve->getColorScale());
-    }
-
-    return pcurve;
-}
+//QCPCurve* Viewer1D::newCurve(const Curve2D& datacurve)
+//{
+//    QCPCurve* pcurve =
+//    this->rescaleAxes();
+//    return pcurve;
+//}
 
 void Viewer1D::slot_add_data(const Curve2D& datacurve)
 {
     if (datacurve.getType()==Curve2D::GRAPH)
     {
-        newGraph(datacurve);
+        datacurve.toQCPGraph(this);
     }
     else
     {
-        newCurve(datacurve);
+        datacurve.toQCPCurve(this);
         axisRect()->setupFullAxesBox();
     }
 
@@ -1197,21 +1149,13 @@ QList<Curve2D> Viewer1D::getSelectedCurves()
 
     for (int i=0,id=0; i<plottableslist.size(); i++)
     {
-        QVector<double> x,y;
+        QVector<double> xv,yv;
 
         QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(plottableslist[i]);
         if (currentcurve)
         {
-            auto it =currentcurve->data()->begin();
-
-            while (it!=currentcurve->data()->end())
-            {
-                x.push_back(it->key);
-                y.push_back(it->value);
-                it++;
-            }
-            Curve2D curve(fromQVector(x),fromQVector(y),currentcurve->name(),Curve2D::CURVE);
-            curve.setScalarField(fromQVector(currentcurve->getScalarField()));
+            Curve2D curve;
+            curve.fromQCP(currentcurve);
             curvelist.push_back(curve);
             id++;
         }
@@ -1219,15 +1163,9 @@ QList<Curve2D> Viewer1D::getSelectedCurves()
         QCPGraph* currentgraph=dynamic_cast<QCPGraph*>(plottableslist[i]);
         if (currentgraph)
         {
-            auto it =currentgraph->data()->begin();
-
-            while (it!=currentgraph->data()->end())
-            {
-                x.push_back(it->key);
-                y.push_back(it->value);
-                it++;
-            }
-            curvelist.push_back(Curve2D(fromQVector(x),fromQVector(y),currentgraph->name(),Curve2D::GRAPH));
+            Curve2D curve;
+            curve.fromQCP(currentgraph);
+            curvelist.push_back(curve);
             id++;
         }
 

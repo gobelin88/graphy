@@ -24274,7 +24274,9 @@ QCPCurve::QCPCurve(QCPAxis* keyAxis, QCPAxis* valueAxis) :
     setLineStyle(lsLine);
     setScatterSkip(0);
 
+    //Hack
     scale=nullptr;
+    QObject::connect(scale,SIGNAL(dataRangeChanged(const QCPRange&)),this,SLOT(slot_setGradientRange(const QCPRange&)));
 }
 
 QCPCurve::~QCPCurve()

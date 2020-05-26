@@ -205,6 +205,7 @@ void MainWindow::direct_open(QString filename)
         connect(model,SIGNAL(dataChanged(const QModelIndex&,const QModelIndex&)),this,SLOT(updateTable(const QModelIndex&,const QModelIndex&)));
         setCurrentFilename(filename);
         updateTable();
+        table->resizeColumnsToContents();
     }
     else
     {
@@ -966,7 +967,7 @@ void MainWindow::direct_new(int sx,int sy)
 void MainWindow::setCurrentFilename(QString filename)
 {
     current_filename=filename;
-    this->setWindowTitle(QString("Graphy v2.0 : %1").arg(current_filename));
+    this->setWindowTitle(QString("Graphy v3.0 : %1").arg(current_filename));
 }
 
 void MainWindow::resizeEvent(QResizeEvent* event)

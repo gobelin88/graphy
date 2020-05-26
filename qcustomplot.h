@@ -6179,7 +6179,70 @@ Q_DECLARE_TYPEINFO(QCPGraphData, Q_PRIMITIVE_TYPE);
 */
 typedef QCPDataContainer<QCPGraphData> QCPGraphDataContainer;
 
-class QCP_LIB_DECL QCPGraph : public QCPAbstractPlottable1D<QCPGraphData>
+class Hack
+{
+public:
+    ////////////////////////////////////hack
+    QCPRange getScalarFieldRange()const
+    {
+        double min = *std::min_element(scalarFieldData.constBegin(), scalarFieldData.constEnd());
+        double max = *std::max_element(scalarFieldData.constBegin(), scalarFieldData.constEnd());
+        return QCPRange (min,max);
+    }
+
+    void setScalarField(const QVector<double>& scalarFieldData)
+    {
+        this->scalarFieldData=scalarFieldData;
+        gradient = QCPColorGradient(QCPColorGradient::gpPolar);
+        scalarFieldColors=QVector<QRgb>(scalarFieldData.size(),0);
+        setGradientRange(getScalarFieldRange());
+    }
+
+    QVector<double> getScalarField()const
+    {
+        return scalarFieldData;
+    }
+
+    void setLabelField(const QVector<QString>& labelFieldData)
+    {
+        this->labelFieldData=labelFieldData;
+    }
+
+    QVector<QString> getLabelField()const
+    {
+        return labelFieldData;
+    }
+
+    QCPColorGradient getGradient()const
+    {
+        return gradient;
+    }
+
+    void setColorScale(QCPColorScale* scale)
+    {
+        this->scale=scale;
+
+    }
+
+    QCPColorScale* getColorScale()
+    {
+        return scale;
+    }
+
+    void setGradientRange(const QCPRange& range)
+    {
+        gradient.colorize(scalarFieldData.data(),range,scalarFieldColors.data(),scalarFieldColors.size());
+    }
+
+protected:
+    QVector<QString> labelFieldData;
+    QCPColorScale* scale;
+    QVector<QRgb> scalarFieldColors;
+    QVector<double> scalarFieldData;
+    QCPColorGradient gradient;
+};
+
+class QCP_LIB_DECL QCPGraph : public QCPAbstractPlottable1D<QCPGraphData>,public Hack
 {
     Q_OBJECT
     /// \cond INCLUDE_QPROPERTIES
@@ -6355,7 +6418,7 @@ Q_DECLARE_TYPEINFO(QCPCurveData, Q_PRIMITIVE_TYPE);
 */
 typedef QCPDataContainer<QCPCurveData> QCPCurveDataContainer;
 
-class QCP_LIB_DECL QCPCurve : public QCPAbstractPlottable1D<QCPCurveData>
+class QCP_LIB_DECL QCPCurve : public QCPAbstractPlottable1D<QCPCurveData>,public Hack
 {
     Q_OBJECT
     /// \cond INCLUDE_QPROPERTIES
@@ -6414,46 +6477,11 @@ public:
     virtual QCPRange getKeyRange(bool& foundRange, QCP::SignDomain inSignDomain=QCP::sdBoth) const Q_DECL_OVERRIDE;
     virtual QCPRange getValueRange(bool& foundRange, QCP::SignDomain inSignDomain=QCP::sdBoth, const QCPRange& inKeyRange=QCPRange()) const Q_DECL_OVERRIDE;
 
-    ////////////////////////////////////hack
-    QCPRange getScalarFieldRange()const
+public slots:
+    void slot_setGradientRange(const QCPRange& range)
     {
-        double min = *std::min_element(scalarFieldData.constBegin(), scalarFieldData.constEnd());
-        double max = *std::max_element(scalarFieldData.constBegin(), scalarFieldData.constEnd());
-        return QCPRange (min,max);
+        setGradientRange(range);
     }
-
-    void setScalarField(const QVector<double>& scalarFieldData)
-    {
-        this->scalarFieldData=scalarFieldData;
-        gradient = QCPColorGradient(QCPColorGradient::gpPolar);
-        scalarFieldColors=QVector<QRgb>(scalarFieldData.size(),0);
-        setGradientRange(getScalarFieldRange());
-    }
-
-    QVector<double> getScalarField()
-    {
-        return scalarFieldData;
-    }
-    QCPColorGradient getGradient()const
-    {
-        return gradient;
-    }
-
-    void setColorScale(QCPColorScale* scale)
-    {
-        this->scale=scale;
-        connect(scale,SIGNAL(dataRangeChanged(const QCPRange&)),this,SLOT(setGradientRange(const QCPRange&)));
-    }
-
-    QCPColorScale* getColorScale()
-    {
-        return scale;
-    }
-
-    QCPColorScale* scale;
-    QVector<QRgb> scalarFieldColors;
-    QVector<double> scalarFieldData;
-    QCPColorGradient gradient;
 
 protected:
     // property members:
@@ -6485,13 +6513,6 @@ protected:
 
     friend class QCustomPlot;
     friend class QCPLegend;
-
-public slots:
-    void setGradientRange(const QCPRange& range)
-    {
-        gradient.colorize(scalarFieldData.data(),range,scalarFieldColors.data(),scalarFieldColors.size());
-    }
-
 };
 Q_DECLARE_METATYPE(QCPCurve::LineStyle)
 

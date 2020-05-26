@@ -448,6 +448,123 @@ void Curve2D::operator=(const Curve2D& other)
     this->l=other.l;
     this->legendname=other.legendname;
     this->type=other.type;
+    this->qcpData=other.qcpData;
+}
+
+void Curve2D::fromQCP(const QCPCurve* other)
+{
+    x.resize(other->data()->size());
+    y.resize(other->data()->size());
+    auto it =other->data()->begin();
+    int i=0;
+    while (it!=other->data()->end())
+    {
+        x[i]=it->key;
+        y[i]=it->value;
+        it++;
+        i++;
+    }
+
+    this->s=fromQVector(other->getScalarField());
+    this->l=other->getLabelField();
+    this->legendname=other->name();
+    this->type=Curve2D::CURVE;
+    this->qcpData.mLineStyle=other->lineStyle();
+    this->qcpData.mScatterStyle=other->scatterStyle().shape();
+    this->qcpData.pen=other->pen();
+    this->qcpData.brush=other->brush();
+}
+
+void Curve2D::fromQCP(const QCPGraph* other)
+{
+    x.resize(other->data()->size());
+    y.resize(other->data()->size());
+    auto it =other->data()->begin();
+    int i=0;
+    while (it!=other->data()->end())
+    {
+        x[i]=it->key;
+        y[i]=it->value;
+        it++;
+        i++;
+    }
+
+    this->s=fromQVector(other->getScalarField());
+    this->l=other->getLabelField();
+    this->legendname=other->name();
+    this->type=Curve2D::GRAPH;
+    this->qcpData.mLineStyle=other->lineStyle();
+    this->qcpData.mScatterStyle=other->scatterStyle().shape();
+    this->qcpData.pen=other->pen();
+    this->qcpData.brush=other->brush();
+}
+
+QCPGraph* Curve2D::toQCPGraph(QCustomPlot* plot)const
+{
+    QCPGraph* pgraph = new QCPGraph(plot->xAxis, plot->yAxis);
+
+    pgraph->setScalarField(getQScalarField());
+    pgraph->setLabelField(getLabelsField());
+    pgraph->setLineStyle(static_cast<QCPGraph::LineStyle>(qcpData.mLineStyle));
+    pgraph->setScatterStyle(QCPScatterStyle(static_cast<QCPScatterStyle::ScatterShape>(qcpData.mScatterStyle), 10));
+    pgraph->setSelectable(QCP::stWhole);
+    pgraph->setSelectionDecorator(nullptr);
+    pgraph->setName(getLegend());
+    pgraph->setData(getQX(),getQY());
+    pgraph->setPen(qcpData.pen);
+    pgraph->setBrush(qcpData.brush);
+
+    if (getLabelsField().size()>0)
+    {
+        buildX(getY().size());
+        QSharedPointer<QCPAxisTickerText> textTicker(new QCPAxisTickerText);
+        textTicker->addTicks(getQX(), getLabelsField() );
+        plot->xAxis->setTicker(textTicker);
+        plot->xAxis->setTickLabelColor(Qt::black);
+        plot->xAxis->setLabelColor(Qt::black);
+    }
+
+    return pgraph;
+}
+
+QCPCurve* Curve2D::toQCPCurve(QCustomPlot* plot)const
+{
+    QCPCurve* pcurve = new QCPCurve(plot->xAxis, plot->yAxis);
+
+    pcurve->setScalarField(getQScalarField());
+    pcurve->setLabelField(getLabelsField());
+    pcurve->setLineStyle(static_cast<QCPCurve::LineStyle>(qcpData.mLineStyle));
+    pcurve->setScatterStyle(QCPScatterStyle(static_cast<QCPScatterStyle::ScatterShape>(qcpData.mScatterStyle), 10));
+    pcurve->setSelectable(QCP::stWhole);
+    pcurve->setSelectionDecorator(nullptr);
+    pcurve->setName(getLegend());
+    pcurve->setData(getQX(),getQY());
+    pcurve->setPen(qcpData.pen);
+    pcurve->setBrush(qcpData.brush);
+
+    if (getLabelsField().size()>0)
+    {
+        buildX(getY().size());
+        QSharedPointer<QCPAxisTickerText> textTicker(new QCPAxisTickerText);
+        textTicker->addTicks(getQX(), getLabelsField() );
+        plot->xAxis->setTicker(textTicker);
+        plot->xAxis->setTickLabelColor(Qt::black);
+        plot->xAxis->setLabelColor(Qt::black);
+    }
+
+    if (getScalarField().size()>0)
+    {
+        pcurve->setColorScale(new QCPColorScale(plot));
+        pcurve->getColorScale()->setType(QCPAxis::atRight);
+        pcurve->getColorScale()->setDataRange(pcurve->getScalarFieldRange());
+        pcurve->getColorScale()->setGradient(pcurve->getGradient());
+        pcurve->setLineStyle(QCPCurve::lsNone);
+        pcurve->setScatterStyle(QCPScatterStyle::ScatterShape::ssDisc);
+
+        plot->plotLayout()->addElement(0, plot->plotLayout()->columnCount(), pcurve->getColorScale());
+    }
+
+    return pcurve;
 }
 
 QString Curve2D::getLegend() const

@@ -18,10 +18,6 @@ public:
     Viewer1D(Curve2D* sharedBuf, const QMap<QString, QKeySequence>& shortcuts_map, QWidget* parent);
     ~Viewer1D();
 
-    QCPGraph* newGraph(const Curve2D& datacurve);
-    QCPCurve* newCurve(const Curve2D& datacurve);
-
-
 
     void applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
 

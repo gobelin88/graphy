@@ -858,16 +858,17 @@ bool MainWindow::custom_exp_parse(QString expression,int currentRow,QString& res
     return false;
 }
 
-Eigen::VectorXd toDouble(QVector<QString> vec_col_str)
+
+
+QVector<QString> MainWindow::getColumn(int idCol)
 {
-    Eigen::VectorXd vec_col(vec_col_str.size());
-
-    for (int i=0; i<vec_col.size(); i++)
+    int nbRows=model->rowCount();
+    QVector<QString> contentCol(nbRows);
+    for (int i=0; i<nbRows; i++)
     {
-        vec_col[i]=vec_col_str[i].toDouble();
+        contentCol[i]=model->item(i,idCol)->text();
     }
-
-    return vec_col;
+    return contentCol;
 }
 
 void MainWindow::setColumn(int idCol,const QVector<QString>& vec_col)
@@ -889,7 +890,7 @@ void MainWindow::setColumn(int idCol,const QVector<QString>& vec_col)
                     model->item(i,idCol)->setText(vec_col[i]);
                 }
             }
-            datatable.col(idCol)=toDouble(vec_col);
+            datatable.col(idCol)=toSafeDouble(vec_col);
         }
         std::cout<<"setColumn 2 end"<<std::endl;
     }
@@ -911,7 +912,7 @@ void MainWindow::setColumn(int idCol,const QVector<QString>& vec_col)
             {
                 items.append(new QStandardItem(vec_col[i]));
             }
-            addColumn(datatable,toDouble(vec_col));
+            addColumn(datatable,toSafeDouble(vec_col));
             model->appendColumn(items);
         }
     }
@@ -986,7 +987,7 @@ void MainWindow::updateTable()
     {
         for (int i = 0; i < rows; i++)
         {
-            datatable(i,j)=table->model()->data(table->model()->index(i,j)).toDouble();
+            datatable(i,j)=toSafeDouble(model->item(i,j)->text());
         }
     }
 }
@@ -997,12 +998,10 @@ void MainWindow::updateTable(const QModelIndex& indexA,const QModelIndex& indexB
 
     int i=indexA.row();
     int j=indexA.column();
-    double value=table->model()->data(table->model()->index(i,j)).toDouble();
-    std::cout<<"updateTable at ("<<i<<" "<<j<<")="<<value<<std::endl;
 
     if (i<datatable.rows() && j<datatable.cols())
     {
-        datatable(i,j)=value;
+        datatable(i,j)=toSafeDouble(model->item(i,j)->text());
     }
     std::cout<<"updateTable end"<<std::endl;
 }
@@ -1074,6 +1073,11 @@ void MainWindow::slot_plot_y()
 
 }
 
+bool MainWindow::asColumnStrings(int idCol)
+{
+    return isnan(datatable.col(idCol).sum());
+}
+
 void MainWindow::slot_plot_graph_xy()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
@@ -1093,10 +1097,17 @@ void MainWindow::slot_plot_graph_xy()
 
             if (data_x.size()>0 && data_y.size()>0)
             {
-                viewer1d->slot_add_data(Curve2D(data_x,
-                                                data_y,
-                                                QString("%2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),
-                                                Curve2D::GRAPH));
+                if (!asColumnStrings(id_list[k  ].column()))
+                {
+                    Curve2D curve(data_x,data_y,QString("%2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),Curve2D::GRAPH);
+                    viewer1d->slot_add_data(curve);
+                }
+                else
+                {
+                    Curve2D curve(data_y,QString("%2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),Curve2D::GRAPH);
+                    curve.setLabelsField(getColumn(id_list[k  ].column()));
+                    viewer1d->slot_add_data(curve);
+                }
             }
         }
 
@@ -1355,7 +1366,6 @@ void MainWindow::slot_plot_histogram()
         Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
         QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
         QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
-
         viewer1d->setMinimumSize(600,400);
 
         for (int k=0; k<id_list.size(); k++)
@@ -1369,14 +1379,15 @@ void MainWindow::slot_plot_histogram()
                 if (ok)
                 {
                     viewer1d->slot_histogram(data_y,QString("Histogram %1").arg(getColName(id_list[k  ].column())),nbbins);
-                    QMdiSubWindow* subWindow = new QMdiSubWindow;
-                    subWindow->setWidget(viewer1d);
-                    subWindow->setAttribute(Qt::WA_DeleteOnClose);
-                    mdiArea->addSubWindow(subWindow);
-                    viewer1d->show();
                 }
             }
         }
+
+        QMdiSubWindow* subWindow = new QMdiSubWindow;
+        subWindow->setWidget(viewer1d);
+        subWindow->setAttribute(Qt::WA_DeleteOnClose);
+        mdiArea->addSubWindow(subWindow);
+        viewer1d->show();
 
     }
     else
@@ -1522,4 +1533,22 @@ void MainWindow::saveShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     }
 
     applyShortcuts(shortcuts);
+}
+
+double MainWindow::toSafeDouble(const QString& str)const
+{
+    bool ok;
+    double value=str.toDouble(&ok);
+    return ok?value:nan("");
+}
+Eigen::VectorXd MainWindow::toSafeDouble(QVector<QString> vec_col_str)
+{
+    Eigen::VectorXd vec_col(vec_col_str.size());
+
+    for (int i=0; i<vec_col.size(); i++)
+    {
+        vec_col[i]=toSafeDouble(vec_col_str[i]);
+    }
+
+    return vec_col;
 }

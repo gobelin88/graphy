@@ -45,6 +45,10 @@ public:
     Eigen::VectorXd getScalarField()const;
     QVector<double> getQScalarField()const;
 
+    //Optional labelField
+    void setLabelsField(const QVector<QString>& l);
+    QVector<QString> getLabelsField()const;
+
     //Fit a model
     void fit(Shape<Eigen::Vector2d>* model);
 
@@ -83,6 +87,7 @@ private:
     Eigen::VectorXd x;
     Eigen::VectorXd y;
     Eigen::VectorXd s;
+    QVector<QString> l;
     QString legendname;
     CurveType type;
 };

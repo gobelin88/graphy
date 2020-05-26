@@ -66,6 +66,16 @@ QCPGraph* Viewer1D::newGraph(const Curve2D& datacurve)
     graph()->setName(datacurve.getLegend());
     graph()->setData(toQVector(datacurve.getX()),toQVector(datacurve.getY()));
 
+    if (datacurve.getLabelsField().size()>0)
+    {
+        datacurve.buildX(datacurve.getY().size());
+        QSharedPointer<QCPAxisTickerText> textTicker(new QCPAxisTickerText);
+        textTicker->addTicks(datacurve.getQX(), datacurve.getLabelsField() );
+        xAxis->setTicker(textTicker);
+        xAxis->setTickLabelColor(Qt::black);
+        xAxis->setLabelColor(Qt::black);
+    }
+
     return this->graph();
 }
 
@@ -584,6 +594,7 @@ void Viewer1D::addTextLabel(double cx,double cy,QString markstr)
 
 void Viewer1D::mouseMoveEvent(QMouseEvent* event)
 {
+    QCustomPlot::mouseMoveEvent(event);
     double cx=this->xAxis->pixelToCoord(event->x());
     double cy=this->yAxis->pixelToCoord(event->y());
 
@@ -610,6 +621,7 @@ void Viewer1D::mouseMoveEvent(QMouseEvent* event)
 
 void Viewer1D::mousePressEvent(QMouseEvent* event)
 {
+    QCustomPlot::mousePressEvent(event);
     if (event->button() == Qt::RightButton)
     {
         configurePopup();

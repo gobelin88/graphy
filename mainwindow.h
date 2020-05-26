@@ -105,6 +105,7 @@ private:
     QAction* a_updateColumns;
 
     //Col/row
+    QVector<QString> getColumn(int idCol);
     void setColumn(int idCol,const QVector<QString>& vec_col);
     void addModelRow(const QStringList& str_row);
 
@@ -134,6 +135,11 @@ private:
 
     //Results
     QTextEdit* te_results;
+
+    //
+    Eigen::VectorXd toSafeDouble(QVector<QString> vec_col_str);
+    double toSafeDouble(const QString& str) const;
+    bool asColumnStrings(int idCol);
 };
 
 #endif // MAINWINDOW_H

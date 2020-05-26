@@ -71,6 +71,16 @@ QVector<double> Curve2D::getQScalarField()const
     return toQVector(s);
 }
 
+void Curve2D::setLabelsField(const QVector<QString>& l)
+{
+    this->l=l;
+}
+
+QVector<QString> Curve2D::getLabelsField()const
+{
+    return  l;
+}
+
 Eigen::VectorXd Curve2D::buildX(int sz)
 {
     Eigen::VectorXd qv(sz);
@@ -435,6 +445,7 @@ void Curve2D::operator=(const Curve2D& other)
     this->x=other.x;
     this->y=other.y;
     this->s=other.s;
+    this->l=other.l;
     this->legendname=other.legendname;
     this->type=other.type;
 }

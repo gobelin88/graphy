@@ -24,7 +24,8 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(ui->actionPlot_CurveXY,&QAction::triggered,this,&MainWindow::slot_plot_curve_xy);
     connect(ui->actionPlot_MapXYZ, &QAction::triggered,this,&MainWindow::slot_plot_map_2D);
     connect(ui->actionHistogram, &QAction::triggered,this,&MainWindow::slot_plot_histogram);
-    connect(ui->actionPlot_Cloud_XYZ,&QAction::triggered,this,&MainWindow::slot_plot_cloud_2D);
+    connect(ui->actionPlot_Field_2D,&QAction::triggered,this,&MainWindow::slot_plot_field_2D);
+    connect(ui->actionPlot_Cloud_2D,&QAction::triggered,this,&MainWindow::slot_plot_cloud_2D);
     connect(ui->actionPlot_Cloud_3D, &QAction::triggered,this,&MainWindow::slot_plot_cloud_3D);
     connect(ui->actionFFT, &QAction::triggered,this,&MainWindow::slot_plot_fft);
     connect(ui->actionPlot_Gain_Phase, &QAction::triggered,this,&MainWindow::slot_plot_gain_phase);
@@ -1004,7 +1005,6 @@ void MainWindow::updateTable(const QModelIndex& indexA,const QModelIndex& indexB
     {
         datatable(i,j)=toSafeDouble(model->item(i,j)->text());
     }
-    std::cout<<"updateTable end"<<std::endl;
 }
 
 
@@ -1187,6 +1187,8 @@ void MainWindow::slot_plot_cloud_2D()
                               QString("(%1,%2)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),
                               Curve2D::CURVE);
                 curve.setScalarField(data_s);
+                curve.getStyle().mLineStyle=QCPCurve::lsNone;
+                curve.getStyle().mScatterStyle=QCPScatterStyle::ssDisc;
                 viewer1d->slot_add_data(curve);
             }
         }
@@ -1202,6 +1204,62 @@ void MainWindow::slot_plot_cloud_2D()
         QMessageBox::information(this,"Information","Please select 3k columns (k>1)");
     }
 }
+
+void MainWindow::slot_plot_field_2D()
+{
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+
+    if (id_list.size()%4==0 && id_list.size()>0)
+    {
+        Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
+        QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
+        QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
+
+        viewer1d->setMinimumSize(600,400);
+
+        for (int k=0; k<id_list.size(); k+=4)
+        {
+            Eigen::VectorXd data_x=datatable.col(id_list[k  ].column());
+            Eigen::VectorXd data_y=datatable.col(id_list[k+1].column());
+            Eigen::VectorXd data_vx=datatable.col(id_list[k+2].column());
+            Eigen::VectorXd data_vy=datatable.col(id_list[k+3].column());
+
+            Eigen::VectorXd data_a(data_vx.size());
+            Eigen::VectorXd data_s(data_vx.size());
+
+            for (int i=0; i<data_a.size(); i++)
+            {
+                data_a[i]=atan2(data_vx[i],data_vy[i])-M_PI/2;
+                data_s[i]=sqrt(data_vy[i]*data_vy[i]+data_vx[i]*data_vx[i]);
+            }
+
+            if (data_x.size()>0 && data_y.size()>0)
+            {
+                Curve2D curve(data_x,
+                              data_y,
+                              QString("(%1,%2)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),
+                              Curve2D::CURVE);
+                curve.setScalarField(data_s);
+                curve.setAlphaField(data_a);
+                curve.getStyle().mLineStyle=QCPCurve::lsNone;
+                curve.getStyle().mScatterStyle=QCPScatterStyle::ssArrow;
+                curve.getStyle().mScatterSize=20;
+                viewer1d->slot_add_data(curve);
+            }
+        }
+
+        QMdiSubWindow* subWindow = new QMdiSubWindow;
+        subWindow->setWidget(viewer1d);
+        subWindow->setAttribute(Qt::WA_DeleteOnClose);
+        mdiArea->addSubWindow(subWindow);
+        viewer1d->show();
+    }
+    else
+    {
+        QMessageBox::information(this,"Information","Please select 3k columns (k>1)");
+    }
+}
+
 
 void MainWindow::slot_plot_map_2D()
 {

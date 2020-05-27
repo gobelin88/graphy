@@ -69,7 +69,8 @@
    <addaction name="actionPlot_GraphXY"/>
    <addaction name="actionPlot_CurveXY"/>
    <addaction name="actionHistogram"/>
-   <addaction name="actionPlot_Cloud_XYZ"/>
+   <addaction name="actionPlot_Cloud_2D"/>
+   <addaction name="actionPlot_Field_2D"/>
    <addaction name="actionFFT"/>
    <addaction name="separator"/>
    <addaction name="actionPlot_MapXYZ"/>
@@ -234,7 +235,7 @@
     <string>Ctrl+E</string>
    </property>
   </action>
-  <action name="actionPlot_Cloud_XYZ">
+  <action name="actionPlot_Cloud_2D">
    <property name="icon">
     <iconset resource="rsc.qrc">
      <normaloff>:/img/icons/cloudYX.png</normaloff>:/img/icons/cloudYX.png</iconset>
@@ -262,6 +263,11 @@
    </property>
    <property name="text">
     <string>Parameters</string>
+   </property>
+  </action>
+  <action name="actionPlot_Field_2D">
+   <property name="text">
+    <string>Field 2D</string>
    </property>
   </action>
  </widget>

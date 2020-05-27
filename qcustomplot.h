@@ -2827,6 +2827,7 @@ public:
     ,ssCrossCircle      ///< \enumimage{ssCrossCircle.png} a circle with a cross inside
     ,ssPlusCircle       ///< \enumimage{ssPlusCircle.png} a circle with a plus inside
     ,ssPeace     ///< \enumimage{ssPeace.png} a circle, with one vertical and two downward diagonal lines
+    ,ssArrow
     ,ssPixmap    ///< a custom pixmap specified by \ref setPixmap, centered on the data point coordinates
     ,ssCustom    ///< custom painter operations are performed per scatter (As QPainterPath, see \ref setCustomPath)
                       };
@@ -2886,8 +2887,8 @@ public:
     }
     void undefinePen();
     void applyTo(QCPPainter* painter, const QPen& defaultPen) const;
-    void drawShape(QCPPainter* painter, const QPointF& pos) const;
-    void drawShape(QCPPainter* painter, double x, double y) const;
+    void drawShape(QCPPainter* painter, const QPointF& pos, double theta=0) const;
+    void drawShape(QCPPainter* painter, double x, double y,double theta=0) const;
 
 protected:
     // property members:
@@ -6203,6 +6204,16 @@ public:
         return scalarFieldData;
     }
 
+    void setAlphaField(const QVector<double>& alphaFieldData)
+    {
+        this->alphaFieldData=alphaFieldData;
+    }
+
+    QVector<double> getAlphaField()const
+    {
+        return alphaFieldData;
+    }
+
     void setLabelField(const QVector<QString>& labelFieldData)
     {
         this->labelFieldData=labelFieldData;
@@ -6218,7 +6229,7 @@ public:
         return gradient;
     }
 
-    void setColorScale(QCPColorScale* scale)
+    virtual void setColorScale(QCPColorScale* scale)
     {
         this->scale=scale;
 
@@ -6239,6 +6250,7 @@ protected:
     QCPColorScale* scale;
     QVector<QRgb> scalarFieldColors;
     QVector<double> scalarFieldData;
+    QVector<double> alphaFieldData;
     QCPColorGradient gradient;
 };
 
@@ -6477,6 +6489,12 @@ public:
     virtual QCPRange getKeyRange(bool& foundRange, QCP::SignDomain inSignDomain=QCP::sdBoth) const Q_DECL_OVERRIDE;
     virtual QCPRange getValueRange(bool& foundRange, QCP::SignDomain inSignDomain=QCP::sdBoth, const QCPRange& inKeyRange=QCPRange()) const Q_DECL_OVERRIDE;
 
+    void setColorScale(QCPColorScale* colorscale) override
+    {
+        this->scale=colorscale;
+        QObject::connect(scale,SIGNAL(dataRangeChanged(const QCPRange&)),this,SLOT(slot_setGradientRange(const QCPRange&)));
+    }
+
 public slots:
     void slot_setGradientRange(const QCPRange& range)
     {
@@ -6500,9 +6518,15 @@ protected:
                                  const QVector<QRgb>& scattercolors,
                                  const QCPScatterStyle& style) const;
 
+    virtual void drawScatterPlot(QCPPainter* painter,
+                                 const QVector<QPointF>& points,
+                                 const QVector<QRgb>& scattercolors,
+                                 const QVector<double>& scatterangles,
+                                 const QCPScatterStyle& style) const;
+
     // non-virtual methods:
     void getCurveLines(QVector<QPointF>* lines, const QCPDataRange& dataRange, double penWidth) const;
-    void getScatters(QVector<QPointF>* scatters,QVector<QRgb>* scatters_colors, const QCPDataRange& dataRange, double scatterWidth) const;
+    void getScatters(QVector<QPointF>* scatters,QVector<QRgb>* scatters_colors,QVector<double>* scatters_angles, const QCPDataRange& dataRange, double scatterWidth) const;
     int getRegion(double key, double value, double keyMin, double valueMax, double keyMax, double valueMin) const;
     QPointF getOptimizedPoint(int prevRegion, double prevKey, double prevValue, double key, double value, double keyMin, double valueMax, double keyMax, double valueMin) const;
     QVector<QPointF> getOptimizedCornerPoints(int prevRegion, int currentRegion, double prevKey, double prevValue, double key, double value, double keyMin, double valueMax, double keyMax, double valueMin) const;

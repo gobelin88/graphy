@@ -73,6 +73,8 @@ public slots:
     void slot_gadgetText();
     void slot_gadgetArrow();
 
+    //void slot_addXaxisLabel();
+
 signals:
     void pick(double p0);
     void sig_displayResults(QString results);

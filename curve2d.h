@@ -12,6 +12,25 @@
 class Curve2D
 {
 public:
+    struct Style
+    {
+        Style()
+        {
+            brush.setStyle(Qt::BrushStyle::NoBrush);
+            pen.setColor(QColor(0,0,0));
+            pen.setStyle(Qt::SolidLine);
+            mLineStyle=QCPGraph::lsLine;
+            mScatterStyle=QCPScatterStyle::ssNone;
+            mScatterSize=10;
+        }
+
+        QPen pen;
+        QBrush brush;
+        int mLineStyle;
+        int mScatterStyle;
+        int mScatterSize;
+    };
+
     enum CurveType
     {
         GRAPH=0,
@@ -44,6 +63,11 @@ public:
     void setScalarField(const Eigen::VectorXd& s);
     Eigen::VectorXd getScalarField()const;
     QVector<double> getQScalarField()const;
+
+    //Optional scalar field
+    void setAlphaField(const Eigen::VectorXd& a);
+    Eigen::VectorXd getAlphaField()const;
+    QVector<double> getQAlphaField()const;
 
     //Optional labelField
     void setLabelsField(const QVector<QString>& l);
@@ -89,32 +113,23 @@ public:
     QCPGraph* toQCPGraph(QCustomPlot* plot) const;
     QCPCurve* toQCPCurve(QCustomPlot* plot) const;
 
+    Style& getStyle()
+    {
+        return style;
+    }
+
 private:
     Eigen::VectorXd x;
     Eigen::VectorXd y;
     Eigen::VectorXd s;
+    Eigen::VectorXd a;
     QVector<QString> l;
     QString legendname;
     CurveType type;
 
-    struct QCPData
-    {
-        QCPData()
-        {
-            brush.setStyle(Qt::BrushStyle::NoBrush);
-            pen.setColor(QColor(0,0,0));
-            pen.setStyle(Qt::SolidLine);
-            mLineStyle=QCPGraph::lsLine;
-            mScatterStyle=QCPScatterStyle::ssNone;
-        }
 
-        QPen pen;
-        QBrush brush;
-        int mLineStyle;
-        int mScatterStyle;
-    };
 
-    QCPData qcpData;
+    Style style;
 };
 
 #endif // CURVE2D_H

@@ -11282,15 +11282,15 @@ void QCPScatterStyle::applyTo(QCPPainter* painter, const QPen& defaultPen) const
 
   \see applyTo
 */
-void QCPScatterStyle::drawShape(QCPPainter* painter, const QPointF& pos) const
+void QCPScatterStyle::drawShape(QCPPainter* painter, const QPointF& pos, double theta) const
 {
-    drawShape(painter, pos.x(), pos.y());
+    drawShape(painter, pos.x(), pos.y(),theta);
 }
 
 /*! \overload
   Draws the scatter shape with \a painter at position \a x and \a y.
 */
-void QCPScatterStyle::drawShape(QCPPainter* painter, double x, double y) const
+void QCPScatterStyle::drawShape(QCPPainter* painter, double x, double y, double theta) const
 {
     double w = mSize/2.0;
     switch (mShape)
@@ -11417,6 +11417,15 @@ void QCPScatterStyle::drawShape(QCPPainter* painter, double x, double y) const
         {
             painter->drawPixmap(x-widthHalf, y-heightHalf, mPixmap);
         }
+        break;
+    }
+    case ssArrow:
+    {
+        double ct=qFastCos(theta)*w;
+        double st=qFastSin(theta)*w;
+        painter->drawLine(QLineF(x-ct,y-st,x+ct,y+st));
+        painter->drawLine(QLineF(x+0.75*ct-0.25*st,y+0.75*st+0.25*ct,x+ct,y+st));
+        painter->drawLine(QLineF(x+0.75*ct+0.25*st,y+0.75*st-0.25*ct,x+ct,y+st));
         break;
     }
     case ssCustom:
@@ -24276,7 +24285,6 @@ QCPCurve::QCPCurve(QCPAxis* keyAxis, QCPAxis* valueAxis) :
 
     //Hack
     scale=nullptr;
-    QObject::connect(scale,SIGNAL(dataRangeChanged(const QCPRange&)),this,SLOT(slot_setGradientRange(const QCPRange&)));
 }
 
 QCPCurve::~QCPCurve()
@@ -24551,6 +24559,7 @@ void QCPCurve::draw(QCPPainter* painter)
     // allocate line vector:
     QVector<QPointF> lines, scatters;
     QVector<QRgb> scattercolors;
+    QVector<double> scatterangles;
 
     // loop over and draw segments of unselected/selected data:
     QList<QCPDataRange> selectedSegments, unselectedSegments, allSegments;
@@ -24616,14 +24625,22 @@ void QCPCurve::draw(QCPPainter* painter)
         {
             if (scalarFieldData.size()>0)
             {
-                getScatters(&scatters,&scattercolors, allSegments.at(i), finalScatterStyle.size());
+                if (alphaFieldData.size()>0)
+                {
+                    getScatters(&scatters,&scattercolors,&scatterangles, allSegments.at(i), finalScatterStyle.size());
+                    drawScatterPlot(painter, scatters, scattercolors,scatterangles, finalScatterStyle);
+                }
+                else
+                {
+                    getScatters(&scatters,&scattercolors,nullptr, allSegments.at(i), finalScatterStyle.size());
+                    drawScatterPlot(painter, scatters, scattercolors, finalScatterStyle);
+                }
             }
             else
             {
-                std::cout<<"ok nullptr"<<std::endl;
-                getScatters(&scatters,nullptr, allSegments.at(i), finalScatterStyle.size());
+                getScatters(&scatters,nullptr,nullptr, allSegments.at(i), finalScatterStyle.size());
+                drawScatterPlot(painter, scatters, scattercolors, finalScatterStyle);
             }
-            drawScatterPlot(painter, scatters, scattercolors, finalScatterStyle);
 
         }
     }
@@ -24714,6 +24731,32 @@ void QCPCurve::drawScatterPlot(QCPPainter* painter,
                 painter->setPen(mPen);
             }
             style.drawShape(painter,  points.at(i));
+        }
+    }
+}
+
+void QCPCurve::drawScatterPlot(QCPPainter* painter,
+                               const QVector<QPointF>& points,
+                               const QVector<QRgb>& scattercolors,
+                               const QVector<double>& scatterangles,
+                               const QCPScatterStyle& style) const
+{
+    // draw scatter point symbols:
+    applyScattersAntialiasingHint(painter);
+
+    for (int i=0; i<points.size(); ++i)
+    {
+        if (!qIsNaN(points.at(i).x()) && !qIsNaN(points.at(i).y()))
+        {
+            if (i<scattercolors.size())
+            {
+                painter->setPen(QPen(scattercolors[i]));
+            }
+            else
+            {
+                painter->setPen(mPen);
+            }
+            style.drawShape(painter,  points.at(i),scatterangles.at(i));
         }
     }
 }
@@ -24868,7 +24911,7 @@ void QCPCurve::getCurveLines(QVector<QPointF>* lines, const QCPDataRange& dataRa
 
   \see draw, drawScatterPlot
 */
-void QCPCurve::getScatters(QVector<QPointF>* scatters,QVector<QRgb>* scatters_colors, const QCPDataRange& dataRange, double scatterWidth) const
+void QCPCurve::getScatters(QVector<QPointF>* scatters,QVector<QRgb>* scatters_colors,QVector<double>* scatters_angles, const QCPDataRange& dataRange, double scatterWidth) const
 {
     if (!scatters)
     {
@@ -24878,6 +24921,10 @@ void QCPCurve::getScatters(QVector<QPointF>* scatters,QVector<QRgb>* scatters_co
     if (scatters_colors!=nullptr)
     {
         scatters_colors->clear();
+    }
+    if (scatters_angles!=nullptr)
+    {
+        scatters_angles->clear();
     }
     QCPAxis* keyAxis = mKeyAxis.data();
     QCPAxis* valueAxis = mValueAxis.data();
@@ -24926,6 +24973,10 @@ void QCPCurve::getScatters(QVector<QPointF>* scatters,QVector<QRgb>* scatters_co
                 {
                     scatters_colors->append(scalarFieldColors[id]);
                 }
+                if (scatters_angles!=nullptr)
+                {
+                    scatters_angles->append(alphaFieldData[id]);
+                }
             }
             // advance iterator to next (non-skipped) data point:
             if (!doScatterSkip)
@@ -24960,6 +25011,10 @@ void QCPCurve::getScatters(QVector<QPointF>* scatters,QVector<QRgb>* scatters_co
                 if (scatters_colors!=nullptr)
                 {
                     scatters_colors->append(scalarFieldColors[id]);
+                }
+                if (scatters_angles!=nullptr)
+                {
+                    scatters_angles->append(alphaFieldData[id]);
                 }
             }
 

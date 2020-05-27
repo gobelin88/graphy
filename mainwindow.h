@@ -72,6 +72,7 @@ public slots:
     void slot_plot_histogram();
 
     void slot_plot_cloud_2D();
+    void slot_plot_field_2D();
     void slot_plot_map_2D();
     void slot_plot_cloud_3D();
     void slot_plot_gain_phase();

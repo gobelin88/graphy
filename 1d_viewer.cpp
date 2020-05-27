@@ -179,6 +179,7 @@ QWidgetAction* Viewer1D::createParametersWidget()
     cb_itemScatterStyleList->addItem(QStringLiteral("ssCrossCircle"),      int(QCPScatterStyle::ScatterShape::ssCrossCircle));
     cb_itemScatterStyleList->addItem(QStringLiteral("ssPlusCircle"),       int(QCPScatterStyle::ScatterShape::ssPlusCircle));
     cb_itemScatterStyleList->addItem(QStringLiteral("ssPeace"),            int(QCPScatterStyle::ScatterShape::ssPeace));
+    cb_itemScatterStyleList->addItem(QStringLiteral("ssArrow"),            int(QCPScatterStyle::ScatterShape::ssArrow));
 
     cb_penstyle = new QComboBox;
     cb_penstyle->addItem(QStringLiteral("SolidLine"));
@@ -420,11 +421,11 @@ void Viewer1D::slot_setScatter(int style)
 
     for (int i=0; i<graphslist.size(); i++)
     {
-        graphslist[0]->setScatterStyle( QCPScatterStyle::ScatterShape (style) );
+        graphslist[0]->setScatterStyle( QCPScatterStyle(QCPScatterStyle::ScatterShape (style),graphslist[0]->scatterStyle().size()) );
     }
     for (int i=0; i<curveslist.size(); i++)
     {
-        curveslist[0]->setScatterStyle( QCPScatterStyle::ScatterShape (style) );
+        curveslist[0]->setScatterStyle( QCPScatterStyle(QCPScatterStyle::ScatterShape (style),curveslist[0]->scatterStyle().size()) );
     }
     replot();
 }
@@ -642,7 +643,7 @@ void Viewer1D::mousePressEvent(QMouseEvent* event)
 void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart part)
 {
     // Set an axis label by double clicking on it
-    if (part == QCPAxis::spAxisLabel) // only react when the actual axis label is clicked, not tick label or axis backbone
+    if (part == QCPAxis::spAxisLabel || part == QCPAxis::spAxis || part == QCPAxis::spTickLabels) // only react when the actual axis label is clicked, not tick label or axis backbone
     {
         bool ok;
         QString newLabel = QInputDialog::getText(this, "Set legend", "New axis label:", QLineEdit::Normal, axis->label(), &ok);
@@ -1074,7 +1075,7 @@ void Viewer1D::slot_histogram(Eigen::VectorXd data,QString name,int nbbins)
     }
 
     Curve2D hist_curve(labels,hist,name,Curve2D::GRAPH);
-
+    hist_curve.getStyle().mLineStyle=QCPGraph::lsImpulse;
     slot_add_data(hist_curve);
 }
 

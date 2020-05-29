@@ -58,7 +58,8 @@ public slots:
     void slot_setPenColor(QColor color);
     void slot_setPenWidth(double width);
     void slot_setStyle(int style);
-    void slot_setScatter(int style);
+    void slot_setScatterShape(int scatter_shape);
+    void slot_setScatterSize(double scatter_size);
     void slot_setPenStyle(int style);
     void slot_setBrushStyle(int style);
     void slot_setPenAlpha(double alpha);
@@ -131,7 +132,8 @@ protected:
     QComboBox* cb_scale_mode_x;
     QComboBox* cb_scale_mode_y;
     QComboBox* cb_itemLineStyleList;
-    QComboBox* cb_itemScatterStyleList;
+    QComboBox* cb_ScatterShapes;
+    QDoubleSpinBox* sb_ScatterSize;
     QComboBox* cb_penstyle;
     QComboBox* cb_brushstyle;
     Color_Wheel* cw_pen_color;

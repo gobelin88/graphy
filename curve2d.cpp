@@ -1,9 +1,12 @@
 #include "curve2d.h"
 
+
+
 Curve2D::Curve2D()
 {
     this->legendname="none";
     this->type=GRAPH;
+    clear();
 }
 
 Curve2D::Curve2D(const Eigen::VectorXd& y,
@@ -14,6 +17,7 @@ Curve2D::Curve2D(const Eigen::VectorXd& y,
     this->y=y;
     this->legendname=legendname;
     this->type=type;
+    clear();
 }
 
 Curve2D::Curve2D(const Eigen::VectorXd& x,
@@ -25,6 +29,7 @@ Curve2D::Curve2D(const Eigen::VectorXd& x,
     this->y=y;
     this->legendname=legendname;
     this->type=type;
+    clear();
 }
 
 Curve2D::Curve2D(const Eigen::VectorXd& x,
@@ -38,6 +43,14 @@ Curve2D::Curve2D(const Eigen::VectorXd& x,
     this->s=s;
     this->legendname=legendname;
     this->type=type;
+    clear();
+}
+
+void Curve2D::clear()
+{
+    a.resize(0);
+    s.resize(0);
+    l.clear();
 }
 
 Eigen::VectorXd Curve2D::getX()const
@@ -486,7 +499,7 @@ void Curve2D::fromQCP(const QCPCurve* other)
     this->legendname=other->name();
     this->type=Curve2D::CURVE;
     this->style.mLineStyle=other->lineStyle();
-    this->style.mScatterStyle=other->scatterStyle().shape();
+    this->style.mScatterShape=other->scatterStyle().shape();
     this->style.mScatterSize=other->scatterStyle().size();
     this->style.pen=other->pen();
     this->style.brush=other->brush();
@@ -512,7 +525,7 @@ void Curve2D::fromQCP(const QCPGraph* other)
     this->legendname=other->name();
     this->type=Curve2D::GRAPH;
     this->style.mLineStyle=other->lineStyle();
-    this->style.mScatterStyle=other->scatterStyle().shape();
+    this->style.mScatterShape=other->scatterStyle().shape();
     this->style.mScatterSize=other->scatterStyle().size();
     this->style.pen=other->pen();
     this->style.brush=other->brush();
@@ -526,7 +539,7 @@ QCPGraph* Curve2D::toQCPGraph(QCustomPlot* plot)const
     pgraph->setScalarField(getQScalarField());
     pgraph->setLabelField(getLabelsField());
     pgraph->setLineStyle(static_cast<QCPGraph::LineStyle>(style.mLineStyle));
-    pgraph->setScatterStyle(QCPScatterStyle(static_cast<QCPScatterStyle::ScatterShape>(style.mScatterStyle), style.mScatterSize));
+    pgraph->setScatterStyle(QCPScatterStyle(static_cast<QCPScatterStyle::ScatterShape>(style.mScatterShape), style.mScatterSize));
     pgraph->setSelectable(QCP::stWhole);
     pgraph->setSelectionDecorator(nullptr);
     pgraph->setName(getLegend());
@@ -555,7 +568,7 @@ QCPCurve* Curve2D::toQCPCurve(QCustomPlot* plot)const
     pcurve->setScalarField(getQScalarField());
     pcurve->setLabelField(getLabelsField());
     pcurve->setLineStyle(static_cast<QCPCurve::LineStyle>(style.mLineStyle));
-    pcurve->setScatterStyle(QCPScatterStyle(static_cast<QCPScatterStyle::ScatterShape>(style.mScatterStyle), style.mScatterSize));
+    pcurve->setScatterStyle(QCPScatterStyle(static_cast<QCPScatterStyle::ScatterShape>(style.mScatterShape), style.mScatterSize));
     pcurve->setSelectable(QCP::stWhole);
     pcurve->setSelectionDecorator(nullptr);
     pcurve->setName(getLegend());

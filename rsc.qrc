@@ -17,6 +17,7 @@
         <file>icons/paste.png</file>
         <file>icons/save.png</file>
         <file>icons/parametres.png</file>
+        <file>icons/field2D.png</file>
     </qresource>
     <qresource prefix="/eqn">
         <file>eqn/sin.gif</file>

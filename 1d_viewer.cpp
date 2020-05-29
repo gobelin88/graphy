@@ -117,12 +117,14 @@ void Viewer1D::configurePopup()
         if (currentcurve)
         {
             cb_itemLineStyleList->setCurrentIndex(currentcurve->lineStyle());
-            cb_itemScatterStyleList->setCurrentIndex(static_cast<int>(currentcurve->scatterStyle().shape()));
+            cb_ScatterShapes->setCurrentIndex(static_cast<int>(currentcurve->scatterStyle().shape()));
+            sb_ScatterSize->setValue(currentcurve->scatterStyle().size());
         }
         else if (currentgraph)
         {
             cb_itemLineStyleList->setCurrentIndex(currentgraph->lineStyle());
-            cb_itemScatterStyleList->setCurrentIndex(static_cast<int>(currentgraph->scatterStyle().shape()));
+            cb_ScatterShapes->setCurrentIndex(static_cast<int>(currentgraph->scatterStyle().shape()));
+            sb_ScatterSize->setValue(currentgraph->scatterStyle().size());
         }
 
 
@@ -133,6 +135,7 @@ void Viewer1D::configurePopup()
         cw_pen_color->setColor(plottables[0]->pen().color());
         cw_brush_color->setColor(plottables[0]->brush().color());
         sb_pen_width->setValue(plottables[0]->pen().widthF());
+
     }
 }
 
@@ -162,24 +165,27 @@ QWidgetAction* Viewer1D::createParametersWidget()
     cb_itemLineStyleList->addItem(QStringLiteral("lsStepCenter"),  int(QCPGraph::LineStyle::lsStepCenter));
     cb_itemLineStyleList->addItem(QStringLiteral("lsImpulse"),     int(QCPGraph::LineStyle::lsImpulse));
 
-    cb_itemScatterStyleList = new QComboBox;
-    cb_itemScatterStyleList->addItem(QStringLiteral("ssNone"),             int(QCPScatterStyle::ScatterShape::ssNone));
-    cb_itemScatterStyleList->addItem(QStringLiteral("ssDot"),              int(QCPScatterStyle::ScatterShape::ssDot));
-    cb_itemScatterStyleList->addItem(QStringLiteral("ssCross"),            int(QCPScatterStyle::ScatterShape::ssCross));
-    cb_itemScatterStyleList->addItem(QStringLiteral("ssPlus"),             int(QCPScatterStyle::ScatterShape::ssPlus));
-    cb_itemScatterStyleList->addItem(QStringLiteral("ssCircle"),           int(QCPScatterStyle::ScatterShape::ssCircle));
-    cb_itemScatterStyleList->addItem(QStringLiteral("ssDisc"),             int(QCPScatterStyle::ScatterShape::ssDisc));
-    cb_itemScatterStyleList->addItem(QStringLiteral("ssSquare"),           int(QCPScatterStyle::ScatterShape::ssSquare));
-    cb_itemScatterStyleList->addItem(QStringLiteral("ssDiamond"),          int(QCPScatterStyle::ScatterShape::ssDiamond));
-    cb_itemScatterStyleList->addItem(QStringLiteral("ssStar"),             int(QCPScatterStyle::ScatterShape::ssStar));
-    cb_itemScatterStyleList->addItem(QStringLiteral("ssTriangle"),         int(QCPScatterStyle::ScatterShape::ssTriangle));
-    cb_itemScatterStyleList->addItem(QStringLiteral("ssTriangleInverted"), int(QCPScatterStyle::ScatterShape::ssTriangleInverted));
-    cb_itemScatterStyleList->addItem(QStringLiteral("ssCrossSquare"),      int(QCPScatterStyle::ScatterShape::ssCrossSquare));
-    cb_itemScatterStyleList->addItem(QStringLiteral("ssPlusSquare"),       int(QCPScatterStyle::ScatterShape::ssPlusSquare));
-    cb_itemScatterStyleList->addItem(QStringLiteral("ssCrossCircle"),      int(QCPScatterStyle::ScatterShape::ssCrossCircle));
-    cb_itemScatterStyleList->addItem(QStringLiteral("ssPlusCircle"),       int(QCPScatterStyle::ScatterShape::ssPlusCircle));
-    cb_itemScatterStyleList->addItem(QStringLiteral("ssPeace"),            int(QCPScatterStyle::ScatterShape::ssPeace));
-    cb_itemScatterStyleList->addItem(QStringLiteral("ssArrow"),            int(QCPScatterStyle::ScatterShape::ssArrow));
+    cb_ScatterShapes = new QComboBox;
+    cb_ScatterShapes->addItem(QStringLiteral("ssNone"),             int(QCPScatterStyle::ScatterShape::ssNone));
+    cb_ScatterShapes->addItem(QStringLiteral("ssDot"),              int(QCPScatterStyle::ScatterShape::ssDot));
+    cb_ScatterShapes->addItem(QStringLiteral("ssCross"),            int(QCPScatterStyle::ScatterShape::ssCross));
+    cb_ScatterShapes->addItem(QStringLiteral("ssPlus"),             int(QCPScatterStyle::ScatterShape::ssPlus));
+    cb_ScatterShapes->addItem(QStringLiteral("ssCircle"),           int(QCPScatterStyle::ScatterShape::ssCircle));
+    cb_ScatterShapes->addItem(QStringLiteral("ssDisc"),             int(QCPScatterStyle::ScatterShape::ssDisc));
+    cb_ScatterShapes->addItem(QStringLiteral("ssSquare"),           int(QCPScatterStyle::ScatterShape::ssSquare));
+    cb_ScatterShapes->addItem(QStringLiteral("ssDiamond"),          int(QCPScatterStyle::ScatterShape::ssDiamond));
+    cb_ScatterShapes->addItem(QStringLiteral("ssStar"),             int(QCPScatterStyle::ScatterShape::ssStar));
+    cb_ScatterShapes->addItem(QStringLiteral("ssTriangle"),         int(QCPScatterStyle::ScatterShape::ssTriangle));
+    cb_ScatterShapes->addItem(QStringLiteral("ssTriangleInverted"), int(QCPScatterStyle::ScatterShape::ssTriangleInverted));
+    cb_ScatterShapes->addItem(QStringLiteral("ssCrossSquare"),      int(QCPScatterStyle::ScatterShape::ssCrossSquare));
+    cb_ScatterShapes->addItem(QStringLiteral("ssPlusSquare"),       int(QCPScatterStyle::ScatterShape::ssPlusSquare));
+    cb_ScatterShapes->addItem(QStringLiteral("ssCrossCircle"),      int(QCPScatterStyle::ScatterShape::ssCrossCircle));
+    cb_ScatterShapes->addItem(QStringLiteral("ssPlusCircle"),       int(QCPScatterStyle::ScatterShape::ssPlusCircle));
+    cb_ScatterShapes->addItem(QStringLiteral("ssPeace"),            int(QCPScatterStyle::ScatterShape::ssPeace));
+    cb_ScatterShapes->addItem(QStringLiteral("ssArrow"),            int(QCPScatterStyle::ScatterShape::ssArrow));
+
+    sb_ScatterSize=new QDoubleSpinBox;
+    sb_ScatterSize->setRange(1,100);
 
     cb_penstyle = new QComboBox;
     cb_penstyle->addItem(QStringLiteral("SolidLine"));
@@ -224,29 +230,31 @@ QWidgetAction* Viewer1D::createParametersWidget()
     QGroupBox* gb_style=new QGroupBox("Graphic Style");
     gb_style->setLayout(g_style);
 
-    g_style->addWidget(new QLabel("Scatter style : "),0,0);
-    g_style->addWidget(new QLabel("Line style : "),1,0);
-    g_style->addWidget(new QLabel("Pen style : "),2,0);
-    g_style->addWidget(new QLabel("Pen width : "),3,0);
-    g_style->addWidget(new QLabel("Brush style : "),4,0);
+    g_style->addWidget(new QLabel("Scatter shape : "),0,0);
+    g_style->addWidget(new QLabel("Scatter size : "),1,0);
+    g_style->addWidget(new QLabel("Line style : "),2,0);
+    g_style->addWidget(new QLabel("Pen style : "),3,0);
+    g_style->addWidget(new QLabel("Pen size : "),4,0);
+    g_style->addWidget(new QLabel("Brush style : "),5,0);
 
-    g_style->addWidget(cb_itemScatterStyleList,0,1);
-    g_style->addWidget(cb_itemLineStyleList,1,1);
-    g_style->addWidget(cb_penstyle,2,1);
-    g_style->addWidget(sb_pen_width,3,1);
-    g_style->addWidget(cb_brushstyle,4,1);
+    g_style->addWidget(cb_ScatterShapes,0,1);
+    g_style->addWidget(sb_ScatterSize,1,1);
+    g_style->addWidget(cb_itemLineStyleList,2,1);
+    g_style->addWidget(cb_penstyle,3,1);
+    g_style->addWidget(sb_pen_width,4,1);
+    g_style->addWidget(cb_brushstyle,5,1);
 
     QLabel* l_pen_color=new QLabel("Pen color");
     QLabel* l_brush_color=new QLabel("Brush color");
     l_pen_color->setAlignment(Qt::AlignHCenter);
     l_brush_color->setAlignment(Qt::AlignHCenter);
 
-    g_style->addWidget(l_pen_color,5,0);
-    g_style->addWidget(l_brush_color,5,1);
-    g_style->addWidget(cw_pen_color,6,0);
-    g_style->addWidget(cw_brush_color,6,1);
-    g_style->addWidget(s_pen_alpha,7,0);
-    g_style->addWidget(s_brush_alpha,7,1);
+    g_style->addWidget(l_pen_color,6,0);
+    g_style->addWidget(l_brush_color,6,1);
+    g_style->addWidget(cw_pen_color,7,0);
+    g_style->addWidget(cw_brush_color,7,1);
+    g_style->addWidget(s_pen_alpha,8,0);
+    g_style->addWidget(s_brush_alpha,8,1);
 
     QGridLayout* g_axis = new QGridLayout();
     QGroupBox* gb_axis=new QGroupBox("Axis");
@@ -270,7 +278,8 @@ QWidgetAction* Viewer1D::createParametersWidget()
     QObject::connect(cw_pen_color, SIGNAL(colorChanged(QColor)), this, SLOT(slot_setPenColor(QColor)));
     QObject::connect(cb_penstyle, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setPenStyle(int)));
     QObject::connect(cb_brushstyle, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setBrushStyle(int)));
-    QObject::connect(cb_itemScatterStyleList, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setScatter(int)));
+    QObject::connect(cb_ScatterShapes, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setScatterShape(int)));
+    QObject::connect(sb_ScatterSize, SIGNAL(valueChanged(double) ), this, SLOT(slot_setScatterSize(double)));
     QObject::connect(cb_itemLineStyleList, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setStyle(int)));
     QObject::connect(cb_scale_mode_x, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setAxisXType(int)));
     QObject::connect(cb_scale_mode_y, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setAxisYType(int)));
@@ -414,18 +423,34 @@ void Viewer1D::slot_setStyle(int style)
 }
 
 
-void Viewer1D::slot_setScatter(int style)
+void Viewer1D::slot_setScatterShape(int scatter_shape)
 {
     QList<QCPGraph*> graphslist=this->selectedGraphs();
     QList<QCPCurve*> curveslist=this->getSelectedQCPCurves();
 
     for (int i=0; i<graphslist.size(); i++)
     {
-        graphslist[0]->setScatterStyle( QCPScatterStyle(QCPScatterStyle::ScatterShape (style),graphslist[0]->scatterStyle().size()) );
+        graphslist[0]->setScatterStyle( QCPScatterStyle(QCPScatterStyle::ScatterShape (scatter_shape),graphslist[0]->scatterStyle().size()) );
     }
     for (int i=0; i<curveslist.size(); i++)
     {
-        curveslist[0]->setScatterStyle( QCPScatterStyle(QCPScatterStyle::ScatterShape (style),curveslist[0]->scatterStyle().size()) );
+        curveslist[0]->setScatterStyle( QCPScatterStyle(QCPScatterStyle::ScatterShape (scatter_shape),curveslist[0]->scatterStyle().size()) );
+    }
+    replot();
+}
+
+void Viewer1D::slot_setScatterSize(double scatter_size)
+{
+    QList<QCPGraph*> graphslist=this->selectedGraphs();
+    QList<QCPCurve*> curveslist=this->getSelectedQCPCurves();
+
+    for (int i=0; i<graphslist.size(); i++)
+    {
+        graphslist[0]->setScatterStyle( QCPScatterStyle(graphslist[0]->scatterStyle().shape(),scatter_size) );
+    }
+    for (int i=0; i<curveslist.size(); i++)
+    {
+        curveslist[0]->setScatterStyle( QCPScatterStyle(curveslist[0]->scatterStyle().shape(),scatter_size) );
     }
     replot();
 }
@@ -820,6 +845,8 @@ void Viewer1D::slot_fit_2var_polynomial()
                 QString result_str=Curve2D::getPolynome2VString(C,order);
 
                 Curve2D fit_curve(X,Y,QString("Fit Polynome : %1").arg(result_str),Curve2D::CURVE);
+                fit_curve.getStyle().mScatterShape=static_cast<int>(QCPScatterStyle::ssDisc);
+                fit_curve.getStyle().mLineStyle=static_cast<int>(QCPCurve::lsNone);
                 fit_curve.setScalarField(S);
                 slot_add_data(fit_curve);
             }

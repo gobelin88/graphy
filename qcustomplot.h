@@ -6232,7 +6232,6 @@ public:
     virtual void setColorScale(QCPColorScale* scale)
     {
         this->scale=scale;
-
     }
 
     QCPColorScale* getColorScale()

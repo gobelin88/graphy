@@ -1120,7 +1120,7 @@ void MainWindow::slot_plot_graph_xy()
     }
     else
     {
-        QMessageBox::information(this,"Information","Please select 2k columns (k>1)");
+        QMessageBox::information(this,"Information","Please select 2 columns X and Y in order to plot X=f(Y)");
     }
 }
 
@@ -1158,7 +1158,7 @@ void MainWindow::slot_plot_curve_xy()
     }
     else
     {
-        QMessageBox::information(this,"Information","Please select 2k columns (k>1)");
+        QMessageBox::information(this,"Information","Please select 2 columns X and Y in order to plot (X,Y)");
     }
 }
 
@@ -1188,7 +1188,7 @@ void MainWindow::slot_plot_cloud_2D()
                               Curve2D::CURVE);
                 curve.setScalarField(data_s);
                 curve.getStyle().mLineStyle=QCPCurve::lsNone;
-                curve.getStyle().mScatterStyle=QCPScatterStyle::ssDisc;
+                curve.getStyle().mScatterShape=QCPScatterStyle::ssDisc;
                 viewer1d->slot_add_data(curve);
             }
         }
@@ -1201,7 +1201,7 @@ void MainWindow::slot_plot_cloud_2D()
     }
     else
     {
-        QMessageBox::information(this,"Information","Please select 3k columns (k>1)");
+        QMessageBox::information(this,"Information","Please select 3 columns P(X,Y) and Scalarfield S in order to plot S(P)");
     }
 }
 
@@ -1237,12 +1237,12 @@ void MainWindow::slot_plot_field_2D()
             {
                 Curve2D curve(data_x,
                               data_y,
-                              QString("(%1,%2)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),
+                              QString("V(%3,%4)=f(%1,%2)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())).arg(getColName(id_list[k+2].column())).arg(getColName(id_list[k+3].column())),
                               Curve2D::CURVE);
                 curve.setScalarField(data_s);
                 curve.setAlphaField(data_a);
                 curve.getStyle().mLineStyle=QCPCurve::lsNone;
-                curve.getStyle().mScatterStyle=QCPScatterStyle::ssArrow;
+                curve.getStyle().mScatterShape=QCPScatterStyle::ssArrow;
                 curve.getStyle().mScatterSize=20;
                 viewer1d->slot_add_data(curve);
             }
@@ -1256,7 +1256,7 @@ void MainWindow::slot_plot_field_2D()
     }
     else
     {
-        QMessageBox::information(this,"Information","Please select 3k columns (k>1)");
+        QMessageBox::information(this,"Information","Please select 4 columns P(X,Y) and V(X,Y) in order to plot vector 2d field V(P)");
     }
 }
 
@@ -1289,7 +1289,7 @@ void MainWindow::slot_plot_map_2D()
     }
     else
     {
-        QMessageBox::information(this,"Information","Please select 3 columns");
+        QMessageBox::information(this,"Information","Please select 3 columns P(X,Y) and S in order to plot S(P)");
     }
 }
 

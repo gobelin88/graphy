@@ -20,14 +20,14 @@ public:
             pen.setColor(QColor(0,0,0));
             pen.setStyle(Qt::SolidLine);
             mLineStyle=QCPGraph::lsLine;
-            mScatterStyle=QCPScatterStyle::ssNone;
-            mScatterSize=10;
+            mScatterShape=QCPScatterStyle::ssNone;
+            mScatterSize=5;
         }
 
         QPen pen;
         QBrush brush;
         int mLineStyle;
-        int mScatterStyle;
+        int mScatterShape;
         int mScatterSize;
     };
 
@@ -117,6 +117,8 @@ public:
     {
         return style;
     }
+
+    void clear();
 
 private:
     Eigen::VectorXd x;

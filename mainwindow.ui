@@ -266,6 +266,10 @@
    </property>
   </action>
   <action name="actionPlot_Field_2D">
+   <property name="icon">
+    <iconset resource="rsc.qrc">
+     <normaloff>:/img/icons/field2D.png</normaloff>:/img/icons/field2D.png</iconset>
+   </property>
    <property name="text">
     <string>Field 2D</string>
    </property>

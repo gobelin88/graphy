@@ -109,11 +109,73 @@ public:
     static Eigen::VectorXd buildX(int sz);
 
     void operator=(const Curve2D& other);
-    void fromQCP(const QCPCurve* other);
-    void fromQCP(const QCPGraph* other);
 
-    QCPGraph* toQCPGraph(QCustomPlot* plot) const;
-    QCPCurve* toQCPCurve(QCustomPlot* plot) const;
+    template<typename T>
+    void fromQCP(const T* other)
+    {
+        x.resize(other->data()->size());
+        y.resize(other->data()->size());
+        auto it =other->data()->begin();
+        int i=0;
+        while (it!=other->data()->end())
+        {
+            x[i]=it->key;
+            y[i]=it->value;
+            it++;
+            i++;
+        }
+
+        this->a=fromQVector(other->getAlphaField());
+        this->s=fromQVector(other->getScalarField());
+        this->l=other->getLabelField();
+        this->legendname=other->name();
+        this->type=(reinterpret_cast<const QCPCurve*>(other) )? Curve2D::CURVE: Curve2D::GRAPH;
+        this->style.mLineStyle=other->lineStyle();
+        this->style.mScatterShape=other->scatterStyle().shape();
+        this->style.mScatterSize=other->scatterStyle().size();
+        this->style.pen=other->pen();
+        this->style.brush=other->brush();
+        this->style.gradientType=other->getScalarFieldGradientType();
+    }
+
+    //T = QCPCurve or QCPGraph
+    template<typename T>
+    T* toQCP(QCustomPlot* plot)const
+    {
+        T* pqcp = new T(plot);
+
+        pqcp->setAlphaField(getQAlphaField());
+        pqcp->setScalarField(getQScalarField());
+        pqcp->setLabelField(getLabelsField());
+        pqcp->setScalarFieldGradientType(style.gradientType);
+
+        pqcp->setLineStyle(static_cast<T::LineStyle>(style.mLineStyle));
+
+        pqcp->setScatterStyle(QCPScatterStyle(static_cast<QCPScatterStyle::ScatterShape>(style.mScatterShape), style.mScatterSize));
+        pqcp->setSelectable(QCP::stWhole);
+        pqcp->setSelectionDecorator(nullptr);
+        pqcp->setName(getLegend());
+        pqcp->setData(getQX(),getQY());
+        pqcp->setPen(style.pen);
+        pqcp->setBrush(style.brush);
+
+        if (getLabelsField().size()>0)
+        {
+            buildX(getY().size());
+            QSharedPointer<QCPAxisTickerText> textTicker(new QCPAxisTickerText);
+            textTicker->addTicks(getQX(), getLabelsField() );
+            plot->xAxis->setTicker(textTicker);
+            plot->xAxis->setTickLabelColor(Qt::black);
+            plot->xAxis->setLabelColor(Qt::black);
+        }
+
+        if (getScalarField().size()>0)
+        {
+            plot->plotLayout()->addElement(0, plot->plotLayout()->columnCount(), pqcp->getColorScale());
+        }
+
+        return pqcp;
+    }
 
     Style& getStyle()
     {

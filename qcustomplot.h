@@ -6503,7 +6503,7 @@ public:
     virtual QCPRange getValueRange(bool& foundRange, QCP::SignDomain inSignDomain=QCP::sdBoth, const QCPRange& inKeyRange=QCPRange()) const Q_DECL_OVERRIDE;
 
 public slots:
-    void slot_setGradientRange(const QCPRange& range)
+    void slot_setGradientRange()
     {
         updateScalarFieldColor();
     }

@@ -93,11 +93,11 @@ void Viewer1D::slot_add_data(const Curve2D& datacurve)
 {
     if (datacurve.getType()==Curve2D::GRAPH)
     {
-        datacurve.toQCPGraph(this);
+        datacurve.toQCP<QCPGraph>(this);
     }
     else
     {
-        datacurve.toQCPCurve(this);
+        datacurve.toQCP<QCPCurve>(this);
         axisRect()->setupFullAxesBox();
     }
 

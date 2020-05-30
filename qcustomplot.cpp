@@ -24299,7 +24299,7 @@ QCPCurve::QCPCurve(QCustomPlot* plot) :
     setLineStyle(lsLine);
     setScatterSkip(0);
 
-    QObject::connect(scale,SIGNAL(dataRangeChanged(const QCPRange&)),this,SLOT(slot_setGradientRange(const QCPRange&)));
+    QObject::connect(scale,SIGNAL(dataRangeChanged(const QCPRange&)),this,SLOT(slot_setGradientRange()));
 }
 
 //QCPCurve::QCPCurve(QCPAxis* keyAxis, QCPAxis* valueAxis) :

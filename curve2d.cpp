@@ -503,6 +503,7 @@ void Curve2D::fromQCP(const QCPCurve* other)
     this->style.mScatterSize=other->scatterStyle().size();
     this->style.pen=other->pen();
     this->style.brush=other->brush();
+    this->style.gradientType=other->getScalarFieldGradientType();
 }
 
 void Curve2D::fromQCP(const QCPGraph* other)
@@ -529,14 +530,16 @@ void Curve2D::fromQCP(const QCPGraph* other)
     this->style.mScatterSize=other->scatterStyle().size();
     this->style.pen=other->pen();
     this->style.brush=other->brush();
+    this->style.gradientType=other->getScalarFieldGradientType();
 }
 
 QCPGraph* Curve2D::toQCPGraph(QCustomPlot* plot)const
 {
-    QCPGraph* pgraph = new QCPGraph(plot->xAxis, plot->yAxis);
+    QCPGraph* pgraph = new QCPGraph(plot);
 
     pgraph->setAlphaField(getQAlphaField());
     pgraph->setScalarField(getQScalarField());
+    pgraph->setScalarFieldGradientType(style.gradientType);
     pgraph->setLabelField(getLabelsField());
     pgraph->setLineStyle(static_cast<QCPGraph::LineStyle>(style.mLineStyle));
     pgraph->setScatterStyle(QCPScatterStyle(static_cast<QCPScatterStyle::ScatterShape>(style.mScatterShape), style.mScatterSize));
@@ -562,11 +565,12 @@ QCPGraph* Curve2D::toQCPGraph(QCustomPlot* plot)const
 
 QCPCurve* Curve2D::toQCPCurve(QCustomPlot* plot)const
 {
-    QCPCurve* pcurve = new QCPCurve(plot->xAxis, plot->yAxis);
+    QCPCurve* pcurve = new QCPCurve(plot);
 
     pcurve->setAlphaField(getQAlphaField());
     pcurve->setScalarField(getQScalarField());
     pcurve->setLabelField(getLabelsField());
+    pcurve->setScalarFieldGradientType(style.gradientType);
     pcurve->setLineStyle(static_cast<QCPCurve::LineStyle>(style.mLineStyle));
     pcurve->setScatterStyle(QCPScatterStyle(static_cast<QCPScatterStyle::ScatterShape>(style.mScatterShape), style.mScatterSize));
     pcurve->setSelectable(QCP::stWhole);
@@ -588,10 +592,6 @@ QCPCurve* Curve2D::toQCPCurve(QCustomPlot* plot)const
 
     if (getScalarField().size()>0)
     {
-        pcurve->setColorScale(new QCPColorScale(plot));
-        pcurve->getColorScale()->setType(QCPAxis::atRight);
-        pcurve->getColorScale()->setDataRange(pcurve->getScalarFieldRange());
-        pcurve->getColorScale()->setGradient(pcurve->getGradient());
         plot->plotLayout()->addElement(0, plot->plotLayout()->columnCount(), pcurve->getColorScale());
     }
 

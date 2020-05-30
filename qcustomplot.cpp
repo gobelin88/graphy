@@ -15195,7 +15195,7 @@ QCPGraph* QCustomPlot::addGraph(QCPAxis* keyAxis, QCPAxis* valueAxis)
         return 0;
     }
 
-    QCPGraph* newGraph = new QCPGraph(keyAxis, valueAxis);
+    QCPGraph* newGraph = new QCPGraph(this);
     newGraph->setName(QLatin1String("Graph ")+QString::number(mGraphs.size()));
     return newGraph;
 }
@@ -22194,8 +22194,23 @@ QCPGraphData::QCPGraphData(double key, double value) :
 
   To directly create a graph inside a plot, you can also use the simpler QCustomPlot::addGraph function.
 */
-QCPGraph::QCPGraph(QCPAxis* keyAxis, QCPAxis* valueAxis) :
-    QCPAbstractPlottable1D<QCPGraphData>(keyAxis, valueAxis)
+//QCPGraph::QCPGraph(QCPAxis* keyAxis, QCPAxis* valueAxis) :
+//    QCPAbstractPlottable1D<QCPGraphData>(keyAxis, valueAxis)
+//{
+//    // special handling for QCPGraphs to maintain the simple graph interface:
+//    mParentPlot->registerGraph(this);
+
+//    setPen(QPen(Qt::blue, 0));
+//    setBrush(Qt::NoBrush);
+
+//    setLineStyle(lsLine);
+//    setScatterSkip(0);
+//    setChannelFillGraph(0);
+//    setAdaptiveSampling(true);
+//}
+
+QCPGraph::QCPGraph(QCustomPlot* plot) :
+    QCPAbstractPlottable1D<QCPGraphData>(plot->xAxis,plot->yAxis),Hack(plot)
 {
     // special handling for QCPGraphs to maintain the simple graph interface:
     mParentPlot->registerGraph(this);
@@ -24272,8 +24287,9 @@ QCPCurveData::QCPCurveData(double t, double key, double value) :
   keyAxis. This QCustomPlot instance takes ownership of the QCPCurve, so do not delete it manually
   but use QCustomPlot::removePlottable() instead.
 */
-QCPCurve::QCPCurve(QCPAxis* keyAxis, QCPAxis* valueAxis) :
-    QCPAbstractPlottable1D<QCPCurveData>(keyAxis, valueAxis)
+
+QCPCurve::QCPCurve(QCustomPlot* plot) :
+    QCPAbstractPlottable1D<QCPCurveData>(plot->xAxis,plot->yAxis),Hack(plot)
 {
     // modify inherited properties from abstract plottable:
     setPen(QPen(Qt::blue, 0));
@@ -24283,9 +24299,23 @@ QCPCurve::QCPCurve(QCPAxis* keyAxis, QCPAxis* valueAxis) :
     setLineStyle(lsLine);
     setScatterSkip(0);
 
-    //Hack
-    scale=nullptr;
+    QObject::connect(scale,SIGNAL(dataRangeChanged(const QCPRange&)),this,SLOT(slot_setGradientRange(const QCPRange&)));
 }
+
+//QCPCurve::QCPCurve(QCPAxis* keyAxis, QCPAxis* valueAxis) :
+//    QCPAbstractPlottable1D<QCPCurveData>(keyAxis, valueAxis)
+//{
+//    // modify inherited properties from abstract plottable:
+//    setPen(QPen(Qt::blue, 0));
+//    setBrush(Qt::NoBrush);
+
+//    setScatterStyle(QCPScatterStyle());
+//    setLineStyle(lsLine);
+//    setScatterSkip(0);
+
+//    //Hack
+//    scale=nullptr;
+//}
 
 QCPCurve::~QCPCurve()
 {

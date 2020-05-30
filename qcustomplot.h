@@ -6183,6 +6183,12 @@ typedef QCPDataContainer<QCPGraphData> QCPGraphDataContainer;
 class Hack
 {
 public:
+    Hack(QCustomPlot* plot)
+    {
+        scale=new QCPColorScale(plot);
+        scale->setType(QCPAxis::atRight);
+    }
+
     ////////////////////////////////////hack
     QCPRange getScalarFieldRange()const
     {
@@ -6194,9 +6200,9 @@ public:
     void setScalarField(const QVector<double>& scalarFieldData)
     {
         this->scalarFieldData=scalarFieldData;
-        gradient = QCPColorGradient(QCPColorGradient::gpPolar);
+        scalarFieldRange=getScalarFieldRange();
         scalarFieldColors=QVector<QRgb>(scalarFieldData.size(),0);
-        setGradientRange(getScalarFieldRange());
+        scale->setDataRange(scalarFieldRange);
     }
 
     QVector<double> getScalarField()const
@@ -6224,24 +6230,29 @@ public:
         return labelFieldData;
     }
 
-    QCPColorGradient getGradient()const
+    void setScalarFieldGradientType(int gradient_type)
     {
-        return gradient;
+        scalarFieldGradientType =static_cast<QCPColorGradient::GradientPreset>(gradient_type);
+        scale->setGradient( QCPColorGradient(scalarFieldGradientType) );
+        updateScalarFieldColor();
     }
 
-    virtual void setColorScale(QCPColorScale* scale)
+    QCPColorGradient::GradientPreset getScalarFieldGradientType()const
     {
-        this->scale=scale;
+        return scalarFieldGradientType;
+    }
+
+    void updateScalarFieldColor()
+    {
+        if (scalarFieldData.size()>0)
+        {
+            scale->gradient().colorize(scalarFieldData.data(),scale->dataRange(),scalarFieldColors.data(),scalarFieldColors.size());
+        }
     }
 
     QCPColorScale* getColorScale()
     {
         return scale;
-    }
-
-    void setGradientRange(const QCPRange& range)
-    {
-        gradient.colorize(scalarFieldData.data(),range,scalarFieldColors.data(),scalarFieldColors.size());
     }
 
 protected:
@@ -6250,7 +6261,8 @@ protected:
     QVector<QRgb> scalarFieldColors;
     QVector<double> scalarFieldData;
     QVector<double> alphaFieldData;
-    QCPColorGradient gradient;
+    QCPColorGradient::GradientPreset scalarFieldGradientType;
+    QCPRange scalarFieldRange;
 };
 
 class QCP_LIB_DECL QCPGraph : public QCPAbstractPlottable1D<QCPGraphData>,public Hack
@@ -6279,7 +6291,8 @@ public:
                    };
     Q_ENUMS(LineStyle)
 
-    explicit QCPGraph(QCPAxis* keyAxis, QCPAxis* valueAxis);
+    //explicit QCPGraph(QCPAxis* keyAxis, QCPAxis* valueAxis);
+    explicit QCPGraph(QCustomPlot* plot);
     virtual ~QCPGraph();
 
     // getters:
@@ -6448,7 +6461,8 @@ public:
                    };
     Q_ENUMS(LineStyle)
 
-    explicit QCPCurve(QCPAxis* keyAxis, QCPAxis* valueAxis);
+    explicit QCPCurve(QCustomPlot* plot);
+    //explicit QCPCurve(QCPAxis* keyAxis, QCPAxis* valueAxis);
     virtual ~QCPCurve();
 
     // getters:
@@ -6488,16 +6502,10 @@ public:
     virtual QCPRange getKeyRange(bool& foundRange, QCP::SignDomain inSignDomain=QCP::sdBoth) const Q_DECL_OVERRIDE;
     virtual QCPRange getValueRange(bool& foundRange, QCP::SignDomain inSignDomain=QCP::sdBoth, const QCPRange& inKeyRange=QCPRange()) const Q_DECL_OVERRIDE;
 
-    void setColorScale(QCPColorScale* colorscale) override
-    {
-        this->scale=colorscale;
-        QObject::connect(scale,SIGNAL(dataRangeChanged(const QCPRange&)),this,SLOT(slot_setGradientRange(const QCPRange&)));
-    }
-
 public slots:
     void slot_setGradientRange(const QCPRange& range)
     {
-        setGradientRange(range);
+        updateScalarFieldColor();
     }
 
 protected:

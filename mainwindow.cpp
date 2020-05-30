@@ -253,14 +253,17 @@ void MainWindow::direct_export(QString filename)
         int rows = table->model()->rowCount();
         int columns = table->model()->columnCount();
 
-        textData+= QString("\\begin{tabular}{|*{%1}{c|}} \n").arg(columns+1);
+        textData+= QString("\\begin{tabular}{|*{%1}{c|}} \n").arg(columns);
         textData += "\\hline \n";
         if (hasheader)
         {
             for (int j = 0; j < columns; j++)
             {
                 textData+="$"+model->horizontalHeaderItem(j)->text()+"$";
-                textData += "&";
+                if (j!=columns-1)
+                {
+                    textData += "&";
+                }
             }
             textData += "\\\\ \\hline \n";
         }
@@ -284,7 +287,11 @@ void MainWindow::direct_export(QString filename)
                 {
                     textData+=table->model()->data(table->model()->index(i,j)).toString();
                 }
-                textData += "&";      // for .csv file format
+
+                if (j!=columns-1)
+                {
+                    textData += "&";
+                }
             }
             textData += "\\\\ \\hline \n";             // (optional: for new line segmentation)
         }
@@ -1323,7 +1330,7 @@ void MainWindow::slot_plot_fft()
     }
     else
     {
-        QMessageBox::information(this,"Information","Please select k columns (k>1)");
+        QMessageBox::information(this,"Information","Please select 1 columns");
     }
 }
 
@@ -1412,7 +1419,7 @@ void MainWindow::slot_plot_gain_phase()
     }
     else
     {
-        QMessageBox::information(this,"Information","Please select 3k columns (f,module,phase)");
+        QMessageBox::information(this,"Information","Please select 3 columns (frequency,module,phase)");
     }
 }
 

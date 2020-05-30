@@ -22,6 +22,7 @@ public:
             mLineStyle=QCPGraph::lsLine;
             mScatterShape=QCPScatterStyle::ssNone;
             mScatterSize=5;
+            gradientType=QCPColorGradient::gpPolar;
         }
 
         QPen pen;
@@ -29,6 +30,7 @@ public:
         int mLineStyle;
         int mScatterShape;
         int mScatterSize;
+        int gradientType;
     };
 
     enum CurveType

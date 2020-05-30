@@ -73,6 +73,7 @@ public slots:
     void slot_gadgetMark();
     void slot_gadgetText();
     void slot_gadgetArrow();
+    void slot_setScalarFieldGradientType(int type);
 
     //void slot_addXaxisLabel();
 
@@ -129,6 +130,7 @@ protected:
     QAction* actGadgetMark;
     QWidgetAction* createParametersWidget();
 
+    QComboBox* cb_gradient;
     QComboBox* cb_scale_mode_x;
     QComboBox* cb_scale_mode_y;
     QComboBox* cb_itemLineStyleList;

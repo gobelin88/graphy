@@ -119,12 +119,30 @@ void Viewer1D::configurePopup()
             cb_itemLineStyleList->setCurrentIndex(currentcurve->lineStyle());
             cb_ScatterShapes->setCurrentIndex(static_cast<int>(currentcurve->scatterStyle().shape()));
             sb_ScatterSize->setValue(currentcurve->scatterStyle().size());
+            if (currentcurve->getScalarField().size()>0)
+            {
+                cb_gradient->setCurrentIndex(currentcurve->getScalarFieldGradientType());
+                cb_gradient->show();
+            }
+            else
+            {
+                cb_gradient->hide();
+            }
         }
         else if (currentgraph)
         {
             cb_itemLineStyleList->setCurrentIndex(currentgraph->lineStyle());
             cb_ScatterShapes->setCurrentIndex(static_cast<int>(currentgraph->scatterStyle().shape()));
             sb_ScatterSize->setValue(currentgraph->scatterStyle().size());
+            if (currentgraph->getScalarField().size()>0)
+            {
+                cb_gradient->setCurrentIndex(currentgraph->getScalarFieldGradientType());
+                cb_gradient->show();
+            }
+            else
+            {
+                cb_gradient->hide();
+            }
         }
 
 
@@ -216,6 +234,20 @@ QWidgetAction* Viewer1D::createParametersWidget()
     cw_brush_color = new Color_Wheel;
     //cd_pen_color->setOptions(QColorDialog::DontUseNativeDialog| QColorDialog::NoButtons);
 
+    cb_gradient=new QComboBox;
+    cb_gradient->addItem("gpGrayscale",QCPColorGradient::GradientPreset::gpGrayscale);
+    cb_gradient->addItem("gpHot",QCPColorGradient::GradientPreset::gpHot);
+    cb_gradient->addItem("gpCold",QCPColorGradient::GradientPreset::gpCold);
+    cb_gradient->addItem("gpNight",QCPColorGradient::GradientPreset::gpNight);
+    cb_gradient->addItem("gpCandy",QCPColorGradient::GradientPreset::gpCandy);
+    cb_gradient->addItem("gpGeography",QCPColorGradient::GradientPreset::gpGeography);
+    cb_gradient->addItem("gpIon",QCPColorGradient::GradientPreset::gpIon);
+    cb_gradient->addItem("gpThermal",QCPColorGradient::GradientPreset::gpThermal);
+    cb_gradient->addItem("gpPolar",QCPColorGradient::GradientPreset::gpPolar);
+    cb_gradient->addItem("gpSpectrum",QCPColorGradient::GradientPreset::gpSpectrum);
+    cb_gradient->addItem("gpJet",QCPColorGradient::GradientPreset::gpJet);
+    cb_gradient->addItem("gpHues",QCPColorGradient::GradientPreset::gpHues);
+
     sb_pen_width=new QDoubleSpinBox();
     s_pen_alpha=new QDoubleSpinBox();
     s_pen_alpha->setRange(0,1.0);
@@ -255,6 +287,7 @@ QWidgetAction* Viewer1D::createParametersWidget()
     g_style->addWidget(cw_brush_color,7,1);
     g_style->addWidget(s_pen_alpha,8,0);
     g_style->addWidget(s_brush_alpha,8,1);
+    g_style->addWidget(cb_gradient,9,0,1,2);
 
     QGridLayout* g_axis = new QGridLayout();
     QGroupBox* gb_axis=new QGroupBox("Axis");
@@ -283,6 +316,8 @@ QWidgetAction* Viewer1D::createParametersWidget()
     QObject::connect(cb_itemLineStyleList, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setStyle(int)));
     QObject::connect(cb_scale_mode_x, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setAxisXType(int)));
     QObject::connect(cb_scale_mode_y, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setAxisYType(int)));
+
+    QObject::connect(cb_gradient, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setScalarFieldGradientType(int)));
 
     return actWidget;
 }
@@ -878,7 +913,8 @@ void Viewer1D::slot_fit_polynomial()
         label_eqn->setAlignment(Qt::AlignHCenter);
 
         QSpinBox* getOrder=new QSpinBox(dialog);
-        getOrder->setRange(2,10);
+        getOrder->setRange(1,40);
+        getOrder->setValue(1);
         getOrder->setPrefix("Order=");
 
         QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
@@ -1373,5 +1409,21 @@ void Viewer1D::slot_setAxisYType(int mode)
         this->yAxis->setScaleType(QCPAxis::stLinear);
     }
     rescaleAxes();
+    replot();
+}
+
+void Viewer1D::slot_setScalarFieldGradientType(int type)
+{
+    QList<QCPGraph*> graphslist=this->selectedGraphs();
+    QList<QCPCurve*> curveslist=this->getSelectedQCPCurves();
+
+    for (int i=0; i<graphslist.size(); i++)
+    {
+        graphslist[0]->setScalarFieldGradientType(type);
+    }
+    for (int i=0; i<curveslist.size(); i++)
+    {
+        curveslist[0]->setScalarFieldGradientType(type);
+    }
     replot();
 }

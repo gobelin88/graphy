@@ -612,23 +612,63 @@ void MainWindow::slot_delete()
     QModelIndexList id_list_cols=table->selectionModel()->selectedColumns();
     if (id_list_cols.size()>=1)
     {
-        for (int i=0; i<id_list_cols.size(); i++)
+        for (int i=0; i<id_list_cols.size();)
         {
-            int index=id_list_cols[i].column()-i;
-            registerDelVariable(variables_names[index]);
-            model->removeColumn(index);
-            removeColumn(datatable,index);
+            int indexa=id_list_cols[i].column();
+
+            int n=1;
+            if ((i+n)<id_list_cols.size())
+            {
+                int indexb=id_list_cols[i+n].column();
+                while ((i+n)<id_list_cols.size() && indexb==indexa+n)
+                {
+                    n++;
+                    if ((i+n)<id_list_cols.size())
+                    {
+                        indexb=id_list_cols[i+n].column();
+                    }
+                }
+            }
+
+            for (int k=0; k<n; k++)
+            {
+                registerDelVariable(variables_names[indexa-i]);
+            }
+
+            model->removeColumns(indexa-i,n);
+            removeColumns(datatable,indexa-i,n);
+
+            i+=n;
         }
         table->setModel(model);
     }
+
+
     QModelIndexList id_list_rows=table->selectionModel()->selectedRows();
     if (id_list_rows.size()>=1)
     {
-        for (int i=0; i<id_list_rows.size(); i++)
+        for (int i=0; i<id_list_rows.size();)
         {
-            int index=id_list_rows[i].row()-i;
-            model->removeRow(index);
-            removeRow(datatable,index);
+            int indexa=id_list_rows[i].row();
+
+            int n=1;
+            if ((i+n)<id_list_rows.size())
+            {
+                int indexb=id_list_rows[i+n].row();
+                while ((i+n)<id_list_rows.size() && indexb==indexa+n)
+                {
+                    n++;
+                    if ((i+n)<id_list_rows.size())
+                    {
+                        indexb=id_list_rows[i+n].row();
+                    }
+                }
+            }
+
+            model->removeRows(indexa-i,n);
+            removeRows(datatable,indexa-i,n);
+
+            i+=n;
         }
         table->setModel(model);
     }

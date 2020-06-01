@@ -5,30 +5,28 @@ void create(Eigen::MatrixXd& data, uint nbL,uint nbC)
     data=Eigen::MatrixXd(nbL,nbC);
 }
 
-void removeRow(Eigen::MatrixXd& matrix, unsigned int rowToRemove)
+void removeRows(Eigen::MatrixXd& matrix, unsigned int rowToRemove, unsigned int nbRow)
 {
-    unsigned int numRows = matrix.rows()-1;
+    unsigned int numRows = matrix.rows()-nbRow;
     unsigned int numCols = matrix.cols();
 
     if ( rowToRemove < numRows )
     {
-        matrix.block(rowToRemove,0,numRows-rowToRemove,numCols) = matrix.block(rowToRemove+1,0,numRows-rowToRemove,numCols);
+        matrix.block(rowToRemove,0,numRows-rowToRemove,numCols) = matrix.block(rowToRemove+nbRow,0,numRows-rowToRemove,numCols);
+        matrix.conservativeResize(numRows,numCols);
     }
-
-    matrix.conservativeResize(numRows,numCols);
 }
 
-void removeColumn(Eigen::MatrixXd& matrix, unsigned int colToRemove)
+void removeColumns(Eigen::MatrixXd& matrix, unsigned int colToRemove,unsigned int nbCol)
 {
     unsigned int numRows = matrix.rows();
-    unsigned int numCols = matrix.cols()-1;
+    unsigned int numCols = matrix.cols()-nbCol;
 
     if ( colToRemove < numCols )
     {
-        matrix.block(0,colToRemove,numRows,numCols-colToRemove) = matrix.block(0,colToRemove+1,numRows,numCols-colToRemove);
+        matrix.block(0,colToRemove,numRows,numCols-colToRemove) = matrix.block(0,colToRemove+nbCol,numRows,numCols-colToRemove);
+        matrix.conservativeResize(numRows,numCols);
     }
-
-    matrix.conservativeResize(numRows,numCols);
 }
 
 void addRow(Eigen::MatrixXd& matrix, Eigen::VectorXd rowToAdd)
@@ -124,6 +122,24 @@ std::vector<double> toStdVector(const Eigen::VectorXd& v)
     std::vector<double> v_std(v.size());
     memcpy(v_std.data(),v.data(),v_std.size()*sizeof(double));
     return v_std;
+}
+
+QString toString(const Eigen::MatrixXd& m)
+{
+    QString str;
+    for (int i=0; i<m.rows(); i++)
+    {
+        for (int j=0; j<m.cols(); j++)
+        {
+            str+=QString::number(m(i,j));
+            if (j!=m.cols()-1)
+            {
+                str+=" ";
+            }
+        }
+        str.append("\n");
+    }
+    return str;
 }
 
 QVector<double> toQVector(const Eigen::VectorXd& v)

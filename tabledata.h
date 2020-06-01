@@ -15,8 +15,8 @@ enum InterpolationMode
     MODE_WEIGHTED
 };
 
-void removeRow(Eigen::MatrixXd& matrix, unsigned int rowToRemove);
-void removeColumn(Eigen::MatrixXd& matrix, unsigned int colToRemove);
+void removeRows(Eigen::MatrixXd& matrix, unsigned int rowToRemove,unsigned int nbRow=1);
+void removeColumns(Eigen::MatrixXd& matrix, unsigned int colToRemove, unsigned int nbCol=1);
 void addRow(Eigen::MatrixXd& matrix, Eigen::VectorXd rowToAdd);
 void addColumn(Eigen::MatrixXd& matrix, Eigen::VectorXd colToAdd);
 
@@ -31,5 +31,7 @@ QVector<QString> toQVectorStr(const Eigen::VectorXd& v);
 
 Eigen::VectorXd fromStdVector(const std::vector<double>& v_std);
 Eigen::VectorXd fromQVector(const QVector<double>& v);
+
+QString toString(const Eigen::MatrixXd& v);
 
 #endif // TABLEDATA_H

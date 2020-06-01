@@ -48,6 +48,7 @@ public slots:
     void slot_copy();
     void slot_paste();
     void slot_statistiques();
+    void slot_svd();
 
     void addLabel(double cx,double cy);
     void addTextLabel(double cx,double cy,QString markstr);
@@ -73,6 +74,7 @@ public slots:
     void slot_gadgetMark();
     void slot_gadgetText();
     void slot_gadgetArrow();
+    void slot_gadgetAddArrow(Eigen::Vector2d A,Eigen::Vector2d B);
     void slot_setScalarFieldGradientType(int type);
 
     //void slot_addXaxisLabel();
@@ -117,12 +119,15 @@ protected:
     QMenu* menuFit;
     QMenu* menuScalarField;
     QMenu* menuScalarFieldFit;
+    QMenu* menuAnalyse;
+
     QAction* actFitPolynomial;
     QAction* actFitPolynomial2V;
     QAction* actFitGaussian;
     QAction* actFitSigmoid;
     QAction* actFitSinusoide;
     QAction* actStatistiques;
+    QAction* actSvd;
     QMenu* menuGadgets;
     QAction* actClearGadgets;
     QAction* actGadgetArrow;
@@ -143,7 +148,6 @@ protected:
     QDoubleSpinBox* sb_pen_width;
     QDoubleSpinBox* s_pen_alpha;
     QDoubleSpinBox* s_brush_alpha;
-
 
 };
 

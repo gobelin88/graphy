@@ -331,6 +331,7 @@ void Viewer1D::createPopup()
     menuScalarField=new QMenu("Scalar Field",this);
     menuScalarFieldFit=new QMenu("Fit",this);
     menuParameters=new QMenu("Parameters",this);
+    menuAnalyse=new QMenu("Anaylse",this);
 
     actCopy   = new QAction("Copy",  this);
     actPaste   = new QAction("Paste",  this);
@@ -345,6 +346,7 @@ void Viewer1D::createPopup()
     actLegendTopBottom= new QAction("Move bottom",  this);
     actLegendLeftRight= new QAction("Move left",  this);
     actStatistiques= new QAction("Statistiques",  this);
+    actSvd= new QAction("Singular values decomposition (SVD)",  this);
     actFitPolynomial= new QAction("Polynomial",  this);
     actFitGaussian= new QAction("Gaussian",  this);
     actFitSigmoid= new QAction("Sigmoid",  this);
@@ -391,7 +393,7 @@ void Viewer1D::createPopup()
     popup_menu->addAction(actDelete);
     popup_menu->addAction(actRescale);
     popup_menu->addSeparator();
-    popup_menu->addAction(actStatistiques);
+    popup_menu->addMenu(menuAnalyse);
     popup_menu->addMenu(menuFit);
     popup_menu->addMenu(menuScalarField);
     popup_menu->addSeparator();
@@ -420,12 +422,17 @@ void Viewer1D::createPopup()
     menuParameters->addMenu(menuLegend);
     menuParameters->addAction(createParametersWidget());
 
+    menuAnalyse->addAction(actStatistiques);
+    menuAnalyse->addAction(actSvd);
+
 
     connect(actGadgetMark,SIGNAL(triggered()),this,SLOT(slot_gadgetMark()));
     connect(actGadgetText,SIGNAL(triggered()),this,SLOT(slot_gadgetText()));
     connect(actGadgetArrow,SIGNAL(triggered()),this,SLOT(slot_gadgetArrow()));
     connect(actClearGadgets,SIGNAL(triggered()),this,SLOT(slot_clear_marks()));
     connect(actStatistiques,SIGNAL(triggered()),this,SLOT(slot_statistiques()));
+    connect(actSvd,SIGNAL(triggered()),this,SLOT(slot_svd()));
+
     connect(actSave,SIGNAL(triggered()),this,SLOT(slot_save_image()));
     connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_rescale()));
     connect(actFitPolynomial,SIGNAL(triggered()),this,SLOT(slot_fit_polynomial()));
@@ -516,6 +523,16 @@ void Viewer1D::slot_gadgetArrow()
     this->setCursor(Qt::PointingHandCursor);
 }
 
+void Viewer1D::slot_gadgetAddArrow(Eigen::Vector2d A,Eigen::Vector2d B)
+{
+    arrowItem = new QCPItemCurve(this);
+    arrowItem->start->setCoords(A.x(), A.y());
+    arrowItem->startDir->setCoords(B.x(), B.y());
+    arrowItem->endDir->setCoords(A.x(), A.y());
+    arrowItem->end->setCoords(B.x(), B.y());
+    arrowItem->setHead(QCPLineEnding::esSpikeArrow);
+    arrowItem=nullptr;
+}
 void Viewer1D::addLabel(double cx, double cy)
 {
     double mx=this->xAxis->range().lower;
@@ -1317,6 +1334,40 @@ void Viewer1D::slot_paste()
         }
     }
     slot_rescale();
+}
+
+void Viewer1D::slot_svd()
+{
+    QList<Curve2D> curves=getSelectedCurves();
+
+    for (int i=0; i<curves.size(); i++)
+    {
+        Eigen::MatrixXd M(curves[i].getX().size(),2);
+        M.col(0)=curves[i].getX();
+        M.col(1)=curves[i].getY();
+
+        //Centroid
+        Eigen::VectorXd C=M.colwise().mean();
+
+        //Substract centroid
+        for (int i=0; i<M.rows(); i++)
+        {
+            M(i,0)-=C[0];
+            M(i,1)-=C[1];
+        }
+
+        //Svd
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(M, Eigen::ComputeThinU | Eigen::ComputeThinV);
+        Eigen::VectorXd S=svd.singularValues();
+        Eigen::MatrixXd U=svd.matrixU();
+        Eigen::MatrixXd V=svd.matrixV();
+
+        slot_gadgetAddArrow(C,C+V.col(0)*S[0]);
+        slot_gadgetAddArrow(C,C+V.col(1)*S[1]);
+
+        emit sig_displayResults(QString("Singular value decomposition M=USV:\n-Centroid:\n%4\n-Singulars values S:\n%1\n-Right singular vectors V:\n%3-Left Singular vectors U:\n%2").arg(toString(S)).arg(toString(U)).arg(toString(V)).arg(toString(C)) );
+    }
+
 }
 
 void Viewer1D::slot_statistiques()

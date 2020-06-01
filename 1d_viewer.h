@@ -49,6 +49,7 @@ public slots:
     void slot_paste();
     void slot_statistiques();
     void slot_svd();
+    void slot_covariance();
 
     void addLabel(double cx,double cy);
     void addTextLabel(double cx,double cy,QString markstr);
@@ -128,6 +129,7 @@ protected:
     QAction* actFitSinusoide;
     QAction* actStatistiques;
     QAction* actSvd;
+    QAction* actCovariance;
     QMenu* menuGadgets;
     QAction* actClearGadgets;
     QAction* actGadgetArrow;

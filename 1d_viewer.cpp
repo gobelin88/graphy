@@ -347,6 +347,7 @@ void Viewer1D::createPopup()
     actLegendLeftRight= new QAction("Move left",  this);
     actStatistiques= new QAction("Statistiques",  this);
     actSvd= new QAction("Singular values decomposition (SVD)",  this);
+    actCovariance= new QAction("Covariance matrix",  this);
     actFitPolynomial= new QAction("Polynomial",  this);
     actFitGaussian= new QAction("Gaussian",  this);
     actFitSigmoid= new QAction("Sigmoid",  this);
@@ -424,6 +425,7 @@ void Viewer1D::createPopup()
 
     menuAnalyse->addAction(actStatistiques);
     menuAnalyse->addAction(actSvd);
+    menuAnalyse->addAction(actCovariance);
 
 
     connect(actGadgetMark,SIGNAL(triggered()),this,SLOT(slot_gadgetMark()));
@@ -432,6 +434,7 @@ void Viewer1D::createPopup()
     connect(actClearGadgets,SIGNAL(triggered()),this,SLOT(slot_clear_marks()));
     connect(actStatistiques,SIGNAL(triggered()),this,SLOT(slot_statistiques()));
     connect(actSvd,SIGNAL(triggered()),this,SLOT(slot_svd()));
+    connect(actCovariance,SIGNAL(triggered()),this,SLOT(slot_covariance()));
 
     connect(actSave,SIGNAL(triggered()),this,SLOT(slot_save_image()));
     connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_rescale()));
@@ -1357,17 +1360,50 @@ void Viewer1D::slot_svd()
         }
 
         //Svd
-        Eigen::JacobiSVD<Eigen::MatrixXd> svd(M, Eigen::ComputeThinU | Eigen::ComputeThinV);
-        Eigen::VectorXd S=svd.singularValues();
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(M, Eigen::ComputeFullU | Eigen::ComputeFullV);
         Eigen::MatrixXd U=svd.matrixU();
+        Eigen::VectorXd S=svd.singularValues();
         Eigen::MatrixXd V=svd.matrixV();
 
-        slot_gadgetAddArrow(C,C+V.col(0)*S[0]);
-        slot_gadgetAddArrow(C,C+V.col(1)*S[1]);
+        slot_gadgetAddArrow(C,C+V.row(0).transpose()*sqrt(S[0]));
+        slot_gadgetAddArrow(C,C+V.row(1).transpose()*sqrt(S[1]));
 
         emit sig_displayResults(QString("Singular value decomposition M=USV:\n-Centroid:\n%4\n-Singulars values S:\n%1\n-Right singular vectors V:\n%3-Left Singular vectors U:\n%2").arg(toString(S)).arg(toString(U)).arg(toString(V)).arg(toString(C)) );
     }
+    replot();
+}
 
+void Viewer1D::slot_covariance()
+{
+    QList<Curve2D> curves=getSelectedCurves();
+
+    for (int i=0; i<curves.size(); i++)
+    {
+        Eigen::MatrixXd M(curves[i].getX().size(),2);
+        M.col(0)=curves[i].getX();
+        M.col(1)=curves[i].getY();
+
+        //Centroid
+        Eigen::VectorXd C=M.colwise().mean();
+
+        //Substract centroid
+        for (int i=0; i<M.rows(); i++)
+        {
+            M(i,0)-=C[0];
+            M(i,1)-=C[1];
+        }
+
+        Eigen::MatrixXd Cov=(M.transpose()*M)*1.0/M.rows();
+
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver(Cov);
+        Eigen::MatrixXd U=eigenSolver.eigenvectors();
+        Eigen::VectorXd S=eigenSolver.eigenvalues();
+
+        slot_gadgetAddArrow(C,C+U.col(0)*sqrt(S[0]));
+        slot_gadgetAddArrow(C,C+U.col(1)*sqrt(S[1]));
+
+        emit sig_displayResults(QString("Covariance matrix :\n%1\n Eigen value decomposition M=USU^*:\n-Centroid:\n%2\n-Eigen values S:\n%3\n-Eigen vectors U:\n%4\n").arg(toString(Cov)).arg(toString(C)).arg(toString(S)).arg(toString(U)) );
+    }
 }
 
 void Viewer1D::slot_statistiques()

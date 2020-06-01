@@ -21,7 +21,7 @@ public:
             pen.setStyle(Qt::SolidLine);
             mLineStyle=QCPGraph::lsLine;
             mScatterShape=QCPScatterStyle::ssNone;
-            mScatterSize=5;
+            mScatterSize=2;
             gradientType=QCPColorGradient::gpPolar;
         }
 

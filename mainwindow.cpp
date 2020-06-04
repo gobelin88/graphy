@@ -184,8 +184,7 @@ void MainWindow::direct_open(QString filename)
             }
             else
             {
-                QStringList dataToken = extractToken(dataLine);
-                addModelRow(dataToken);
+                addModelRow(extractToken(dataLine));
                 lineindex++;
             }
         }

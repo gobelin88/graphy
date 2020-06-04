@@ -182,6 +182,18 @@ public:
         return style;
     }
 
+    double getMeanXWeightedByY()
+    {
+        double sumx=0.0,sumy=0.0;
+        for (int i=0; i<x.size(); i++)
+        {
+            sumx+=x[i]*y[i];
+            sumy+=y[i];
+        }
+
+        return sumx/sumy;
+    }
+
     void clear();
 
 private:

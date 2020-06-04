@@ -788,20 +788,21 @@ void Viewer1D::slot_fit_sigmoid()
 {
     QList<Curve2D> curves=getSelectedCurves();
 
-    QDoubleSpinBox* A,*B,*C,*P;
-    QDialog* dialog=Sigmoid::createDialog(A,B,C,P);
-    A->setValue(-1);
-    B->setValue(1);
-    C->setValue(0);
-    P->setValue(1);
-    int result=dialog->exec();
-
-    if (result == QDialog::Accepted)
+    for (int i=0; i<curves.size(); i++)
     {
-        Sigmoid sigmoid(A->value(),B->value(),C->value(),P->value());
+        QDoubleSpinBox* A,*B,*C,*P;
+        QDialog* dialog=Sigmoid::createDialog(A,B,C,P);
+        A->setValue(-1);
+        B->setValue(1);
+        C->setValue(0);
+        P->setValue(1);
+        int result=dialog->exec();
 
-        for (int i=0; i<curves.size(); i++)
+        if (result == QDialog::Accepted)
         {
+            Sigmoid sigmoid(A->value(),B->value(),C->value(),P->value());
+
+
             curves[i].fit(&sigmoid);
 
             Eigen::VectorXd X=curves[i].getLinX(1000);
@@ -824,18 +825,19 @@ void Viewer1D::slot_fit_gaussian()
 {
     QList<Curve2D> curves=getSelectedCurves();
 
-    QDoubleSpinBox* S,*M,*K;
-    QDialog* dialog=Gaussian::createDialog(S,M,K);
-    S->setValue(10);
-    M->setValue(0);
-    int result=dialog->exec();
-
-    if (result == QDialog::Accepted)
+    for (int i=0; i<curves.size(); i++)
     {
-        Gaussian gaussian(S->value(),M->value(),K->value());
 
-        for (int i=0; i<curves.size(); i++)
+        QDoubleSpinBox* S,*M,*K;
+        QDialog* dialog=Gaussian::createDialog(S,M,K);
+        S->setValue(1);
+        M->setValue(curves[i].getMeanXWeightedByY());
+        int result=dialog->exec();
+
+        if (result == QDialog::Accepted)
         {
+            Gaussian gaussian(S->value(),M->value(),K->value());
+
             curves[i].fit(&gaussian);
             Eigen::VectorXd X=curves[i].getLinX(1000);
             Eigen::VectorXd Y=gaussian.at(X);
@@ -850,7 +852,9 @@ void Viewer1D::slot_fit_gaussian()
 
             emit sig_displayResults(QString("Fit Gaussian :\n%1 \nF(X)==%2 \n").arg(result_str).arg(expression));
             emit sig_newColumn(QString("Err(Gaussian)"),gaussian.getErrNorm());
+
         }
+
     }
 }
 

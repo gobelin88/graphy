@@ -13,8 +13,8 @@ void removeRows(Eigen::MatrixXd& matrix, unsigned int rowToRemove, unsigned int 
     if ( rowToRemove < numRows )
     {
         matrix.block(rowToRemove,0,numRows-rowToRemove,numCols) = matrix.block(rowToRemove+nbRow,0,numRows-rowToRemove,numCols);
-        matrix.conservativeResize(numRows,numCols);
     }
+    matrix.conservativeResize(numRows,numCols);
 }
 
 void removeColumns(Eigen::MatrixXd& matrix, unsigned int colToRemove,unsigned int nbCol)
@@ -25,8 +25,8 @@ void removeColumns(Eigen::MatrixXd& matrix, unsigned int colToRemove,unsigned in
     if ( colToRemove < numCols )
     {
         matrix.block(0,colToRemove,numRows,numCols-colToRemove) = matrix.block(0,colToRemove+nbCol,numRows,numCols-colToRemove);
-        matrix.conservativeResize(numRows,numCols);
     }
+    matrix.conservativeResize(numRows,numCols);
 }
 
 void addRow(Eigen::MatrixXd& matrix, Eigen::VectorXd rowToAdd)

@@ -537,7 +537,7 @@ public:
         getS->setRange(0.001,1e8);
         getS->setPrefix("Sigma=");
         getM=new QDoubleSpinBox(dialog);
-        getM->setRange(0.001,1e8);
+        getM->setRange(-1e8,1e8);
         getM->setPrefix("M=");
         getK=new QDoubleSpinBox(dialog);
         getK->setRange(0.001,1e8);

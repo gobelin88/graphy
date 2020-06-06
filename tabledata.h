@@ -19,6 +19,10 @@ void removeRows(Eigen::MatrixXd& matrix, unsigned int rowToRemove,unsigned int n
 void removeColumns(Eigen::MatrixXd& matrix, unsigned int colToRemove, unsigned int nbCol=1);
 void addRow(Eigen::MatrixXd& matrix, Eigen::VectorXd rowToAdd);
 void addColumn(Eigen::MatrixXd& matrix, Eigen::VectorXd colToAdd);
+void swapColumns(Eigen::MatrixXd& matrix,int ida,int idb);
+void moveColumn(Eigen::MatrixXd& matrix,int ida,int idb);
+void swapRows(Eigen::MatrixXd& matrix,int ida,int idb);
+void moveRow(Eigen::MatrixXd& matrix,int ida,int idb);
 
 void interpolate(const Eigen::MatrixXd& data,const BoxPlot& box,QCPColorMap* map,size_t knn,InterpolationMode mode);
 double getMin(const Eigen::MatrixXd& data,int id);

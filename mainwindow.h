@@ -45,6 +45,8 @@ public:
 
 public slots:
     //underlying table
+    QStandardItem* itemAt(int i,int j);
+    QString at(int i,int j);
     void updateTable();
     void updateTable(const QModelIndex& indexA, const QModelIndex& indexB);
 
@@ -81,6 +83,10 @@ public slots:
     void slot_parameters();
     void slot_results(QString results);
 
+    //
+    void slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
+    void slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
+
 private:
 
     bool isValidExpression(QString variableExpression);
@@ -91,6 +97,7 @@ private:
 
     void resizeEvent(QResizeEvent* event);
 
+    QTabWidget* te_widget;
     Ui::MainWindow* ui;
     QTableView* table;
     QString current_filename;
@@ -118,10 +125,10 @@ private:
     void registerNewVariable(QString varname,QString varexpr);
     void registerDelVariable(QString varname);
     void registerRenameVariable(QString old_varname, QString new_varname, QString oldExpression, QString newExpression);
-
+    void swapVariables(int ida,int idb);
+    void moveVariable(int ida,int idb);
     exprtk::symbol_table<double> symbolsTable;
-
-    QLinkedList<double> variables;
+    QVector<double*> variables;
     QStringList variables_names;
     QStringList variables_expressions;
 

@@ -11,7 +11,19 @@ MainWindow::MainWindow(QWidget* parent) :
     mdiArea=new QMdiArea();
     table=new QTableView(mdiArea);
 
+    //tableview.setSelectionBehavior(tableview.SelectRows)
+    //tableview.setSelectionMode(tableview.SingleSelection)
+//    table->setDragDropMode(QTableView::InternalMove);
+//    table->setDragDropOverwriteMode(false);
+    table->horizontalHeader()->setSectionsMovable(true);
+    table->verticalHeader()->setSectionsMovable(true);
+
+
+
     this->setCentralWidget(mdiArea);
+
+    connect(table->horizontalHeader(),SIGNAL(sectionMoved(int,int,int)),this,SLOT(slot_hSectionMoved(int,int,int)));
+    connect(table->verticalHeader(),SIGNAL(sectionMoved(int,int,int)),this,SLOT(slot_vSectionMoved(int,int,int)));
 
     connect(ui->actionNew, &QAction::triggered,this,&MainWindow::slot_new);
     connect(ui->actionOpen, &QAction::triggered,this,&MainWindow::slot_open);
@@ -57,7 +69,8 @@ MainWindow::MainWindow(QWidget* parent) :
     //------------------------------------------------------------------------------
 
     te_results=new QTextEdit;
-    QTabWidget* te_widget=new QTabWidget();
+
+    te_widget=new QTabWidget();
     te_widget->addTab(table,"Data");
     te_widget->addTab(te_results,"Results");
     mdiArea->setViewport(te_widget);
@@ -68,7 +81,7 @@ MainWindow::MainWindow(QWidget* parent) :
     table->setSizeAdjustPolicy   (QAbstractScrollArea::AdjustToContents);
 
 
-    direct_new(10,10);
+    direct_new(3,3);
 
 
     loadShortcuts();
@@ -148,6 +161,8 @@ void MainWindow::direct_open(QString filename)
     {
         registerClear();
 
+        model->removeRows(0,model->rowCount());
+        model->removeColumns(0,model->columnCount());
         model = new QStandardItemModel;
 
         int lineindex = 0;                     // file line counter
@@ -343,7 +358,7 @@ void MainWindow::direct_save(QString filename)
             for (int j = 0; j < columns; j++)
             {
 
-                textData += table->model()->data(table->model()->index(i,j)).toString();
+                textData += at(i,j);
                 textData += ";";      // for .csv file format
             }
             textData += "\n";             // (optional: for new line segmentation)
@@ -425,7 +440,7 @@ bool MainWindow::editVariableAndExpression(int currentIndex)
     QString currentName,currentExpression;
     QString newName,newExpression;
 
-    if (currentIndex<variables.size()) //fetch variable and expression
+    if (currentIndex<variables.size() && currentIndex>=0) //fetch variable and expression
     {
         currentName=variables_names[currentIndex];
         currentExpression=variables_expressions[currentIndex];
@@ -500,10 +515,10 @@ void MainWindow::registerClear()
 
 void MainWindow::registerNewVariable(QString varname,QString varexpr)
 {
-    variables.push_back(0.0);
+    variables.push_back(new double(0.0));
     variables_names.push_back(varname);
     variables_expressions.push_back(varexpr);
-    symbolsTable.add_variable(varname.toStdString(),variables.last());
+    symbolsTable.add_variable(varname.toStdString(),*variables.last());
 }
 
 void MainWindow::registerDelVariable(QString varname)
@@ -513,6 +528,31 @@ void MainWindow::registerDelVariable(QString varname)
     variables_expressions.removeAt(index);
     variables.erase(variables.begin()+index);
     symbolsTable.remove_variable(varname.toStdString());
+}
+
+void MainWindow::swapVariables(int ida,int idb)
+{
+    std::swap(variables[ida],variables[idb]);
+    variables_names.swap(ida,idb);
+    variables_expressions.swap(ida,idb);
+}
+
+void MainWindow::moveVariable(int ida,int idb)
+{
+    if (ida<idb)
+    {
+        for (int k=ida; k<idb; k++)
+        {
+            swapVariables(k,k+1);
+        }
+    }
+    else if (ida>idb)
+    {
+        for (int k=ida; k>idb; k--)
+        {
+            swapVariables(k,k-1);
+        }
+    }
 }
 
 void MainWindow::registerRenameVariable(QString old_varname,QString new_varname,QString oldExpression,QString newExpression)
@@ -557,21 +597,25 @@ void MainWindow::slot_newRow()
 
 void MainWindow::slot_editColumn()
 {
+    std::cout<<"slot_editColumn begin"<<std::endl;
+
     int currentColIndex=model->columnCount();
+    int logicalIndex=currentColIndex;
 
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
     if (id_list.size()==1)
     {
         currentColIndex=id_list[0].column();
+        logicalIndex=table->horizontalHeader()->logicalIndex( id_list[0].column() );
     }
 
-    if (editVariableAndExpression(currentColIndex))
+    bool var=editVariableAndExpression(logicalIndex);
+    if (var)
     {
-        std::cout<<"editColumn 2 "<<std::endl;
-        setColumn(currentColIndex,evalColumn(currentColIndex));
+        setColumn(logicalIndex,evalColumn(logicalIndex));
 
-        std::cout<<"editColumn 3"<<std::endl;
-        model->setHorizontalHeaderItem(currentColIndex, new QStandardItem(variables_names[currentColIndex]));
+        model->setHorizontalHeaderItem(currentColIndex, new QStandardItem(variables_names[logicalIndex]));
+
         table->setModel(model);
 
         hasheader=true;
@@ -584,7 +628,7 @@ void MainWindow::slot_updateColumns()
 
     for (int i=0; i<nbCols; i++)
     {
-        setColumn(i,evalColumn(i));
+        setColumn(i,evalColumn( i ));
     }
 }
 
@@ -677,16 +721,18 @@ void MainWindow::dispVariables()
 {
     for (int i=0; i<variables_names.size(); i++)
     {
-        std::cout<<variables_names[i].toLocal8Bit().data()<<"="<<variables_expressions[i].toLocal8Bit().data()<<"="<<*(variables.begin()+i)<<" ("<<& *(variables.begin()+i) <<") ";
+        std::cout<<variables_names[i].toLocal8Bit().data()<<"="<<variables_expressions[i].toLocal8Bit().data()<<"="<<*(variables[i])<<" ("<<(variables[i]) <<") ";
     }
     std::cout<<std::endl;
 }
 
 QVector<QString> MainWindow::evalColumn(int colId)
 {
-    assert(colId<variables_expressions.size());
+    int logicalColId=colId;
 
-    if (variables_expressions[colId].isEmpty())
+    assert(logicalColId<variables_expressions.size());
+
+    if (variables_expressions[logicalColId].isEmpty())
     {
         return QVector<QString>();
     }
@@ -700,7 +746,7 @@ QVector<QString> MainWindow::evalColumn(int colId)
         exprtk::parser<double> parser;
         exprtk::expression<double> compiled_expression;
         compiled_expression.register_symbol_table(symbolsTable);
-        if (parser.compile(variables_expressions[colId].toStdString(),compiled_expression))
+        if (parser.compile(variables_expressions[logicalColId].toStdString(),compiled_expression))
         {
             for (int i=0; i<nbRows; i++)
             {
@@ -708,7 +754,7 @@ QVector<QString> MainWindow::evalColumn(int colId)
                 //std::cout<<float(i)/nbRows<<std::endl;
                 for (int j=0; j<datatable.cols(); j++)
                 {
-                    *(variables.begin()+j)=datatable(i,j);
+                    *(variables[j])=datatable(i,j);
                 }
                 colResults[i]=QString::number(compiled_expression.value());
             }
@@ -721,9 +767,9 @@ QVector<QString> MainWindow::evalColumn(int colId)
                 //std::cout<<float(i)/nbRows<<std::endl;
                 for (int j=0; j<datatable.cols(); j++)
                 {
-                    *(variables.begin()+j)=datatable(i,j);
+                    *(variables[j])=datatable(i,j);
                 }
-                custom_exp_parse(variables_expressions[colId],i,colResults[i]);
+                custom_exp_parse(variables_expressions[logicalColId],i,colResults[i]);
             }
         }
 
@@ -779,7 +825,7 @@ bool MainWindow::custom_exp_parse(QString expression,int currentRow,QString& res
             int index1=variables_names.indexOf(args[1]);
             if (index1>=0)
             {
-                search_for_name=model->item(currentRow,index1)->text();
+                search_for_name=at(currentRow,index1);
             }
             else
             {
@@ -808,20 +854,20 @@ bool MainWindow::custom_exp_parse(QString expression,int currentRow,QString& res
                 {
                     if (sub_args1[1]=="#" )
                     {
-                        result=result.arg(model->item(currentRow,index1)->text());
+                        result=result.arg(at(currentRow,index1));
                     }
                     else if (sub_args1[1]=="#")
                     {
-                        result=result.arg(model->item(currentRow,index1)->text());
+                        result=result.arg(at(currentRow,index1));
                     }
                     else
                     {
-                        result=result.arg(*(variables.begin()+index1),sub_args1[1].toInt(),'g',-1,'0');
+                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0');
                     }
                 }
                 else if (sub_args1.size()==1)
                 {
-                    result=result.arg(*(variables.begin()+index1));
+                    result=result.arg(*(variables[index1]));
                 }
 
                 return true;
@@ -841,46 +887,46 @@ bool MainWindow::custom_exp_parse(QString expression,int currentRow,QString& res
                 {
                     if (sub_args1[1]=="#" && sub_args2[1]=="#")
                     {
-                        result=result.arg(model->item(currentRow,index1)->text()).arg(model->item(currentRow,index2)->text());
+                        result=result.arg(at(currentRow,index1)).arg(at(currentRow,index2));
                     }
                     else if (sub_args1[1]=="#")
                     {
-                        result=result.arg(model->item(currentRow,index1)->text()).arg(*(variables.begin()+index2),sub_args2[1].toInt(),'g',-1,'0');
+                        result=result.arg(at(currentRow,index1)).arg(*(variables[index2]),sub_args2[1].toInt(),'g',-1,'0');
                     }
                     else if (sub_args2[1]=="#")
                     {
-                        result=result.arg(*(variables.begin()+index1),sub_args1[1].toInt(),'g',-1,'0').arg(model->item(currentRow,index2)->text());
+                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0').arg(at(currentRow,index2));
                     }
                     else
                     {
-                        result=result.arg(*(variables.begin()+index1),sub_args1[1].toInt(),'g',-1,'0').arg(*(variables.begin()+index2),sub_args2[1].toInt(),'g',-1,'0');
+                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0').arg(*(variables[index2]),sub_args2[1].toInt(),'g',-1,'0');
                     }
                 }
                 else if (sub_args1.size()==2 && sub_args2.size()==1)
                 {
                     if (sub_args1[1]=="#")
                     {
-                        result=result.arg(*(variables.begin()+index1),sub_args1[1].toInt(),'g',-1,'0').arg(*(variables.begin()+index2));
+                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0').arg(*(variables[index2]));
                     }
                     else
                     {
-                        result=result.arg(model->item(currentRow,index1)->text()).arg(*(variables.begin()+index2));
+                        result=result.arg(at(currentRow,index1)).arg(*(variables[index2]));
                     }
                 }
                 else if (sub_args1.size()==1 && sub_args2.size()==2)
                 {
                     if (sub_args2[1]=="#")
                     {
-                        result=result.arg(*(variables.begin()+index1)).arg(model->item(currentRow,index2)->text());
+                        result=result.arg(*(variables[index1])).arg(at(currentRow,index2));
                     }
                     else
                     {
-                        result=result.arg(*(variables.begin()+index1)).arg(*(variables.begin()+index2),sub_args2[1].toInt(),'g',-1,'0');
+                        result=result.arg(*(variables[index1])).arg(*(variables[index2]),sub_args2[1].toInt(),'g',-1,'0');
                     }
                 }
                 else if (sub_args1.size()==1 && sub_args2.size()==1)
                 {
-                    result=result.arg(*(variables.begin()+index1)).arg(*(variables.begin()+index2));
+                    result=result.arg(*(variables[index1])).arg(*(variables[index2]));
                 }
 
                 return true;
@@ -914,7 +960,7 @@ QVector<QString> MainWindow::getColumn(int idCol)
     QVector<QString> contentCol(nbRows);
     for (int i=0; i<nbRows; i++)
     {
-        contentCol[i]=model->item(i,idCol)->text();
+        contentCol[i]=at(i,idCol);
     }
     return contentCol;
 }
@@ -933,9 +979,10 @@ void MainWindow::setColumn(int idCol,const QVector<QString>& vec_col)
         {
             for (int i=0; i<nbRows; i++)
             {
-                if (model->item(i,idCol))
+                QStandardItem* item=itemAt(i,idCol);
+                if (item)
                 {
-                    model->item(i,idCol)->setText(vec_col[i]);
+                    item->setText(vec_col[i]);
                 }
             }
             datatable.col(idCol)=toSafeDouble(vec_col);
@@ -1000,8 +1047,7 @@ void MainWindow::direct_new(int sx,int sy)
     {
         QString value = QString("C%1").arg(j);
         registerNewVariable(value,"");
-        QStandardItem* item = new QStandardItem(value);
-        model->setHorizontalHeaderItem(j, item);
+        model->setHorizontalHeaderItem(j, new QStandardItem(value));
     }
 
     table->setModel(model);
@@ -1035,22 +1081,41 @@ void MainWindow::updateTable()
     {
         for (int i = 0; i < rows; i++)
         {
-            datatable(i,j)=toSafeDouble(model->item(i,j)->text());
+            datatable(i,j)=toSafeDouble(at(i,j));
         }
     }
+
+    std::cout<<datatable<<std::endl;
+}
+
+QStandardItem* MainWindow::itemAt(int i,int j)
+{
+    int row=table->verticalHeader()->logicalIndex(i);
+    int column=table->horizontalHeader()->logicalIndex(j);
+    return model->item(row,column);
+}
+
+QString MainWindow::at(int i,int j)
+{
+    return itemAt(i,j)->text();
 }
 
 void MainWindow::updateTable(const QModelIndex& indexA,const QModelIndex& indexB)
 {
     Q_UNUSED(indexB)
 
-    int i=indexA.row();
-    int j=indexA.column();
+    int i=table->verticalHeader()->visualIndex(indexA.row());
+    int j=table->horizontalHeader()->visualIndex(indexA.column());
+
+    std::cout<<"(i,j)="<<i<<" "<<j<<" (r,c)="<<indexA.row()<<" "<<indexA.column()<<std::endl;
 
     if (i<datatable.rows() && j<datatable.cols())
     {
-        datatable(i,j)=toSafeDouble(model->item(i,j)->text());
+        datatable(i,j)=toSafeDouble(model->item(indexA.row(),indexA.column())->text());
+        //datatable(i,j)=toSafeDouble(at(i,j));
     }
+
+    std::cout<<datatable<<std::endl;
 }
 
 
@@ -1656,4 +1721,29 @@ Eigen::VectorXd MainWindow::toSafeDouble(QVector<QString> vec_col_str)
     }
 
     return vec_col;
+}
+
+void MainWindow::slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex)
+{
+    std::cout<<logicalIndex<<" "<<oldVisualIndex<<" "<<newVisualIndex<<std::endl;
+
+    moveRow(datatable,oldVisualIndex,newVisualIndex);
+
+    std::cout<<datatable<<std::endl;
+}
+
+void MainWindow::slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex)
+{
+    //int oldIndex=table->horizontalHeader()->logicalIndex(oldVisualIndex);
+    //int newIndex=table->horizontalHeader()->logicalIndex(newVisualIndex);
+
+    std::cout<<"-----------------"<<std::endl;
+    std::cout<<logicalIndex<<" "<<oldVisualIndex<<" "<<newVisualIndex<<std::endl;
+
+    moveVariable(oldVisualIndex,newVisualIndex);
+    moveColumn(datatable,oldVisualIndex,newVisualIndex);
+
+    dispVariables();
+    std::cout<<"-----------------"<<std::endl;
+    std::cout<<datatable<<std::endl;
 }

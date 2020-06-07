@@ -57,6 +57,7 @@ public slots:
     void slot_newColumn(QString name,Eigen::VectorXd data);
 
     //IO
+    void clear();
     void slot_new();
     void slot_open();
     void slot_save();

@@ -36,14 +36,57 @@ public:
     }
     QCustomPlot* getColorScalePlot()
     {
-        return plot;
+        return color_plot;
+    }
+
+    QCPAxis* getXAxis()
+    {
+        return axisX;
+    }
+    QCPAxis* getYAxis()
+    {
+        return axisY;
+    }
+    QCPAxis* getZAxis()
+    {
+        return axisZ;
+    }
+
+    QVector3D getTranslation()
+    {
+        return QVector3D(float(axisX->range().center()),
+                         float(axisY->range().center()),
+                         float(axisZ->range().center()));
+    }
+
+    QVector3D getScale()
+    {
+        return QVector3D(float(0.5*(axisX->range().upper-axisX->range().lower)),
+                         float(0.5*(axisY->range().upper-axisY->range().lower)),
+                         float(0.5*(axisZ->range().upper-axisZ->range().lower)));
     }
 
 private:
     QWidget* container;
 
-    QCustomPlot* plot;
+    void createColorAxisPlot();
+    QCustomPlot* color_plot;
     QCPColorScale* scale;
+
+    void createXAxisPlot();
+    QCustomPlot* axisX_plot;
+    QCPAxisRect* axisX_rect;
+    QCPAxis* axisX;
+
+    void createYAxisPlot();
+    QCustomPlot* axisY_plot;
+    QCPAxisRect* axisY_rect;
+    QCPAxis* axisY;
+
+    void createZAxisPlot();
+    QCustomPlot* axisZ_plot;
+    QCPAxisRect* axisZ_rect;
+    QCPAxis* axisZ;
 };
 
 
@@ -59,9 +102,9 @@ public:
 
     View3D();
 
-    void addGrid(Cloud* cloud,unsigned int N,QColor color);
     void addLabel(QString text, QVector3D coord, float scale, float anglex, float angley, float anglez);
 
+    void createGrid(unsigned int N, QColor color);
     void setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode);
 
     void addObj(Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor color);
@@ -81,6 +124,7 @@ public slots:
     void slot_fitPlan();
     void slot_fitCustomMesh();
     void slot_ColorScaleChanged(const QCPRange& range);
+    void slot_ScaleChanged();
     void slot_setGradient(int preset);
 
 signals:
@@ -186,6 +230,15 @@ private:
             return cameraEntity;
         }
 
+        double getAlpha()
+        {
+            return alpha;
+        }
+        double getBeta()
+        {
+            return beta;
+        }
+
     private:
         float alpha,beta;
         float radius;
@@ -220,12 +273,17 @@ private:
     Qt3DRender::QLineWidth* lineWidth;
     Qt3DCore::QEntity* cloudPrimitivesEntity;
     Qt3DRender::QGeometry* cloudGeometry;
+    Qt3DCore::QTransform* cloudTransform;
     Qt3DRender::QBuffer* cloudBuf;
     Qt3DRender::QAttribute* cloudPositionAttribute;
     Qt3DRender::QAttribute* cloudColorsAttribute;
     Qt3DCore::QEntity* rootEntity;
     std::vector<Qt3DCore::QTransform*> transforms;
     std::vector<Qt3DExtras::QPhongMaterial*> materials;
+
+    //Grid
+    Qt3DRender::QBuffer* gridBuf;
+    Qt3DRender::QAttribute* gridPositionAttribute;
 
     //Data
     Cloud* cloud;

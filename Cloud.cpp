@@ -125,6 +125,11 @@ void Cloud::operator=(const Cloud& other)
     this->pts=other.pts;
 }
 
+Eigen::Vector3d Cloud::getCenter()
+{
+    return Eigen::Vector3d(rangeX.center(),rangeY.center(),rangeZ.center());
+}
+
 Eigen::Vector3d Cloud::getBarycenter()
 {
     return Barycenter;

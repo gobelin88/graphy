@@ -42,6 +42,7 @@ public:
     const QCPColorGradient& getGradient();
     QCPColorGradient::GradientPreset getGradientPreset();
 
+    Eigen::Vector3d getCenter();
     Eigen::Vector3d getBarycenter();
     double getBoundingRadius();
 

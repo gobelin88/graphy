@@ -4,22 +4,92 @@
 CustomViewContainer::CustomViewContainer(QWidget* container)
 {
     QGridLayout* glayout=new QGridLayout(this);
-    glayout->addWidget(container,0,0);
 
-    plot=new QCustomPlot(this);
-    scale=new QCPColorScale(plot);
+    createColorAxisPlot();
+    createXAxisPlot();
+    createYAxisPlot();
+    createZAxisPlot();
+
+    glayout->addWidget(axisX_plot,2,1);
+    glayout->addWidget(axisY_plot,1,0);
+    glayout->addWidget(axisZ_plot,0,1);
+    glayout->addWidget(color_plot,1,2);
+    glayout->addWidget(container,1,1);
+
+    //white
+    QPalette pal = palette();
+    pal.setColor(QPalette::Background, Qt::white);
+    this->setAutoFillBackground(true);
+    this->setPalette(pal);
+
+    this->container=container;
+}
+
+void CustomViewContainer::createColorAxisPlot()
+{
+    color_plot=new QCustomPlot(this);
+    scale=new QCPColorScale(color_plot);
     scale->setRangeDrag(true);
     scale->setRangeZoom(true);
-    plot->setInteractions(QCP::iRangeDrag|QCP::iRangeZoom);
+    color_plot->setInteractions(QCP::iRangeDrag|QCP::iRangeZoom);
+    color_plot->plotLayout()->clear();
+    color_plot->plotLayout()->addElement(scale);
 
-    plot->plotLayout()->clear();
-    plot->plotLayout()->addElement(scale);
+    color_plot->setMaximumWidth(100);
+}
 
-    glayout->addWidget(container,0,0);
-    glayout->addWidget(plot,0,1);
+void CustomViewContainer::createXAxisPlot()
+{
+    axisX_plot=new QCustomPlot(this);
 
-    plot->setMaximumWidth(100);
-    this->container=container;
+    axisX_rect=new QCPAxisRect(axisX_plot,false);
+    axisX=new QCPAxis(axisX_rect,QCPAxis::AxisType::atBottom);
+    axisX_rect->addAxis(QCPAxis::AxisType::atBottom,axisX);
+    axisX_plot->setInteractions(QCP::iRangeDrag|QCP::iRangeZoom);
+    axisX_rect->setRangeDrag(Qt::Horizontal);
+    axisX_rect->setRangeZoom(Qt::Horizontal);
+    axisX_rect->setRangeDragAxes(axisX,nullptr);
+    axisX_rect->setRangeZoomAxes(axisX,nullptr);
+    axisX_plot->plotLayout()->clear();
+    axisX_plot->plotLayout()->addElement(axisX_rect);
+
+    axisX_plot->setMaximumHeight(100);
+}
+
+void CustomViewContainer::createYAxisPlot()
+{
+    axisY_plot=new QCustomPlot(this);
+
+    axisY_rect=new QCPAxisRect(axisY_plot,false);
+    axisY=new QCPAxis(axisY_rect,QCPAxis::AxisType::atLeft);
+    axisY_rect->addAxis(QCPAxis::AxisType::atLeft,axisY);
+    axisY_plot->setInteractions(QCP::iRangeDrag|QCP::iRangeZoom);
+    axisY_rect->setRangeDrag(Qt::Vertical);
+    axisY_rect->setRangeZoom(Qt::Vertical);
+    axisY_rect->setRangeDragAxes(nullptr,axisY);
+    axisY_rect->setRangeZoomAxes(nullptr,axisY);
+    axisY_plot->plotLayout()->clear();
+    axisY_plot->plotLayout()->addElement(axisY_rect);
+
+    axisY_plot->setMaximumWidth(100);
+}
+
+void CustomViewContainer::createZAxisPlot()
+{
+    axisZ_plot=new QCustomPlot(this);
+
+    axisZ_rect=new QCPAxisRect(axisZ_plot,false);
+    axisZ=new QCPAxis(axisZ_rect,QCPAxis::AxisType::atTop);
+    axisZ_rect->addAxis(QCPAxis::AxisType::atTop,axisZ);
+    axisZ_plot->setInteractions(QCP::iRangeDrag|QCP::iRangeZoom);
+    axisZ_rect->setRangeDrag(Qt::Horizontal);
+    axisZ_rect->setRangeZoom(Qt::Horizontal);
+    axisZ_rect->setRangeDragAxes(axisZ,nullptr);
+    axisZ_rect->setRangeZoomAxes(axisZ,nullptr);
+    axisZ_plot->plotLayout()->clear();
+    axisZ_plot->plotLayout()->addElement(axisZ_rect);
+
+    axisZ_plot->setMaximumHeight(100);
 }
 
 QWidget* CustomViewContainer::getContainer()
@@ -251,6 +321,9 @@ View3D::View3D()
     init3D();
     createPopup();
 
+    connect(customContainer->getXAxis(),SIGNAL(rangeChanged(const QCPRange&)),this,SLOT(slot_ScaleChanged()));
+    connect(customContainer->getYAxis(),SIGNAL(rangeChanged(const QCPRange&)),this,SLOT(slot_ScaleChanged()));
+    connect(customContainer->getZAxis(),SIGNAL(rangeChanged(const QCPRange&)),this,SLOT(slot_ScaleChanged()));
     connect(customContainer->getColorScale(),SIGNAL(dataRangeChanged(const QCPRange&)),this,SLOT(slot_ColorScaleChanged(const QCPRange&)));
     //addSphere(QPosAtt(Eigen::Vector3d(0.05,0.05,0.05),Eigen::Quaterniond(1,0,0,0)),1.0,QColor(128,128,128),0.01);
 }
@@ -281,124 +354,87 @@ void View3D::addLabel(QString text, QVector3D coord, float scale, float anglex, 
     textEntity->addComponent(textMesh);
 }
 
-void View3D::addGrid(Cloud* cloud,
-                     unsigned int N,
-                     QColor color)
+QByteArray getGridBuffer(bool xy_swap,bool xz_swap,bool yz_swap,int N)
 {
-
-
-    auto* gridGeometry = new Qt3DRender::QGeometry(rootEntity);
-
     unsigned int n=(N+1)*3;
 
-    // position vertices (start and end)
     QByteArray bufferBytes;
     bufferBytes.resize(3 * (4*n) * sizeof(float));
     float* positions = reinterpret_cast<float*>(bufferBytes.data());
 
-    double stepX=cloud->getXRange().size()/(N-1);
-    double stepY=cloud->getYRange().size()/(N-1);
-    double stepZ=cloud->getZRange().size()/(N-1);
+    double step=2.0/N;
 
-    float scale=cloud->getBoundingRadius()/N*0.75;
-    addLabel(cloud->getLabelX(),QVector3D(cloud->getXRange().upper+scale*5,
-                                          cloud->getYRange().lower,
-                                          cloud->getZRange().center()+cloud->getLabelX().size()*scale),
-             scale,-90,90,0);
-    addLabel(cloud->getLabelY(),QVector3D(cloud->getXRange().upper+scale*5,
-                                          cloud->getYRange().center(),
-                                          cloud->getZRange().lower),scale,0,0,90);
-
-    addLabel(cloud->getLabelZ(),QVector3D(cloud->getXRange().center(),
-                                          cloud->getYRange().lower,
-                                          cloud->getZRange().upper+stepZ+scale*4),scale,-90,0,0);
-
-    //Tiks
-    double dec=scale*2;
     for (unsigned int i=0; i<N+1; i++)
     {
-        addLabel(QString("%1").arg( (i)*stepX+cloud->getXRange().lower,0,'g',2),
-                 QVector3D(i*stepX+cloud->getXRange().lower,
-                           cloud->getYRange().lower,
-                           cloud->getZRange().upper+stepZ+dec),scale*0.5,-90,90,0);
+        *positions++ = i*step-1;
+        *positions++ = xz_swap?1:-1;
+        *positions++ = 1;
 
-        addLabel(QString("%1").arg( (i)*stepZ+cloud->getZRange().lower,0,'g',2),
-                 QVector3D(cloud->getXRange().upper+stepX,
-                           cloud->getYRange().lower,
-                           (i)*stepZ+cloud->getZRange().lower),scale*0.5,-90,0,0);
+        *positions++ = i*step-1;
+        *positions++ = xz_swap?1:-1;
+        *positions++ = -1;
 
-        addLabel(QString("%1").arg( (i)*stepY+cloud->getYRange().lower,0,'g',2),
-                 QVector3D(cloud->getXRange().upper+stepX,
-                           (i)*stepY+cloud->getYRange().lower,
-                           cloud->getZRange().lower),scale*0.5,0,0,0);
-    }
+        *positions++ = 1;
+        *positions++ = xz_swap?1:-1;
+        *positions++ = i*step-1;
 
-    if (!cloud->getLabelS().isEmpty())
-    {
-        addLabel(cloud->getLabelS(),QVector3D(cloud->getXRange().upper+stepX,cloud->getYRange().lower-stepY,cloud->getZRange().upper+stepZ),scale,0,45,0);
+        *positions++ = -1;
+        *positions++ = xz_swap?1:-1;
+        *positions++ = i*step-1;
     }
 
     for (unsigned int i=0; i<N+1; i++)
     {
-        *positions++ = (i)*stepX+cloud->getXRange().lower;
-        *positions++ = cloud->getYRange().lower;
-        *positions++ = cloud->getZRange().upper+stepZ;
+        *positions++ = yz_swap?1:-1;
+        *positions++ = (i)*step-1;
+        *positions++ = 1;
 
-        *positions++ = (i)*stepX+cloud->getXRange().lower;
-        *positions++ = cloud->getYRange().lower;
-        *positions++ = cloud->getZRange().lower;
+        *positions++ = yz_swap?1:-1;
+        *positions++ = i*step-1;
+        *positions++ = -1;
 
-        *positions++ = cloud->getXRange().upper+stepX;
-        *positions++ = cloud->getYRange().lower;
-        *positions++ = (i)*stepZ+cloud->getZRange().lower;
+        *positions++ = yz_swap?1:-1;
+        *positions++ = 1;
+        *positions++ = i*step-1;
 
-        *positions++ = cloud->getXRange().lower;
-        *positions++ = cloud->getYRange().lower;
-        *positions++ = (i)*stepZ+cloud->getZRange().lower;
+        *positions++ = yz_swap?1:-1;
+        *positions++ = -1;
+        *positions++ = (i)*step-1;
     }
 
     for (unsigned int i=0; i<N+1; i++)
     {
-        *positions++ = cloud->getXRange().lower;
-        *positions++ = (i)*stepY+cloud->getYRange().lower;
-        *positions++ = cloud->getZRange().upper+stepZ;
+        *positions++ = (i)*step-1;
+        *positions++ = 1;
+        *positions++ = xy_swap?1:-1;
 
-        *positions++ = cloud->getXRange().lower;
-        *positions++ = (i)*stepY+cloud->getYRange().lower;
-        *positions++ = cloud->getZRange().lower;
+        *positions++ = (i)*step-1;
+        *positions++ = -1;
+        *positions++ = xy_swap?1:-1;
 
-        *positions++ = cloud->getXRange().lower;
-        *positions++ = cloud->getYRange().upper+stepY;
-        *positions++ = (i)*stepZ+cloud->getZRange().lower;
+        *positions++ = 1;
+        *positions++ = (i)*step-1;
+        *positions++ = xy_swap?1:-1;
 
-        *positions++ = cloud->getXRange().lower;
-        *positions++ = cloud->getYRange().lower;
-        *positions++ = (i)*stepZ+cloud->getZRange().lower;
+        *positions++ = -1;
+        *positions++ = (i)*step-1;
+        *positions++ = xy_swap?1:-1;
     }
 
-    for (unsigned int i=0; i<N+1; i++)
-    {
-        *positions++ = (i)*stepX+cloud->getXRange().lower;
-        *positions++ = cloud->getYRange().upper+stepY;
-        *positions++ = cloud->getZRange().lower;
+    return bufferBytes;
+}
 
-        *positions++ = (i)*stepX+cloud->getXRange().lower;
-        *positions++ = cloud->getYRange().lower;
-        *positions++ = cloud->getZRange().lower;
+void View3D::createGrid(unsigned int N,
+                        QColor color)
+{
+    auto* gridGeometry = new Qt3DRender::QGeometry(rootEntity);
 
-        *positions++ = cloud->getXRange().upper+stepX;
-        *positions++ = (i)*stepY+cloud->getYRange().lower;
-        *positions++ = cloud->getZRange().lower;
+    unsigned int n=(N+1)*3;
 
-        *positions++ = cloud->getXRange().lower;
-        *positions++ = (i)*stepY+cloud->getYRange().lower;
-        *positions++ = cloud->getZRange().lower;
-    }
+    gridBuf = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer,gridGeometry);
+    gridBuf->setData(getGridBuffer(false,false,false,N));
 
-    auto* gridBuf = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer,gridGeometry);
-    gridBuf->setData(bufferBytes);
-
-    auto* gridPositionAttribute = new Qt3DRender::QAttribute(gridGeometry);
+    gridPositionAttribute = new Qt3DRender::QAttribute(gridGeometry);
     gridPositionAttribute->setName(Qt3DRender::QAttribute::defaultPositionAttributeName());
     gridPositionAttribute->setVertexBaseType(Qt3DRender::QAttribute::Float);
     gridPositionAttribute->setVertexSize(3);
@@ -443,9 +479,176 @@ void View3D::addGrid(Cloud* cloud,
     gridEntity->addComponent(gridMaterial);
 }
 
+//void View3D::addGrid(Cloud* cloud,
+//                     unsigned int N,
+//                     QColor color)
+//{
+
+
+//    auto* gridGeometry = new Qt3DRender::QGeometry(rootEntity);
+
+//    unsigned int n=(N+1)*3;
+
+//    // position vertices (start and end)
+//    QByteArray bufferBytes;
+//    bufferBytes.resize(3 * (4*n) * sizeof(float));
+//    float* positions = reinterpret_cast<float*>(bufferBytes.data());
+
+//    double stepX=cloud->getXRange().size()/(N-1);
+//    double stepY=cloud->getYRange().size()/(N-1);
+//    double stepZ=cloud->getZRange().size()/(N-1);
+
+//    float scale=cloud->getBoundingRadius()/N*0.75;
+//    addLabel(cloud->getLabelX(),QVector3D(cloud->getXRange().upper+scale*5,
+//                                          cloud->getYRange().lower,
+//                                          cloud->getZRange().center()+cloud->getLabelX().size()*scale),
+//             scale,-90,90,0);
+//    addLabel(cloud->getLabelY(),QVector3D(cloud->getXRange().upper+scale*5,
+//                                          cloud->getYRange().center(),
+//                                          cloud->getZRange().lower),scale,0,0,90);
+
+//    addLabel(cloud->getLabelZ(),QVector3D(cloud->getXRange().center(),
+//                                          cloud->getYRange().lower,
+//                                          cloud->getZRange().upper+stepZ+scale*4),scale,-90,0,0);
+
+//    //Tiks
+//    double dec=scale*2;
+//    for (unsigned int i=0; i<N+1; i++)
+//    {
+//        addLabel(QString("%1").arg( (i)*stepX+cloud->getXRange().lower,0,'g',2),
+//                 QVector3D(i*stepX+cloud->getXRange().lower,
+//                           cloud->getYRange().lower,
+//                           cloud->getZRange().upper+stepZ+dec),scale*0.5,-90,90,0);
+
+//        addLabel(QString("%1").arg( (i)*stepZ+cloud->getZRange().lower,0,'g',2),
+//                 QVector3D(cloud->getXRange().upper+stepX,
+//                           cloud->getYRange().lower,
+//                           (i)*stepZ+cloud->getZRange().lower),scale*0.5,-90,0,0);
+
+//        addLabel(QString("%1").arg( (i)*stepY+cloud->getYRange().lower,0,'g',2),
+//                 QVector3D(cloud->getXRange().upper+stepX,
+//                           (i)*stepY+cloud->getYRange().lower,
+//                           cloud->getZRange().lower),scale*0.5,0,0,0);
+//    }
+
+//    if (!cloud->getLabelS().isEmpty())
+//    {
+//        addLabel(cloud->getLabelS(),QVector3D(cloud->getXRange().upper+stepX,cloud->getYRange().lower-stepY,cloud->getZRange().upper+stepZ),scale,0,45,0);
+//    }
+
+//    for (unsigned int i=0; i<N+1; i++)
+//    {
+//        *positions++ = (i)*stepX+cloud->getXRange().lower;
+//        *positions++ = cloud->getYRange().lower;
+//        *positions++ = cloud->getZRange().upper+stepZ;
+
+//        *positions++ = (i)*stepX+cloud->getXRange().lower;
+//        *positions++ = cloud->getYRange().lower;
+//        *positions++ = cloud->getZRange().lower;
+
+//        *positions++ = cloud->getXRange().upper+stepX;
+//        *positions++ = cloud->getYRange().lower;
+//        *positions++ = (i)*stepZ+cloud->getZRange().lower;
+
+//        *positions++ = cloud->getXRange().lower;
+//        *positions++ = cloud->getYRange().lower;
+//        *positions++ = (i)*stepZ+cloud->getZRange().lower;
+//    }
+
+//    for (unsigned int i=0; i<N+1; i++)
+//    {
+//        *positions++ = cloud->getXRange().lower;
+//        *positions++ = (i)*stepY+cloud->getYRange().lower;
+//        *positions++ = cloud->getZRange().upper+stepZ;
+
+//        *positions++ = cloud->getXRange().lower;
+//        *positions++ = (i)*stepY+cloud->getYRange().lower;
+//        *positions++ = cloud->getZRange().lower;
+
+//        *positions++ = cloud->getXRange().lower;
+//        *positions++ = cloud->getYRange().upper+stepY;
+//        *positions++ = (i)*stepZ+cloud->getZRange().lower;
+
+//        *positions++ = cloud->getXRange().lower;
+//        *positions++ = cloud->getYRange().lower;
+//        *positions++ = (i)*stepZ+cloud->getZRange().lower;
+//    }
+
+//    for (unsigned int i=0; i<N+1; i++)
+//    {
+//        *positions++ = (i)*stepX+cloud->getXRange().lower;
+//        *positions++ = cloud->getYRange().upper+stepY;
+//        *positions++ = cloud->getZRange().lower;
+
+//        *positions++ = (i)*stepX+cloud->getXRange().lower;
+//        *positions++ = cloud->getYRange().lower;
+//        *positions++ = cloud->getZRange().lower;
+
+//        *positions++ = cloud->getXRange().upper+stepX;
+//        *positions++ = (i)*stepY+cloud->getYRange().lower;
+//        *positions++ = cloud->getZRange().lower;
+
+//        *positions++ = cloud->getXRange().lower;
+//        *positions++ = (i)*stepY+cloud->getYRange().lower;
+//        *positions++ = cloud->getZRange().lower;
+//    }
+
+//    auto* gridBuf = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer,gridGeometry);
+//    gridBuf->setData(bufferBytes);
+
+//    auto* gridPositionAttribute = new Qt3DRender::QAttribute(gridGeometry);
+//    gridPositionAttribute->setName(Qt3DRender::QAttribute::defaultPositionAttributeName());
+//    gridPositionAttribute->setVertexBaseType(Qt3DRender::QAttribute::Float);
+//    gridPositionAttribute->setVertexSize(3);
+//    gridPositionAttribute->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
+//    gridPositionAttribute->setBuffer(gridBuf);
+//    gridPositionAttribute->setByteStride(3 * sizeof(float));
+//    gridPositionAttribute->setCount(4*n);
+//    gridGeometry->addAttribute(gridPositionAttribute); // We add the vertices in the geometry
+
+//    // connectivity between vertices
+//    QByteArray indexBytes;
+//    indexBytes.resize( (4*n) * sizeof(unsigned int)); // start to end
+//    unsigned int* indices = reinterpret_cast<unsigned int*>(indexBytes.data());
+//    for (unsigned int i=0; i<n; i++)
+//    {
+//        *indices++ = 0+4*i;
+//        *indices++ = 1+4*i;
+//        *indices++ = 2+4*i;
+//        *indices++ = 3+4*i;
+//    }
+
+//    auto* gridIndexBuffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::BufferType::IndexBuffer,gridGeometry);
+//    gridIndexBuffer->setData(indexBytes);
+
+//    auto* gridIndexAttribute = new Qt3DRender::QAttribute(gridGeometry);
+//    gridIndexAttribute->setVertexBaseType(Qt3DRender::QAttribute::UnsignedInt);
+//    gridIndexAttribute->setAttributeType(Qt3DRender::QAttribute::IndexAttribute);
+//    gridIndexAttribute->setBuffer(gridIndexBuffer);
+//    gridIndexAttribute->setCount(4*n);
+//    gridGeometry->addAttribute(gridIndexAttribute); // We add the indices linking the points in the geometry
+
+//    // mesh
+//    auto* gridLine = new Qt3DRender::QGeometryRenderer(rootEntity);
+//    gridLine->setGeometry(gridGeometry);
+//    gridLine->setPrimitiveType(Qt3DRender::QGeometryRenderer::Lines);
+//    auto* gridMaterial = new Qt3DExtras::QPhongMaterial(rootEntity);
+//    gridMaterial->setAmbient(color);
+
+//    // entity
+//    auto* gridEntity = new Qt3DCore::QEntity(rootEntity);
+//    gridEntity->addComponent(gridLine);
+//    gridEntity->addComponent(gridMaterial);
+//}
+
 void View3D::init3D()
 {
     mode=MODE_POINTS;
+
+    cloudTransform = new Qt3DCore::QTransform();
+    cloudTransform->setScale(1.0);
+    cloudTransform->setRotation(QQuaternion(1,0,0,0));
+    cloudTransform->setTranslation(QVector3D(0,0,0));
 
     cloudGeometry = new Qt3DRender::QGeometry(rootEntity);
     cloudBuf = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer,cloudGeometry);
@@ -477,6 +680,7 @@ void View3D::init3D()
     cloudPrimitivesEntity = new Qt3DCore::QEntity(rootEntity);
     cloudPrimitivesEntity->addComponent(cloudPrimitives);
     cloudPrimitivesEntity->addComponent(cloudMaterial);
+    cloudPrimitivesEntity->addComponent(cloudTransform);
 
     pointSize = new Qt3DRender::QPointSize();
     pointSize->setSizeMode(Qt3DRender::QPointSize::SizeMode::Fixed);
@@ -492,6 +696,14 @@ void View3D::slot_ColorScaleChanged(const QCPRange& range)
         cloud->setScalarFieldRange(range);
         cloudBuf->setData(cloud->getBuffer());
     }
+}
+
+void View3D::slot_ScaleChanged()
+{
+    Qt3DCore::QTransform t;
+    t.setTranslation(customContainer->getTranslation());
+    t.setScale3D(customContainer->getScale());
+    cloudTransform->setMatrix(t.matrix().inverted());
 }
 
 void View3D::slot_setGradient(int preset)
@@ -510,9 +722,9 @@ void View3D::setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode)
 {
     this->cloud=cloud;
 
-    addGrid(cloud,10,QColor(128,128,128));
-    camera_params->setBarycenter( Cloud::toQVec3D(cloud->getBarycenter()) );
-    camera_params->setBoundingRadius( cloud->getBoundingRadius() );
+    createGrid(10,QColor(128,128,128));
+    camera_params->setBarycenter( QVector3D(0,0,0) );
+    camera_params->setBoundingRadius( 1.5 );
 
     //Set Data Buffers
     //cloudBuf->setData(cloud->getBuffer());
@@ -549,6 +761,14 @@ void View3D::setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode)
     customContainer->getColorScale()->setDataRange(cloud->getScalarFieldRange());
     customContainer->getColorScalePlot()->rescaleAxes();
     customContainer->getColorScalePlot()->replot();
+
+    customContainer->getXAxis()->setRange(cloud->getXRange());
+    customContainer->getYAxis()->setRange(cloud->getYRange());
+    customContainer->getZAxis()->setRange(cloud->getZRange());
+
+    customContainer->getXAxis()->setLabel(cloud->getLabelX());
+    customContainer->getYAxis()->setLabel(cloud->getLabelY());
+    customContainer->getZAxis()->setLabel(cloud->getLabelZ());
 }
 
 void View3D::slot_setPointSize(double value)
@@ -660,6 +880,46 @@ void View3D::mouseMoveEvent(QMouseEvent* event)
         float dy=yp-event->y();
 
         camera_params->move(dx,dy);
+
+        static bool xy_reversed=false;
+        static bool yz_reversed=false;
+        static bool xz_reversed=false;
+
+        if (camera_params->getBeta()>0 && xy_reversed==false)
+        {
+            xy_reversed=true;
+            gridBuf->setData(getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
+        }
+        else if (camera_params->getBeta()<0 && xy_reversed==true)
+        {
+            xy_reversed=false;
+            gridBuf->setData(getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
+        }
+
+        if ( cos(camera_params->getAlpha())>0 && yz_reversed==false)
+        {
+            yz_reversed=true;
+            gridBuf->setData(getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
+        }
+        else if ( cos(camera_params->getAlpha())<0 && yz_reversed==true)
+        {
+            yz_reversed=false;
+            gridBuf->setData(getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
+        }
+
+        if ( sin(camera_params->getAlpha())>0 && xz_reversed==false)
+        {
+            xz_reversed=true;
+            gridBuf->setData(getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
+        }
+        else if ( sin(camera_params->getAlpha())<0 && xz_reversed==true)
+        {
+            xz_reversed=false;
+            gridBuf->setData(getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
+        }
+
+
+
 
         xp=event->x();
         yp=event->y();

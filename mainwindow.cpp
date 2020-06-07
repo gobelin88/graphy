@@ -10,14 +10,16 @@ MainWindow::MainWindow(QWidget* parent) :
     ui->setupUi(this);
     mdiArea=new QMdiArea();
     table=new QTableView(mdiArea);
+    model=nullptr;
 
-    //tableview.setSelectionBehavior(tableview.SelectRows)
-    //tableview.setSelectionMode(tableview.SingleSelection)
-//    table->setDragDropMode(QTableView::InternalMove);
-//    table->setDragDropOverwriteMode(false);
+//  tableview.setSelectionBehavior(tableview.SelectRows)
+//  tableview.setSelectionMode(tableview.SingleSelection)
+//  table->setDragDropMode(QTableView::InternalMove);
+//  table->setDragDropOverwriteMode(false);
+//  table->setSortingEnabled(true);
+
     table->horizontalHeader()->setSectionsMovable(true);
     table->verticalHeader()->setSectionsMovable(true);
-
 
 
     this->setCentralWidget(mdiArea);
@@ -159,11 +161,7 @@ void MainWindow::direct_open(QString filename)
     QFile file(filename);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        registerClear();
-
-        model->removeRows(0,model->rowCount());
-        model->removeColumns(0,model->columnCount());
-        model = new QStandardItemModel;
+        clear();
 
         int lineindex = 0;                     // file line counter
         QTextStream in(&file);                 // read to text stream
@@ -1027,12 +1025,22 @@ void MainWindow::addModelRow(const QStringList& str_row)
     model->appendRow(items);
 }
 
-void MainWindow::direct_new(int sx,int sy)
+void MainWindow::clear()
 {
     registerClear();
+    if (model)
+    {
+        model->removeRows(0,model->rowCount());
+        model->removeColumns(0,model->columnCount());
+    }
+    model = new QStandardItemModel;
+}
+
+void MainWindow::direct_new(int sx,int sy)
+{
+    clear();
 
     hasheader=false;
-    model = new QStandardItemModel;
 
     for (int dx=0; dx<sx; dx++)
     {

@@ -5,6 +5,7 @@ CustomViewContainer::CustomViewContainer(QWidget* container)
 {
     QGridLayout* glayout=new QGridLayout(this);
 
+    axisSize=100;
     createColorAxisPlot();
     createXAxisPlot();
     createYAxisPlot();
@@ -23,6 +24,8 @@ CustomViewContainer::CustomViewContainer(QWidget* container)
     this->setPalette(pal);
 
     this->container=container;
+
+
 }
 
 void CustomViewContainer::createColorAxisPlot()
@@ -35,7 +38,7 @@ void CustomViewContainer::createColorAxisPlot()
     color_plot->plotLayout()->clear();
     color_plot->plotLayout()->addElement(scale);
 
-    color_plot->setMaximumWidth(100);
+    color_plot->setMaximumWidth(axisSize);
 }
 
 void CustomViewContainer::createXAxisPlot()
@@ -53,7 +56,7 @@ void CustomViewContainer::createXAxisPlot()
     axisX_plot->plotLayout()->clear();
     axisX_plot->plotLayout()->addElement(axisX_rect);
 
-    axisX_plot->setMaximumHeight(100);
+    axisX_plot->setMaximumHeight(axisSize);
 }
 
 void CustomViewContainer::createYAxisPlot()
@@ -71,7 +74,7 @@ void CustomViewContainer::createYAxisPlot()
     axisY_plot->plotLayout()->clear();
     axisY_plot->plotLayout()->addElement(axisY_rect);
 
-    axisY_plot->setMaximumWidth(100);
+    axisY_plot->setMaximumWidth(axisSize);
 }
 
 void CustomViewContainer::createZAxisPlot()
@@ -89,7 +92,7 @@ void CustomViewContainer::createZAxisPlot()
     axisZ_plot->plotLayout()->clear();
     axisZ_plot->plotLayout()->addElement(axisZ_rect);
 
-    axisZ_plot->setMaximumHeight(100);
+    axisZ_plot->setMaximumHeight(axisSize);
 }
 
 QWidget* CustomViewContainer::getContainer()
@@ -251,14 +254,15 @@ QVector3D toQVector3D(Eigen::Vector3d v)
 View3D::View3D()
 {
     cloud=nullptr;
-
+    xy_reversed=false;
+    yz_reversed=false;
+    xz_reversed=false;
 
     current_filename.clear();
 
     //renderSettings()->setRenderPolicy(Qt3DRender::QRenderSettings::RenderPolicy::OnDemand);
     defaultFrameGraph()->setClearColor(QColor(255,255,255));
     defaultFrameGraph()->setFrustumCullingEnabled(true);
-
 
     QWidget* container = QWidget::createWindowContainer(this);
     container->setMinimumSize(QSize(512, 512));
@@ -326,32 +330,8 @@ View3D::View3D()
     connect(customContainer->getZAxis(),SIGNAL(rangeChanged(const QCPRange&)),this,SLOT(slot_ScaleChanged()));
     connect(customContainer->getColorScale(),SIGNAL(dataRangeChanged(const QCPRange&)),this,SLOT(slot_ColorScaleChanged(const QCPRange&)));
     //addSphere(QPosAtt(Eigen::Vector3d(0.05,0.05,0.05),Eigen::Quaterniond(1,0,0,0)),1.0,QColor(128,128,128),0.01);
-}
-
-void View3D::addLabel(QString text, QVector3D coord, float scale, float anglex, float angley,float anglez)
-{
-    // Set label's text
-    auto* textEntity = new Qt3DCore::QEntity();
-    textEntity->setParent(rootEntity);
-
-    auto* textMaterial = new Qt3DExtras::QPhongMaterial(rootEntity);
-    textMaterial->setDiffuse(QColor(0,0,0));
-
-    auto* textTransform = new Qt3DCore::QTransform();
-    textTransform->setTranslation(coord);
-    textTransform->setRotationX(anglex);
-    textTransform->setRotationY(angley);
-    textTransform->setRotationZ(anglez);
-    textTransform->setScale(scale);
-
-    auto textMesh = new Qt3DExtras::QExtrudedTextMesh();
-    textMesh->setText(text);
-    textMesh->setDepth(.001f);//flat
 
 
-    textEntity->addComponent(textMaterial);
-    textEntity->addComponent(textTransform);
-    textEntity->addComponent(textMesh);
 }
 
 QByteArray getGridBuffer(bool xy_swap,bool xz_swap,bool yz_swap,int N)
@@ -687,6 +667,12 @@ void View3D::init3D()
     pointSize->setValue(4.0f);
     lineWidth = new Qt3DRender::QLineWidth();
     lineWidth->setValue(4.0f);
+
+    createGrid(10,QColor(128,128,128));
+
+    labelx=new Label3D(rootEntity,"XXXXXX",QVector3D(0,1,-1),0.1,0,0,0);
+    labely=new Label3D(rootEntity,"YYYYYY",QVector3D(-1,0,1),0.1,0,90,90);
+    labelz=new Label3D(rootEntity,"ZZZZZZ",QVector3D(1,-1,0),0.1,-90,-90,0);
 }
 
 void View3D::slot_ColorScaleChanged(const QCPRange& range)
@@ -704,6 +690,11 @@ void View3D::slot_ScaleChanged()
     t.setTranslation(customContainer->getTranslation());
     t.setScale3D(customContainer->getScale());
     cloudTransform->setMatrix(t.matrix().inverted());
+
+    for (int i=0; i<transforms.size(); i++)
+    {
+        transforms[i]->setMatrix(t.matrix().inverted()*baseTransforms[i]);
+    }
 }
 
 void View3D::slot_setGradient(int preset)
@@ -722,9 +713,8 @@ void View3D::setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode)
 {
     this->cloud=cloud;
 
-    createGrid(10,QColor(128,128,128));
     camera_params->setBarycenter( QVector3D(0,0,0) );
-    camera_params->setBoundingRadius( 1.5 );
+    camera_params->setBoundingRadius( 1.25 );
 
     //Set Data Buffers
     //cloudBuf->setData(cloud->getBuffer());
@@ -769,6 +759,10 @@ void View3D::setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode)
     customContainer->getXAxis()->setLabel(cloud->getLabelX());
     customContainer->getYAxis()->setLabel(cloud->getLabelY());
     customContainer->getZAxis()->setLabel(cloud->getLabelZ());
+
+    labelx->setText(cloud->getLabelX());
+    labely->setText(cloud->getLabelY());
+    labelz->setText(cloud->getLabelZ());
 }
 
 void View3D::slot_setPointSize(double value)
@@ -846,8 +840,11 @@ void View3D::addObj(Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor 
         }
     }
 
+    baseTransforms.push_back(t_obj->matrix());
     transforms.push_back(t_obj);
     materials.push_back(mat_obj);
+
+    slot_ScaleChanged();
 }
 
 void View3D::setObjColor(unsigned int id,QColor color)
@@ -872,6 +869,34 @@ CustomViewContainer* View3D::getContainer()
     return customContainer;
 }
 
+
+
+void View3D::updateLabelZPosition()
+{
+    labelz->setPosRot(QVector3D((yz_reversed?-1:1),(xy_reversed?1:-1),0),
+                      -90+(xy_reversed?180:0),
+                      (yz_reversed?-270:-90),
+                      (xy_reversed?180:0));
+
+    if (!xz_reversed)
+    {
+        labelx->setPosRot(QVector3D(0,(xy_reversed?-1:1),-1),(xy_reversed?180:0),0,0);
+    }
+    else
+    {
+        labelx->setPosRot(QVector3D(0,(xy_reversed?-1:1),1),(xy_reversed?180:0),-180,0);
+    }
+
+    if (!yz_reversed)
+    {
+        labely->setPosRot(QVector3D(-1,0,(xz_reversed?-1:1)),(xz_reversed?180:0),90+(xz_reversed?180:0),90);
+    }
+    else
+    {
+        labely->setPosRot(QVector3D(1,0,(xz_reversed?-1:1)),(xz_reversed?180:0)+180,90+(xz_reversed?180:0),90);
+    }
+}
+
 void View3D::mouseMoveEvent(QMouseEvent* event)
 {
     if (event->buttons()==Qt::LeftButton)
@@ -881,41 +906,44 @@ void View3D::mouseMoveEvent(QMouseEvent* event)
 
         camera_params->move(dx,dy);
 
-        static bool xy_reversed=false;
-        static bool yz_reversed=false;
-        static bool xz_reversed=false;
 
         if (camera_params->getBeta()>0 && xy_reversed==false)
         {
             xy_reversed=true;
             gridBuf->setData(getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
+            updateLabelZPosition();
         }
         else if (camera_params->getBeta()<0 && xy_reversed==true)
         {
             xy_reversed=false;
             gridBuf->setData(getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
+            updateLabelZPosition();
         }
 
         if ( cos(camera_params->getAlpha())>0 && yz_reversed==false)
         {
             yz_reversed=true;
             gridBuf->setData(getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
+            updateLabelZPosition();
         }
         else if ( cos(camera_params->getAlpha())<0 && yz_reversed==true)
         {
             yz_reversed=false;
             gridBuf->setData(getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
+            updateLabelZPosition();
         }
 
         if ( sin(camera_params->getAlpha())>0 && xz_reversed==false)
         {
             xz_reversed=true;
             gridBuf->setData(getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
+            updateLabelZPosition();
         }
         else if ( sin(camera_params->getAlpha())<0 && xz_reversed==true)
         {
             xz_reversed=false;
             gridBuf->setData(getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
+            updateLabelZPosition();
         }
 
 

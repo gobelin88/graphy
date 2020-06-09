@@ -23,6 +23,64 @@
 @brief Classe pour gestion d'affichage avec Qt3D
 */
 
+struct Label3D
+{
+    Label3D(Qt3DCore::QEntity* rootEntity,
+            QString text,
+            QVector3D position,
+            float scale,
+            float anglex,
+            float angley,
+            float anglez)
+    {
+        textEntity = new Qt3DCore::QEntity();
+        textEntity->setParent(rootEntity);
+
+        textMaterial = new Qt3DExtras::QPhongMaterial(rootEntity);
+        textMaterial->setDiffuse(QColor(0,0,0));
+
+        textTransform = new Qt3DCore::QTransform();
+        textTransform->setTranslation(position);
+        textTransform->setRotationX(anglex);
+        textTransform->setRotationY(angley);
+        textTransform->setRotationZ(anglez);
+        textTransform->setScale(scale);
+
+        textMesh = new Qt3DExtras::QExtrudedTextMesh();
+        textMesh->setText(text);
+        textMesh->setDepth(.001f);
+
+        textEntity->addComponent(textMaterial);
+        textEntity->addComponent(textTransform);
+        textEntity->addComponent(textMesh);
+    }
+
+    void setPosRot(QVector3D position,float anglex,
+                   float angley,
+                   float anglez)
+    {
+        textTransform->setTranslation(position);
+        textTransform->setRotationX(anglex);
+        textTransform->setRotationY(angley);
+        textTransform->setRotationZ(anglez);
+    }
+
+    void setPos(QVector3D position)
+    {
+        textTransform->setTranslation(position);
+    }
+
+    void setText(QString text)
+    {
+        textMesh->setText(text);
+    }
+
+    Qt3DCore::QEntity* textEntity;
+    Qt3DExtras::QPhongMaterial* textMaterial;
+    Qt3DCore::QTransform* textTransform;
+    Qt3DExtras::QExtrudedTextMesh* textMesh;
+};
+
 class CustomViewContainer: public QWidget
 {
     Q_OBJECT
@@ -87,6 +145,8 @@ private:
     QCustomPlot* axisZ_plot;
     QCPAxisRect* axisZ_rect;
     QCPAxis* axisZ;
+
+    int axisSize;
 };
 
 
@@ -101,8 +161,6 @@ public:
     };
 
     View3D();
-
-    void addLabel(QString text, QVector3D coord, float scale, float anglex, float angley, float anglez);
 
     void createGrid(unsigned int N, QColor color);
     void setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode);
@@ -138,6 +196,7 @@ protected:
     void wheelEvent(QWheelEvent* event);
 
 private:
+    void updateLabelZPosition();
 
     struct CameraParams
     {
@@ -279,6 +338,7 @@ private:
     Qt3DRender::QAttribute* cloudColorsAttribute;
     Qt3DCore::QEntity* rootEntity;
     std::vector<Qt3DCore::QTransform*> transforms;
+    std::vector<QMatrix4x4> baseTransforms;
     std::vector<Qt3DExtras::QPhongMaterial*> materials;
 
     //Grid
@@ -291,5 +351,15 @@ private:
     QComboBox* c_gradient;
     QDoubleSpinBox* sb_size;
     QComboBox* cb_mode;
+
+    //Labels Tiks
+    Label3D* labelx;
+    Label3D* labely;
+    Label3D* labelz;
+
+    //
+    bool xy_reversed;
+    bool yz_reversed;
+    bool xz_reversed;
 };
 #endif // VIEW3D_H

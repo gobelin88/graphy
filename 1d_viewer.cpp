@@ -93,10 +93,12 @@ void Viewer1D::slot_add_data(const Curve2D& datacurve)
 {
     if (datacurve.getType()==Curve2D::GRAPH)
     {
+        std::cout<<"graph"<<std::endl;
         datacurve.toQCP<QCPGraph>(this);
     }
     else
     {
+        std::cout<<"curve"<<std::endl;
         datacurve.toQCP<QCPCurve>(this);
         axisRect()->setupFullAxesBox();
     }

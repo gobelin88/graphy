@@ -124,6 +124,14 @@ public:
                          float(0.5*(axisZ->range().upper-axisZ->range().lower)));
     }
 
+    void replot()
+    {
+        axisX_plot->replot();
+        axisY_plot->replot();
+        axisZ_plot->replot();
+        color_plot->replot();
+    }
+
 private:
     QWidget* container;
 
@@ -184,6 +192,7 @@ public slots:
     void slot_ColorScaleChanged(const QCPRange& range);
     void slot_ScaleChanged();
     void slot_setGradient(int preset);
+    void updateGrid();
 
 signals:
     void sig_newColumn(QString varName,Eigen::VectorXd data);
@@ -196,7 +205,7 @@ protected:
     void wheelEvent(QWheelEvent* event);
 
 private:
-    void updateLabelZPosition();
+    void updateLabels();
 
     struct CameraParams
     {

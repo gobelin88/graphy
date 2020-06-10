@@ -129,7 +129,7 @@ public:
         this->s=fromQVector(other->getScalarField());
         this->l=other->getLabelField();
         this->legendname=other->name();
-        this->type=(reinterpret_cast<const QCPCurve*>(other) )? Curve2D::CURVE: Curve2D::GRAPH;
+        this->type= (std::is_same<QCPCurve, T>::value == true)? Curve2D::CURVE: Curve2D::GRAPH;
         this->style.mLineStyle=other->lineStyle();
         this->style.mScatterShape=other->scatterStyle().shape();
         this->style.mScatterSize=other->scatterStyle().size();

@@ -63,7 +63,6 @@ void Cloud::setGradientPreset(QCPColorGradient::GradientPreset preset)
 {
     this->gradientPreset=preset;
     gradient.loadPreset(gradientPreset);
-    updateColors();
 }
 
 QCPColorGradient::GradientPreset Cloud::getGradientPreset()
@@ -74,18 +73,6 @@ QCPColorGradient::GradientPreset Cloud::getGradientPreset()
 const QCPColorGradient& Cloud::getGradient()
 {
     return gradient;
-}
-
-void Cloud::setScalarFieldRange(QCPRange rangeS)
-{
-    this->rangeS=rangeS;
-    updateColors();
-}
-
-void Cloud::updateColors()
-{
-    colors.resize(scalarField.size());
-    gradient.colorize(scalarField.data(),rangeS,colors.data(),scalarField.size());
 }
 
 QCPRange Cloud::getRange(const Eigen::VectorXd& v)
@@ -107,7 +94,14 @@ QCPRange Cloud::getZRange()
 }
 QCPRange Cloud::getScalarFieldRange()
 {
-    return rangeS;
+    if (rangeS.lower==rangeS.upper)
+    {
+        QCPRange(-1,1);
+    }
+    else
+    {
+        return rangeS;
+    }
 }
 
 std::vector<QRgb>& Cloud::getColors()
@@ -193,9 +187,11 @@ void Cloud::fit(Shape<Eigen::Vector3d>* model)
     model->fit(pts,10000);
 }
 
-QByteArray Cloud::getBuffer()
+QByteArray Cloud::getColorBuffer(QCPRange range)
 {
-    std::cout<<"getBuffer 1"<<std::endl;
+    colors.resize(scalarField.size());
+    gradient.colorize(scalarField.data(),range,colors.data(),scalarField.size());
+
     QByteArray bufferBytes;
     bufferBytes.resize(2 * 3 * ( pts.size() ) * sizeof(float));
     float* vertices = reinterpret_cast<float*>(bufferBytes.data());
@@ -210,7 +206,6 @@ QByteArray Cloud::getBuffer()
         *vertices++ = qGreen(colors[i])/255.0;
         *vertices++ = qBlue (colors[i])/255.0;
     }
-    std::cout<<"getBuffer 2"<<std::endl;
 
     return bufferBytes;
 }

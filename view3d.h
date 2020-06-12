@@ -18,10 +18,45 @@
 #include "qcustomplot.h"
 #include "obj.h"
 
+
+QQuaternion toQQuaternion(Eigen::Quaterniond q);
+QVector3D toQVector3D(Eigen::Vector3d v);
+
 /**
 @class View3D
 @brief Classe pour gestion d'affichage avec Qt3D
 */
+struct Object3D
+{
+    Object3D(Qt3DCore::QEntity* rootEntity,Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor color)
+    {
+        t_obj = new Qt3DCore::QTransform();
+        t_obj->setScale(scale);
+        t_obj->setRotation(toQQuaternion(posatt.Q));
+        t_obj->setTranslation(toQVector3D(posatt.P));
+
+        mat_obj = new Qt3DExtras::QPhongMaterial();
+        mat_obj->setDiffuse(color);
+
+        //    Qt3DExtras::QPerVertexColorMaterial * mat_obj = new Qt3DExtras::QPerVertexColorMaterial();
+
+        m_objEntity = new Qt3DCore::QEntity(rootEntity);
+        m_objEntity->addComponent(m_obj);
+        m_objEntity->addComponent(mat_obj);
+        m_objEntity->addComponent(t_obj);
+    }
+
+    void setPosAtt(QPosAtt posatt)
+    {
+        t_obj->setTranslation(toQVector3D(posatt.P));
+        t_obj->setRotation(toQQuaternion(posatt.Q));
+    }
+
+    Qt3DCore::QTransform* t_obj;
+    Qt3DExtras::QPhongMaterial* mat_obj;
+    Qt3DCore::QEntity* m_objEntity;
+};
+
 
 struct Label3D
 {
@@ -166,6 +201,7 @@ public:
     {
         MODE_POINTS,
         MODE_LINES,
+        MODE_LINE_STRIP,
     };
 
     View3D();
@@ -365,6 +401,11 @@ private:
     Label3D* labelx;
     Label3D* labely;
     Label3D* labelz;
+
+    //
+    Object3D* objArrowX;
+    Object3D* objArrowY;
+    Object3D* objArrowZ;
 
     //
     bool xy_reversed;

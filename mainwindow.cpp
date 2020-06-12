@@ -223,6 +223,7 @@ void MainWindow::direct_open(QString filename)
         table->setModel(model);
         connect(model,SIGNAL(dataChanged(const QModelIndex&,const QModelIndex&)),this,SLOT(updateTable(const QModelIndex&,const QModelIndex&)));
         setCurrentFilename(filename);
+        updateTable();
 
         table->resizeColumnsToContents();
     }
@@ -230,6 +231,8 @@ void MainWindow::direct_open(QString filename)
     {
         QMessageBox::information(this,"Erreur",QString("Impossible d'ouvrir le fichier : ")+filename);
     }
+
+    std::cout<<datatable<<std::endl;
 }
 
 void MainWindow::slot_save()

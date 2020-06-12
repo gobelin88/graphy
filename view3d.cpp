@@ -58,6 +58,8 @@ void CustomViewContainer::createXAxisPlot()
     axisX->setPadding(0);
     axisX->setLabelPadding(0);
 
+    axisX->setUpperEnding(QCPLineEnding::esFlatArrow);
+    axisX->setOffset(0);
 
     axisX_plot->setMaximumHeight(axisSize);
 }
@@ -79,6 +81,9 @@ void CustomViewContainer::createYAxisPlot()
     axisY->setPadding(0);
     axisY->setLabelPadding(0);
 
+    axisY->setUpperEnding(QCPLineEnding::esFlatArrow);
+    axisY->setOffset(0);
+
     axisY_plot->setMaximumWidth(axisSize);
 }
 
@@ -98,6 +103,9 @@ void CustomViewContainer::createZAxisPlot()
     axisZ_plot->plotLayout()->addElement(axisZ_rect);
     axisZ->setPadding(0);
     axisZ->setLabelPadding(0);
+
+    axisZ->setUpperEnding(QCPLineEnding::esFlatArrow);
+    axisZ->setOffset(0);
 
     axisZ_plot->setMaximumHeight(axisSize);
 }
@@ -133,6 +141,7 @@ void View3D::createPopup()
     cb_mode=new QComboBox;
     cb_mode->addItem("POINTS");
     cb_mode->addItem("LINES");
+    cb_mode->addItem("LINES_STRIP");
 
     c_gradient=new QComboBox;
     c_gradient->addItem("gpGrayscale",QCPColorGradient::GradientPreset::gpGrayscale);
@@ -220,6 +229,8 @@ void View3D::slot_fitPlan()
 void View3D::slot_fitCustomMesh()
 {
     QString filename=QFileDialog::getOpenFileName(nullptr,"3D Mesh","./obj","Object (*.obj)");
+
+    std::cout<<filename.toLocal8Bit().data()<<std::endl;
 
     QElapsedTimer timer;
     timer.start();
@@ -512,7 +523,14 @@ void View3D::init3D()
     lineWidth = new Qt3DRender::QLineWidth();
     lineWidth->setValue(4.0f);
 
-    createGrid(10,QColor(128,128,128));
+    createGrid(10,QColor(255,255,255));
+
+    auto* meshArrow = new Qt3DRender::QMesh();
+    meshArrow->setSource(QUrl( QUrl::fromLocalFile("./obj/axis.obj") ) );
+
+    objArrowX=new Object3D(rootEntity,meshArrow,QPosAtt(Eigen::Vector3d(-0.0,1,-1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(1,0,0),Eigen::Vector3d(0,-1,0))),0.1,QColor(255,0,0));
+    objArrowY=new Object3D(rootEntity,meshArrow,QPosAtt(Eigen::Vector3d(-1,-0.0,1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),Eigen::Vector3d(0,1,0))),0.1,QColor(0,255,0));
+    objArrowZ=new Object3D(rootEntity,meshArrow,QPosAtt(Eigen::Vector3d(1,-1,-0.0),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,0,1),Eigen::Vector3d(0,-1,0))),0.1,QColor(0,0,255));
 
     labelx=new Label3D(rootEntity,"XXXXXX",QVector3D(0,1,-1),0.1,0,0,0);
     labely=new Label3D(rootEntity,"YYYYYY",QVector3D(-1,0,1),0.1,0,90,90);
@@ -567,9 +585,13 @@ void View3D::setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode)
     // mesh
     if (primitiveMode==MODE_LINES)
     {
+        cloudPrimitives->setPrimitiveType(Qt3DRender::QGeometryRenderer::Lines);
+    }
+    else if (primitiveMode==MODE_LINE_STRIP)
+    {
         cloudPrimitives->setPrimitiveType(Qt3DRender::QGeometryRenderer::LineStrip);
     }
-    else
+    else if (primitiveMode==MODE_POINTS)
     {
         cloudPrimitives->setPrimitiveType(Qt3DRender::QGeometryRenderer::Points);
     }
@@ -637,6 +659,11 @@ void View3D::slot_setPrimitiveType(int type)
     else if (type==1)
     {
         mode=MODE_LINES;
+        cloudPrimitives->setPrimitiveType(Qt3DRender::QGeometryRenderer::Lines);
+    }
+    else if (type==2)
+    {
+        mode=MODE_LINE_STRIP;
         cloudPrimitives->setPrimitiveType(Qt3DRender::QGeometryRenderer::LineStrip);
     }
 }
@@ -660,24 +687,11 @@ void View3D::addPlan(QPosAtt posatt,float scale,QColor color,double width,double
 
 void View3D::addObj(Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor color)
 {
-    auto* t_obj = new Qt3DCore::QTransform();
-    t_obj->setScale(scale);
-    t_obj->setRotation(toQQuaternion(posatt.Q));
-    t_obj->setTranslation(toQVector3D(posatt.P));
-
-    auto* mat_obj = new Qt3DExtras::QPhongMaterial();
-    mat_obj->setDiffuse(color);
-
-    //    Qt3DExtras::QPerVertexColorMaterial * mat_obj = new Qt3DExtras::QPerVertexColorMaterial();
-
-    auto* m_objEntity = new Qt3DCore::QEntity(rootEntity);
-    m_objEntity->addComponent(m_obj);
-    m_objEntity->addComponent(mat_obj);
-    m_objEntity->addComponent(t_obj);
+    Object3D* obj=new Object3D(rootEntity,m_obj,posatt,scale,color);
 
     Qt3DRender::QCullFace* culling = new Qt3DRender::QCullFace();
     culling->setMode(Qt3DRender::QCullFace::NoCulling);
-    auto effect = mat_obj->effect();
+    auto effect = obj->mat_obj->effect();
     for (auto t : effect->techniques())
     {
         for (auto rp : t->renderPasses())
@@ -686,9 +700,9 @@ void View3D::addObj(Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor 
         }
     }
 
-    baseTransforms.push_back(t_obj->matrix());
-    transforms.push_back(t_obj);
-    materials.push_back(mat_obj);
+    baseTransforms.push_back(obj->t_obj->matrix());
+    transforms.push_back(obj->t_obj);
+    materials.push_back(obj->mat_obj);
 
     slot_ScaleChanged();
 }
@@ -719,28 +733,22 @@ CustomViewContainer* View3D::getContainer()
 
 void View3D::updateLabels()
 {
-    labelz->setPosRot(QVector3D((yz_reversed?-1:1),(xy_reversed?1:-1),0),
+    Eigen::Vector3d Px(0,(xy_reversed?-1:1),(xz_reversed)?1:-1);
+    Eigen::Vector3d Py(yz_reversed?1:-1,0,(xz_reversed?-1:1));
+    Eigen::Vector3d Pz((yz_reversed?-1:1),(xy_reversed?1:-1),0);
+
+    labelx->setPosRot(toQVector3D(Px),(xy_reversed?180:0),(xz_reversed)?-180:0,0);
+
+    labely->setPosRot(toQVector3D(Py),(xz_reversed?180:0)+(yz_reversed?180:0),90+(xz_reversed?180:0),90);
+
+    labelz->setPosRot(toQVector3D(Pz),
                       -90+(xy_reversed?180:0),
                       (yz_reversed?-270:-90),
                       (xy_reversed?180:0));
 
-    if (!xz_reversed)
-    {
-        labelx->setPosRot(QVector3D(0,(xy_reversed?-1:1),-1),(xy_reversed?180:0),0,0);
-    }
-    else
-    {
-        labelx->setPosRot(QVector3D(0,(xy_reversed?-1:1),1),(xy_reversed?180:0),-180,0);
-    }
-
-    if (!yz_reversed)
-    {
-        labely->setPosRot(QVector3D(-1,0,(xz_reversed?-1:1)),(xz_reversed?180:0),90+(xz_reversed?180:0),90);
-    }
-    else
-    {
-        labely->setPosRot(QVector3D(1,0,(xz_reversed?-1:1)),(xz_reversed?180:0)+180,90+(xz_reversed?180:0),90);
-    }
+    objArrowX->setPosAtt(QPosAtt(Px,Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(1,0,0),Eigen::Vector3d(0,-1,0))));
+    objArrowY->setPosAtt(QPosAtt(Py,Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),Eigen::Vector3d(0, 1,0))));
+    objArrowZ->setPosAtt(QPosAtt(Pz,Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,0,1),Eigen::Vector3d(0,-1,0))));
 }
 
 void View3D::updateGrid()
@@ -783,6 +791,8 @@ void View3D::updateGrid()
         gridBuf->setData(getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
         updateLabels();
     }
+
+
 }
 
 void View3D::mouseMoveEvent(QMouseEvent* event)

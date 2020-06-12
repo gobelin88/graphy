@@ -41,7 +41,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionNew"/>
-   <addaction name="actionSave"/>
+   <addaction name="actionSaveAs"/>
    <addaction name="actionOpen"/>
    <addaction name="actionExport"/>
    <addaction name="actionParameters"/>
@@ -272,6 +272,18 @@
    </property>
    <property name="text">
     <string>Field 2D</string>
+   </property>
+  </action>
+  <action name="actionSaveAs">
+   <property name="icon">
+    <iconset resource="rsc.qrc">
+     <normaloff>:/img/icons/save.png</normaloff>:/img/icons/save.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save As</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
    </property>
   </action>
  </widget>

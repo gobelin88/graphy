@@ -27,9 +27,12 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(table->horizontalHeader(),SIGNAL(sectionMoved(int,int,int)),this,SLOT(slot_hSectionMoved(int,int,int)));
     connect(table->verticalHeader(),SIGNAL(sectionMoved(int,int,int)),this,SLOT(slot_vSectionMoved(int,int,int)));
 
+    this->addAction(ui->actionSave);
+
     connect(ui->actionNew, &QAction::triggered,this,&MainWindow::slot_new);
     connect(ui->actionOpen, &QAction::triggered,this,&MainWindow::slot_open);
     connect(ui->actionSave, &QAction::triggered,this,&MainWindow::slot_save);
+    connect(ui->actionSaveAs, &QAction::triggered,this,&MainWindow::slot_save_as);
     connect(ui->actionExport, &QAction::triggered,this,&MainWindow::slot_export);
     connect(ui->actionParameters, &QAction::triggered,this,&MainWindow::slot_parameters);
 
@@ -57,15 +60,18 @@ MainWindow::MainWindow(QWidget* parent) :
     a_updateColumns=new QAction(this);
     a_newColumn=new QAction(this);
     a_newRow=new QAction(this);
+    a_newRows=new QAction(this);
     a_delete=new QAction(this);
 
     this->addAction(a_newColumn);
     this->addAction(a_newRow);
+    this->addAction(a_newRows);
     this->addAction(a_delete);
     this->addAction(a_updateColumns);
 
     connect(a_newColumn,&QAction::triggered,this,&MainWindow::slot_editColumn);
     connect(a_newRow,&QAction::triggered,this,&MainWindow::slot_newRow);
+    connect(a_newRows,&QAction::triggered,this,&MainWindow::slot_newRows);
     connect(a_delete,&QAction::triggered,this,&MainWindow::slot_delete);
     connect(a_updateColumns,&QAction::triggered,this,&MainWindow::slot_updateColumns);
     //------------------------------------------------------------------------------
@@ -217,7 +223,7 @@ void MainWindow::direct_open(QString filename)
         table->setModel(model);
         connect(model,SIGNAL(dataChanged(const QModelIndex&,const QModelIndex&)),this,SLOT(updateTable(const QModelIndex&,const QModelIndex&)));
         setCurrentFilename(filename);
-        updateTable();
+
         table->resizeColumnsToContents();
     }
     else
@@ -227,6 +233,18 @@ void MainWindow::direct_open(QString filename)
 }
 
 void MainWindow::slot_save()
+{
+    if (!current_filename.isEmpty())
+    {
+        direct_save(current_filename);
+    }
+    else
+    {
+        slot_save_as();
+    }
+}
+
+void MainWindow::slot_save_as()
 {
     QString filename=QFileDialog::getSaveFileName(this,"Save data",current_filename,"*.csv");
 
@@ -577,20 +595,48 @@ void MainWindow::registerRenameVariable(QString old_varname,QString new_varname,
 void MainWindow::slot_newRow()
 {
     int nbCols=model->columnCount();
-    std::cout<<"slot_newRow"<<std::endl;
     QList<QStandardItem*> items;
     items.reserve(nbCols);
     for (int i=0; i<nbCols; i++)
     {
         items.append(new QStandardItem);
     }
+
     model->appendRow(items);
-
-
     addRow(datatable,Eigen::VectorXd::Zero(items.size()));
 
-
     table->setModel(model);
+}
+
+void MainWindow::slot_newRows()
+{
+    int nbCols=model->columnCount();
+
+    bool ok=false;
+    int N=QInputDialog::getInt(this,"Number of rows","Number of rows to add",1,1,10000000,1,&ok);
+
+    if (ok)
+    {
+        QElapsedTimer timer;
+        timer.start();
+
+        for (int k=0; k<N; k++)
+        {
+            QList<QStandardItem*> items;
+            items.reserve(nbCols);
+            for (int i=0; i<nbCols; i++)
+            {
+                items.append(new QStandardItem);
+            }
+
+            model->appendRow(items);
+        }
+
+        std::cout<<timer.nsecsElapsed()*1e-9<<std::endl;
+
+        addRows(datatable,N);
+        table->setModel(model);
+    }
 }
 
 void MainWindow::slot_editColumn()
@@ -1061,14 +1107,19 @@ void MainWindow::direct_new(int sx,int sy)
     table->setModel(model);
     connect(model,SIGNAL(dataChanged(const QModelIndex&,const QModelIndex&)),this,SLOT(updateTable(const QModelIndex&,const QModelIndex&)));
 
-    setCurrentFilename("new.csv");
+    setCurrentFilename("");
     updateTable();
 }
 
 void MainWindow::setCurrentFilename(QString filename)
 {
     current_filename=filename;
-    this->setWindowTitle(QString("Graphy v3.0 : %1").arg(current_filename));
+    this->setWindowTitle(QString("Graphy %1 : %2").arg(graphyVersion).arg(current_filename));
+}
+
+void MainWindow::fileModified()
+{
+    this->setWindowTitle(QString("Graphy %1 : %2*").arg(graphyVersion).arg(current_filename));
 }
 
 void MainWindow::resizeEvent(QResizeEvent* event)
@@ -1093,7 +1144,7 @@ void MainWindow::updateTable()
         }
     }
 
-    std::cout<<datatable<<std::endl;
+    //std::cout<<datatable<<std::endl;
 }
 
 QStandardItem* MainWindow::itemAt(int i,int j)
@@ -1115,15 +1166,12 @@ void MainWindow::updateTable(const QModelIndex& indexA,const QModelIndex& indexB
     int i=table->verticalHeader()->visualIndex(indexA.row());
     int j=table->horizontalHeader()->visualIndex(indexA.column());
 
-    std::cout<<"(i,j)="<<i<<" "<<j<<" (r,c)="<<indexA.row()<<" "<<indexA.column()<<std::endl;
-
     if (i<datatable.rows() && j<datatable.cols())
     {
         datatable(i,j)=toSafeDouble(model->item(indexA.row(),indexA.column())->text());
-        //datatable(i,j)=toSafeDouble(at(i,j));
     }
 
-    std::cout<<datatable<<std::endl;
+    fileModified();
 }
 
 
@@ -1675,6 +1723,7 @@ void MainWindow::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     shortcuts_links.insert(QString("Update"),a_updateColumns);
     shortcuts_links.insert(QString("Edit/Add-variable"),a_newColumn);
     shortcuts_links.insert(QString("New-row"),a_newRow);
+    shortcuts_links.insert(QString("New-rows"),a_newRows);
     shortcuts_links.insert(QString("Delete"),a_delete);
 
     QMapIterator<QString, QKeySequence> i(shortcuts_map);
@@ -1733,25 +1782,13 @@ Eigen::VectorXd MainWindow::toSafeDouble(QVector<QString> vec_col_str)
 
 void MainWindow::slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex)
 {
-    std::cout<<logicalIndex<<" "<<oldVisualIndex<<" "<<newVisualIndex<<std::endl;
-
     moveRow(datatable,oldVisualIndex,newVisualIndex);
-
-    std::cout<<datatable<<std::endl;
+    fileModified();
 }
 
 void MainWindow::slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex)
 {
-    //int oldIndex=table->horizontalHeader()->logicalIndex(oldVisualIndex);
-    //int newIndex=table->horizontalHeader()->logicalIndex(newVisualIndex);
-
-    std::cout<<"-----------------"<<std::endl;
-    std::cout<<logicalIndex<<" "<<oldVisualIndex<<" "<<newVisualIndex<<std::endl;
-
     moveVariable(oldVisualIndex,newVisualIndex);
     moveColumn(datatable,oldVisualIndex,newVisualIndex);
-
-    dispVariables();
-    std::cout<<"-----------------"<<std::endl;
-    std::cout<<datatable<<std::endl;
+    fileModified();
 }

@@ -18,6 +18,7 @@ enum InterpolationMode
 void removeRows(Eigen::MatrixXd& matrix, unsigned int rowToRemove,unsigned int nbRow=1);
 void removeColumns(Eigen::MatrixXd& matrix, unsigned int colToRemove, unsigned int nbCol=1);
 void addRow(Eigen::MatrixXd& matrix, Eigen::VectorXd rowToAdd);
+void addRows(Eigen::MatrixXd& matrix, int n);
 void addColumn(Eigen::MatrixXd& matrix, Eigen::VectorXd colToAdd);
 void swapColumns(Eigen::MatrixXd& matrix,int ida,int idb);
 void moveColumn(Eigen::MatrixXd& matrix,int ida,int idb);

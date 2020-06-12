@@ -37,6 +37,14 @@ void addRow(Eigen::MatrixXd& matrix, Eigen::VectorXd rowToAdd)
     matrix.row(numRows-1)=rowToAdd;
 }
 
+void addRows(Eigen::MatrixXd& matrix, int n)
+{
+    unsigned int numRows = matrix.rows()+n;
+    unsigned int numCols = matrix.cols();
+    matrix.conservativeResize(numRows,numCols);
+    matrix.block(numRows-n,0,n,numCols);
+}
+
 void addColumn(Eigen::MatrixXd& matrix, Eigen::VectorXd colToAdd)
 {
     unsigned int numRows = matrix.rows();

@@ -53,6 +53,7 @@ public slots:
     void slot_editColumn();
     void slot_delete();
     void slot_newRow();
+    void slot_newRows();
     void slot_updateColumns();
     void slot_newColumn(QString name,Eigen::VectorXd data);
 
@@ -61,6 +62,7 @@ public slots:
     void slot_new();
     void slot_open();
     void slot_save();
+    void slot_save_as();
     void slot_export();
     void direct_open(QString filename);
     void direct_save(QString filename);
@@ -95,6 +97,7 @@ private:
     bool editVariableAndExpression(int currentIndex);
 
     void setCurrentFilename(QString filename);
+    void fileModified();
 
     void resizeEvent(QResizeEvent* event);
 
@@ -110,6 +113,7 @@ private:
 
     QAction* a_newColumn;
     QAction* a_newRow;
+    QAction* a_newRows;
     QAction* a_delete;
     QAction* a_updateColumns;
 
@@ -149,6 +153,8 @@ private:
     Eigen::VectorXd toSafeDouble(QVector<QString> vec_col_str);
     double toSafeDouble(const QString& str) const;
     bool asColumnStrings(int idCol);
+
+    const int graphyVersion=3;
 };
 
 #endif // MAINWINDOW_H

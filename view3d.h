@@ -5,6 +5,7 @@
 #include <Qt3DExtras>
 #include <Qt3DRender>
 #include <QCullFace>
+#include <QAction>
 #include <iostream>
 #include <Qt3DRender/QRenderCaptureReply>
 #include <obj.h>
@@ -18,181 +19,164 @@
 #include "qcustomplot.h"
 #include "obj.h"
 
+#include "label3d.h"
+#include "object3d.h"
+#include "customviewcontainer.h"
+#include "cameraparams.h"
 
-QQuaternion toQQuaternion(Eigen::Quaterniond q);
-QVector3D toQVector3D(Eigen::Vector3d v);
+struct Base3D
+{
+    Qt3DCore::QEntity* entity;
+    Qt3DRender::QBuffer* buffer;
+    Qt3DRender::QAttribute* positionAttribute;
+    Qt3DRender::QGeometry* geometry;
+    Qt3DRender::QGeometryRenderer* geometryRenderer;
+};
+
+struct Grid3D:public Base3D
+{
+    Grid3D(Qt3DCore::QEntity* rootEntity,unsigned int N,QColor color)
+    {
+        geometry = new Qt3DRender::QGeometry(rootEntity);
+
+        unsigned int n=(N+1)*3;
+
+        buffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer,geometry);
+        buffer->setData(getGridBuffer(false,false,false,N));
+
+        positionAttribute = new Qt3DRender::QAttribute(geometry);
+        positionAttribute->setName(Qt3DRender::QAttribute::defaultPositionAttributeName());
+        positionAttribute->setVertexBaseType(Qt3DRender::QAttribute::Float);
+        positionAttribute->setVertexSize(3);
+        positionAttribute->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
+        positionAttribute->setBuffer(buffer);
+        positionAttribute->setByteStride(3 * sizeof(float));
+        positionAttribute->setCount(4*n);
+        geometry->addAttribute(positionAttribute); // We add the vertices in the geometry
+
+        // connectivity between vertices
+        QByteArray indexBytes;
+        indexBytes.resize( (4*n) * sizeof(unsigned int)); // start to end
+        unsigned int* indices = reinterpret_cast<unsigned int*>(indexBytes.data());
+        for (unsigned int i=0; i<n; i++)
+        {
+            *indices++ = 0+4*i;
+            *indices++ = 1+4*i;
+            *indices++ = 2+4*i;
+            *indices++ = 3+4*i;
+        }
+
+        gridIndexBuffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::BufferType::IndexBuffer,geometry);
+        gridIndexBuffer->setData(indexBytes);
+
+        gridIndexAttribute = new Qt3DRender::QAttribute(geometry);
+        gridIndexAttribute->setVertexBaseType(Qt3DRender::QAttribute::UnsignedInt);
+        gridIndexAttribute->setAttributeType(Qt3DRender::QAttribute::IndexAttribute);
+        gridIndexAttribute->setBuffer(gridIndexBuffer);
+        gridIndexAttribute->setCount(4*n);
+        geometry->addAttribute(gridIndexAttribute); // We add the indices linking the points in the geometry
+
+        // mesh
+        geometryRenderer = new Qt3DRender::QGeometryRenderer(rootEntity);
+        geometryRenderer->setGeometry(geometry);
+        geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Lines);
+        gridMaterial = new Qt3DExtras::QPhongMaterial(rootEntity);
+        gridMaterial->setAmbient(color);
+
+        // entity
+        entity = new Qt3DCore::QEntity(rootEntity);
+        entity->addComponent(geometryRenderer);
+        entity->addComponent(gridMaterial);
+    }
+
+    QByteArray getGridBuffer(bool xy_swap,bool xz_swap,bool yz_swap,int N)
+    {
+        unsigned int n=(N+1)*3;
+
+        QByteArray bufferBytes;
+        bufferBytes.resize(3 * (4*n) * sizeof(float));
+        float* positions = reinterpret_cast<float*>(bufferBytes.data());
+
+        double step=2.0/N;
+
+        for (unsigned int i=0; i<N+1; i++)
+        {
+            *positions++ = i*step-1;
+            *positions++ = xz_swap?1:-1;
+            *positions++ = 1;
+
+            *positions++ = i*step-1;
+            *positions++ = xz_swap?1:-1;
+            *positions++ = -1;
+
+            *positions++ = 1;
+            *positions++ = xz_swap?1:-1;
+            *positions++ = i*step-1;
+
+            *positions++ = -1;
+            *positions++ = xz_swap?1:-1;
+            *positions++ = i*step-1;
+        }
+
+        for (unsigned int i=0; i<N+1; i++)
+        {
+            *positions++ = yz_swap?1:-1;
+            *positions++ = (i)*step-1;
+            *positions++ = 1;
+
+            *positions++ = yz_swap?1:-1;
+            *positions++ = i*step-1;
+            *positions++ = -1;
+
+            *positions++ = yz_swap?1:-1;
+            *positions++ = 1;
+            *positions++ = i*step-1;
+
+            *positions++ = yz_swap?1:-1;
+            *positions++ = -1;
+            *positions++ = (i)*step-1;
+        }
+
+        for (unsigned int i=0; i<N+1; i++)
+        {
+            *positions++ = (i)*step-1;
+            *positions++ = 1;
+            *positions++ = xy_swap?1:-1;
+
+            *positions++ = (i)*step-1;
+            *positions++ = -1;
+            *positions++ = xy_swap?1:-1;
+
+            *positions++ = 1;
+            *positions++ = (i)*step-1;
+            *positions++ = xy_swap?1:-1;
+
+            *positions++ = -1;
+            *positions++ = (i)*step-1;
+            *positions++ = xy_swap?1:-1;
+        }
+
+        return bufferBytes;
+    }
+
+    Qt3DRender::QBuffer* gridIndexBuffer;
+    Qt3DRender::QAttribute* gridIndexAttribute;
+    Qt3DExtras::QPhongMaterial* gridMaterial;
+};
+
+struct Cloud3D:public Base3D
+{
+    Qt3DExtras::QPerVertexColorMaterial* cloudMaterial;
+    Qt3DRender::QPointSize* pointSize;
+    Qt3DRender::QLineWidth* lineWidth;
+    Qt3DCore::QTransform* cloudTransform;
+    Qt3DRender::QAttribute* cloudColorsAttribute;
+};
 
 /**
 @class View3D
 @brief Classe pour gestion d'affichage avec Qt3D
 */
-struct Object3D
-{
-    Object3D(Qt3DCore::QEntity* rootEntity,Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor color)
-    {
-        t_obj = new Qt3DCore::QTransform();
-        t_obj->setScale(scale);
-        t_obj->setRotation(toQQuaternion(posatt.Q));
-        t_obj->setTranslation(toQVector3D(posatt.P));
-
-        mat_obj = new Qt3DExtras::QPhongMaterial();
-        mat_obj->setDiffuse(color);
-
-        //    Qt3DExtras::QPerVertexColorMaterial * mat_obj = new Qt3DExtras::QPerVertexColorMaterial();
-
-        m_objEntity = new Qt3DCore::QEntity(rootEntity);
-        m_objEntity->addComponent(m_obj);
-        m_objEntity->addComponent(mat_obj);
-        m_objEntity->addComponent(t_obj);
-    }
-
-    void setPosAtt(QPosAtt posatt)
-    {
-        t_obj->setTranslation(toQVector3D(posatt.P));
-        t_obj->setRotation(toQQuaternion(posatt.Q));
-    }
-
-    Qt3DCore::QTransform* t_obj;
-    Qt3DExtras::QPhongMaterial* mat_obj;
-    Qt3DCore::QEntity* m_objEntity;
-};
-
-
-struct Label3D
-{
-    Label3D(Qt3DCore::QEntity* rootEntity,
-            QString text,
-            QVector3D position,
-            float scale,
-            float anglex,
-            float angley,
-            float anglez)
-    {
-        textEntity = new Qt3DCore::QEntity();
-        textEntity->setParent(rootEntity);
-
-        textMaterial = new Qt3DExtras::QPhongMaterial(rootEntity);
-        textMaterial->setDiffuse(QColor(0,0,0));
-
-        textTransform = new Qt3DCore::QTransform();
-        textTransform->setTranslation(position);
-        textTransform->setRotationX(anglex);
-        textTransform->setRotationY(angley);
-        textTransform->setRotationZ(anglez);
-        textTransform->setScale(scale);
-
-        textMesh = new Qt3DExtras::QExtrudedTextMesh();
-        textMesh->setText(text);
-        textMesh->setDepth(.001f);
-
-        textEntity->addComponent(textMaterial);
-        textEntity->addComponent(textTransform);
-        textEntity->addComponent(textMesh);
-    }
-
-    void setPosRot(QVector3D position,float anglex,
-                   float angley,
-                   float anglez)
-    {
-        textTransform->setTranslation(position);
-        textTransform->setRotationX(anglex);
-        textTransform->setRotationY(angley);
-        textTransform->setRotationZ(anglez);
-    }
-
-    void setPos(QVector3D position)
-    {
-        textTransform->setTranslation(position);
-    }
-
-    void setText(QString text)
-    {
-        textMesh->setText(text);
-    }
-
-    Qt3DCore::QEntity* textEntity;
-    Qt3DExtras::QPhongMaterial* textMaterial;
-    Qt3DCore::QTransform* textTransform;
-    Qt3DExtras::QExtrudedTextMesh* textMesh;
-};
-
-class CustomViewContainer: public QWidget
-{
-    Q_OBJECT
-public:
-    CustomViewContainer(QWidget* container);
-
-    QWidget* getContainer();
-    QCPColorScale* getColorScale()
-    {
-        return scale;
-    }
-    QCustomPlot* getColorScalePlot()
-    {
-        return color_plot;
-    }
-
-    QCPAxis* getXAxis()
-    {
-        return axisX;
-    }
-    QCPAxis* getYAxis()
-    {
-        return axisY;
-    }
-    QCPAxis* getZAxis()
-    {
-        return axisZ;
-    }
-
-    QVector3D getTranslation()
-    {
-        return QVector3D(float(axisX->range().center()),
-                         float(axisY->range().center()),
-                         float(axisZ->range().center()));
-    }
-
-    QVector3D getScale()
-    {
-        return QVector3D(float(0.5*(axisX->range().upper-axisX->range().lower)),
-                         float(0.5*(axisY->range().upper-axisY->range().lower)),
-                         float(0.5*(axisZ->range().upper-axisZ->range().lower)));
-    }
-
-    void replot()
-    {
-        axisX_plot->replot();
-        axisY_plot->replot();
-        axisZ_plot->replot();
-        color_plot->replot();
-    }
-
-private:
-    QWidget* container;
-
-    void createColorAxisPlot();
-    QCustomPlot* color_plot;
-    QCPColorScale* scale;
-
-    void createXAxisPlot();
-    QCustomPlot* axisX_plot;
-    QCPAxisRect* axisX_rect;
-    QCPAxis* axisX;
-
-    void createYAxisPlot();
-    QCustomPlot* axisY_plot;
-    QCPAxisRect* axisY_rect;
-    QCPAxis* axisY;
-
-    void createZAxisPlot();
-    QCustomPlot* axisZ_plot;
-    QCPAxisRect* axisZ_rect;
-    QCPAxis* axisZ;
-
-    int axisSize;
-};
-
-
 class View3D:public Qt3DExtras::Qt3DWindow
 {
     Q_OBJECT
@@ -206,7 +190,6 @@ public:
 
     View3D();
 
-    void createGrid(unsigned int N, QColor color);
     void setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode);
 
     void addObj(Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor color);
@@ -228,7 +211,7 @@ public slots:
     void slot_ColorScaleChanged(const QCPRange& range);
     void slot_ScaleChanged();
     void slot_setGradient(int preset);
-    void updateGrid();
+    void updateGridAndLabels();
 
 signals:
     void sig_newColumn(QString varName,Eigen::VectorXd data);
@@ -243,118 +226,40 @@ protected:
 private:
     void updateLabels();
 
-    struct CameraParams
-    {
-        CameraParams(Qt3DRender::QCamera* cameraEntity,float alpha,float beta,float radius,QVector3D barycenter=QVector3D(0,0,0),float boundingRadius=0.0)
-        {
-            this->cameraEntity=cameraEntity;
-            init(alpha,beta,radius);
-            this->barycenter=barycenter;
-            this->boundingRadius=boundingRadius;
-        }
-
-        void init(float alpha,float beta,float radius)
-        {
-            this->alpha=alpha;
-            this->beta=beta;
-            this->radius=radius;
-        }
-
-        void update()
-        {
-            cameraEntity->setPosition(barycenter+QVector3D(-radius*cos(alpha)*cos(beta),-radius*sin(beta),-radius*sin(alpha)*cos(beta)));
-            cameraEntity->setUpVector(QVector3D(0, 1, 0));
-            cameraEntity->setViewCenter(barycenter);
-        }
-
-        void move(float dx,float dy)
-        {
-            float speed =0.01f,eps=1.0e-2f;
-            this->alpha-=dx*speed;
-
-            this->beta+=dy*speed;
-
-            if (beta>(float(M_PI)/2.0f-eps))
-            {
-                beta=(float(M_PI)/2.0f-eps);
-            }
-            else if (beta<(-float(M_PI)/2.0f+eps))
-            {
-                beta=(-float(M_PI)/2.0f+eps);
-            }
-
-            update();
-        }
-
-        void moveTo(float alpha,float beta,float radius)
-        {
-            init(alpha,beta,radius);
-            update();
-        }
-
-        void setBarycenter(QVector3D barycenter)
-        {
-            this->barycenter=barycenter;
-            update();
-        }
-
-        QVector3D getBarycenter()
-        {
-            return barycenter;
-        }
-
-        void setBoundingRadius(float boundingRadius)
-        {
-            this->boundingRadius=boundingRadius;
-        }
-
-        float getBoundingRadius()
-        {
-            return boundingRadius;
-        }
-
-        float getRadius()
-        {
-            return radius;
-        }
-
-        void setRadius(float radius)
-        {
-            this->radius=radius;
-            update();
-        }
-
-        void reset()
-        {
-            moveTo(float(M_PI*0.25+M_PI),-float(M_PI*0.10),4*boundingRadius);
-        }
-
-        Qt3DRender::QCamera* entity()
-        {
-            return cameraEntity;
-        }
-
-        double getAlpha()
-        {
-            return alpha;
-        }
-        double getBeta()
-        {
-            return beta;
-        }
-
-    private:
-        float alpha,beta;
-        float radius;
-        float boundingRadius;
-        QVector3D barycenter;
-        Qt3DRender::QCamera* cameraEntity;
-    };
-
     CameraParams* camera_params;
     CustomViewContainer* customContainer;
 
+    //Misc
+    QString current_filename;
+    float xp,yp;
+
+    //3D
+    void init3D();
+    PrimitiveMode mode;
+    Qt3DCore::QEntity* rootEntity;
+    std::vector<Qt3DCore::QTransform*> transforms;
+    std::vector<QMatrix4x4> baseTransforms;
+    std::vector<Qt3DExtras::QPhongMaterial*> materials;
+
+    //Cloud3D
+    Cloud3D cloud3D;
+
+    //Grid
+    Grid3D* grid3D;
+
+    //Data
+    Cloud* cloud;
+
+    //Labels Tiks and Arrows
+    Label3D* labelx;
+    Label3D* labely;
+    Label3D* labelz;
+    Object3D* objArrowX;
+    Object3D* objArrowY;
+    Object3D* objArrowZ;
+
     //Menu
+    void configurePopup();
     void createPopup();
     QMenu* popup_menu;
     QAction* actSave;
@@ -364,48 +269,9 @@ private:
     QAction* actFitPlan;
     QAction* actFitMesh;
 
-    //Misc
-    QString current_filename;
-    float xp,yp;
-
-    //3D
-    void init3D();
-    PrimitiveMode mode;
-    Qt3DExtras::QPerVertexColorMaterial* cloudMaterial;
-    Qt3DRender::QGeometryRenderer* cloudPrimitives;
-    Qt3DRender::QPointSize* pointSize;
-    Qt3DRender::QLineWidth* lineWidth;
-    Qt3DCore::QEntity* cloudPrimitivesEntity;
-    Qt3DRender::QGeometry* cloudGeometry;
-    Qt3DCore::QTransform* cloudTransform;
-    Qt3DRender::QBuffer* cloudBuf;
-    Qt3DRender::QAttribute* cloudPositionAttribute;
-    Qt3DRender::QAttribute* cloudColorsAttribute;
-    Qt3DCore::QEntity* rootEntity;
-    std::vector<Qt3DCore::QTransform*> transforms;
-    std::vector<QMatrix4x4> baseTransforms;
-    std::vector<Qt3DExtras::QPhongMaterial*> materials;
-
-    //Grid
-    Qt3DRender::QBuffer* gridBuf;
-    Qt3DRender::QAttribute* gridPositionAttribute;
-
-    //Data
-    Cloud* cloud;
-
     QComboBox* c_gradient;
     QDoubleSpinBox* sb_size;
     QComboBox* cb_mode;
-
-    //Labels Tiks
-    Label3D* labelx;
-    Label3D* labely;
-    Label3D* labelz;
-
-    //
-    Object3D* objArrowX;
-    Object3D* objArrowY;
-    Object3D* objArrowZ;
 
     //
     bool xy_reversed;

@@ -37,12 +37,16 @@ SOURCES += \
         ScatterModifier.cpp \
         SurfaceModifier.cpp \
         ShapeFit.cpp \
+        cameraparams.cpp \
         color_wheel.cpp \
         curve2d.cpp \
         curve2d_gainphase.cpp \
+        customviewcontainer.cpp \
+        label3d.cpp \
         main.cpp \
         mainwindow.cpp \
         obj.cpp \
+        object3d.cpp \
         qcustomplot.cpp \
         tabledata.cpp \
         view3d.cpp \
@@ -61,11 +65,15 @@ HEADERS += \
         ShapeFit.h \
         box.h \
         boxplot.h \
+        cameraparams.h \
         color_wheel.hpp \
         curve2d.h \
         curve2d_gainphase.h \
+        customviewcontainer.h \
+        label3d.h \
         mainwindow.h \
         obj.h \
+        object3d.h \
         qcustomplot.h \
         tabledata.h \
         view3d.h \

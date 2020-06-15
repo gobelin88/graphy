@@ -28,32 +28,10 @@ View3D::View3D()
     setRootEntity(rootEntity);
 
     //Light
-    Qt3DCore::QEntity* lightEntity_a = new Qt3DCore::QEntity(rootEntity);
-    Qt3DRender::QPointLight* light_a = new Qt3DRender::QPointLight(lightEntity_a);
-    light_a->setColor("white");
-    light_a->setIntensity(1);
-    lightEntity_a->addComponent(light_a);
-    Qt3DCore::QTransform* lightTransform_a = new Qt3DCore::QTransform(lightEntity_a);
-    lightTransform_a->setTranslation(QVector3D(5,5,-5));
-    lightEntity_a->addComponent(lightTransform_a);
-
-    Qt3DCore::QEntity* lightEntity_b = new Qt3DCore::QEntity(rootEntity);
-    Qt3DRender::QPointLight* light_b = new Qt3DRender::QPointLight(lightEntity_b);
-    light_b->setColor("white");
-    light_b->setIntensity(1);
-    lightEntity_b->addComponent(light_b);
-    Qt3DCore::QTransform* lightTransform_b = new Qt3DCore::QTransform(lightEntity_b);
-    lightTransform_b->setTranslation(QVector3D(5,5,5));
-    lightEntity_b->addComponent(lightTransform_b);
-
-    Qt3DCore::QEntity* lightEntity_c = new Qt3DCore::QEntity(rootEntity);
-    Qt3DRender::QPointLight* light_c = new Qt3DRender::QPointLight(lightEntity_c);
-    light_c->setColor("white");
-    light_c->setIntensity(1);
-    lightEntity_c->addComponent(light_c);
-    Qt3DCore::QTransform* lightTransform_c = new Qt3DCore::QTransform(lightEntity_c);
-    lightTransform_c->setTranslation(QVector3D(0,5,0));
-    lightEntity_c->addComponent(lightTransform_c);
+    new Light3D(rootEntity, "white",QVector3D(5,5,5));
+    new Light3D(rootEntity, "white",QVector3D(5,5,-5));
+    new Light3D(rootEntity, "white",QVector3D(-5,5,5));
+    new Light3D(rootEntity, "white",QVector3D(-5,5,-5));
 
     init3D();
 
@@ -64,6 +42,27 @@ View3D::View3D()
     //addSphere(QPosAtt(Eigen::Vector3d(0.05,0.05,0.05),Eigen::Quaterniond(1,0,0,0)),1.0,QColor(128,128,128),0.01);
 
     createPopup();
+}
+
+void View3D::init3D()
+{
+    mode=MODE_POINTS;
+
+    cloud3D=new Cloud3D(rootEntity);
+
+    grid3D=new Grid3D(rootEntity,10,QColor(255,255,255));
+
+    auto* meshArrow = new Qt3DRender::QMesh();
+    meshArrow->setSource(QUrl( QUrl::fromLocalFile(":/obj/obj/axis.obj") ) );
+
+    objArrowX=new Object3D(rootEntity,meshArrow,QPosAtt(Eigen::Vector3d(-0.0,1,-1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(1,0,0),Eigen::Vector3d(0,-1,0))),0.1f,QColor(255,0,0));
+    objArrowY=new Object3D(rootEntity,meshArrow,QPosAtt(Eigen::Vector3d(-1,-0.0,1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),Eigen::Vector3d(0,1,0))),0.1f,QColor(0,255,0));
+    objArrowZ=new Object3D(rootEntity,meshArrow,QPosAtt(Eigen::Vector3d(1,-1,-0.0),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,0,1),Eigen::Vector3d(0,-1,0))),0.1f,QColor(0,0,255));
+
+    labelx=new Label3D(rootEntity,"XXXXXX",QVector3D(0,1,-1),0.1f,0,0,0);
+    labely=new Label3D(rootEntity,"YYYYYY",QVector3D(-1,0,1),0.1f,0,90,90);
+    labelz=new Label3D(rootEntity,"ZZZZZZ",QVector3D(1,-1,0),0.1f,-90,-90,0);
+    updateLabels();
 }
 
 void View3D::createPopup()
@@ -92,7 +91,9 @@ void View3D::createPopup()
     cb_mode=new QComboBox;
     cb_mode->addItem("POINTS");
     cb_mode->addItem("LINES");
-    cb_mode->addItem("LINES_STRIP");
+    cb_mode->addItem("LINE_STRIP");
+    cb_mode->addItem("TRIANGLES");
+    cb_mode->addItem("TRIANGLE_STRIP");
 
     c_gradient=new QComboBox;
     c_gradient->addItem("gpGrayscale",QCPColorGradient::GradientPreset::gpGrayscale);
@@ -133,7 +134,7 @@ void View3D::createPopup()
     QObject::connect(c_gradient, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setGradient(int)));
 }
 
-void View3D::slot_saveImage()
+void View3D::slot_saveGif()
 {
     Qt3DRender::QRenderCapture renderCapture(rootEntity);
 
@@ -141,13 +142,59 @@ void View3D::slot_saveImage()
     QString where=info.path();
 
     QString filename=QFileDialog::getSaveFileName(nullptr,"Save Image",where,"(*.png)");
+
+    QScreen* screen=QGuiApplication::primaryScreen();
     if (!filename.isEmpty())
     {
         this->current_filename=filename;
-        QPixmap::grabWindow(customContainer->winId()).save(filename);
+
+        screen->grabWindow(customContainer->winId()).save(filename);
     }
 
 }
+
+void View3D::slot_saveImage()
+{
+    Qt3DRender::QRenderCapture renderCapture(rootEntity);
+
+    QFileInfo info(current_filename);
+    QString where=info.path();
+
+    QString filename=QFileDialog::getSaveFileName(nullptr,"Save Images",where,"(*.png)");
+    if (!filename.isEmpty())
+    {
+        this->current_filename=filename;
+
+        int N=QInputDialog::getInt(nullptr,"Number of frames","Number of frames=",1,1,360*10,1);
+        //QScreen* screen=QGuiApplication::primaryScreen();
+
+        QFileInfo info(filename);
+
+        Qt3DRender::QRenderCapture* capture = new Qt3DRender::QRenderCapture;
+        this->activeFrameGraph()->setParent(capture);
+        this->setActiveFrameGraph(capture);
+
+        MyCapture myCap(capture);
+        float a0=camera_params->getAlpha();
+        QScreen* screen=QGuiApplication::primaryScreen();
+
+        for (int k=0; k<N; k++)
+        {
+            QString image_filename=info.dir().path()+QString("/%1_").arg(k)+info.baseName()+QString(".png");
+            std::cout<<image_filename.toLocal8Bit().data()<<std::endl;
+            camera_params->moveTo(a0+float(2.0*M_PI/N*k),camera_params->getBeta(),camera_params->getRadius());
+            updateGridAndLabels();
+            //this->customContainer->update();
+            //QApplication::processEvents();
+
+            myCap.capture();
+            screen->grabWindow(customContainer->winId()).save(image_filename);
+            //myCap.capture().save(image_filename);
+        }
+    }
+
+}
+
 
 void View3D::slot_fitSphere()
 {
@@ -212,72 +259,13 @@ void View3D::slot_fitCustomMesh()
 //----------------------------
 
 
-void View3D::init3D()
-{
-    mode=MODE_POINTS;
 
-    cloud3D.cloudTransform = new Qt3DCore::QTransform();
-    cloud3D.cloudTransform->setScale(1.0);
-    cloud3D.cloudTransform->setRotation(QQuaternion(1,0,0,0));
-    cloud3D.cloudTransform->setTranslation(QVector3D(0,0,0));
-
-    cloud3D.geometry = new Qt3DRender::QGeometry(rootEntity);
-    cloud3D.buffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer,cloud3D.geometry);
-
-    cloud3D.positionAttribute = new Qt3DRender::QAttribute(cloud3D.geometry);
-    cloud3D.positionAttribute->setName(Qt3DRender::QAttribute::defaultPositionAttributeName());
-    cloud3D.positionAttribute->setVertexBaseType(Qt3DRender::QAttribute::Float);
-    cloud3D.positionAttribute->setVertexSize(3);
-    cloud3D.positionAttribute->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
-    cloud3D.positionAttribute->setBuffer(cloud3D.buffer);
-    cloud3D.positionAttribute->setByteStride(6 * sizeof(float));
-    cloud3D.geometry->addAttribute(cloud3D.positionAttribute); // We add the vertices in the geometry
-
-    cloud3D.cloudColorsAttribute = new Qt3DRender::QAttribute(cloud3D.geometry);
-    cloud3D.cloudColorsAttribute->setName(Qt3DRender::QAttribute::defaultColorAttributeName());
-    cloud3D.cloudColorsAttribute->setVertexBaseType(Qt3DRender::QAttribute::Float);
-    cloud3D.cloudColorsAttribute->setVertexSize(3);
-    cloud3D.cloudColorsAttribute->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
-    cloud3D.cloudColorsAttribute->setBuffer(cloud3D.buffer);
-    cloud3D.cloudColorsAttribute->setByteOffset(3 * sizeof(float));
-    cloud3D.cloudColorsAttribute->setByteStride(6 * sizeof(float));
-
-    cloud3D.geometry->addAttribute(cloud3D.cloudColorsAttribute);
-
-    cloud3D.cloudMaterial = new Qt3DExtras::QPerVertexColorMaterial(rootEntity);
-    cloud3D.geometryRenderer = new Qt3DRender::QGeometryRenderer(rootEntity);
-    cloud3D.geometryRenderer->setGeometry(cloud3D.geometry);
-
-    cloud3D.entity = new Qt3DCore::QEntity(rootEntity);
-    cloud3D.entity->addComponent(cloud3D.geometryRenderer);
-    cloud3D.entity->addComponent(cloud3D.cloudMaterial);
-    cloud3D.entity->addComponent(cloud3D.cloudTransform);
-
-    cloud3D.pointSize = new Qt3DRender::QPointSize();
-    cloud3D.pointSize->setSizeMode(Qt3DRender::QPointSize::SizeMode::Fixed);
-    cloud3D.pointSize->setValue(4.0f);
-    cloud3D.lineWidth = new Qt3DRender::QLineWidth();
-    cloud3D.lineWidth->setValue(4.0f);
-
-    grid3D=new Grid3D(rootEntity,10,QColor(255,255,255));
-
-    auto* meshArrow = new Qt3DRender::QMesh();
-    meshArrow->setSource(QUrl( QUrl::fromLocalFile("./obj/axis.obj") ) );
-
-    objArrowX=new Object3D(rootEntity,meshArrow,QPosAtt(Eigen::Vector3d(-0.0,1,-1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(1,0,0),Eigen::Vector3d(0,-1,0))),0.1,QColor(255,0,0));
-    objArrowY=new Object3D(rootEntity,meshArrow,QPosAtt(Eigen::Vector3d(-1,-0.0,1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),Eigen::Vector3d(0,1,0))),0.1,QColor(0,255,0));
-    objArrowZ=new Object3D(rootEntity,meshArrow,QPosAtt(Eigen::Vector3d(1,-1,-0.0),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,0,1),Eigen::Vector3d(0,-1,0))),0.1,QColor(0,0,255));
-
-    labelx=new Label3D(rootEntity,"XXXXXX",QVector3D(0,1,-1),0.1,0,0,0);
-    labely=new Label3D(rootEntity,"YYYYYY",QVector3D(-1,0,1),0.1,0,90,90);
-    labelz=new Label3D(rootEntity,"ZZZZZZ",QVector3D(1,-1,0),0.1,-90,-90,0);
-}
 
 void View3D::slot_ColorScaleChanged(const QCPRange& range)
 {
-    if (cloud && cloud3D.buffer)
+    if (cloud && cloud3D->buffer)
     {
-        cloud3D.buffer->setData(cloud->getColorBuffer(range));
+        cloud3D->buffer->setData(cloud->getColorBuffer(range));
     }
 }
 
@@ -286,7 +274,7 @@ void View3D::slot_ScaleChanged()
     Qt3DCore::QTransform t;
     t.setTranslation(customContainer->getTranslation());
     t.setScale3D(customContainer->getScale());
-    cloud3D.cloudTransform->setMatrix(t.matrix().inverted());
+    cloud3D->cloudTransform->setMatrix(t.matrix().inverted());
 
     for (int i=0; i<transforms.size(); i++)
     {
@@ -296,11 +284,11 @@ void View3D::slot_ScaleChanged()
 
 void View3D::slot_setGradient(int preset)
 {
-    if (cloud && cloud3D.buffer)
+    if (cloud && cloud3D->buffer)
     {
         cloud->setGradientPreset(static_cast<QCPColorGradient::GradientPreset>(preset));
         customContainer->getColorScale()->setGradient(cloud->getGradient());
-        cloud3D.buffer->setData(cloud->getColorBuffer(customContainer->getColorScale()->dataRange()));
+        cloud3D->buffer->setData(cloud->getColorBuffer(customContainer->getColorScale()->dataRange()));
         customContainer->getColorScalePlot()->rescaleAxes();
         customContainer->getColorScalePlot()->replot();
     }
@@ -314,34 +302,14 @@ void View3D::setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode)
     camera_params->setBoundingRadius( 1.20 );
 
     //Set Data Buffers
-    //cloudBuf->setData(cloud->getBuffer());
-    cloud3D.positionAttribute->setCount(cloud->positions().size());
-    cloud3D.cloudColorsAttribute->setCount(cloud->positions().size());
+    cloud3D->positionAttribute->setCount(cloud->positions().size());
+    cloud3D->cloudColorsAttribute->setCount(cloud->positions().size());
 
     // mesh
-    if (primitiveMode==MODE_LINES)
-    {
-        cloud3D.geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Lines);
-    }
-    else if (primitiveMode==MODE_LINE_STRIP)
-    {
-        cloud3D.geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::LineStrip);
-    }
-    else if (primitiveMode==MODE_POINTS)
-    {
-        cloud3D.geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Points);
-    }
+    slot_setPrimitiveType(primitiveMode);
 
     //points size
-    auto effect = cloud3D.cloudMaterial->effect();
-    for (auto t : effect->techniques())
-    {
-        for (auto rp : t->renderPasses())
-        {
-            rp->addRenderState(cloud3D.pointSize);
-            rp->addRenderState(cloud3D.lineWidth);
-        }
-    }
+    slot_setPointSize(cloud3D->pointSize->value());
 
     // entity
     mode=primitiveMode;
@@ -371,16 +339,16 @@ void View3D::setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode)
 
 void View3D::slot_setPointSize(double value)
 {
-    cloud3D.pointSize->setValue(value);
-    cloud3D.lineWidth->setValue(value);
+    cloud3D->pointSize->setValue(value);
+    cloud3D->lineWidth->setValue(value);
 
-    auto effect = cloud3D.cloudMaterial->effect();
+    auto effect = cloud3D->cloudMaterial->effect();
     for (auto t : effect->techniques())
     {
         for (auto rp : t->renderPasses())
         {
-            rp->addRenderState(cloud3D.pointSize);
-            rp->addRenderState(cloud3D.lineWidth);
+            rp->addRenderState(cloud3D->pointSize);
+            rp->addRenderState(cloud3D->lineWidth);
         }
     }
 }
@@ -390,17 +358,27 @@ void View3D::slot_setPrimitiveType(int type)
     if (type==0)
     {
         mode=MODE_POINTS;
-        cloud3D.geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Points);
+        cloud3D->geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Points);
     }
     else if (type==1)
     {
         mode=MODE_LINES;
-        cloud3D.geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Lines);
+        cloud3D->geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Lines);
     }
     else if (type==2)
     {
         mode=MODE_LINE_STRIP;
-        cloud3D.geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::LineStrip);
+        cloud3D->geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::LineStrip);
+    }
+    else if (type==3)
+    {
+        mode=MODE_TRIANGLE;
+        cloud3D->geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Triangles);
+    }
+    else if (type==3)
+    {
+        mode=MODE_TRIANGLE_STRIP;
+        cloud3D->geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::TriangleStrip);
     }
 }
 
@@ -467,15 +445,21 @@ CustomViewContainer* View3D::getContainer()
 
 void View3D::updateLabels()
 {
+    double s=1.1;
+
     Eigen::Vector3d Px(0,(xy_reversed?-1:1),(xz_reversed)?1:-1);
     Eigen::Vector3d Py(yz_reversed?1:-1,0,(xz_reversed?-1:1));
     Eigen::Vector3d Pz((yz_reversed?-1:1),(xy_reversed?1:-1),0);
 
-    labelx->setPosRot(toQVector3D(Px),(xy_reversed?180:0),(xz_reversed)?-180:0,0);
+    Eigen::Vector3d Plx(0,(xy_reversed?-s:s),(xz_reversed)?1:-1);
+    Eigen::Vector3d Ply(yz_reversed?1:-1,0,(xz_reversed?-s:s));
+    Eigen::Vector3d Plz((yz_reversed?-s:s),(xy_reversed?1:-1),0);
 
-    labely->setPosRot(toQVector3D(Py),(xz_reversed?180:0)+(yz_reversed?180:0),90+(xz_reversed?180:0),90);
+    labelx->setPosRot(toQVector3D(Plx),(xy_reversed?180:0),(xz_reversed)?-180:0,0);
 
-    labelz->setPosRot(toQVector3D(Pz),
+    labely->setPosRot(toQVector3D(Ply),(xz_reversed?180:0)+(yz_reversed?180:0),90+(xz_reversed?180:0),90);
+
+    labelz->setPosRot(toQVector3D(Plz),
                       -90+(xy_reversed?180:0),
                       (yz_reversed?-270:-90),
                       (xy_reversed?180:0));
@@ -568,7 +552,7 @@ void View3D::configurePopup()
     c_gradient->blockSignals(true);
 
 
-    sb_size->setValue(static_cast<double>(cloud3D.pointSize->value()));
+    sb_size->setValue(static_cast<double>(cloud3D->pointSize->value()));
     cb_mode->setCurrentIndex(static_cast<int>(mode));
     c_gradient->setCurrentIndex(static_cast<int>(cloud->getGradientPreset()));
 

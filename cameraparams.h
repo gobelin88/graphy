@@ -23,8 +23,8 @@ struct CameraParams
 
     Qt3DRender::QCamera* entity();
 
-    double getAlpha();
-    double getBeta();
+    float getAlpha();
+    float getBeta();
 
 private:
     float alpha,beta;

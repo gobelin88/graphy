@@ -38,11 +38,14 @@ SOURCES += \
         SurfaceModifier.cpp \
         ShapeFit.cpp \
         cameraparams.cpp \
+        cloud3d.cpp \
         color_wheel.cpp \
         curve2d.cpp \
         curve2d_gainphase.cpp \
         customviewcontainer.cpp \
+        grid3d.cpp \
         label3d.cpp \
+        light3d.cpp \
         main.cpp \
         mainwindow.cpp \
         obj.cpp \
@@ -57,6 +60,7 @@ HEADERS += \
         1d_cplx_viewer.h \
         2d_viewer.h \
         3d_viewer.h \
+        Base3D.h \
         Cloud.h \
         FIR.h \
         Functor.h \
@@ -66,11 +70,14 @@ HEADERS += \
         box.h \
         boxplot.h \
         cameraparams.h \
+        cloud3d.h \
         color_wheel.hpp \
         curve2d.h \
         curve2d_gainphase.h \
         customviewcontainer.h \
+        grid3d.h \
         label3d.h \
+        light3d.h \
         mainwindow.h \
         obj.h \
         object3d.h \

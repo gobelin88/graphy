@@ -89,11 +89,11 @@ Qt3DRender::QCamera* CameraParams::entity()
     return cameraEntity;
 }
 
-double CameraParams::getAlpha()
+float CameraParams::getAlpha()
 {
     return alpha;
 }
-double CameraParams::getBeta()
+float CameraParams::getBeta()
 {
     return beta;
 }

@@ -35,4 +35,7 @@
         <file>imp/R+L.png</file>
         <file>imp/R+L+C.png</file>
     </qresource>
+    <qresource prefix="/obj">
+        <file>obj/axis.obj</file>
+    </qresource>
 </RCC>

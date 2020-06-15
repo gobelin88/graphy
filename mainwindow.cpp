@@ -647,21 +647,21 @@ void MainWindow::slot_editColumn()
     std::cout<<"slot_editColumn begin"<<std::endl;
 
     int currentColIndex=model->columnCount();
-    int logicalIndex=currentColIndex;
+    int visualIndex=currentColIndex;
 
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
     if (id_list.size()==1)
     {
         currentColIndex=id_list[0].column();
-        logicalIndex=table->horizontalHeader()->logicalIndex( id_list[0].column() );
+        visualIndex=table->horizontalHeader()->visualIndex( id_list[0].column() );
     }
 
-    bool var=editVariableAndExpression(logicalIndex);
+    bool var=editVariableAndExpression(visualIndex);
     if (var)
     {
-        setColumn(logicalIndex,evalColumn(logicalIndex));
+        setColumn(visualIndex,evalColumn(visualIndex));
 
-        model->setHorizontalHeaderItem(currentColIndex, new QStandardItem(variables_names[logicalIndex]));
+        model->setHorizontalHeaderItem(currentColIndex, new QStandardItem(variables_names[visualIndex]));
 
         table->setModel(model);
 
@@ -1220,7 +1220,7 @@ void MainWindow::slot_plot_y()
 
         for (int k=0; k<id_list.size(); k++)
         {
-            Eigen::VectorXd data_y=datatable.col(id_list[k].column()); //getCol(id_list[k].column(),datatable);
+            Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k].column())); //getCol(id_list[k].column(),datatable);
 
             if (data_y.size()>0)
             {
@@ -1263,12 +1263,12 @@ void MainWindow::slot_plot_graph_xy()
 
         for (int k=0; k<id_list.size(); k+=2)
         {
-            Eigen::VectorXd data_x=datatable.col(id_list[k  ].column());
-            Eigen::VectorXd data_y=datatable.col(id_list[k+1].column());
+            Eigen::VectorXd data_x=datatable.col(table->horizontalHeader()->visualIndex(id_list[k  ].column()));
+            Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
 
             if (data_x.size()>0 && data_y.size()>0)
             {
-                if (!asColumnStrings(id_list[k  ].column()))
+                if (!asColumnStrings(table->horizontalHeader()->visualIndex(id_list[k  ].column())))
                 {
                     Curve2D curve(data_x,data_y,QString("%2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),Curve2D::GRAPH);
                     viewer1d->slot_add_data(curve);
@@ -1308,8 +1308,8 @@ void MainWindow::slot_plot_curve_xy()
 
         for (int k=0; k<id_list.size(); k+=2)
         {
-            Eigen::VectorXd data_x=datatable.col(id_list[k  ].column());
-            Eigen::VectorXd data_y=datatable.col(id_list[k+1].column());
+            Eigen::VectorXd data_x=datatable.col(table->horizontalHeader()->visualIndex(id_list[k  ].column()));
+            Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
 
             if (data_x.size()>0 && data_y.size()>0)
             {
@@ -1346,9 +1346,9 @@ void MainWindow::slot_plot_cloud_2D()
 
         for (int k=0; k<id_list.size(); k+=3)
         {
-            Eigen::VectorXd data_x=datatable.col(id_list[k  ].column());
-            Eigen::VectorXd data_y=datatable.col(id_list[k+1].column());
-            Eigen::VectorXd data_s=datatable.col(id_list[k+2].column());
+            Eigen::VectorXd data_x=datatable.col(table->horizontalHeader()->visualIndex(id_list[k  ].column()));
+            Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
+            Eigen::VectorXd data_s=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+2].column()));
 
             if (data_x.size()>0 && data_y.size()>0)
             {
@@ -1389,10 +1389,10 @@ void MainWindow::slot_plot_field_2D()
 
         for (int k=0; k<id_list.size(); k+=4)
         {
-            Eigen::VectorXd data_x=datatable.col(id_list[k  ].column());
-            Eigen::VectorXd data_y=datatable.col(id_list[k+1].column());
-            Eigen::VectorXd data_vx=datatable.col(id_list[k+2].column());
-            Eigen::VectorXd data_vy=datatable.col(id_list[k+3].column());
+            Eigen::VectorXd data_x=datatable.col(table->horizontalHeader()->visualIndex(id_list[k  ].column()));
+            Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
+            Eigen::VectorXd data_vx=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+2].column()));
+            Eigen::VectorXd data_vy=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+3].column()));
 
             Eigen::VectorXd data_a(data_vx.size());
             Eigen::VectorXd data_s(data_vx.size());
@@ -1437,9 +1437,9 @@ void MainWindow::slot_plot_map_2D()
 
     if (id_list.size()==3)
     {
-        Eigen::VectorXd data_x=datatable.col(id_list[0].column());
-        Eigen::VectorXd data_y=datatable.col(id_list[1].column());
-        Eigen::VectorXd data_z=datatable.col(id_list[2].column());
+        Eigen::VectorXd data_x=datatable.col(table->horizontalHeader()->visualIndex(id_list[0].column()));
+        Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[1].column()));
+        Eigen::VectorXd data_z=datatable.col(table->horizontalHeader()->visualIndex(id_list[2].column()));
 
         if (data_x.size()>0 && data_y.size()>0 && data_z.size()>0)
         {
@@ -1476,7 +1476,7 @@ void MainWindow::slot_plot_fft()
 
         for (int k=0; k<id_list.size(); k++)
         {
-            Eigen::VectorXd data_y=datatable.col(id_list[k  ].column());
+            Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k  ].column()));
             Curve2D curve(data_y,QString("%1").arg(getColName(id_list[k  ].column())),Curve2D::GRAPH);
 
             if (data_y.size()>0)
@@ -1508,9 +1508,9 @@ void MainWindow::slot_plot_cloud_3D()
         QObject::connect(view3d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
         QObject::connect(view3d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
 
-        Eigen::VectorXd data_x=datatable.col(id_list[0].column());
-        Eigen::VectorXd data_y=datatable.col(id_list[1].column());
-        Eigen::VectorXd data_z=datatable.col(id_list[2].column());
+        Eigen::VectorXd data_x=datatable.col(table->horizontalHeader()->visualIndex(id_list[0].column()));
+        Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[1].column()));
+        Eigen::VectorXd data_z=datatable.col(table->horizontalHeader()->visualIndex(id_list[2].column()));
 
         Cloud* cloud=nullptr;
 
@@ -1524,7 +1524,7 @@ void MainWindow::slot_plot_cloud_3D()
         }
         else if (id_list.size()==4)
         {
-            Eigen::VectorXd data_s=datatable.col(id_list[3].column());
+            Eigen::VectorXd data_s=datatable.col(table->horizontalHeader()->visualIndex(id_list[3].column()));
             cloud=new Cloud(data_x,data_y,data_z,data_s,
                             getColName(id_list[0].column()),
                             getColName(id_list[1].column()),
@@ -1561,9 +1561,9 @@ void MainWindow::slot_plot_gain_phase()
 
         for (int k=0; k<id_list.size(); k+=3)
         {
-            Eigen::VectorXd data_f=datatable.col(id_list[k].column());
-            Eigen::VectorXd data_module=datatable.col(id_list[k+1].column());
-            Eigen::VectorXd data_phase=datatable.col(id_list[k+2].column());
+            Eigen::VectorXd data_f=datatable.col(table->horizontalHeader()->visualIndex(id_list[k].column()));
+            Eigen::VectorXd data_module=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
+            Eigen::VectorXd data_phase=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+2].column()));
 
             if (data_f.size()>0 && data_module.size()>0 && data_phase.size()>0)
             {
@@ -1599,7 +1599,7 @@ void MainWindow::slot_plot_histogram()
 
         for (int k=0; k<id_list.size(); k++)
         {
-            Eigen::VectorXd data_y=datatable.col(id_list[k].column());
+            Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k].column()));
 
             if (data_y.size()>0)
             {
@@ -1794,4 +1794,6 @@ void MainWindow::slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newV
     moveVariable(oldVisualIndex,newVisualIndex);
     moveColumn(datatable,oldVisualIndex,newVisualIndex);
     fileModified();
+
+    dispVariables();
 }

@@ -6291,7 +6291,7 @@ public:
                    };
     Q_ENUMS(LineStyle)
 
-    //explicit QCPGraph(QCPAxis* keyAxis, QCPAxis* valueAxis);
+    explicit QCPGraph(QCPAxis* keyAxis, QCPAxis* valueAxis, QCustomPlot* plot);
     explicit QCPGraph(QCustomPlot* plot);
     virtual ~QCPGraph();
 

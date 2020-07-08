@@ -11,9 +11,9 @@ struct Object3D
 
     void setPosAtt(QPosAtt posatt);
 
-    Qt3DCore::QTransform* t_obj;
-    Qt3DExtras::QPhongMaterial* mat_obj;
-    Qt3DCore::QEntity* m_objEntity;
+    Qt3DCore::QTransform* transform;
+    Qt3DExtras::QPhongMaterial* material;
+    Qt3DCore::QEntity* entity;
 };
 
 #endif // OBJECT3D_H

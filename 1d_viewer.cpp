@@ -1441,8 +1441,8 @@ void Viewer1D::slot_statistiques()
                          .arg(curves[i].getY().minCoeff())
                          .arg(curves[i].getY().maxCoeff())
                          .arg(mean)
-                         .arg( (curves[i].getY()-Eigen::VectorXd::Constant(curves[i].getY().size(),mean)).cwiseAbs2().mean() )
-                         .arg(curves[i].getY().cwiseAbs2().mean())
+                         .arg( sqrt( (curves[i].getY()-Eigen::VectorXd::Constant(curves[i].getY().size(),mean)).cwiseAbs2().mean() ) )
+                         .arg( curves[i].getRms() )
                          .arg(CIstr);
 
         emit sig_displayResults(stat_str);

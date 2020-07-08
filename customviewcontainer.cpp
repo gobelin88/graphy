@@ -149,6 +149,13 @@ QVector3D CustomViewContainer::getScale()
                      float(0.5*(axisZ->range().upper-axisZ->range().lower)));
 }
 
+QVector3D CustomViewContainer::getScaleInv()
+{
+    return QVector3D(1.0f/float(0.5*(axisX->range().upper-axisX->range().lower)),
+                     1.0f/float(0.5*(axisY->range().upper-axisY->range().lower)),
+                     1.0f/float(0.5*(axisZ->range().upper-axisZ->range().lower)));
+}
+
 void CustomViewContainer::replot()
 {
     axisX_plot->replot();

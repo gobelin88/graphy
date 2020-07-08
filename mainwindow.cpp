@@ -191,15 +191,23 @@ void MainWindow::direct_open(QString filename)
                 {
                     QString varname = varToken.at(j);
                     QString varexpr = expToken.at(j);
-                    model->setHorizontalHeaderItem(j, new QStandardItem(varname));
-                    registerNewVariable(varname,varexpr);
+                    if ( isValidVariable(varname,j))
+                    {
+                        model->setHorizontalHeaderItem(j, new QStandardItem(varname));
+                        registerNewVariable(varname,varexpr);
+                    }
+                    else
+                    {
+                        clear();
+                        return;
+                    }
                 }
 
                 do
                 {
                     dataLine = in.readLine();
                 }
-                while (dataLine!="</header>");
+                while (dataLine!="</header>" && !in.atEnd());
             }
             else
             {
@@ -429,13 +437,19 @@ bool MainWindow::isValidVariable(QString variableName,int currentIndex)
 
     if (variableName.begin()->isDigit())
     {
-        QMessageBox::information(this,"Error",QString("Variables names can't start with a number"));
+        QMessageBox::information(this,"Error",QString("%1 : Variables names can't start with a number").arg(variableName));
         return false;
     }
 
     if (variableName.contains(" "))
     {
-        QMessageBox::information(this,"Error",QString("Variables names can't have any space"));
+        QMessageBox::information(this,"Error",QString("%1 : Variables names can't have any space").arg(variableName));
+        return false;
+    }
+
+    if (variableName.contains("+") || variableName.contains("-") || variableName.contains("/") || variableName.contains("*") || variableName.contains("^"))
+    {
+        QMessageBox::information(this,"Error",QString("%1 : Variables names can't have any of these characters : + - / * ^ ").arg(variableName));
         return false;
     }
 
@@ -447,7 +461,7 @@ bool MainWindow::isValidVariable(QString variableName,int currentIndex)
 
     if (remainder.contains(variableName))
     {
-        QMessageBox::information(this,"Error",QString("This variable name is already used"));
+        QMessageBox::information(this,"Error",QString("%1 : This variable name is already used").arg(variableName));
         return false;
     }
 
@@ -1469,27 +1483,73 @@ void MainWindow::slot_plot_fft()
 
     if (id_list.size()>0)
     {
-        Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
-        QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
-        QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
-        viewer1d->setMinimumSize(600,400);
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("FFT : Fast Fourier Transform parameters");
+        QGridLayout* gbox = new QGridLayout();
 
-        for (int k=0; k<id_list.size(); k++)
+        QComboBox* cb_mode=new QComboBox(dialog);
+        cb_mode->addItem("RECTANGLE");
+        cb_mode->addItem("BLACKMAN");
+        cb_mode->addItem("HANN");
+        cb_mode->addItem("FLAT_TOP");
+
+        QDoubleSpinBox* sb_fe=new QDoubleSpinBox(dialog);
+        sb_fe->setPrefix("Fe=");
+        sb_fe->setValue(1.0);
+        sb_fe->setRange(0.0,1e100);
+        sb_fe->setSuffix(" [Hz]");
+
+        QCheckBox* cb_normalize=new QCheckBox("Normalized");
+        cb_normalize->setToolTip("Parseval theorem don't apply if normalized");
+        cb_normalize->setChecked(true);
+
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                           | QDialogButtonBox::Cancel);
+
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+
+        gbox->addWidget(new QLabel("Windows type : "),0,0);
+        gbox->addWidget(cb_mode,0,1);
+        gbox->addWidget(new QLabel("Sample frequency : "),1,0);
+        gbox->addWidget(sb_fe,1,1);
+        gbox->addWidget(cb_normalize,2,0,1,2);
+        gbox->addWidget(buttonBox,3,0,1,2);
+
+        dialog->setLayout(gbox);
+
+        int result=dialog->exec();
+        if (result == QDialog::Accepted)
         {
-            Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k  ].column()));
-            Curve2D curve(data_y,QString("%1").arg(getColName(id_list[k  ].column())),Curve2D::GRAPH);
+            Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
+            QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
+            QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
+            viewer1d->setMinimumSize(600,400);
 
-            if (data_y.size()>0)
+            for (int k=0; k<id_list.size(); k++)
             {
-                viewer1d->slot_add_data(curve.getFFT());
+                Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k  ].column()));
+                Curve2D curve(data_y,QString("%1").arg(getColName(id_list[k  ].column())),Curve2D::GRAPH);
+
+                if (data_y.size()>0)
+                {
+                    Curve2D fft=curve.getFFT((Curve2D::FFTMode)cb_mode->currentIndex(),sb_fe->value(),cb_normalize->isChecked());
+                    viewer1d->slot_add_data(fft);
+                    //slot_newColumn(QString("FFT_%1").arg(getColName(id_list[k  ].column())),fft.getY());
+                }
             }
+
+            QMdiSubWindow* subWindow = new QMdiSubWindow;
+            subWindow->setWidget(viewer1d);
+            subWindow->setAttribute(Qt::WA_DeleteOnClose);
+            mdiArea->addSubWindow(subWindow);
+            viewer1d->show();
+
+
         }
 
-        QMdiSubWindow* subWindow = new QMdiSubWindow;
-        subWindow->setWidget(viewer1d);
-        subWindow->setAttribute(Qt::WA_DeleteOnClose);
-        mdiArea->addSubWindow(subWindow);
-        viewer1d->show();
     }
     else
     {
@@ -1567,9 +1627,11 @@ void MainWindow::slot_plot_gain_phase()
 
             if (data_f.size()>0 && data_module.size()>0 && data_phase.size()>0)
             {
+                std::cout<<data_phase.transpose()<<std::endl;
+
                 viewer1d->slot_add_data_graph(
-                    Curve2D_GainPhase(data_f,data_module,data_phase,QString("%2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column()))
-                                      ,QString("%2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+2].column())))
+                    Curve2D_GainPhase(data_f,data_module,data_phase,QString("%2(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column()))
+                                      ,QString("%2(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+2].column())))
                 );
             }
         }
@@ -1639,24 +1701,40 @@ void MainWindow::slot_parameters()
 
     //Table shortcuts
     QTableView* tableShortcuts=new QTableView();
-    QMapIterator<QString, QKeySequence> i(shortcuts);
-    QStandardItemModel* modelParameters = new QStandardItemModel;
+    QMapIterator<QString, QKeySequence> shortcuts_it(shortcuts);
+    QStandardItemModel* modelParametersShortcuts = new QStandardItemModel;
     int line=0;
-    while (i.hasNext())
+    while (shortcuts_it.hasNext())
     {
-        i.next();
-        QStandardItem* itemA=new QStandardItem(i.key());
-        QStandardItem* itemB=new QStandardItem(i.value().toString());
+        shortcuts_it.next();
+        QStandardItem* itemA=new QStandardItem(shortcuts_it.key());
+        QStandardItem* itemB=new QStandardItem(shortcuts_it.value().toString());
         itemA->setEditable(false);
         itemB->setEditable(true);
-        modelParameters->setItem(line,0,itemA);
-        modelParameters->setItem(line,1,itemB);
+        modelParametersShortcuts->setItem(line,0,itemA);
+        modelParametersShortcuts->setItem(line,1,itemB);
         line++;
     }
-    tableShortcuts->setModel(modelParameters);
+    tableShortcuts->setModel(modelParametersShortcuts);
+
+    //Table variables
+    QTableView* tableVariables=new QTableView();
+    QStandardItemModel* modelParametersVariables = new QStandardItemModel;
+
+    for (int i=0; i<variables_names.size(); i++)
+    {
+        QStandardItem* itemA=new QStandardItem(variables_names[i]);
+        QStandardItem* itemB=new QStandardItem(variables_expressions[i]);
+        itemA->setEditable(false);
+        itemB->setEditable(false);
+        modelParametersVariables->setItem(i,0,itemA);
+        modelParametersVariables->setItem(i,1,itemB);
+    }
+    tableVariables->setModel(modelParametersVariables);
 
     QTabWidget* tab=new QTabWidget(dialog);
     tab->addTab(tableShortcuts,"Shortcuts");
+    tab->addTab(tableVariables,"Variables");
 
     QGridLayout* gbox = new QGridLayout();
     gbox->addWidget(tab,0,0);
@@ -1668,11 +1746,11 @@ void MainWindow::slot_parameters()
     {
         //Shortcuts apply
         shortcuts.clear();
-        for (int i=0; i<modelParameters->rowCount(); i++)
+        for (int i=0; i<modelParametersShortcuts->rowCount(); i++)
         {
-            std::cout<<modelParameters->item(i,0)->text().toLocal8Bit().data()<<" "<<modelParameters->item(i,1)->text().toLocal8Bit().data()<<std::endl;
-            shortcuts.insert(modelParameters->item(i,0)->text(),QKeySequence(modelParameters->item(i,1)->text()));
+            shortcuts.insert(modelParametersShortcuts->item(i,0)->text(),QKeySequence(modelParametersShortcuts->item(i,1)->text()));
         }
+
         applyShortcuts(shortcuts);
         saveShortcuts(shortcuts);
     }

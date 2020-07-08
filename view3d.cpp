@@ -69,11 +69,12 @@ void View3D::createPopup()
 {
     popup_menu=new QMenu();
     actSave   = new QAction("Save",  this);
+    actSaveRevolution   = new QAction("Save a revolution",  this);
 
     menuFit= new QMenu("Fit");
     actFitSphere= new QAction("Sphere",  this);
     actFitPlan= new QAction("Plan",  this);
-    actFitMesh= new QAction("Custom Mesh",  this);
+    actFitMesh= new QAction("Custom mesh",  this);
 
     menuParameters= new QMenu("Parameters");
 
@@ -117,6 +118,7 @@ void View3D::createPopup()
 
     ///////////////////////////////////////////////
     popup_menu->addAction(actSave);
+    popup_menu->addAction(actSaveRevolution);
     popup_menu->addMenu(menuFit);
     menuFit->addAction(actFitSphere);
     menuFit->addAction(actFitPlan);
@@ -125,6 +127,7 @@ void View3D::createPopup()
     menuParameters->addAction(actWidget);
 
     QObject::connect(actSave,SIGNAL(triggered()),this,SLOT(slot_saveImage()));
+    QObject::connect(actSaveRevolution,SIGNAL(triggered()),this,SLOT(slot_saveRevolution()));
     QObject::connect(sb_size, SIGNAL(valueChanged(double)), this, SLOT(slot_setPointSize(double)));
     QObject::connect(cb_mode, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setPrimitiveType(int)));
 
@@ -134,7 +137,7 @@ void View3D::createPopup()
     QObject::connect(c_gradient, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setGradient(int)));
 }
 
-void View3D::slot_saveGif()
+void View3D::slot_saveImage()
 {
     Qt3DRender::QRenderCapture renderCapture(rootEntity);
 
@@ -153,7 +156,7 @@ void View3D::slot_saveGif()
 
 }
 
-void View3D::slot_saveImage()
+void View3D::slot_saveRevolution()
 {
     Qt3DRender::QRenderCapture renderCapture(rootEntity);
 
@@ -198,12 +201,12 @@ void View3D::slot_saveImage()
 
 void View3D::slot_fitSphere()
 {
-    Sphere sphere;
+    Sphere sphere(cloud->getBarycenter(),cloud->getBoundingRadius()/2.0);
     cloud->fit(&sphere);
 
     Eigen::Vector3d C=sphere.getCenter();
 
-    addSphere(QPosAtt(C,Eigen::Quaterniond()),1.0,QColor(64,64,64),sphere.getRadius());
+    addSphere(QPosAtt(C,Eigen::Quaterniond(1,0,0,0)),1.0,QColor(64,64,64),sphere.getRadius());
 
     emit sig_displayResults( QString("Fit Sphere:\nCenter=(%1 , %2 , %3) Radius=%4\nRms=%5\n").arg(C[0]).arg(C[1]).arg(C[2]).arg(sphere.getRadius()).arg(sphere.getRMS()) );
     emit sig_newColumn("Err(Sphere)",sphere.getErrNorm());
@@ -211,17 +214,45 @@ void View3D::slot_fitSphere()
 
 void View3D::slot_fitPlan()
 {
-    Plan plan;
-    cloud->fit(&plan);
+    Eigen::Vector3d barycenter=cloud->getBarycenter();
 
-    Eigen::Vector3d N=plan.getNormal();
+    Plan* plan;
+    Plan planA(Eigen::Vector3d(1,0,0),barycenter);
+    Plan planB(Eigen::Vector3d(0,1,0),barycenter);
+    Plan planC(Eigen::Vector3d(0,0,1),barycenter);
+    cloud->fit(&planA);
+    cloud->fit(&planB);
+    cloud->fit(&planC);
 
-    addPlan(QPosAtt( cloud->getBarycenter(),
-                     Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),N)),1.0,QColor(64,64,64),
-            2*cloud->getBoundingRadius(),2*cloud->getBoundingRadius());
+    if (planA.getRMS()<planB.getRMS() && planA.getRMS()<planC.getRMS())
+    {
+        plan=&planA;
+    }
+    else if (planB.getRMS()<planA.getRMS() && planB.getRMS()<planC.getRMS())
+    {
+        plan=&planB;
+    }
+    else
+    {
+        plan=&planC;
+    }
 
-    emit sig_displayResults( QString("Fit Plan:\nNormal=+-(%1 , %2 , %3)\nRms=%4\n").arg(N[0]).arg(N[1]).arg(N[2]).arg(plan.getRMS()));
-    emit sig_newColumn("Err(Plan)",plan.getErrNorm());
+
+    Eigen::Vector3d N=plan->getNormal();
+
+    QPosAtt posatt( barycenter,Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),N));
+
+//    addPlan(posatt,1.0,QColor(64,64,64),
+//            2*cloud->getBoundingRadius(),2*cloud->getBoundingRadius());
+
+    QCPRange xr=cloud->getXRange();
+    QCPRange yr=cloud->getYRange();
+
+    addPlan(plan,cloud->getBoundingRadius(),QColor(128,128,128));
+
+
+    emit sig_displayResults( QString("Fit Plan:\nNormal=+-(%1 , %2 , %3)\nRms=%4\n").arg(N[0]).arg(N[1]).arg(N[2]).arg(plan->getRMS()));
+    emit sig_newColumn("Err(Plan)",plan->getErrNorm());
 }
 
 void View3D::slot_fitCustomMesh()
@@ -269,16 +300,47 @@ void View3D::slot_ColorScaleChanged(const QCPRange& range)
     }
 }
 
+void dispMat(QMatrix4x4 m)
+{
+    float* data=m.data();
+    Eigen::Matrix3d M;
+    Eigen::Matrix4d M4;
+
+    for (int i=0; i<4; i++)
+    {
+        for (int j=0; j<4; j++)
+        {
+            if (i<3 && j<3)
+            {
+                M(i,j)=data[i*4+j];
+            }
+            M4(i,j)=data[i*4+j];
+        }
+    }
+
+    std::cout<<M4<<" "<<M.determinant()<<std::endl;
+}
+
 void View3D::slot_ScaleChanged()
 {
-    Qt3DCore::QTransform t;
-    t.setTranslation(customContainer->getTranslation());
-    t.setScale3D(customContainer->getScale());
-    cloud3D->cloudTransform->setMatrix(t.matrix().inverted());
+    customContainer->getScale();
+
+    Qt3DCore::QTransform T,S;
+    T.setTranslation(-customContainer->getTranslation());
+    S.setScale3D(customContainer->getScaleInv());
+    cloud3D->cloudTransform->setMatrix( S.matrix()*T.matrix() );//->setMatrix(t.matrix().inverted());
+
+    dispMat(T.matrix()*S.matrix());
+    dispMat(S.matrix()*T.matrix());
 
     for (int i=0; i<transforms.size(); i++)
     {
-        transforms[i]->setMatrix(t.matrix().inverted()*baseTransforms[i]);
+        transforms[i]->setMatrix( S.matrix()*T.matrix()*baseT[i]*baseR[i] );
+    }
+
+    for (int i=0; i<plans.size(); i++)
+    {
+        plans[i]->transform->setMatrix( S.matrix()*T.matrix() );
     }
 }
 
@@ -399,13 +461,20 @@ void View3D::addPlan(QPosAtt posatt,float scale,QColor color,double width,double
     addObj(reinterpret_cast<Qt3DRender::QMesh*>(m_obj),posatt,scale,color);
 }
 
+void View3D::addPlan(Plan* plan,float radius,QColor color)
+{
+    Plan3D* plan3D=new Plan3D(rootEntity,plan,radius,color);
+    plans.push_back(plan3D);
+    slot_ScaleChanged();
+}
+
 void View3D::addObj(Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor color)
 {
     Object3D* obj=new Object3D(rootEntity,m_obj,posatt,scale,color);
 
     Qt3DRender::QCullFace* culling = new Qt3DRender::QCullFace();
     culling->setMode(Qt3DRender::QCullFace::NoCulling);
-    auto effect = obj->mat_obj->effect();
+    auto effect = obj->material->effect();
     for (auto t : effect->techniques())
     {
         for (auto rp : t->renderPasses())
@@ -414,9 +483,16 @@ void View3D::addObj(Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor 
         }
     }
 
-    baseTransforms.push_back(obj->t_obj->matrix());
-    transforms.push_back(obj->t_obj);
-    materials.push_back(obj->mat_obj);
+    Qt3DCore::QTransform tR;
+    tR.setRotation(toQQuaternion(posatt.Q));
+
+    Qt3DCore::QTransform tT;
+    tT.setTranslation(toQVector3D(posatt.P));
+
+    baseT.push_back(tT.matrix());
+    baseR.push_back(tR.matrix());
+    transforms.push_back(obj->transform);
+    materials.push_back(obj->material);
 
     slot_ScaleChanged();
 }

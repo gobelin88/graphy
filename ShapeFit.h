@@ -161,23 +161,54 @@ private:
 class Plan: public Shape<Eigen::Vector3d>
 {
 public:
-    Plan();
+    Plan(Eigen::Vector3d n0,Eigen::Vector3d center);//alpha beta offset
     inline Eigen::Vector3d getNormal()const
     {
-        return Eigen::Vector3d(sin(p[0])*sin(p[1]),cos(p[1]),cos(p[0])*sin(p[1]));
+        Eigen::Vector3d n(p[0],p[1],p[2]);
+        return n/n.norm();
     }
-    inline double getOffset()const
+
+    inline Eigen::Matrix3d getStableBase()const
     {
-        return p[2];
+        Eigen::Matrix3d M;
+
+        M.col(0)=Eigen::Vector3d(p[0],p[1],p[2]);
+
+        if (std::abs(p[2]-1.0)>std::abs(p[0]-1.0) && std::abs(p[2]-1.0)>std::abs(p[1]-1.0))
+        {
+            M.col(1)=Eigen::Vector3d(p[1],-p[0],0);
+        }
+        else if (std::abs(p[1]-1.0)>std::abs(p[0]-1.0) && std::abs(p[1]-1.0)>std::abs(p[0]-1.0))
+        {
+            M.col(1)=Eigen::Vector3d(p[2],0,-p[0]);
+        }
+        else
+        {
+            M.col(1)=Eigen::Vector3d(0,p[2],-p[1]);
+        }
+
+        M.col(0).normalize();
+        M.col(1).normalize();
+
+        M.col(2)=M.col(0).cross(M.col(1));
+        return M;
     }
+
+    Eigen::Vector3d proj(const Eigen::Vector3d& P,const Eigen::Vector3d& V)const;
 
     Eigen::Vector3d delta(const Eigen::Vector3d& pt)const;
     int nb_params();
     void setParams(const Eigen::VectorXd& p);
     const Eigen::VectorXd& getParams();
 
+    Eigen::Vector3d getBarycenter()
+    {
+        return barycenter;
+    }
+
 private:
     Eigen::VectorXd p;
+    Eigen::Vector3d barycenter;
 };
 
 /**

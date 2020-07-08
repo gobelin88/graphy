@@ -154,7 +154,7 @@ private:
     double toSafeDouble(const QString& str) const;
     bool asColumnStrings(int idCol);
 
-    const int graphyVersion=3;
+    const float graphyVersion=3.1;
 };
 
 #endif // MAINWINDOW_H

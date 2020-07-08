@@ -20,6 +20,7 @@ public:
 
     QVector3D getTranslation();
     QVector3D getScale();
+    QVector3D getScaleInv();
 
     void replot();
 

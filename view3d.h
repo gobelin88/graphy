@@ -96,11 +96,13 @@ public:
     void addSphere(QPosAtt posatt,float scale,QColor color,double radius);
     void addPlan(QPosAtt posatt,float scale,QColor color,double width,double height);
 
+    void addPlan(Plan* plan, float radius, QColor color);
+
     CustomViewContainer* getContainer();
 
 public slots:
     void slot_saveImage();
-    void slot_saveGif();
+    void slot_saveRevolution();
     void slot_setPointSize(double value);
     void slot_setPrimitiveType(int type);
     void slot_fitSphere();
@@ -136,8 +138,11 @@ private:
     PrimitiveMode mode;
     Qt3DCore::QEntity* rootEntity;
     std::vector<Qt3DCore::QTransform*> transforms;
-    std::vector<QMatrix4x4> baseTransforms;
+    std::vector<QMatrix4x4> baseR;
+    std::vector<QMatrix4x4> baseT;
     std::vector<Qt3DExtras::QPhongMaterial*> materials;
+
+    std::vector<Plan3D*> plans;
 
     //Cloud3D
     Cloud3D* cloud3D;
@@ -161,6 +166,7 @@ private:
     void createPopup();
     QMenu* popup_menu;
     QAction* actSave;
+    QAction* actSaveRevolution;
     QMenu* menuParameters;
     QMenu* menuFit;
     QAction* actFitSphere;

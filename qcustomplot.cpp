@@ -15195,7 +15195,7 @@ QCPGraph* QCustomPlot::addGraph(QCPAxis* keyAxis, QCPAxis* valueAxis)
         return 0;
     }
 
-    QCPGraph* newGraph = new QCPGraph(this);
+    QCPGraph* newGraph = new QCPGraph(keyAxis,valueAxis,this);
     newGraph->setName(QLatin1String("Graph ")+QString::number(mGraphs.size()));
     return newGraph;
 }
@@ -22194,20 +22194,20 @@ QCPGraphData::QCPGraphData(double key, double value) :
 
   To directly create a graph inside a plot, you can also use the simpler QCustomPlot::addGraph function.
 */
-//QCPGraph::QCPGraph(QCPAxis* keyAxis, QCPAxis* valueAxis) :
-//    QCPAbstractPlottable1D<QCPGraphData>(keyAxis, valueAxis)
-//{
-//    // special handling for QCPGraphs to maintain the simple graph interface:
-//    mParentPlot->registerGraph(this);
+QCPGraph::QCPGraph(QCPAxis* keyAxis, QCPAxis* valueAxis,QCustomPlot* plot) :
+    QCPAbstractPlottable1D<QCPGraphData>(keyAxis, valueAxis),Hack(plot)
+{
+    // special handling for QCPGraphs to maintain the simple graph interface:
+    mParentPlot->registerGraph(this);
 
-//    setPen(QPen(Qt::blue, 0));
-//    setBrush(Qt::NoBrush);
+    setPen(QPen(Qt::blue, 0));
+    setBrush(Qt::NoBrush);
 
-//    setLineStyle(lsLine);
-//    setScatterSkip(0);
-//    setChannelFillGraph(0);
-//    setAdaptiveSampling(true);
-//}
+    setLineStyle(lsLine);
+    setScatterSkip(0);
+    setChannelFillGraph(0);
+    setAdaptiveSampling(true);
+}
 
 QCPGraph::QCPGraph(QCustomPlot* plot) :
     QCPAbstractPlottable1D<QCPGraphData>(plot->xAxis,plot->yAxis),Hack(plot)

@@ -39,6 +39,14 @@ public:
         CURVE=1
     };
 
+    enum FFTMode
+    {
+        RECTANGLE,
+        BLACKMAN,
+        HANN,
+        FLAT_TOP,
+    };
+
     Curve2D();
 
     Curve2D(const Eigen::VectorXd& y,
@@ -98,7 +106,7 @@ public:
     CurveType getType() const;
 
     //misc
-    Curve2D getFFT();
+    Curve2D getFFT(FFTMode mode, double fe, bool normalize_flag);
     double getRms();
     double guessMainFrequency();
     uint getMaxIndex();

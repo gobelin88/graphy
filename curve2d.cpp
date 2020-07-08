@@ -345,17 +345,12 @@ void Curve2D::fit(Shape<Eigen::Vector2d>* model)
 
 double Curve2D::getRms()
 {
-    double sum_squares=0.0;
-    for (int i=0; i<y.size(); i++)
-    {
-        sum_squares+=y[i]*y[i];
-    }
-    return sqrt(sum_squares/y.size());
+    return sqrt(y.cwiseAbs2().mean());
 }
 
 double Curve2D::guessMainFrequency()
 {
-    Curve2D fft=getFFT();
+    Curve2D fft=getFFT(Curve2D::BLACKMAN,1.0,true);
     return fft.getX()[fft.getMaxIndex()];
 }
 
@@ -377,17 +372,34 @@ uint Curve2D::getMaxIndex()
     return index;
 }
 
-Curve2D Curve2D::getFFT()
+Curve2D Curve2D::getFFT(FFTMode fft_mode, double fe,bool normalize_flag)
 {
     std::vector<double> data_y=toStdVector(y);
+    unsigned double N=data_y.size();
+    unsigned double sqrtN=sqrt(N);
     std::vector< double > time=std::vector< double >(data_y.size()/2, 0);
     for (unsigned int i=0; i<time.size(); i++)
     {
-        time[i]=i*1.0/data_y.size();
+        time[i]=i*fe/N;
     }
 
     FIR win;
-    win.getHannCoef(uint(data_y.size()));
+    if (fft_mode==HANN)
+    {
+        win.getHannCoef(uint(data_y.size()));
+    }
+    else if (fft_mode==BLACKMAN)
+    {
+        win.getBlackmanCoef(uint(data_y.size()));
+    }
+    else if (fft_mode==FLAT_TOP)
+    {
+        win.getFlatTopCoef(uint(data_y.size()));
+    }
+    else if (fft_mode==RECTANGLE)
+    {
+        win.getRectCoef(uint(data_y.size()));
+    }
 
     for (unsigned int i=0; i<uint(data_y.size()); i++)
     {
@@ -396,7 +408,7 @@ Curve2D Curve2D::getFFT()
 
     Eigen::FFT<double> fft;
     fft.SetFlag(Eigen::FFT<double>::HalfSpectrum);
-    fft.SetFlag(Eigen::FFT<double>::Unscaled);
+    //fft.ClearFlag(Eigen::FFT<double>::Unscaled);//nothing
 
     std::vector< std::complex<double> > fft_data_cplx;
     fft.fwd(fft_data_cplx,data_y);
@@ -405,12 +417,22 @@ Curve2D Curve2D::getFFT()
     std::vector< double > fft_data_module(fft_data_cplx.size());
     for (unsigned int k=0; k<fft_data_cplx.size(); k++)
     {
-        fft_data_module[k]=20*log10(std::abs(fft_data_cplx[k]));
+        if (normalize_flag==false)
+        {
+            fft_data_module[k]=std::abs(fft_data_cplx[k])*sqrtN;
+        }
+        else
+        {
+            fft_data_module[k]=std::abs(fft_data_cplx[k]);
+        }
     }
+
+    QStringList fft_mode_str;
+    fft_mode_str<<"RECTANGLE"<<"BLACKMAN"<<"HANN"<<"FLAT_TOP";
 
     return Curve2D(fromStdVector(time),
                    fromStdVector(fft_data_module),
-                   QString("FFT %1").arg(getLegend()),Curve2D::GRAPH);
+                   QString("FFT %1 %2").arg(getLegend()).arg(fft_mode_str[fft_mode]),Curve2D::GRAPH);
 }
 
 double Curve2D::at(const Eigen::VectorXd& A, double valuex)

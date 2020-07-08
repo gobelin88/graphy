@@ -123,3 +123,93 @@ QByteArray Grid3D::getGridBuffer(bool xy_swap,bool xz_swap,bool yz_swap,int N)
 
     return bufferBytes;
 }
+
+////////////////////////////
+Plan3D::Plan3D(Qt3DCore::QEntity* rootEntity,Plan* plan,float radius,QColor color)
+{
+    transform = new Qt3DCore::QTransform();
+
+    geometry = new Qt3DRender::QGeometry(rootEntity);
+
+    buffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer,geometry);
+    buffer->setData(getPlanBuffer(plan,radius));
+
+    positionAttribute = new Qt3DRender::QAttribute(geometry);
+    positionAttribute->setName(Qt3DRender::QAttribute::defaultPositionAttributeName());
+    positionAttribute->setVertexBaseType(Qt3DRender::QAttribute::Float);
+    positionAttribute->setVertexSize(3);
+    positionAttribute->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
+    positionAttribute->setBuffer(buffer);
+    positionAttribute->setByteStride(3 * sizeof(float));
+    positionAttribute->setCount(4);
+    geometry->addAttribute(positionAttribute); // We add the vertices in the geometry
+
+    // connectivity between vertices
+    QByteArray indexBytes;
+    indexBytes.resize( 6 * sizeof(unsigned int)); // start to end
+    unsigned int* indices = reinterpret_cast<unsigned int*>(indexBytes.data());
+    *indices++ = 0;
+    *indices++ = 1;
+    *indices++ = 2;
+    *indices++ = 0;
+    *indices++ = 2;
+    *indices++ = 3;
+
+
+    indexBuffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::BufferType::IndexBuffer,geometry);
+    indexBuffer->setData(indexBytes);
+
+    indexAttribute = new Qt3DRender::QAttribute(geometry);
+    indexAttribute->setVertexBaseType(Qt3DRender::QAttribute::UnsignedInt);
+    indexAttribute->setAttributeType(Qt3DRender::QAttribute::IndexAttribute);
+    indexAttribute->setBuffer(indexBuffer);
+    indexAttribute->setCount(6);
+    geometry->addAttribute(indexAttribute); // We add the indices linking the points in the geometry
+
+    // mesh
+    geometryRenderer = new Qt3DRender::QGeometryRenderer(rootEntity);
+    geometryRenderer->setGeometry(geometry);
+    geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Triangles);
+    material = new Qt3DExtras::QPhongAlphaMaterial(rootEntity);
+    material->setAmbient(color);
+    material->setAlpha(0.5);
+
+    Qt3DRender::QCullFace* culling = new Qt3DRender::QCullFace();
+    culling->setMode(Qt3DRender::QCullFace::NoCulling);
+    auto effect = material->effect();
+    for (auto t : effect->techniques())
+    {
+        for (auto rp : t->renderPasses())
+        {
+            rp->addRenderState(culling);
+        }
+    }
+
+    // entity
+    entity = new Qt3DCore::QEntity(rootEntity);
+    entity->addComponent(geometryRenderer);
+    entity->addComponent(material);
+    entity->addComponent(transform);
+}
+
+QByteArray Plan3D::getPlanBuffer(Plan* plan,float radius)
+{
+    QByteArray bufferBytes;
+    bufferBytes.resize(3 * 4 * sizeof(float));
+    float* positions = reinterpret_cast<float*>(bufferBytes.data());
+
+    Eigen::Matrix3d m=plan->getStableBase();
+
+    for (int i=0; i<4; i++)
+    {
+        double alpha=i/4.0*2.0*M_PI;
+        Eigen::Vector3d p= radius*m.col(1)*cos(alpha)+radius*m.col(2)*sin(alpha)+plan->getBarycenter();
+
+        *positions++ = p.x();
+        *positions++ = p.y();
+        *positions++ = p.z();
+    }
+
+    return bufferBytes;
+}
+

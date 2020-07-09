@@ -400,7 +400,12 @@ Curve2D Curve2D::getFFT(FFTMode fft_mode, double fe,bool normalize_flag)
     {
         win.getRectCoef(uint(data_y.size()));
     }
+    if (normalize_flag==false)
+    {
+        win.mul(sqrtN);
+    }
 
+    //apply windows
     for (unsigned int i=0; i<uint(data_y.size()); i++)
     {
         data_y[i]*=win.at(i);
@@ -417,14 +422,7 @@ Curve2D Curve2D::getFFT(FFTMode fft_mode, double fe,bool normalize_flag)
     std::vector< double > fft_data_module(fft_data_cplx.size());
     for (unsigned int k=0; k<fft_data_cplx.size(); k++)
     {
-        if (normalize_flag==false)
-        {
-            fft_data_module[k]=std::abs(fft_data_cplx[k])*sqrtN;
-        }
-        else
-        {
-            fft_data_module[k]=std::abs(fft_data_cplx[k]);
-        }
+        fft_data_module[k]=std::abs(fft_data_cplx[k]);
     }
 
     QStringList fft_mode_str;

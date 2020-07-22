@@ -52,6 +52,8 @@ public slots:
     void updateTableViewRows();
 
     void slot_editColumn();
+    void slot_sectionDoubleClicked(int value);
+
     void slot_delete();
     void slot_newRow();
     void slot_newRows();

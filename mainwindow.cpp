@@ -50,6 +50,7 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(ui->actionFilter, &QAction::triggered,this,&MainWindow::slot_filter);    
     connect(ui->actionSelection_Pattern, &QAction::triggered,this,&MainWindow::slot_select);
 
+
 //    connect(ui->actionTile,&QAction::triggered,mdiArea,&QMdiArea::tileSubWindows);
 //    connect(ui->actionCascade,&QAction::triggered,mdiArea,&QMdiArea::cascadeSubWindows);
 //    connect(ui->actionNext,&QAction::triggered,mdiArea,&QMdiArea::activateNextSubWindow);
@@ -72,6 +73,7 @@ MainWindow::MainWindow(QWidget* parent) :
     this->addAction(a_delete);
     this->addAction(a_updateColumns);
 
+    connect(table->horizontalHeader(),&QHeaderView::sectionDoubleClicked,this,&MainWindow::slot_sectionDoubleClicked);
     connect(a_newColumn,&QAction::triggered,this,&MainWindow::slot_editColumn);
     connect(a_newRow,&QAction::triggered,this,&MainWindow::slot_newRow);
     connect(a_newRows,&QAction::triggered,this,&MainWindow::slot_newRows);
@@ -666,10 +668,13 @@ void MainWindow::slot_newRows()
     }
 }
 
+void MainWindow::slot_sectionDoubleClicked(int value)
+{
+    slot_editColumn();
+}
+
 void MainWindow::slot_editColumn()
 {
-    std::cout<<"slot_editColumn begin"<<std::endl;
-
     int currentColIndex=model->columnCount();
     int visualIndex=currentColIndex;
 

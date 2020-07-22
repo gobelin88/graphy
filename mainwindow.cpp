@@ -47,6 +47,9 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(ui->actionFFT, &QAction::triggered,this,&MainWindow::slot_plot_fft);
     connect(ui->actionPlot_Gain_Phase, &QAction::triggered,this,&MainWindow::slot_plot_gain_phase);
 
+    connect(ui->actionFilter, &QAction::triggered,this,&MainWindow::slot_filter);    
+    connect(ui->actionSelection_Pattern, &QAction::triggered,this,&MainWindow::slot_select);
+
 //    connect(ui->actionTile,&QAction::triggered,mdiArea,&QMdiArea::tileSubWindows);
 //    connect(ui->actionCascade,&QAction::triggered,mdiArea,&QMdiArea::cascadeSubWindows);
 //    connect(ui->actionNext,&QAction::triggered,mdiArea,&QMdiArea::activateNextSubWindow);
@@ -220,7 +223,7 @@ void MainWindow::direct_open(QString filename)
         {
             for (int j = 0; j < model->columnCount(); j++)
             {
-                QString varname = QString("C%1").arg(j);
+                QString varname = QString("C%1").arg(j+1);
                 QString varexpr =QString("");
                 QStandardItem* item = new QStandardItem(varname);
                 model->setHorizontalHeaderItem(j, item);
@@ -318,11 +321,11 @@ void MainWindow::direct_export(QString filename)
                 int vi=table->model()->data(table->model()->index(i,j)).toInt(&okvi);
                 if (okvi)
                 {
-                    textData += QString::number(vi);
+                    textData += fromNumber(vi);
                 }
                 else if (okvf)
                 {
-                    textData += QString::number(vf,'f',prec);
+                    textData += fromNumber(vf,prec);
                 }
                 else
                 {
@@ -714,22 +717,29 @@ void MainWindow::slot_results(QString results)
 void MainWindow::slot_delete()
 {
     QModelIndexList id_list_cols=table->selectionModel()->selectedColumns();
-    if (id_list_cols.size()>=1)
+
+    //////////////////////////////////////////////
+    std::vector<unsigned int> indexs_cols;
+    for(int i=0;i<id_list_cols.size();i++){indexs_cols.push_back(id_list_cols[i].column());}
+    std::sort(indexs_cols.begin(),indexs_cols.end());
+
+    //////////////////////////////////////////////
+    if (indexs_cols.size()>=1)
     {
-        for (int i=0; i<id_list_cols.size();)
+        for (int i=0; i<indexs_cols.size();)
         {
-            int indexa=id_list_cols[i].column();
+            int indexa=indexs_cols[i];
 
             int n=1;
-            if ((i+n)<id_list_cols.size())
+            if ((i+n)<indexs_cols.size())
             {
-                int indexb=id_list_cols[i+n].column();
-                while ((i+n)<id_list_cols.size() && indexb==indexa+n)
+                int indexb=indexs_cols[i+n];
+                while ((i+n)<indexs_cols.size() && indexb==indexa+n)
                 {
                     n++;
-                    if ((i+n)<id_list_cols.size())
+                    if ((i+n)<indexs_cols.size())
                     {
-                        indexb=id_list_cols[i+n].column();
+                        indexb=indexs_cols[i+n];
                     }
                 }
             }
@@ -749,22 +759,29 @@ void MainWindow::slot_delete()
 
 
     QModelIndexList id_list_rows=table->selectionModel()->selectedRows();
-    if (id_list_rows.size()>=1)
+
+    //////////////////////////////////////////////
+    std::vector<unsigned int> indexs_rows;
+    for(int i=0;i<id_list_rows.size();i++){indexs_rows.push_back(id_list_rows[i].row());}
+    std::sort(indexs_rows.begin(),indexs_rows.end());
+
+    //////////////////////////////////////////////
+    if (indexs_rows.size()>=1)
     {
-        for (int i=0; i<id_list_rows.size();)
+        for (int i=0; i<indexs_rows.size();)
         {
-            int indexa=id_list_rows[i].row();
+            int indexa=indexs_rows[i];
 
             int n=1;
-            if ((i+n)<id_list_rows.size())
+            if ((i+n)<indexs_rows.size())
             {
-                int indexb=id_list_rows[i+n].row();
-                while ((i+n)<id_list_rows.size() && indexb==indexa+n)
+                int indexb=indexs_rows[i+n];
+                while ((i+n)<indexs_rows.size() && indexb==indexa+n)
                 {
                     n++;
-                    if ((i+n)<id_list_rows.size())
+                    if ((i+n)<indexs_rows.size())
                     {
-                        indexb=id_list_rows[i+n].row();
+                        indexb=indexs_rows[i+n];
                     }
                 }
             }
@@ -785,6 +802,15 @@ void MainWindow::dispVariables()
         std::cout<<variables_names[i].toLocal8Bit().data()<<"="<<variables_expressions[i].toLocal8Bit().data()<<"="<<*(variables[i])<<" ("<<(variables[i]) <<") ";
     }
     std::cout<<std::endl;
+}
+
+QString MainWindow::fromNumber(double value)
+{
+    return QString::number(value,'f',internal_precision);
+}
+QString MainWindow::fromNumber(double value,int precision)
+{
+    return QString::number(value,'f',precision);
 }
 
 QVector<QString> MainWindow::evalColumn(int colId)
@@ -817,7 +843,7 @@ QVector<QString> MainWindow::evalColumn(int colId)
                 {
                     *(variables[j])=datatable(i,j);
                 }
-                colResults[i]=QString::number(compiled_expression.value());
+                colResults[i]=fromNumber(compiled_expression.value());
             }
         }
         else
@@ -877,7 +903,7 @@ bool MainWindow::custom_exp_parse(QString expression,int currentRow,QString& res
 
         if (args[0]=="rand" && args.size()==1)
         {
-            result=QString::number(2.0*(static_cast<double>(rand())/RAND_MAX-0.5));
+            result=fromNumber(2.0*(static_cast<double>(rand())/RAND_MAX-0.5));
             return true;
         }
         else if (args[0]=="search" && args.size()>=5)
@@ -1088,6 +1114,24 @@ void MainWindow::addModelRow(const QStringList& str_row)
     model->appendRow(items);
 }
 
+void MainWindow::addModelRow(const Eigen::VectorXd & value_row)
+{
+    QList<QStandardItem*> items;
+    items.reserve(value_row.size());
+    for (int i=0; i<value_row.size(); i++)
+    {
+        if(std::isnan(value_row[i]))
+        {
+            items.append(new QStandardItem());
+        }
+        else
+        {
+            items.append(new QStandardItem(fromNumber(value_row[i])));
+        }
+    }
+    model->appendRow(items);
+}
+
 void MainWindow::clear()
 {
     registerClear();
@@ -1116,7 +1160,7 @@ void MainWindow::direct_new(int sx,int sy)
 
     for (int j = 0; j < model->columnCount(); j++)
     {
-        QString value = QString("C%1").arg(j);
+        QString value = QString("C%1").arg(j+1);
         registerNewVariable(value,"");
         model->setHorizontalHeaderItem(j, new QStandardItem(value));
     }
@@ -1162,6 +1206,17 @@ void MainWindow::updateTable()
     }
 
     //std::cout<<datatable<<std::endl;
+}
+
+void MainWindow::updateTableViewRows()
+{
+    model->removeRows(0,model->rowCount());
+
+    for (int i = 0; i < datatable.rows(); i++)
+    {
+        addModelRow(datatable.row(i));
+    }
+
 }
 
 QStandardItem* MainWindow::itemAt(int i,int j)
@@ -1757,6 +1812,157 @@ void MainWindow::slot_parameters()
 
 }
 
+QString MainWindow::getSelectionPattern()
+{
+    QString patterns;
+    QModelIndexList selectedCols=table->selectionModel()->selectedColumns();
+    QModelIndexList selectedRows=table->selectionModel()->selectedRows();
+
+    for(int i=0;i<selectedCols.size();i++)
+    {
+        int index=table->horizontalHeader()->visualIndex(selectedCols[i].column());
+        patterns+=QString("C%1,").arg(index+1);
+    }
+
+    for(int i=0;i<selectedRows.size();i++)
+    {
+        int index=table->horizontalHeader()->visualIndex(selectedRows[i].row());
+        patterns+=QString("R%1,").arg(index+1);
+    }
+
+    return patterns;
+}
+
+void MainWindow::setSelectionPattern(QString pattern)
+{
+    table->clearSelection();
+    QAbstractItemView::SelectionMode currentSelectionMode=table->selectionMode();
+    table->setSelectionMode(QAbstractItemView::MultiSelection);
+    QStringList patterns=pattern.split(",",QString::SkipEmptyParts);
+
+    for(int i=0;i<patterns.size();i++)
+    {
+        if(patterns[i].startsWith('R'))
+        {
+            patterns[i].remove('R');
+            bool ok=false;
+            unsigned int index=patterns[i].toUInt(&ok);
+            if(ok && index>0)
+            {
+                table->selectRow(index-1);
+            }
+        }
+        else if(patterns[i].startsWith('C'))
+        {
+            patterns[i].remove('C');
+            bool ok=false;
+            unsigned int index=patterns[i].toUInt(&ok);
+            if(ok && index>0)
+            {
+                table->selectColumn(index-1);
+            }
+        }
+    }
+    table->setSelectionMode(currentSelectionMode);
+}
+
+void MainWindow::slot_select()
+{
+    QDialog* dialog=new QDialog;
+    dialog->setLocale(QLocale("C"));
+    dialog->setWindowTitle(QString("Selection pattern"));
+    QGridLayout* gbox = new QGridLayout();
+
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                       | QDialogButtonBox::Cancel);
+
+    QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+    QLineEdit * le_pattern=new QLineEdit();
+    le_pattern->setText(getSelectionPattern());
+
+    gbox->addWidget(le_pattern,0,0);
+    gbox->addWidget(buttonBox,1,0,1,2);
+
+    dialog->setLayout(gbox);
+    dialog->setMinimumWidth(250);
+    dialog->adjustSize();
+
+    int result=dialog->exec();
+    if (result == QDialog::Accepted)
+    {
+        setSelectionPattern(le_pattern->text());
+    }
+}
+
+void MainWindow::slot_filter()
+{
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+
+    if (id_list.size()>0)
+    {
+        int index=table->horizontalHeader()->visualIndex(id_list[0].column());
+
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle(QString("Filter by : %1").arg(getColName(id_list[0].column())));
+        QGridLayout* gbox = new QGridLayout();
+
+        QComboBox* cb_mode=new QComboBox(dialog);
+        cb_mode->addItem("Ascending sort");
+        cb_mode->addItem("Decending sort");
+        cb_mode->addItem("Keep greater than threshold");
+        cb_mode->addItem("Keep lower than threshold");
+
+
+        QDoubleSpinBox* sb_threshold=new QDoubleSpinBox(dialog);
+        sb_threshold->setPrefix("Threshold=");
+        sb_threshold->setValue(datatable.col(index).mean());
+        sb_threshold->setRange(-1e100,1e100);
+        //sb_threshold->setEnabled(false);
+
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                           | QDialogButtonBox::Cancel);
+
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+
+        gbox->addWidget(cb_mode,0,0);
+        gbox->addWidget(sb_threshold,0,1);
+        gbox->addWidget(buttonBox,2,0,1,2);
+
+        dialog->setLayout(gbox);
+        dialog->setMinimumWidth(250);
+        dialog->adjustSize();
+        int result=dialog->exec();
+        if (result == QDialog::Accepted)
+        {
+            std::cout<<"sort "<<cb_mode->currentIndex()<<std::endl;
+            std::cout<<datatable<<std::endl;
+            if(cb_mode->currentIndex()==0)
+            {
+                sortBy(datatable,index,SortMode::ASCENDING);
+            }
+            else if(cb_mode->currentIndex()==1)
+            {
+                sortBy(datatable,index,SortMode::DECENDING);
+            }
+            else if(cb_mode->currentIndex()==2)
+            {
+                thresholdBy(datatable,index,ThresholdMode::KEEP_GREATER,sb_threshold->value());
+            }
+            else if(cb_mode->currentIndex()==3)
+            {
+                thresholdBy(datatable,index,ThresholdMode::KEEP_LOWER,sb_threshold->value());
+            }
+            std::cout<<datatable<<std::endl;
+            updateTableViewRows();
+        }
+    }
+}
+
 bool MainWindow::loadShortcuts()
 {
     QString shorcuts_cfg=QCoreApplication::applicationDirPath()+QString("/shortcuts.csv");
@@ -1806,6 +2012,8 @@ void MainWindow::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     shortcuts_links.insert(QString("New-row"),a_newRow);
     shortcuts_links.insert(QString("New-rows"),a_newRows);
     shortcuts_links.insert(QString("Delete"),a_delete);
+    shortcuts_links.insert(QString("Filter"),ui->actionFilter);
+
 
     QMapIterator<QString, QKeySequence> i(shortcuts_map);
     while (i.hasNext())
@@ -1815,6 +2023,10 @@ void MainWindow::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
         if (shortcuts_links.contains(i.key()))
         {
             shortcuts_links[i.key()]->setShortcut(i.value());
+        }
+        else
+        {
+            //std::cout<<"not in main shortcut list : "<<i.key().toLocal8Bit().data()<<std::endl;
         }
     }
 }

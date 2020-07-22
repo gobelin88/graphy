@@ -132,7 +132,7 @@ Plan3D::Plan3D(Qt3DCore::QEntity* rootEntity,Plan* plan,float radius,QColor colo
     geometry = new Qt3DRender::QGeometry(rootEntity);
 
     buffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer,geometry);
-    buffer->setData(getPlanBuffer(plan,radius));
+    buffer->setData(getBuffer(plan,radius));
 
     positionAttribute = new Qt3DRender::QAttribute(geometry);
     positionAttribute->setName(Qt3DRender::QAttribute::defaultPositionAttributeName());
@@ -192,7 +192,7 @@ Plan3D::Plan3D(Qt3DCore::QEntity* rootEntity,Plan* plan,float radius,QColor colo
     entity->addComponent(transform);
 }
 
-QByteArray Plan3D::getPlanBuffer(Plan* plan,float radius)
+QByteArray Plan3D::getBuffer(Plan* plan,float radius)
 {
     QByteArray bufferBytes;
     bufferBytes.resize(3 * 4 * sizeof(float));
@@ -213,3 +213,105 @@ QByteArray Plan3D::getPlanBuffer(Plan* plan,float radius)
     return bufferBytes;
 }
 
+////////////////////////////
+Sphere3D::Sphere3D(Qt3DCore::QEntity* rootEntity,Sphere * sphere,QColor color)
+{
+    transform = new Qt3DCore::QTransform();
+
+    geometry = new Qt3DRender::QGeometry(rootEntity);
+
+    buffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer,geometry);
+    buffer->setData(getBuffer(sphere));
+
+    positionAttribute = new Qt3DRender::QAttribute(geometry);
+    positionAttribute->setName(Qt3DRender::QAttribute::defaultPositionAttributeName());
+    positionAttribute->setVertexBaseType(Qt3DRender::QAttribute::Float);
+    positionAttribute->setVertexSize(3);
+    positionAttribute->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
+    positionAttribute->setBuffer(buffer);
+    positionAttribute->setByteStride(3 * sizeof(float));
+    positionAttribute->setCount(Na*Nb);
+    geometry->addAttribute(positionAttribute); // We add the vertices in the geometry
+
+    // connectivity between vertices
+    QByteArray indexBytes;
+    indexBytes.resize( Na*Nb*2*3 * sizeof(unsigned int)); // start to end
+    unsigned int* indices = reinterpret_cast<unsigned int*>(indexBytes.data());
+    for(int i=0;i<Na;i++)
+    {
+        for(int j=0;j<Nb;j++)
+        {
+            int idb=((j+1)==Nb)?Nb-1:j+1;
+            int ida=(i+1)%Na;
+
+            *indices++ = j+i*Nb;
+            *indices++ = idb+i*Nb;
+            *indices++ = j+ida*Nb;
+            *indices++ = idb+i*Nb;
+            *indices++ = idb+ida*Nb;
+            *indices++ = j+ida*Nb;
+        }
+    }
+
+
+    indexBuffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::BufferType::IndexBuffer,geometry);
+    indexBuffer->setData(indexBytes);
+
+    indexAttribute = new Qt3DRender::QAttribute(geometry);
+    indexAttribute->setVertexBaseType(Qt3DRender::QAttribute::UnsignedInt);
+    indexAttribute->setAttributeType(Qt3DRender::QAttribute::IndexAttribute);
+    indexAttribute->setBuffer(indexBuffer);
+    indexAttribute->setCount(Na*Nb*2*3);
+    geometry->addAttribute(indexAttribute); // We add the indices linking the points in the geometry
+
+    // mesh
+    geometryRenderer = new Qt3DRender::QGeometryRenderer(rootEntity);
+    geometryRenderer->setGeometry(geometry);
+    geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Triangles);
+    material = new Qt3DExtras::QPhongAlphaMaterial(rootEntity);
+    material->setAmbient(color);
+    material->setAlpha(0.5);
+
+    Qt3DRender::QCullFace* culling = new Qt3DRender::QCullFace();
+    culling->setMode(Qt3DRender::QCullFace::NoCulling);
+    auto effect = material->effect();
+    for (auto t : effect->techniques())
+    {
+        for (auto rp : t->renderPasses())
+        {
+            rp->addRenderState(culling);
+        }
+    }
+
+    // entity
+    entity = new Qt3DCore::QEntity(rootEntity);
+    entity->addComponent(geometryRenderer);
+    entity->addComponent(material);
+    entity->addComponent(transform);
+}
+
+QByteArray Sphere3D::getBuffer(Sphere* sphere)
+{
+    QByteArray bufferBytes;
+    bufferBytes.resize(Na* Nb*3 * sizeof(float));
+    float* positions = reinterpret_cast<float*>(bufferBytes.data());
+
+    double radius=sphere->getRadius();
+
+    for (int i=0; i<Na; i++)
+    {
+        for (int j=0; j<Nb; j++)
+        {
+            double alpha=double(i)/Na*M_PI*2;
+            double beta=double(j)/(Nb-1)*M_PI-M_PI/2;
+
+            Eigen::Vector3d p= sphere->getCenter()+radius*Eigen::Vector3d(cos(alpha)*cos(beta),sin(alpha)*cos(beta),sin(beta));
+
+            *positions++ = p.x();
+            *positions++ = p.y();
+            *positions++ = p.z();
+        }
+    }
+
+    return bufferBytes;
+}

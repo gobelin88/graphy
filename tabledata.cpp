@@ -227,3 +227,51 @@ Eigen::VectorXd fromQVector(const QVector<double>& v_q)
     memcpy(v.data(),v_q.data(),v.size()*sizeof(double));
     return v;
 }
+
+void sortBy(Eigen::MatrixXd& matrix, int colId,SortMode mode)
+{
+    std::vector<Eigen::VectorXd> vec;
+    for (int64_t i = 0; i < matrix.rows(); ++i)
+        vec.push_back(matrix.row(i));
+
+    if(mode==ASCENDING)
+    {
+        std::sort(vec.begin(), vec.end(), [&colId](Eigen::VectorXd const& t1, Eigen::VectorXd const& t2){ return t1(colId) < t2(colId); } );
+    }
+    else if(mode==DECENDING)
+    {
+        std::sort(vec.begin(), vec.end(), [&colId](Eigen::VectorXd const& t1, Eigen::VectorXd const& t2){ return t1(colId) > t2(colId); } );
+    }
+
+    for (int64_t i = 0; i < matrix.rows(); ++i)
+        matrix.row(i) = vec[i];
+}
+
+void thresholdBy(Eigen::MatrixXd& matrix, int colId,ThresholdMode mode,double value)
+{
+    std::vector<Eigen::VectorXd> vec;
+    for (int64_t i = 0; i < matrix.rows(); ++i)
+    {
+        if(mode==KEEP_GREATER)
+        {
+            if(matrix(i,colId)>value)//KEEP_GREATER
+            {
+                vec.push_back(matrix.row(i));
+            }
+        }
+        else
+        {
+            if(matrix(i,colId)<value)//KEEP_LOWER
+            {
+                vec.push_back(matrix.row(i));
+            }
+        }
+    }
+
+    for (int64_t i = 0; i < vec.size(); ++i)
+    {
+        matrix.row(i) = vec[i];
+    }
+
+    matrix.conservativeResize(vec.size(),matrix.cols());
+}

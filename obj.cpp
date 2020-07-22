@@ -10,7 +10,7 @@ Object::Object(QString filename, double scale, QPosAtt posatt)
 
     if (file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        std::cout<<"open 0"<<std::endl;
+        std::cout<<"open object"<<std::endl;
         unsigned int id=0;
         while (!file.atEnd())
         {
@@ -71,6 +71,34 @@ Object::Object(QString filename, double scale, QPosAtt posatt)
         open=false;
         std::cout<<"Impossible d'ouvrir :"<<filename.toLocal8Bit().data()<<std::endl;
     }
+}
+
+void Object::save(QString filename)
+{
+    QFile file(filename);
+
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QTextStream ts(&file);
+
+        for(int i=0;i<pts.size();i++)
+        {
+            ts<<"v "<<pts[i].x()<<" "<<pts[i].y()<<" "<<pts[i].z()<<"\n";
+        }
+
+        for(int i=0;i<faces.size();i++)
+        {
+            ts<<"f";
+            for(int j=0;j<faces[i].size();j++)
+            {
+                ts<<" "<<faces[i][j]+1;
+            }
+            ts<<"\n";
+        }
+
+        file.close();
+    }
+
 }
 
 void Object::disp()

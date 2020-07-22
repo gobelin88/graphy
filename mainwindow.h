@@ -49,6 +49,7 @@ public slots:
     QString at(int i,int j);
     void updateTable();
     void updateTable(const QModelIndex& indexA, const QModelIndex& indexB);
+    void updateTableViewRows();
 
     void slot_editColumn();
     void slot_delete();
@@ -81,6 +82,10 @@ public slots:
     void slot_plot_map_2D();
     void slot_plot_cloud_3D();
     void slot_plot_gain_phase();
+
+    //data
+    void slot_filter();
+    void slot_select();
 
     //Misc
     void slot_parameters();
@@ -121,6 +126,7 @@ private:
     QVector<QString> getColumn(int idCol);
     void setColumn(int idCol,const QVector<QString>& vec_col);
     void addModelRow(const QStringList& str_row);
+    void addModelRow(const Eigen::VectorXd & value_row);
 
     //expr
     QVector<QString> evalColumn(int colId);
@@ -154,7 +160,16 @@ private:
     double toSafeDouble(const QString& str) const;
     bool asColumnStrings(int idCol);
 
-    const float graphyVersion=3.1;
+    const float graphyVersion=3.2;
+
+    QString getSelectionPattern();
+    void setSelectionPattern(QString pattern);
+
+    //All conversions use this
+    double toNumber(QString str);
+    QString fromNumber(double value);
+    QString fromNumber(double value,int precision);
+    const int internal_precision=9;
 };
 
 #endif // MAINWINDOW_H

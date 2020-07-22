@@ -15,6 +15,18 @@ enum InterpolationMode
     MODE_WEIGHTED
 };
 
+enum SortMode
+{
+    ASCENDING,
+    DECENDING
+};
+
+enum ThresholdMode
+{
+    KEEP_GREATER,
+    KEEP_LOWER
+};
+
 void removeRows(Eigen::MatrixXd& matrix, unsigned int rowToRemove,unsigned int nbRow=1);
 void removeColumns(Eigen::MatrixXd& matrix, unsigned int colToRemove, unsigned int nbCol=1);
 void addRow(Eigen::MatrixXd& matrix, Eigen::VectorXd rowToAdd);
@@ -38,5 +50,8 @@ Eigen::VectorXd fromStdVector(const std::vector<double>& v_std);
 Eigen::VectorXd fromQVector(const QVector<double>& v);
 
 QString toString(const Eigen::MatrixXd& v);
+
+void sortBy(Eigen::MatrixXd& matrix, int colId,SortMode mode);
+void thresholdBy(Eigen::MatrixXd& matrix, int colId, ThresholdMode mode, double value);
 
 #endif // TABLEDATA_H

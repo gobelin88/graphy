@@ -79,6 +79,9 @@ public:
     QPosAtt getPosAtt();
     double getScale();
 
+    //I/O
+    void save(QString filename);
+
 private:
     //Misc
     void computeNormals();

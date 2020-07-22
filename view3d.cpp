@@ -206,7 +206,9 @@ void View3D::slot_fitSphere()
 
     Eigen::Vector3d C=sphere.getCenter();
 
-    addSphere(QPosAtt(C,Eigen::Quaterniond(1,0,0,0)),1.0,QColor(64,64,64),sphere.getRadius());
+    addSphere(&sphere,QColor(64,64,64));
+
+    //addSphere(QPosAtt(C,Eigen::Quaterniond(1,0,0,0)),1.0,QColor(64,64,64),sphere.getRadius());
 
     emit sig_displayResults( QString("Fit Sphere:\nCenter=(%1 , %2 , %3) Radius=%4\nRms=%5\n").arg(C[0]).arg(C[1]).arg(C[2]).arg(sphere.getRadius()).arg(sphere.getRMS()) );
     emit sig_newColumn("Err(Sphere)",sphere.getErrNorm());
@@ -264,10 +266,10 @@ void View3D::slot_fitCustomMesh()
     QElapsedTimer timer;
     timer.start();
 
-    auto* m_obj = new Qt3DRender::QMesh();
-    m_obj->setSource(QUrl(QString("file:///")+filename));
+
 
     Object obj(filename,1.0,QPosAtt());
+
 
     obj.setScalePosAtt(cloud->getBoundingRadius()/obj.getRadius(),
                        QPosAtt(cloud->getBarycenter()-obj.getBox().middle(),Eigen::Quaterniond(1,0,0,0)));
@@ -275,7 +277,14 @@ void View3D::slot_fitCustomMesh()
 
     cloud->fit(&obj);
 
-    addObj(m_obj,obj.getPosAtt(),obj.getScale(),QColor(64,64,64));
+    QFileInfo info(filename);
+
+    obj.save(info.path()+"/tmp.obj");
+
+    auto* m_obj = new Qt3DRender::QMesh();
+    m_obj->setSource(QUrl(QString("file:///")+info.path()+"/tmp.obj"));
+
+    addObj(m_obj,QPosAtt(),1.0,QColor(64,64,64));
 
     emit sig_displayResults( QString("Fit Mesh :\nScale=%1\nPosition=(%2,%3,%4)\nQ=(%5,%6,%7,%8)\nRms=%9\ndt=%10 ms")
                              .arg(obj.getScale())
@@ -338,9 +347,9 @@ void View3D::slot_ScaleChanged()
         transforms[i]->setMatrix( S.matrix()*T.matrix()*baseT[i]*baseR[i] );
     }
 
-    for (int i=0; i<plans.size(); i++)
+    for (int i=0; i<objects_list.size(); i++)
     {
-        plans[i]->transform->setMatrix( S.matrix()*T.matrix() );
+        objects_list[i]->transform->setMatrix( S.matrix()*T.matrix() );
     }
 }
 
@@ -452,6 +461,13 @@ void View3D::addSphere(QPosAtt posatt,float scale,QColor color,double radius)
     addObj(reinterpret_cast<Qt3DRender::QMesh*>(m_obj),posatt,scale,color);
 }
 
+void View3D::addSphere(Sphere * sphere,QColor color)
+{
+    Sphere3D* sphere3D=new Sphere3D(rootEntity,sphere,color);
+    objects_list.push_back(sphere3D);
+    slot_ScaleChanged();
+}
+
 void View3D::addPlan(QPosAtt posatt,float scale,QColor color,double width,double height)
 {
     auto* m_obj = new Qt3DExtras::QPlaneMesh();
@@ -464,7 +480,7 @@ void View3D::addPlan(QPosAtt posatt,float scale,QColor color,double width,double
 void View3D::addPlan(Plan* plan,float radius,QColor color)
 {
     Plan3D* plan3D=new Plan3D(rootEntity,plan,radius,color);
-    plans.push_back(plan3D);
+    objects_list.push_back(plan3D);
     slot_ScaleChanged();
 }
 

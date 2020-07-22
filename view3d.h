@@ -96,6 +96,7 @@ public:
     void addSphere(QPosAtt posatt,float scale,QColor color,double radius);
     void addPlan(QPosAtt posatt,float scale,QColor color,double width,double height);
 
+    void addSphere(Sphere * sphere,QColor color);
     void addPlan(Plan* plan, float radius, QColor color);
 
     CustomViewContainer* getContainer();
@@ -142,7 +143,7 @@ private:
     std::vector<QMatrix4x4> baseT;
     std::vector<Qt3DExtras::QPhongMaterial*> materials;
 
-    std::vector<Plan3D*> plans;
+    std::vector<Base3D*> objects_list;
 
     //Cloud3D
     Cloud3D* cloud3D;

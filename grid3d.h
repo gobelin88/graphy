@@ -20,12 +20,25 @@ struct Grid3D:public Base3D
 struct Plan3D:public Base3D
 {
     Plan3D(Qt3DCore::QEntity* rootEntity, Plan* plan, float radius, QColor color);
-    QByteArray getPlanBuffer(Plan* plan, float radius);
+    QByteArray getBuffer(Plan* plan, float radius);
 
     Qt3DRender::QBuffer* indexBuffer;
     Qt3DRender::QAttribute* indexAttribute;
     Qt3DExtras::QPhongAlphaMaterial* material;
-    Qt3DCore::QTransform* transform;
+
+};
+
+struct Sphere3D:public Base3D
+{
+    Sphere3D(Qt3DCore::QEntity* rootEntity, Sphere* sphere, QColor color);
+    QByteArray getBuffer(Sphere* sphere);
+
+    Qt3DRender::QBuffer* indexBuffer;
+    Qt3DRender::QAttribute* indexAttribute;
+    Qt3DExtras::QPhongAlphaMaterial* material;
+
+    const int Na=50;
+    const int Nb=50;
 };
 
 #endif // GRID3D_H

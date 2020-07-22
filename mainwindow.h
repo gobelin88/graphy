@@ -156,20 +156,20 @@ private:
     QTextEdit* te_results;
 
     //
-    Eigen::VectorXd toSafeDouble(QVector<QString> vec_col_str);
-    double toSafeDouble(const QString& str) const;
-    bool asColumnStrings(int idCol);
-
     const float graphyVersion=3.2;
 
+    //selections
     QString getSelectionPattern();
     void setSelectionPattern(QString pattern);
 
-    //All conversions use this
-    double toNumber(QString str);
+    //conversions double/string
+    Eigen::VectorXd toSafeDouble(QVector<QString> vec_col_str);
+    double toSafeDouble(const QString& str) const;
     QString fromNumber(double value);
     QString fromNumber(double value,int precision);
     const int internal_precision=9;
+    bool asColumnStrings(int idCol);
+
 };
 
 #endif // MAINWINDOW_H

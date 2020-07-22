@@ -424,7 +424,8 @@ bool MainWindow::isValidExpression(QString variableExpression)
 
         if (!ok)
         {
-            QMessageBox::information(this,"Error",QString("Invalid formula : ")+variableExpression);
+            QString error_str=QString::fromStdString(parser.error());
+            QMessageBox::information(this,"Error",QString("Invalid formula : ")+variableExpression+QString("\nError : ")+error_str);
         }
 
         return ok;
@@ -450,9 +451,15 @@ bool MainWindow::isValidVariable(QString variableName,int currentIndex)
         return false;
     }
 
-    if (variableName.contains("+") || variableName.contains("-") || variableName.contains("/") || variableName.contains("*") || variableName.contains("^"))
+    if (variableName.contains("+") ||
+            variableName.contains("-") ||
+            variableName.contains("/") ||
+            variableName.contains("*") ||
+            variableName.contains("^") ||
+            variableName.contains(">") ||
+            variableName.contains("<"))
     {
-        QMessageBox::information(this,"Error",QString("%1 : Variables names can't have any of these characters : + - / * ^ ").arg(variableName));
+        QMessageBox::information(this,"Error",QString("%1 : Variables names can't have any of these characters : + - / * ^ > <").arg(variableName));
         return false;
     }
 
@@ -1881,12 +1888,13 @@ void MainWindow::slot_select()
 
     QLineEdit * le_pattern=new QLineEdit();
     le_pattern->setText(getSelectionPattern());
+    le_pattern->setToolTip("For example to select row 1 and column 1 type : R1,C1");
 
     gbox->addWidget(le_pattern,0,0);
     gbox->addWidget(buttonBox,1,0,1,2);
 
     dialog->setLayout(gbox);
-    dialog->setMinimumWidth(250);
+    dialog->setMinimumWidth(300);
     dialog->adjustSize();
 
     int result=dialog->exec();
@@ -1934,7 +1942,7 @@ void MainWindow::slot_filter()
         gbox->addWidget(buttonBox,2,0,1,2);
 
         dialog->setLayout(gbox);
-        dialog->setMinimumWidth(250);
+        dialog->setMinimumWidth(300);
         dialog->adjustSize();
         int result=dialog->exec();
         if (result == QDialog::Accepted)

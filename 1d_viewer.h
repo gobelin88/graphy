@@ -78,6 +78,7 @@ public slots:
     void slot_gadgetAddArrow(Eigen::Vector2d A,Eigen::Vector2d B);
     void slot_setScalarFieldGradientType(int type);
 
+    void slot_auto_color();
     //void slot_addXaxisLabel();
 
 signals:
@@ -115,6 +116,8 @@ protected:
     QAction* actLegendShowHide;
     QAction* actLegendTopBottom;
     QAction* actLegendLeftRight;
+    QAction* actAutoColor;
+
     QMenu* menuParameters;
     QMenu* menuLegend;
     QMenu* menuFit;

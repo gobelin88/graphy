@@ -7,6 +7,8 @@
 #include "ShapeFit.h"
 #include "qPosAtt.h"
 
+#include <omp.h>
+
 #ifndef OBJ_H
 #define OBJ_H
 

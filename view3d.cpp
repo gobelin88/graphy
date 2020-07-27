@@ -260,20 +260,16 @@ void View3D::slot_fitPlan()
 void View3D::slot_fitCustomMesh()
 {
     QString filename=QFileDialog::getOpenFileName(nullptr,"3D Mesh","./obj","Object (*.obj)");
-
     std::cout<<filename.toLocal8Bit().data()<<std::endl;
+    if(filename.isEmpty())return;
 
     QElapsedTimer timer;
     timer.start();
 
-
-
     Object obj(filename,1.0,QPosAtt());
-
 
     obj.setScalePosAtt(cloud->getBoundingRadius()/obj.getRadius(),
                        QPosAtt(cloud->getBarycenter()-obj.getBox().middle(),Eigen::Quaterniond(1,0,0,0)));
-
 
     cloud->fit(&obj);
 

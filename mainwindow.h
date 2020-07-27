@@ -146,6 +146,7 @@ private:
     QStringList variables_expressions;
 
     double activeRow;
+    double activeCol;
 
     bool custom_exp_parse(QString expression, int currentRow, QString& result);
 

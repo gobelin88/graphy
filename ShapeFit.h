@@ -42,7 +42,8 @@ public:
         T dn;
         int n=dn.rows();
 
-        for (int i=0; i<values()/n; i++)
+        #pragma omp parallel for
+        for (int i=0; i<points.size(); i++)
         {
             T d=delta(points[i]);
 
@@ -103,10 +104,13 @@ public:
     std::vector<T> getErr()
     {
         std::vector<Eigen::Vector3d> err_dist(points.size());
+
+        #pragma omp parallel for
         for (unsigned int i=0; i< points.size(); i++)
         {
             err_dist[i]=this->delta(points[i]);
         }
+
         return err_dist;
     }
 

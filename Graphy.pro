@@ -37,6 +37,7 @@ SOURCES += \
         ScatterModifier.cpp \
         SurfaceModifier.cpp \
         ShapeFit.cpp \
+        bode_viewer.cpp \
         cameraparams.cpp \
         cloud3d.cpp \
         color_wheel.cpp \
@@ -67,6 +68,7 @@ HEADERS += \
         ScatterModifier.h \
         SurfaceModifier.h \
         ShapeFit.h \
+        bode_viewer.h \
         box.h \
         boxplot.h \
         cameraparams.h \
@@ -93,6 +95,8 @@ FORMS += \
 INCLUDEPATH += $$(EIGEN_PATH)/
 
 QMAKE_CXXFLAGS += -Dexprtk_disable_caseinsensitivity
+QMAKE_CXXFLAGS += -openmp
+QMAKE_LFLAGS +=  -openmp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

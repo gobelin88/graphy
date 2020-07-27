@@ -175,6 +175,7 @@ void MainWindow::direct_open(QString filename)
         clear();
 
         int lineindex = 0;                     // file line counter
+        int numberOfColumns=0;
         QTextStream in(&file);                 // read to text stream
 
         hasheader=false;
@@ -183,6 +184,7 @@ void MainWindow::direct_open(QString filename)
         {
             // read one line from textstream(separated by "\n")
             QString dataLine = in.readLine();
+            std::cout<<"----"<<dataLine.toLocal8Bit().data()<<std::endl;
 
             if (dataLine=="<header>")
             {
@@ -192,20 +194,28 @@ void MainWindow::direct_open(QString filename)
                 QStringList varToken = extractToken(varLine);
                 QStringList expToken = extractToken(expLine);
 
-                for (int j = 0; j < varToken.size(); j++)
+                if(varToken.size()==expToken.size())
                 {
-                    QString varname = varToken.at(j);
-                    QString varexpr = expToken.at(j);
-                    if ( isValidVariable(varname,j))
+                    for (int j = 0; j < varToken.size(); j++)
                     {
-                        model->setHorizontalHeaderItem(j, new QStandardItem(varname));
-                        registerNewVariable(varname,varexpr);
+                        QString varname = varToken.at(j);
+                        QString varexpr = expToken.at(j);
+                        if ( isValidVariable(varname,j))
+                        {
+                            model->setHorizontalHeaderItem(j, new QStandardItem(varname));
+                            registerNewVariable(varname,varexpr);
+                        }
+                        else
+                        {
+                            clear();
+                            return;
+                        }
                     }
-                    else
-                    {
-                        clear();
-                        return;
-                    }
+                }
+                else
+                {
+                    QMessageBox::warning(this,"Error",QString("Number of expressions (%1) and number of variables (%2) are different.").arg(expToken.size()).arg(varToken.size()));
+                    return;
                 }
 
                 do
@@ -216,8 +226,26 @@ void MainWindow::direct_open(QString filename)
             }
             else
             {
-                addModelRow(extractToken(dataLine));
-                lineindex++;
+                QStringList valuesToken=extractToken(dataLine);
+                if(lineindex==0 && !hasheader)
+                {
+                    numberOfColumns=valuesToken.size();
+                }
+                else if (lineindex==0 && hasheader)
+                {
+                    numberOfColumns=variables_names.size();
+                }
+
+                if(valuesToken.size()==numberOfColumns)
+                {
+                    addModelRow(valuesToken);
+                    lineindex++;
+                }
+                else
+                {
+                    QMessageBox::warning(this,"Error",QString("Error line %1 detected\n%2 elements expected got %3 elements").arg(lineindex+1).arg(numberOfColumns).arg(valuesToken.size()));
+                    return;
+                }
             }
         }
 
@@ -556,6 +584,7 @@ void MainWindow::registerClear()
     symbolsTable.clear();
     symbolsTable.add_pi();
     symbolsTable.add_variable("Row",activeRow);
+    symbolsTable.add_variable("Col",activeCol);
 }
 
 void MainWindow::registerNewVariable(QString varname,QString varexpr)
@@ -828,6 +857,7 @@ QString MainWindow::fromNumber(double value,int precision)
 QVector<QString> MainWindow::evalColumn(int colId)
 {
     int logicalColId=colId;
+    activeCol=colId;
 
     assert(logicalColId<variables_expressions.size());
 

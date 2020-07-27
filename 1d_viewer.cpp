@@ -340,7 +340,7 @@ void Viewer1D::createPopup()
     actSave   = new QAction("Save",  this);
     actRescale= new QAction("Rescale",  this);
     actDelete= new QAction("Delete",  this);
-    actClearGadgets   = new QAction("Clear Gadgets",  this);
+    actClearGadgets   = new QAction("Clear gadgets",  this);
     actGadgetArrow= new QAction("Arrow",  this);
     actGadgetText= new QAction("Text",  this);
     actGadgetMark= new QAction("Mark",  this);
@@ -355,6 +355,7 @@ void Viewer1D::createPopup()
     actFitSigmoid= new QAction("Sigmoid",  this);
     actFitSinusoide= new QAction("Sinusoide",  this);
     actFitPolynomial2V= new QAction("Polynomial XY",  this);
+    actAutoColor= new QAction("Auto color",  this);
 
     this->addAction(actCopy);
     this->addAction(actPaste);
@@ -369,7 +370,9 @@ void Viewer1D::createPopup()
     this->addAction(actLegendTopBottom);
     this->addAction(actLegendLeftRight);
     this->addAction(actStatistiques);
+    this->addAction(actAutoColor);
 
+    actAutoColor->setShortcutVisibleInContextMenu(true);
     actCopy->setShortcutVisibleInContextMenu(true);
     actPaste->setShortcutVisibleInContextMenu(true);
     actSave->setShortcutVisibleInContextMenu(true);
@@ -422,6 +425,7 @@ void Viewer1D::createPopup()
     menuScalarField->addMenu(menuScalarFieldFit);
     menuScalarFieldFit->addAction(actFitPolynomial2V);
 
+    menuParameters->addAction(actAutoColor);
     menuParameters->addMenu(menuLegend);
     menuParameters->addAction(createParametersWidget());
 
@@ -451,6 +455,35 @@ void Viewer1D::createPopup()
     connect(actLegendShowHide,SIGNAL(toggled(bool)),this,SLOT(slot_show_legend(bool)));
     connect(actLegendTopBottom,SIGNAL(toggled(bool)),this,SLOT(slot_top_legend(bool)));
     connect(actLegendLeftRight,SIGNAL(toggled(bool)),this,SLOT(slot_left_legend(bool)));
+    connect(actAutoColor,SIGNAL(triggered()),this,SLOT(slot_auto_color()));
+}
+
+void Viewer1D::slot_auto_color()
+{
+    QVector<QColor> color;
+    color<<QColor(160,0,0);
+    color<<QColor(0,160,0);
+    color<<QColor(0,0,160);
+    color<<QColor(255,160,0);
+    color<<QColor(255,0,255);
+    color<<QColor(0,160,128);
+    color<<QColor(128,255,0);
+    color<<QColor(128,0,255);
+    color<<QColor(0,128,255);
+    color<<QColor(0,0,0);
+
+    QList<QCPAbstractPlottable*> plottables=this->plottables();
+
+    for (int i=0; i<plottables.size(); i++)
+    {
+        int index=i%color.size();
+        QPen pen=plottables[i]->pen();
+        color[index].setAlphaF(pen.color().alphaF());
+        pen.setColor(color[index]);
+        plottables[i]->setPen(pen);
+    }
+
+    replot();
 }
 
 void Viewer1D::slot_setStyle(int style)
@@ -1436,10 +1469,14 @@ void Viewer1D::slot_statistiques()
             }
         }
 
-        QString stat_str=QString("Statistiques : %1\nMin=%2\nMax=%3\nMean=%4\nStandard-Deviation=%5\nRoot-Mean-Squares=%6\n%7")
+        double min=curves[i].getY().minCoeff();
+        double max=curves[i].getY().maxCoeff();
+
+        QString stat_str=QString("Statistiques : %1\nMin=%2\nMax=%3\nSpan=%4\nMean=%5\nStandard-Deviation=%6\nRoot-Mean-Squares=%7\n%8")
                          .arg(curves[i].getLegend())
-                         .arg(curves[i].getY().minCoeff())
-                         .arg(curves[i].getY().maxCoeff())
+                         .arg(min)
+                         .arg(max)
+                         .arg(max-min)
                          .arg(mean)
                          .arg( sqrt( (curves[i].getY()-Eigen::VectorXd::Constant(curves[i].getY().size(),mean)).cwiseAbs2().mean() ) )
                          .arg( curves[i].getRms() )
@@ -1464,6 +1501,7 @@ void Viewer1D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     shortcuts_links.insert(QString("Graph-Legend-Show/Hide"),actLegendShowHide);
     shortcuts_links.insert(QString("Graph-Legend-Top/Bottom"),actLegendTopBottom);
     shortcuts_links.insert(QString("Graph-Legend-Left/Right"),actLegendLeftRight);
+    shortcuts_links.insert(QString("Graph-AutoColor"),actAutoColor);
 
     QMapIterator<QString, QKeySequence> i(shortcuts_map);
     while (i.hasNext())

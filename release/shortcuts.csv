@@ -2,6 +2,7 @@ Delete;Del
 Edit/Add-variable;Ins
 Export;Ctrl+E
 Filter;Ctrl+F
+Graph-AutoColor;Alt+*
 Graph-ClearGadgets;Backspace
 Graph-Copy;Alt+C
 Graph-Delete;Alt+Del

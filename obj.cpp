@@ -298,20 +298,19 @@ const Eigen::VectorXd& Object::getParams()
 Vector3d Object::nearest(const Vector3d& p) const
 {
     Vector3d p_nearest;
-    double dmin=DBL_MAX;
+    std::vector<Vector3d> projected_p(faces.size());
+    VectorXd distances(faces.size());
 
+    //#pragma omp parallel for
     for (int i=0; i<faces.size(); i++)
     {
-        Vector3d p_n=nearest(i,p);
-
-        double d=(p-p_n).squaredNorm();
-        if (d<dmin)
-        {
-            dmin=d;
-            p_nearest=p_n;
-        }
+        projected_p[i]=nearest(i,p);
+        distances[i]=(p-projected_p[i]).squaredNorm();
     }
-    return p_nearest;
+
+    unsigned int minIndex;
+    distances.minCoeff(&minIndex);
+    return projected_p[minIndex];
 }
 
 Vector3d Object::delta(const Vector3d& p) const

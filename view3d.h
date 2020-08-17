@@ -28,6 +28,7 @@
 
 #include "customviewcontainer.h"
 #include "cameraparams.h"
+#include "qgradientcombobox.h"
 
 class MyCapture : public QObject
 {

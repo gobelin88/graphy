@@ -38,7 +38,6 @@ public slots:
     void slot_fit_ralpcprb();
     void slot_fit_rlpc();
     void slot_fit_rl();
-
     void slot_fit_rlc();
     void slot_fit_rlcapcb();
 

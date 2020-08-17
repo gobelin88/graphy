@@ -96,19 +96,7 @@ void View3D::createPopup()
     cb_mode->addItem("TRIANGLES");
     cb_mode->addItem("TRIANGLE_STRIP");
 
-    c_gradient=new QComboBox;
-    c_gradient->addItem("gpGrayscale",QCPColorGradient::GradientPreset::gpGrayscale);
-    c_gradient->addItem("gpHot",QCPColorGradient::GradientPreset::gpHot);
-    c_gradient->addItem("gpCold",QCPColorGradient::GradientPreset::gpCold);
-    c_gradient->addItem("gpNight",QCPColorGradient::GradientPreset::gpNight);
-    c_gradient->addItem("gpCandy",QCPColorGradient::GradientPreset::gpCandy);
-    c_gradient->addItem("gpGeography",QCPColorGradient::GradientPreset::gpGeography);
-    c_gradient->addItem("gpIon",QCPColorGradient::GradientPreset::gpIon);
-    c_gradient->addItem("gpThermal",QCPColorGradient::GradientPreset::gpThermal);
-    c_gradient->addItem("gpPolar",QCPColorGradient::GradientPreset::gpPolar);
-    c_gradient->addItem("gpSpectrum",QCPColorGradient::GradientPreset::gpSpectrum);
-    c_gradient->addItem("gpJet",QCPColorGradient::GradientPreset::gpJet);
-    c_gradient->addItem("gpHues",QCPColorGradient::GradientPreset::gpHues);
+    c_gradient=new QGradientComboBox(nullptr);
 
     gbox->addWidget(cb_mode,0,0);
     gbox->addWidget(sb_size,0,1);
@@ -366,7 +354,7 @@ void View3D::setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode)
     this->cloud=cloud;
 
     camera_params->setBarycenter( QVector3D(0,0,0) );
-    camera_params->setBoundingRadius( 1.20 );
+    camera_params->setBoundingRadius( 1.20f );
 
     //Set Data Buffers
     cloud3D->positionAttribute->setCount(cloud->positions().size());

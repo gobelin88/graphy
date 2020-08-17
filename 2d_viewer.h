@@ -13,6 +13,7 @@
 #include "boxplot.h"
 #include "qcustomplot.h"
 #include "tabledata.h"
+#include "qgradientcombobox.h"
 
 class Viewer2D:public QCustomPlot
 {

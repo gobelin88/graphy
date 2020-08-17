@@ -6,6 +6,7 @@
 #include "curve2d.h"
 #include "tabledata.h"
 #include "color_wheel.hpp"
+#include "qgradientcombobox.h"
 
 #ifndef VIEWER1D_H
 #define VIEWER1D_H
@@ -20,6 +21,7 @@ public:
 
 
     void applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
+    void addSubMenu(QMenu * sub_menu);
 
 public slots:
     void slot_add_data(const Curve2D& datacurve);
@@ -140,7 +142,7 @@ protected:
     QAction* actGadgetMark;
     QWidgetAction* createParametersWidget();
 
-    QComboBox* cb_gradient;
+    QGradientComboBox * cb_gradient;
     QComboBox* cb_scale_mode_x;
     QComboBox* cb_scale_mode_y;
     QComboBox* cb_itemLineStyleList;
@@ -154,6 +156,7 @@ protected:
     QDoubleSpinBox* s_pen_alpha;
     QDoubleSpinBox* s_brush_alpha;
 
+    QVector<QMenu*> sub_menus;
 };
 
 #endif // VIEWER1D_H

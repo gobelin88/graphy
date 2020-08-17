@@ -236,19 +236,7 @@ QWidgetAction* Viewer1D::createParametersWidget()
     cw_brush_color = new Color_Wheel;
     //cd_pen_color->setOptions(QColorDialog::DontUseNativeDialog| QColorDialog::NoButtons);
 
-    cb_gradient=new QComboBox;
-    cb_gradient->addItem("gpGrayscale",QCPColorGradient::GradientPreset::gpGrayscale);
-    cb_gradient->addItem("gpHot",QCPColorGradient::GradientPreset::gpHot);
-    cb_gradient->addItem("gpCold",QCPColorGradient::GradientPreset::gpCold);
-    cb_gradient->addItem("gpNight",QCPColorGradient::GradientPreset::gpNight);
-    cb_gradient->addItem("gpCandy",QCPColorGradient::GradientPreset::gpCandy);
-    cb_gradient->addItem("gpGeography",QCPColorGradient::GradientPreset::gpGeography);
-    cb_gradient->addItem("gpIon",QCPColorGradient::GradientPreset::gpIon);
-    cb_gradient->addItem("gpThermal",QCPColorGradient::GradientPreset::gpThermal);
-    cb_gradient->addItem("gpPolar",QCPColorGradient::GradientPreset::gpPolar);
-    cb_gradient->addItem("gpSpectrum",QCPColorGradient::GradientPreset::gpSpectrum);
-    cb_gradient->addItem("gpJet",QCPColorGradient::GradientPreset::gpJet);
-    cb_gradient->addItem("gpHues",QCPColorGradient::GradientPreset::gpHues);
+    cb_gradient=new QGradientComboBox(nullptr);
 
     sb_pen_width=new QDoubleSpinBox();
     s_pen_alpha=new QDoubleSpinBox();
@@ -393,19 +381,20 @@ void Viewer1D::createPopup()
     actLegendLeftRight->setCheckable(true);
     actLegendLeftRight->setChecked(true);
 
+    popup_menu->addMenu(menuParameters);
+    popup_menu->addSeparator();
     popup_menu->addAction(actSave);
     popup_menu->addAction(actCopy);
     popup_menu->addAction(actPaste);
     popup_menu->addAction(actDelete);
     popup_menu->addAction(actRescale);
     popup_menu->addSeparator();
-    popup_menu->addMenu(menuAnalyse);
-    popup_menu->addMenu(menuFit);
-    popup_menu->addMenu(menuScalarField);
-    popup_menu->addSeparator();
     popup_menu->addMenu(menuGadgets);
     popup_menu->addSeparator();
-    popup_menu->addMenu(menuParameters);
+    popup_menu->addMenu(menuAnalyse);
+    popup_menu->addMenu(menuFit);
+    popup_menu->addMenu(menuScalarField);    
+    popup_menu->addSeparator();
 
     menuGadgets->addAction(actGadgetMark);
     menuGadgets->addAction(actGadgetText);
@@ -1513,6 +1502,12 @@ void Viewer1D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
             shortcuts_links[i.key()]->setShortcut(i.value());
         }
     }
+}
+
+void Viewer1D::addSubMenu(QMenu * sub_menu)
+{
+    sub_menus.push_back(sub_menu);
+    popup_menu->addMenu(sub_menu);
 }
 
 void Viewer1D::slot_setAxisXType(int mode)

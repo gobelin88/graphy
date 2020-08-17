@@ -20,9 +20,11 @@
 
 #include "1d_viewer.h"
 #include "1d_cplx_viewer.h"
+#include "bode_viewer.h"
 #include "2d_viewer.h"
 #include "3d_viewer.h"
 #include "view3d.h"
+#include "qgradientcombobox.h"
 
 #include "exprtk/exprtk.hpp"
 
@@ -97,8 +99,10 @@ public slots:
     void slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
     void slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
 
-private:
+    //
+    void slot_colourize();
 
+private:
     bool isValidExpression(QString variableExpression);
     bool isValidVariable(QString variableName, int currentIndex);
     bool editVariableAndExpression(int currentIndex);
@@ -159,7 +163,7 @@ private:
     QTextEdit* te_results;
 
     //
-    const float graphyVersion=3.2;
+    const float graphyVersion=3.2f;
 
     //selections
     QString getSelectionPattern();

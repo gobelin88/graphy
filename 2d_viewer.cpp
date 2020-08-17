@@ -112,19 +112,7 @@ void Viewer2D::slot_setParameters()
     sb_knn->setRange(1,10000);
     sb_knn->setValue(knn);
 
-    QComboBox* c_gradient=new QComboBox(dialog);
-    c_gradient->addItem("gpGrayscale",QCPColorGradient::GradientPreset::gpGrayscale);
-    c_gradient->addItem("gpHot",QCPColorGradient::GradientPreset::gpHot);
-    c_gradient->addItem("gpCold",QCPColorGradient::GradientPreset::gpCold);
-    c_gradient->addItem("gpNight",QCPColorGradient::GradientPreset::gpNight);
-    c_gradient->addItem("gpCandy",QCPColorGradient::GradientPreset::gpCandy);
-    c_gradient->addItem("gpGeography",QCPColorGradient::GradientPreset::gpGeography);
-    c_gradient->addItem("gpIon",QCPColorGradient::GradientPreset::gpIon);
-    c_gradient->addItem("gpThermal",QCPColorGradient::GradientPreset::gpThermal);
-    c_gradient->addItem("gpPolar",QCPColorGradient::GradientPreset::gpPolar);
-    c_gradient->addItem("gpSpectrum",QCPColorGradient::GradientPreset::gpSpectrum);
-    c_gradient->addItem("gpJet",QCPColorGradient::GradientPreset::gpJet);
-    c_gradient->addItem("gpHues",QCPColorGradient::GradientPreset::gpHues);
+    QGradientComboBox * c_gradient=new QGradientComboBox(dialog);
     c_gradient->setCurrentIndex(static_cast<int>(currentgradient));
 
     QObject::connect(sb_knn, SIGNAL(valueChanged(int)), this, SLOT(slot_setKnn(int)));
@@ -138,7 +126,7 @@ void Viewer2D::slot_setParameters()
 
     dialog->setLayout(gbox);
 
-    int result=dialog->exec();
+    dialog->exec();
 }
 
 void Viewer2D::slot_setKnn(int value)

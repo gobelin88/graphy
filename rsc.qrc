@@ -20,6 +20,7 @@
         <file>icons/field2D.png</file>
         <file>icons/filter.png</file>
         <file>icons/selection.png</file>
+        <file>icons/colourise.png</file>
     </qresource>
     <qresource prefix="/eqn">
         <file>eqn/sin.gif</file>

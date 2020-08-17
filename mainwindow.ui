@@ -84,6 +84,7 @@
    <addaction name="separator"/>
    <addaction name="actionFilter"/>
    <addaction name="actionSelection_Pattern"/>
+   <addaction name="actionColourize"/>
   </widget>
   <action name="actionOpen">
    <property name="icon">
@@ -313,6 +314,15 @@
    </property>
    <property name="toolTip">
     <string>Selection pattern</string>
+   </property>
+  </action>
+  <action name="actionColourize">
+   <property name="icon">
+    <iconset resource="rsc.qrc">
+     <normaloff>:/img/icons/colourise.png</normaloff>:/img/icons/colourise.png</iconset>
+   </property>
+   <property name="text">
+    <string>Colourize</string>
    </property>
   </action>
  </widget>

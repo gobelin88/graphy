@@ -5,6 +5,7 @@
 #include <QVector>
 #include "ShapeFit.h"
 #include "tabledata.h"
+#include "curve2d.h"
 
 class Curve2D_GainPhase
 {
@@ -89,4 +90,45 @@ private:
     QString legendpname;
 };
 
+//---------------------------------------------------------
+class Curve2DModulePhase
+{
+public:
+    Curve2DModulePhase()
+    {
+
+    }
+
+    Curve2DModulePhase(const Curve2D & modules_curve,
+                       const Curve2D & phase_curve)
+    {
+        this->modules_curve=modules_curve;
+        this->phase_curve=phase_curve;
+    }
+
+    const Curve2D & getModules()const
+    {
+        return modules_curve;
+    }
+
+    const Curve2D & getPhases()const
+    {
+        return phase_curve;
+    }
+
+    void fit(Shape<Eigen::Vector3d>* model)
+    {
+        std::vector<Eigen::Vector3d> points;
+        for (int m=0; m<modules_curve.getX().size(); ++m)
+        {
+            points.push_back(Eigen::Vector3d(modules_curve.getX()[m],modules_curve.getY()[m],phase_curve.getY()[m]));
+        }
+
+        model->fit(points,10000);
+    }
+
+private:
+    Curve2D modules_curve;
+    Curve2D phase_curve;
+};
 #endif // CURVE2D_H

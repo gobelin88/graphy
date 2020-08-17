@@ -64,8 +64,8 @@ public:
             QString legendname,
             CurveType type);
 
-    Eigen::VectorXd getX()const;
-    Eigen::VectorXd getY()const;
+    const Eigen::VectorXd & getX()const;
+    const Eigen::VectorXd & getY()const;
     QVector<double> getQX()const;
     QVector<double> getQY()const;
 
@@ -111,7 +111,7 @@ public:
     double guessMainFrequency();
     uint getMaxIndex();
     Eigen::Vector2d getBarycenter();
-    Eigen::VectorXd getLinX(int n);
+    Eigen::VectorXd getLinX(int n)const;
     void getLinXY(int n, Eigen::VectorXd& valuesX, Eigen::VectorXd& valuesY);
 
     static Eigen::VectorXd buildX(int sz);

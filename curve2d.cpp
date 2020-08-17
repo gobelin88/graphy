@@ -53,11 +53,11 @@ void Curve2D::clear()
     l.clear();
 }
 
-Eigen::VectorXd Curve2D::getX()const
+const Eigen::VectorXd & Curve2D::getX()const
 {
     return x;
 }
-Eigen::VectorXd Curve2D::getY()const
+const Eigen::VectorXd & Curve2D::getY()const
 {
     return y;
 }
@@ -118,7 +118,7 @@ Eigen::VectorXd Curve2D::buildX(int sz)
     return qv;
 }
 
-Eigen::VectorXd Curve2D::getLinX(int n)
+Eigen::VectorXd Curve2D::getLinX(int n) const
 {
     double min=x.minCoeff();
     double max=x.maxCoeff();

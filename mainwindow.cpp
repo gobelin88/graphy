@@ -49,6 +49,7 @@ MainWindow::MainWindow(QWidget* parent) :
 
     connect(ui->actionFilter, &QAction::triggered,this,&MainWindow::slot_filter);    
     connect(ui->actionSelection_Pattern, &QAction::triggered,this,&MainWindow::slot_select);
+    connect(ui->actionColourize, &QAction::triggered,this,&MainWindow::slot_colourize);
 
 
 //    connect(ui->actionTile,&QAction::triggered,mdiArea,&QMdiArea::tileSubWindows);
@@ -86,9 +87,9 @@ MainWindow::MainWindow(QWidget* parent) :
     te_widget=new QTabWidget();
     te_widget->addTab(table,"Data");
     te_widget->addTab(te_results,"Results");
-    mdiArea->setViewport(te_widget);
 
-    //mdiArea->viewport()->stackUnder(table);
+    mdiArea->setViewport(te_widget);
+    //mdiArea->addSubWindow(te_widget);
 
     mdiArea->setSizeAdjustPolicy (QAbstractScrollArea::AdjustToContents);
     table->setSizeAdjustPolicy   (QAbstractScrollArea::AdjustToContents);
@@ -1707,14 +1708,52 @@ void MainWindow::slot_plot_cloud_3D()
     }
 }
 
+//void MainWindow::slot_plot_gain_phase_old()
+//{
+//    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+
+//    if (id_list.size()%3==0 && id_list.size()>0)
+//    {
+//        Viewer1DCPLX* viewer1d=new Viewer1DCPLX(shortcuts);
+//        viewer1d->setMinimumSize(600,400);
+
+//        for (int k=0; k<id_list.size(); k+=3)
+//        {
+//            Eigen::VectorXd data_f=datatable.col(table->horizontalHeader()->visualIndex(id_list[k].column()));
+//            Eigen::VectorXd data_module=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
+//            Eigen::VectorXd data_phase=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+2].column()));
+
+//            if (data_f.size()>0 && data_module.size()>0 && data_phase.size()>0)
+//            {
+//                std::cout<<data_phase.transpose()<<std::endl;
+
+//                viewer1d->slot_add_data_graph(
+//                    Curve2D_GainPhase(data_f,data_module,data_phase,QString("%2(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column()))
+//                                      ,QString("%2(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+2].column())))
+//                );
+//            }
+//        }
+
+//        QMdiSubWindow* subWindow = new QMdiSubWindow;
+//        subWindow->setWidget(viewer1d);
+//        subWindow->setAttribute(Qt::WA_DeleteOnClose);
+//        mdiArea->addSubWindow(subWindow);
+//        viewer1d->show();
+//    }
+//    else
+//    {
+//        QMessageBox::information(this,"Information","Please select 3 columns (frequency,module,phase)");
+//    }
+//}
+
 void MainWindow::slot_plot_gain_phase()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
     if (id_list.size()%3==0 && id_list.size()>0)
     {
-        Viewer1DCPLX* viewer1d=new Viewer1DCPLX(shortcuts);
-        viewer1d->setMinimumSize(600,400);
+        ViewerBode * viewer_bode=new ViewerBode(&shared,shortcuts,this);
+        viewer_bode->setMinimumSize(600,400);
 
         for (int k=0; k<id_list.size(); k+=3)
         {
@@ -1726,18 +1765,21 @@ void MainWindow::slot_plot_gain_phase()
             {
                 std::cout<<data_phase.transpose()<<std::endl;
 
-                viewer1d->slot_add_data_graph(
-                    Curve2D_GainPhase(data_f,data_module,data_phase,QString("%2(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column()))
-                                      ,QString("%2(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+2].column())))
-                );
+                Curve2D curve_module(data_f,data_module,QString("%2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),Curve2D::GRAPH);
+                Curve2D curve_phase (data_f,data_phase,QString("%2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+2].column())),Curve2D::GRAPH);
+
+                viewer_bode->slot_add_data(Curve2DModulePhase(curve_module,curve_phase));
             }
         }
 
-        QMdiSubWindow* subWindow = new QMdiSubWindow;
-        subWindow->setWidget(viewer1d);
-        subWindow->setAttribute(Qt::WA_DeleteOnClose);
-        mdiArea->addSubWindow(subWindow);
-        viewer1d->show();
+//        QMdiSubWindow* subWindow = new QMdiSubWindow;
+//        subWindow->setWidget(viewer_bode);
+//        subWindow->setAttribute(Qt::WA_DeleteOnClose);
+//        mdiArea->addSubWindow(subWindow);
+
+
+         mdiArea->addSubWindow(viewer_bode);
+         viewer_bode->show();
     }
     else
     {
@@ -1961,8 +2003,17 @@ void MainWindow::slot_filter()
 
         QDoubleSpinBox* sb_threshold=new QDoubleSpinBox(dialog);
         sb_threshold->setPrefix("Threshold=");
-        sb_threshold->setValue(datatable.col(index).mean());
         sb_threshold->setRange(-1e100,1e100);
+
+        double defaultThresholdValue=datatable.col(index).mean();
+        if(std::isnan(defaultThresholdValue))
+        {
+            sb_threshold->setValue(0);
+        }
+        else
+        {
+            sb_threshold->setValue(defaultThresholdValue);
+        }
         //sb_threshold->setEnabled(false);
 
         QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
@@ -2129,4 +2180,103 @@ void MainWindow::slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newV
     fileModified();
 
     dispVariables();
+}
+
+void MainWindow::slot_colourize()
+{
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+
+    if (id_list.size()>0)
+    {
+        //Dialog
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("Colourize");
+
+        dialog->setMinimumWidth(400);
+        QGridLayout* gbox = new QGridLayout();
+
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel );
+        QPushButton * pb_clear=new QPushButton("Clear");
+        pb_clear->setCheckable(true);
+        buttonBox->addButton(pb_clear,QDialogButtonBox::ButtonRole::AcceptRole);
+
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+        QGradientComboBox * cb_gradients=new QGradientComboBox(this);
+
+        QCheckBox * cb_percolumns=new QCheckBox("Range per columns");
+        cb_percolumns->setChecked(false);
+
+        gbox->addWidget(cb_gradients,0,0);
+        gbox->addWidget(cb_percolumns,1,0);
+        gbox->addWidget(buttonBox,2,0);
+
+        dialog->setLayout(gbox);
+        int result=dialog->exec();
+
+        if (result == QDialog::Accepted)
+        {
+            //Range
+            QCPRange range;
+            if(!cb_percolumns->isChecked())
+            {
+                for(int i=0;i<id_list.size();i++)
+                {
+                    int logicalindex=id_list[i].column();
+                    int index=table->horizontalHeader()->visualIndex(logicalindex);
+
+                    if(i==0)
+                    {
+                        range=QCPRange (datatable.col(index).minCoeff(),datatable.col(index).maxCoeff());
+                    }
+                    else
+                    {
+                        range=QCPRange (std::min(range.lower,datatable.col(index).minCoeff()),
+                                        std::max(range.upper,datatable.col(index).maxCoeff()));
+                    }
+                }
+            }
+            std::cout<<range.lower<<" "<<range.upper<<std::endl;
+
+            //Process
+            for(int i=0;i<id_list.size();i++)
+            {
+                int logicalindex=id_list[i].column();
+                int index=table->horizontalHeader()->visualIndex(logicalindex);
+
+                if(cb_percolumns->isChecked())
+                {
+                    range=QCPRange (datatable.col(index).minCoeff(),datatable.col(index).maxCoeff());
+                }
+
+                if(!pb_clear->isChecked())
+                {
+                    std::vector<QRgb> colors=cb_gradients->colourize(datatable.col(index),range);
+                    for(int j=0;j<datatable.rows();j++)
+                    {
+                        if(qGray(colors[j])>128)
+                        {
+                            model->item(j,logicalindex)->setForeground(QColor(Qt::black));
+                        }
+                        else
+                        {
+                            model->item(j,logicalindex)->setForeground(QColor(Qt::white));
+                        }
+
+                        model->item(j,logicalindex)->setBackground(QColor(colors[j]));
+                    }
+                }
+                else
+                {
+                    for(int j=0;j<datatable.rows();j++)
+                    {
+                        model->item(j,logicalindex)->setForeground(QColor(Qt::black));
+                        model->item(j,logicalindex)->setBackground(QColor(Qt::white));
+                    }
+                }
+            }
+        }
+    }
 }

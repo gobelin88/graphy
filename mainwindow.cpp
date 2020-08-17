@@ -2256,12 +2256,13 @@ void MainWindow::slot_colourize()
                     std::vector<QRgb> colors=cb_gradients->colourize(datatable.col(index),range);
                     for(int j=0;j<datatable.rows();j++)
                     {
-                        if(qGray(colors[j])>128)
+                        if(qGray(colors[j])>100)
                         {
                             model->item(j,logicalindex)->setForeground(QColor(Qt::black));
                         }
                         else
                         {
+                            std::cout<<qGray(colors[j])<<std::endl;
                             model->item(j,logicalindex)->setForeground(QColor(Qt::white));
                         }
 

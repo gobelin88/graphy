@@ -20,7 +20,7 @@
     <string>toolBar</string>
    </property>
    <property name="allowedAreas">
-    <set>Qt::RightToolBarArea</set>
+    <set>Qt::LeftToolBarArea</set>
    </property>
    <property name="orientation">
     <enum>Qt::Vertical</enum>
@@ -35,7 +35,7 @@
     <enum>Qt::ToolButtonIconOnly</enum>
    </property>
    <attribute name="toolBarArea">
-    <enum>RightToolBarArea</enum>
+    <enum>LeftToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
     <bool>false</bool>
@@ -51,7 +51,7 @@
     <string>toolBar</string>
    </property>
    <property name="allowedAreas">
-    <set>Qt::RightToolBarArea</set>
+    <set>Qt::LeftToolBarArea</set>
    </property>
    <property name="iconSize">
     <size>
@@ -63,7 +63,7 @@
     <enum>Qt::ToolButtonIconOnly</enum>
    </property>
    <attribute name="toolBarArea">
-    <enum>RightToolBarArea</enum>
+    <enum>LeftToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
     <bool>false</bool>

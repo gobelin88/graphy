@@ -3,6 +3,8 @@
 QGradientComboBox::QGradientComboBox(QWidget * parent):QComboBox(parent)
 {
     addItem("Grayscale",QCPColorGradient::GradientPreset::gpGrayscale);
+    addItem("GreenRed",QCPColorGradient::GradientPreset::gpGreenRed);
+    addItem("BlueWhiteRed",QCPColorGradient::GradientPreset::gpBlueWhiteRed);
     addItem("Hot",QCPColorGradient::GradientPreset::gpHot);
     addItem("Cold",QCPColorGradient::GradientPreset::gpCold);
     addItem("Night",QCPColorGradient::GradientPreset::gpNight);
@@ -15,7 +17,7 @@ QGradientComboBox::QGradientComboBox(QWidget * parent):QComboBox(parent)
     addItem("Jet",QCPColorGradient::GradientPreset::gpJet);
     addItem("Hues",QCPColorGradient::GradientPreset::gpHues);
 
-    QSize icon_size(128,32);
+    QSize icon_size(256,16);
     this->setIconSize(icon_size);
 
     for(int k=0;k<this->count();k++)

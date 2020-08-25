@@ -62,6 +62,9 @@ public slots:
     void slot_updateColumns();
     void slot_newColumn(QString name,Eigen::VectorXd data);
 
+    void slot_copy();
+    void slot_paste();
+
     //IO
     void clear();
     void slot_new();
@@ -103,6 +106,7 @@ public slots:
     void slot_colourize();
 
 private:
+    QStringList extractToken(QString fileLine);
     bool isValidExpression(QString variableExpression);
     bool isValidVariable(QString variableName, int currentIndex);
     bool editVariableAndExpression(int currentIndex);
@@ -127,6 +131,8 @@ private:
     QAction* a_newRows;
     QAction* a_delete;
     QAction* a_updateColumns;
+    QAction* a_copy;
+    QAction* a_paste;
 
     //Col/row
     QVector<QString> getColumn(int idCol);
@@ -163,7 +169,7 @@ private:
     QTextEdit* te_results;
 
     //
-    const float graphyVersion=3.2f;
+    const float graphyVersion=3.3f;
 
     //selections
     QString getSelectionPattern();
@@ -177,6 +183,9 @@ private:
     const int internal_precision=9;
     bool asColumnStrings(int idCol);
 
+    QString separator;
+
+    void getRowColSelectedRanges(QCPRange &range_row,QCPRange &range_col);
 };
 
 #endif // MAINWINDOW_H

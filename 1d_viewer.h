@@ -83,6 +83,10 @@ public slots:
     void slot_auto_color();
     //void slot_addXaxisLabel();
 
+    void slot_meanFilter();
+    void slot_medianFilter();
+
+
 signals:
     void pick(double p0);
     void sig_displayResults(QString results);
@@ -126,6 +130,10 @@ protected:
     QMenu* menuScalarField;
     QMenu* menuScalarFieldFit;
     QMenu* menuAnalyse;
+    QMenu* menuFilters;
+
+    QAction* actFilterMedian;
+    QAction* actFilterMean;
 
     QAction* actFitPolynomial;
     QAction* actFitPolynomial2V;

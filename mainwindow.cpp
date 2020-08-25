@@ -7,16 +7,18 @@ MainWindow::MainWindow(QWidget* parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+    separator=";";
+
     ui->setupUi(this);
     mdiArea=new QMdiArea();
     table=new QTableView(mdiArea);
     model=nullptr;
 
-//  tableview.setSelectionBehavior(tableview.SelectRows)
-//  tableview.setSelectionMode(tableview.SingleSelection)
-//  table->setDragDropMode(QTableView::InternalMove);
-//  table->setDragDropOverwriteMode(false);
-//  table->setSortingEnabled(true);
+    //  tableview.setSelectionBehavior(tableview.SelectRows)
+    //  tableview.setSelectionMode(tableview.SingleSelection)
+    //  table->setDragDropMode(QTableView::InternalMove);
+    //  table->setDragDropOverwriteMode(false);
+    //  table->setSortingEnabled(true);
 
     table->horizontalHeader()->setSectionsMovable(true);
     table->verticalHeader()->setSectionsMovable(true);
@@ -47,19 +49,19 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(ui->actionFFT, &QAction::triggered,this,&MainWindow::slot_plot_fft);
     connect(ui->actionPlot_Gain_Phase, &QAction::triggered,this,&MainWindow::slot_plot_gain_phase);
 
-    connect(ui->actionFilter, &QAction::triggered,this,&MainWindow::slot_filter);    
+    connect(ui->actionFilter, &QAction::triggered,this,&MainWindow::slot_filter);
     connect(ui->actionSelection_Pattern, &QAction::triggered,this,&MainWindow::slot_select);
     connect(ui->actionColourize, &QAction::triggered,this,&MainWindow::slot_colourize);
 
 
-//    connect(ui->actionTile,&QAction::triggered,mdiArea,&QMdiArea::tileSubWindows);
-//    connect(ui->actionCascade,&QAction::triggered,mdiArea,&QMdiArea::cascadeSubWindows);
-//    connect(ui->actionNext,&QAction::triggered,mdiArea,&QMdiArea::activateNextSubWindow);
-//    connect(ui->actionPrevious,&QAction::triggered,mdiArea,&QMdiArea::activatePreviousSubWindow);
+    //    connect(ui->actionTile,&QAction::triggered,mdiArea,&QMdiArea::tileSubWindows);
+    //    connect(ui->actionCascade,&QAction::triggered,mdiArea,&QMdiArea::cascadeSubWindows);
+    //    connect(ui->actionNext,&QAction::triggered,mdiArea,&QMdiArea::activateNextSubWindow);
+    //    connect(ui->actionPrevious,&QAction::triggered,mdiArea,&QMdiArea::activatePreviousSubWindow);
 
-//    QMdiSubWindow* w = mdiArea->addSubWindow(table);
-//    w->setWindowFlags(Qt::FramelessWindowHint);
-//    w->showMaximized();
+    //    QMdiSubWindow* w = mdiArea->addSubWindow(table);
+    //    w->setWindowFlags(Qt::FramelessWindowHint);
+    //    w->showMaximized();
 
     //Action Edition----------------------------------------------------------------
     a_updateColumns=new QAction(this);
@@ -67,7 +69,14 @@ MainWindow::MainWindow(QWidget* parent) :
     a_newRow=new QAction(this);
     a_newRows=new QAction(this);
     a_delete=new QAction(this);
+    a_copy=new QAction(this);
+    a_paste=new QAction(this);
 
+    a_copy->setShortcut(QKeySequence("Ctrl+C"));
+    a_paste->setShortcut(QKeySequence("Ctrl+V"));
+
+    this->addAction(a_copy);
+    this->addAction(a_paste);
     this->addAction(a_newColumn);
     this->addAction(a_newRow);
     this->addAction(a_newRows);
@@ -80,6 +89,9 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(a_newRows,&QAction::triggered,this,&MainWindow::slot_newRows);
     connect(a_delete,&QAction::triggered,this,&MainWindow::slot_delete);
     connect(a_updateColumns,&QAction::triggered,this,&MainWindow::slot_updateColumns);
+
+    connect(a_copy,&QAction::triggered,this,&MainWindow::slot_copy);
+    connect(a_paste,&QAction::triggered,this,&MainWindow::slot_paste);
     //------------------------------------------------------------------------------
 
     te_results=new QTextEdit;
@@ -154,18 +166,18 @@ void MainWindow::slot_open()
     }
 }
 
-QStringList extractToken(QString fileLine)
+QStringList MainWindow::extractToken(QString fileLine)
 {
     if (fileLine.endsWith("\n"))
     {
         fileLine.chop(1);
     }
-    if (fileLine.endsWith(";"))
+    if (fileLine.endsWith(separator))
     {
         fileLine.chop(1);
     }
 
-    return fileLine.split(";");
+    return fileLine.split(separator);
 }
 
 void MainWindow::direct_open(QString filename)
@@ -185,7 +197,6 @@ void MainWindow::direct_open(QString filename)
         {
             // read one line from textstream(separated by "\n")
             QString dataLine = in.readLine();
-            std::cout<<"----"<<dataLine.toLocal8Bit().data()<<std::endl;
 
             if (dataLine=="<header>")
             {
@@ -273,8 +284,6 @@ void MainWindow::direct_open(QString filename)
     {
         QMessageBox::information(this,"Erreur",QString("Impossible d'ouvrir le fichier : ")+filename);
     }
-
-    std::cout<<datatable<<std::endl;
 }
 
 void MainWindow::slot_save()
@@ -402,13 +411,13 @@ void MainWindow::direct_save(QString filename)
             for (int j = 0; j < columns; j++)
             {
                 textData+=variables_names[j];
-                textData += ";";
+                textData += separator;
             }
             textData += "\n";
             for (int j = 0; j < columns; j++)
             {
                 textData+=variables_expressions[j];
-                textData += ";";
+                textData += separator;
             }
             textData += "\n";
             textData += "</header>\n";
@@ -420,7 +429,7 @@ void MainWindow::direct_save(QString filename)
             {
 
                 textData += at(i,j);
-                textData += ";";      // for .csv file format
+                textData += separator;      // for .csv file format
             }
             textData += "\n";             // (optional: for new line segmentation)
         }
@@ -761,13 +770,19 @@ void MainWindow::slot_delete()
     QModelIndexList id_list_cols=table->selectionModel()->selectedColumns();
 
     //////////////////////////////////////////////
-    std::vector<unsigned int> indexs_cols;
-    for(int i=0;i<id_list_cols.size();i++){indexs_cols.push_back(id_list_cols[i].column());}
+    std::vector<unsigned int> indexs_cols,indexs_cols_visual;
+    for(int i=0;i<id_list_cols.size();i++)
+    {
+        indexs_cols.push_back(id_list_cols[i].column());
+        indexs_cols_visual.push_back(table->horizontalHeader()->visualIndex(id_list_cols[i].column()));
+    }
     std::sort(indexs_cols.begin(),indexs_cols.end());
+    std::sort(indexs_cols_visual.begin(),indexs_cols_visual.end());
 
     //////////////////////////////////////////////
     if (indexs_cols.size()>=1)
     {
+        //-----------------------------------------------------logical
         for (int i=0; i<indexs_cols.size();)
         {
             int indexa=indexs_cols[i];
@@ -786,30 +801,62 @@ void MainWindow::slot_delete()
                 }
             }
 
+            model->removeColumns(indexa-i,n);
+
+            i+=n;
+        }
+
+        //-----------------------------------------------------visual
+        for (int i=0; i<indexs_cols_visual.size();)
+        {
+            int indexa=indexs_cols_visual[i];
+
+            int n=1;
+            if ((i+n)<indexs_cols_visual.size())
+            {
+                int indexb=indexs_cols_visual[i+n];
+                while ((i+n)<indexs_cols_visual.size() && indexb==indexa+n)
+                {
+                    n++;
+                    if ((i+n)<indexs_cols_visual.size())
+                    {
+                        indexb=indexs_cols_visual[i+n];
+                    }
+                }
+            }
+
             for (int k=0; k<n; k++)
             {
                 registerDelVariable(variables_names[indexa-i]);
             }
 
-            model->removeColumns(indexa-i,n);
             removeColumns(datatable,indexa-i,n);
 
             i+=n;
         }
         table->setModel(model);
+        fileModified();
     }
+
+
 
 
     QModelIndexList id_list_rows=table->selectionModel()->selectedRows();
 
     //////////////////////////////////////////////
-    std::vector<unsigned int> indexs_rows;
-    for(int i=0;i<id_list_rows.size();i++){indexs_rows.push_back(id_list_rows[i].row());}
+    std::vector<unsigned int> indexs_rows,indexs_rows_visual;
+    for(int i=0;i<id_list_rows.size();i++)
+    {
+        indexs_rows.push_back(id_list_rows[i].row());
+        indexs_rows_visual.push_back(table->verticalHeader()->visualIndex(id_list_rows[i].row()));
+    }
     std::sort(indexs_rows.begin(),indexs_rows.end());
+    std::sort(indexs_rows_visual.begin(),indexs_rows_visual.end());
 
     //////////////////////////////////////////////
     if (indexs_rows.size()>=1)
     {
+        //-----------------------------------------------------logical
         for (int i=0; i<indexs_rows.size();)
         {
             int indexa=indexs_rows[i];
@@ -829,12 +876,41 @@ void MainWindow::slot_delete()
             }
 
             model->removeRows(indexa-i,n);
+
+            i+=n;
+        }
+
+        //-----------------------------------------------------visual
+        for (int i=0; i<indexs_rows_visual.size();)
+        {
+            int indexa=indexs_rows_visual[i];
+
+            int n=1;
+            if ((i+n)<indexs_rows_visual.size())
+            {
+                int indexb=indexs_rows_visual[i+n];
+                while ((i+n)<indexs_rows_visual.size() && indexb==indexa+n)
+                {
+                    n++;
+                    if ((i+n)<indexs_rows_visual.size())
+                    {
+                        indexb=indexs_rows_visual[i+n];
+                    }
+                }
+            }
+
             removeRows(datatable,indexa-i,n);
 
             i+=n;
         }
+
         table->setModel(model);
+        fileModified();
     }
+
+
+    //std::cout<<datatable<<std::endl;
+    //dispVariables();
 }
 
 void MainWindow::dispVariables()
@@ -869,7 +945,6 @@ QVector<QString> MainWindow::evalColumn(int colId)
     else
     {
         int nbRows=model->rowCount();
-        std::cout<<"evalColumn 1 "<<std::endl;
 
         QVector<QString> colResults(nbRows);
 
@@ -881,7 +956,6 @@ QVector<QString> MainWindow::evalColumn(int colId)
             for (int i=0; i<nbRows; i++)
             {
                 activeRow=i;
-                //std::cout<<float(i)/nbRows<<std::endl;
                 for (int j=0; j<datatable.cols(); j++)
                 {
                     *(variables[j])=datatable(i,j);
@@ -894,7 +968,6 @@ QVector<QString> MainWindow::evalColumn(int colId)
             for (int i=0; i<nbRows; i++)
             {
                 activeRow=i;
-                //std::cout<<float(i)/nbRows<<std::endl;
                 for (int j=0; j<datatable.cols(); j++)
                 {
                     *(variables[j])=datatable(i,j);
@@ -903,7 +976,6 @@ QVector<QString> MainWindow::evalColumn(int colId)
             }
         }
 
-        std::cout<<"evalColumn 3"<<std::endl;
         return colResults;
     }
 }
@@ -1097,14 +1169,12 @@ QVector<QString> MainWindow::getColumn(int idCol)
 
 void MainWindow::setColumn(int idCol,const QVector<QString>& vec_col)
 {
-    std::cout<<"setColumn 1 id="<<idCol<<std::endl;
     QList<QStandardItem*> items;
     items.reserve(model->rowCount());
     int nbRows=model->rowCount();
 
     if (idCol<model->columnCount()) //set
     {
-        std::cout<<"setColumn 2 "<<std::endl;
         if (vec_col.size()>0)
         {
             for (int i=0; i<nbRows; i++)
@@ -1117,11 +1187,9 @@ void MainWindow::setColumn(int idCol,const QVector<QString>& vec_col)
             }
             datatable.col(idCol)=toSafeDouble(vec_col);
         }
-        std::cout<<"setColumn 2 end"<<std::endl;
     }
     else//new column
     {
-        std::cout<<"setColumn 3 "<<std::endl;
         if (vec_col.size()==0)
         {
             for (int i=0; i<nbRows; i++)
@@ -1141,9 +1209,6 @@ void MainWindow::setColumn(int idCol,const QVector<QString>& vec_col)
             model->appendColumn(items);
         }
     }
-
-
-    std::cout<<"setColumn end "<<std::endl;
 }
 
 void MainWindow::addModelRow(const QStringList& str_row)
@@ -1247,8 +1312,6 @@ void MainWindow::updateTable()
             datatable(i,j)=toSafeDouble(at(i,j));
         }
     }
-
-    //std::cout<<datatable<<std::endl;
 }
 
 void MainWindow::updateTableViewRows()
@@ -1428,7 +1491,7 @@ void MainWindow::slot_plot_curve_xy()
                 viewer1d->slot_add_data(Curve2D(data_x,
                                                 data_y,
                                                 QString("(%1,%2)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),
-                                                Curve2D::CURVE));
+                                        Curve2D::CURVE));
             }
         }
 
@@ -1467,7 +1530,7 @@ void MainWindow::slot_plot_cloud_2D()
                 Curve2D curve(data_x,
                               data_y,
                               QString("(%1,%2)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),
-                              Curve2D::CURVE);
+                        Curve2D::CURVE);
                 curve.setScalarField(data_s);
                 curve.getStyle().mLineStyle=QCPCurve::lsNone;
                 curve.getStyle().mScatterShape=QCPScatterStyle::ssDisc;
@@ -1520,7 +1583,7 @@ void MainWindow::slot_plot_field_2D()
                 Curve2D curve(data_x,
                               data_y,
                               QString("V(%3,%4)=f(%1,%2)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())).arg(getColName(id_list[k+2].column())).arg(getColName(id_list[k+3].column())),
-                              Curve2D::CURVE);
+                        Curve2D::CURVE);
                 curve.setScalarField(data_s);
                 curve.setAlphaField(data_a);
                 curve.getStyle().mLineStyle=QCPCurve::lsNone;
@@ -1565,8 +1628,8 @@ void MainWindow::slot_plot_map_2D()
             viewer2d->show();
             viewer2d->slot_setData(datatable,BoxPlot(512,512,
                                                      static_cast<unsigned int>(id_list[0].column()),
-                                                     static_cast<unsigned int>(id_list[1].column()),
-                                                     static_cast<unsigned int>(id_list[2].column())));
+                                   static_cast<unsigned int>(id_list[1].column()),
+                    static_cast<unsigned int>(id_list[2].column())));
         }
     }
     else
@@ -1676,8 +1739,8 @@ void MainWindow::slot_plot_cloud_3D()
         {
             cloud=new Cloud(data_x,data_y,data_z,
                             getColName(id_list[0].column()),
-                            getColName(id_list[1].column()),
-                            getColName(id_list[2].column()));
+                    getColName(id_list[1].column()),
+                    getColName(id_list[2].column()));
 
         }
         else if (id_list.size()==4)
@@ -1685,9 +1748,9 @@ void MainWindow::slot_plot_cloud_3D()
             Eigen::VectorXd data_s=datatable.col(table->horizontalHeader()->visualIndex(id_list[3].column()));
             cloud=new Cloud(data_x,data_y,data_z,data_s,
                             getColName(id_list[0].column()),
-                            getColName(id_list[1].column()),
-                            getColName(id_list[2].column()),
-                            getColName(id_list[3].column()));
+                    getColName(id_list[1].column()),
+                    getColName(id_list[2].column()),
+                    getColName(id_list[3].column()));
         }
 
         if (cloud)
@@ -1699,7 +1762,7 @@ void MainWindow::slot_plot_cloud_3D()
         mdiArea->addSubWindow(view3d->getContainer());
         view3d->getContainer()->show();
 
-//        view3d->show();
+        //        view3d->show();
 
     }
     else
@@ -1707,44 +1770,6 @@ void MainWindow::slot_plot_cloud_3D()
         QMessageBox::information(this,"Information","Please select 3 columns (x,y,z) or 4 columns (x,y,z,scalar)");
     }
 }
-
-//void MainWindow::slot_plot_gain_phase_old()
-//{
-//    QModelIndexList id_list=table->selectionModel()->selectedColumns();
-
-//    if (id_list.size()%3==0 && id_list.size()>0)
-//    {
-//        Viewer1DCPLX* viewer1d=new Viewer1DCPLX(shortcuts);
-//        viewer1d->setMinimumSize(600,400);
-
-//        for (int k=0; k<id_list.size(); k+=3)
-//        {
-//            Eigen::VectorXd data_f=datatable.col(table->horizontalHeader()->visualIndex(id_list[k].column()));
-//            Eigen::VectorXd data_module=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
-//            Eigen::VectorXd data_phase=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+2].column()));
-
-//            if (data_f.size()>0 && data_module.size()>0 && data_phase.size()>0)
-//            {
-//                std::cout<<data_phase.transpose()<<std::endl;
-
-//                viewer1d->slot_add_data_graph(
-//                    Curve2D_GainPhase(data_f,data_module,data_phase,QString("%2(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column()))
-//                                      ,QString("%2(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+2].column())))
-//                );
-//            }
-//        }
-
-//        QMdiSubWindow* subWindow = new QMdiSubWindow;
-//        subWindow->setWidget(viewer1d);
-//        subWindow->setAttribute(Qt::WA_DeleteOnClose);
-//        mdiArea->addSubWindow(subWindow);
-//        viewer1d->show();
-//    }
-//    else
-//    {
-//        QMessageBox::information(this,"Information","Please select 3 columns (frequency,module,phase)");
-//    }
-//}
 
 void MainWindow::slot_plot_gain_phase()
 {
@@ -1763,8 +1788,6 @@ void MainWindow::slot_plot_gain_phase()
 
             if (data_f.size()>0 && data_module.size()>0 && data_phase.size()>0)
             {
-                std::cout<<data_phase.transpose()<<std::endl;
-
                 Curve2D curve_module(data_f,data_module,QString("%2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),Curve2D::GRAPH);
                 Curve2D curve_phase (data_f,data_phase,QString("%2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+2].column())),Curve2D::GRAPH);
 
@@ -1772,14 +1795,8 @@ void MainWindow::slot_plot_gain_phase()
             }
         }
 
-//        QMdiSubWindow* subWindow = new QMdiSubWindow;
-//        subWindow->setWidget(viewer_bode);
-//        subWindow->setAttribute(Qt::WA_DeleteOnClose);
-//        mdiArea->addSubWindow(subWindow);
-
-
-         mdiArea->addSubWindow(viewer_bode);
-         viewer_bode->show();
+        mdiArea->addSubWindow(viewer_bode);
+        viewer_bode->show();
     }
     else
     {
@@ -2000,7 +2017,6 @@ void MainWindow::slot_filter()
         cb_mode->addItem("Keep greater than threshold");
         cb_mode->addItem("Keep lower than threshold");
 
-
         QDoubleSpinBox* sb_threshold=new QDoubleSpinBox(dialog);
         sb_threshold->setPrefix("Threshold=");
         sb_threshold->setRange(-1e100,1e100);
@@ -2033,8 +2049,6 @@ void MainWindow::slot_filter()
         int result=dialog->exec();
         if (result == QDialog::Accepted)
         {
-            std::cout<<"sort "<<cb_mode->currentIndex()<<std::endl;
-            std::cout<<datatable<<std::endl;
             if(cb_mode->currentIndex()==0)
             {
                 sortBy(datatable,index,SortMode::ASCENDING);
@@ -2051,7 +2065,6 @@ void MainWindow::slot_filter()
             {
                 thresholdBy(datatable,index,ThresholdMode::KEEP_LOWER,sb_threshold->value());
             }
-            std::cout<<datatable<<std::endl;
             updateTableViewRows();
         }
     }
@@ -2071,7 +2084,7 @@ bool MainWindow::loadShortcuts()
             {
                 lineraw.chop(1);
             }
-            QStringList line=QString(lineraw).split(";");
+            QStringList line=QString(lineraw).split(separator);
 
             if (line.size()>=2)
             {
@@ -2137,7 +2150,7 @@ void MainWindow::saveShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
         while (i.hasNext())
         {
             i.next();
-            ts<<i.key()<<";"<<i.value().toString()<<"\n";
+            ts<<i.key()<<separator<<i.value().toString()<<"\n";
         }
         file.close();
     }
@@ -2278,6 +2291,103 @@ void MainWindow::slot_colourize()
                     }
                 }
             }
+        }
+    }
+}
+
+void MainWindow::slot_copy()
+{
+    QString clipboardString;
+    QModelIndexList selectedIndexes = table->selectionModel()->selectedIndexes();
+    QCPRange range_row,range_col;
+    getRowColSelectedRanges(range_row,range_col);
+
+    int nrows=range_row.upper-range_row.lower+1;
+    int ncols=range_col.upper-range_col.lower+1;
+
+    Eigen::Matrix<QString,Eigen::Dynamic,Eigen::Dynamic> content(nrows,ncols);
+
+    for (int i = 0; i < selectedIndexes.count(); ++i)
+    {
+        QModelIndex current = selectedIndexes[i];
+        int visualIndexRows=table->verticalHeader()->visualIndex(current.row())-range_row.lower;
+        int visualIndexCols=table->horizontalHeader()->visualIndex(current.column())-range_col.lower;
+
+        std::cout<<visualIndexRows<<" "<<visualIndexCols<<std::endl;
+
+        if(current.data(Qt::DisplayRole).isValid())
+        {
+            content(visualIndexRows,visualIndexCols)=current.data(Qt::DisplayRole).toString();
+        }
+    }
+
+    for(int i=0;i<nrows;i++)
+    {
+        for(int j=0;j<ncols;j++)
+        {
+            clipboardString+=content(i,j);
+            clipboardString+=separator;
+        }
+        clipboardString+="\n";
+    }
+
+    QApplication::clipboard()->setText(clipboardString);
+}
+
+void MainWindow::slot_paste()
+{
+    QString clipboardString=QApplication::clipboard()->text();
+
+    if(!clipboardString.isEmpty())
+    {
+        QCPRange range_row,range_col;
+        getRowColSelectedRanges(range_row,range_col);
+
+        //---------------------------------------------------------------------------------
+        QStringList lines=clipboardString.split("\n",QString::SkipEmptyParts);
+        for(int i=0.0;i<lines.size();i++)
+        {
+            QStringList valuesToken=extractToken(lines[i]);
+            for(int j=0;j<valuesToken.size();j++)
+            {
+                int indexRow=i+range_row.lower;
+                int indexCol=j+range_col.lower;
+
+                int logicalIndexRow=table->verticalHeader()->logicalIndex(indexRow);
+                int logicalIndexCol=table->horizontalHeader()->logicalIndex(indexCol);
+
+                if(indexRow<datatable.rows() && indexCol<datatable.cols())
+                {
+                    model->item(logicalIndexRow,logicalIndexCol)->setText(valuesToken[j]);
+                    datatable(indexRow,indexCol)=toSafeDouble(valuesToken[j]);
+                }
+            }
+        }
+    }
+}
+
+void MainWindow::getRowColSelectedRanges(QCPRange &range_row,QCPRange &range_col)
+{
+    QModelIndexList selectedIndexes = table->selectionModel()->selectedIndexes();
+    for (int i = 0; i < selectedIndexes.count(); ++i)
+    {
+        QModelIndex current = selectedIndexes[i];
+        int visualIndexRows=table->verticalHeader()->visualIndex(current.row());
+        int visualIndexCols=table->horizontalHeader()->visualIndex(current.column());
+
+        if(i==0)
+        {
+            range_row.lower=visualIndexRows;
+            range_row.upper=visualIndexRows;
+            range_col.lower=visualIndexCols;
+            range_col.upper=visualIndexCols;
+        }
+        else
+        {
+            if(visualIndexRows<range_row.lower)range_row.lower=visualIndexRows;
+            else if(visualIndexRows>range_row.upper)range_row.upper=visualIndexRows;
+            if(visualIndexCols<range_col.lower)range_col.lower=visualIndexCols;
+            else if(visualIndexCols>range_col.upper)range_col.upper=visualIndexCols;
         }
     }
 }

@@ -322,6 +322,7 @@ void Viewer1D::createPopup()
     menuScalarFieldFit=new QMenu("Fit",this);
     menuParameters=new QMenu("Parameters",this);
     menuAnalyse=new QMenu("Anaylse",this);
+    menuFilters=new QMenu("Filter",this);
 
     actCopy   = new QAction("Copy",  this);
     actPaste   = new QAction("Paste",  this);
@@ -344,6 +345,8 @@ void Viewer1D::createPopup()
     actFitSinusoide= new QAction("Sinusoide",  this);
     actFitPolynomial2V= new QAction("Polynomial XY",  this);
     actAutoColor= new QAction("Auto color",  this);
+    actFilterMedian=new QAction("Median Filter",this);
+    actFilterMean=new QAction("Mean Filter",this);
 
     this->addAction(actCopy);
     this->addAction(actPaste);
@@ -392,9 +395,13 @@ void Viewer1D::createPopup()
     popup_menu->addMenu(menuGadgets);
     popup_menu->addSeparator();
     popup_menu->addMenu(menuAnalyse);
+    popup_menu->addMenu(menuFilters);
     popup_menu->addMenu(menuFit);
     popup_menu->addMenu(menuScalarField);    
     popup_menu->addSeparator();
+
+    menuFilters->addAction(actFilterMedian);
+    menuFilters->addAction(actFilterMean);
 
     menuGadgets->addAction(actGadgetMark);
     menuGadgets->addAction(actGadgetText);
@@ -445,6 +452,11 @@ void Viewer1D::createPopup()
     connect(actLegendTopBottom,SIGNAL(toggled(bool)),this,SLOT(slot_top_legend(bool)));
     connect(actLegendLeftRight,SIGNAL(toggled(bool)),this,SLOT(slot_left_legend(bool)));
     connect(actAutoColor,SIGNAL(triggered()),this,SLOT(slot_auto_color()));
+
+    connect(actFilterMean,SIGNAL(triggered()),this,SLOT(slot_meanFilter()));
+    connect(actFilterMedian,SIGNAL(triggered()),this,SLOT(slot_medianFilter()));
+
+
 }
 
 void Viewer1D::slot_auto_color()
@@ -1552,4 +1564,118 @@ void Viewer1D::slot_setScalarFieldGradientType(int type)
         curveslist[0]->setScalarFieldGradientType(type);
     }
     replot();
+}
+
+void Viewer1D::slot_meanFilter()
+{
+    QList<Curve2D> curves=getSelectedCurves();
+    if (curves.size()>0)
+    {
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("Mean Filter : Parameters");
+        QGridLayout* gbox = new QGridLayout();
+
+        QSpinBox* getRadius=new QSpinBox(dialog);
+        getRadius->setRange(1,1000);
+        getRadius->setValue(1);
+        getRadius->setPrefix(QString("Radius="));
+
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                           | QDialogButtonBox::Cancel);
+
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+        gbox->addWidget(getRadius,0,0);
+        gbox->addWidget(buttonBox,1,0);
+
+        dialog->setLayout(gbox);
+
+        //------------------------------------------------
+        int result=dialog->exec();
+        if (result == QDialog::Accepted)
+        {
+            for(int k=0;k<curves.size();k++)
+            {
+                Eigen::VectorXd Y=curves[k].getY(),Ymean(Y.rows());
+                int radius=getRadius->value();
+                for(int i=0;i<Y.rows();i++)
+                {
+                    double sum=0.0;
+                    int cpt=0;
+                    for(int j=i-radius;j<=i+radius;j++)
+                    {
+                        if(j>0 && j<Y.rows())
+                        {
+                            sum+=Y[j];
+                            cpt++;
+                        }
+                    }
+                    sum/=cpt;
+                    Ymean[i]=sum;
+                }
+
+                Curve2D fit_curve(curves[k].getX(),Ymean,QString("Mean Filter: %1").arg(curves[k].getLegend()),Curve2D::GRAPH);
+                slot_add_data(fit_curve);
+                emit sig_newColumn(QString("Mean_%1").arg(curves[k].getLegend()),Ymean);
+            }
+        }
+    }
+}
+
+void Viewer1D::slot_medianFilter()
+{
+    QList<Curve2D> curves=getSelectedCurves();
+    if (curves.size()>0)
+    {
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("Median Filter : Parameters");
+        QGridLayout* gbox = new QGridLayout();
+
+        QSpinBox* getRadius=new QSpinBox(dialog);
+        getRadius->setRange(1,1000);
+        getRadius->setValue(1);
+        getRadius->setPrefix(QString("Radius="));
+
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                           | QDialogButtonBox::Cancel);
+
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+        gbox->addWidget(getRadius,0,0);
+        gbox->addWidget(buttonBox,1,0);
+
+        dialog->setLayout(gbox);
+
+        //------------------------------------------------
+        int result=dialog->exec();
+        if (result == QDialog::Accepted)
+        {
+            for(int k=0;k<curves.size();k++)
+            {
+                Eigen::VectorXd Y=curves[k].getY(),Ymean(Y.rows());
+                int radius=getRadius->value();
+                for(int i=0;i<Y.rows();i++)
+                {
+                    std::vector<double> values;
+                    for(int j=i-radius;j<=i+radius;j++)
+                    {
+                        if(j>0 && j<Y.rows())
+                        {
+                            values.push_back(Y[j]);
+                        }
+                    }
+                    qSort(values);
+                    Ymean[i]=values[values.size()/2];
+                }
+
+                Curve2D fit_curve(curves[k].getX(),Ymean,QString("Median Filter: %1").arg(curves[k].getLegend()),Curve2D::GRAPH);
+                slot_add_data(fit_curve);
+                emit sig_newColumn(QString("Median_%1").arg(curves[k].getLegend()),Ymean);
+            }
+        }
+    }
 }

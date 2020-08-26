@@ -924,7 +924,8 @@ void MainWindow::dispVariables()
 
 QString MainWindow::fromNumber(double value)
 {
-    return QString::number(value,'f',internal_precision);
+    //return QString::number(value,'f',internal_precision);//Mauvaise idée
+    return QString::number(value);
 }
 QString MainWindow::fromNumber(double value,int precision)
 {

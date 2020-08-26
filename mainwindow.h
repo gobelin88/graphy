@@ -180,7 +180,7 @@ private:
     double toSafeDouble(const QString& str) const;
     QString fromNumber(double value);
     QString fromNumber(double value,int precision);
-    const int internal_precision=9;
+    const int internal_precision=12;
     bool asColumnStrings(int idCol);
 
     QString separator;

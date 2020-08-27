@@ -106,6 +106,8 @@ public slots:
     void slot_colourize();
 
 private:
+    void closeEvent (QCloseEvent *event);
+
     QStringList extractToken(QString fileLine);
     bool isValidExpression(QString variableExpression);
     bool isValidVariable(QString variableName, int currentIndex);
@@ -185,6 +187,8 @@ private:
 
     QString separator;
 
+
+    bool isModified;
     void getRowColSelectedRanges(QCPRange &range_row,QCPRange &range_col);
 };
 

@@ -7,6 +7,7 @@ MainWindow::MainWindow(QWidget* parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+    isModified=false;
     separator=";";
 
     ui->setupUi(this);
@@ -103,7 +104,7 @@ MainWindow::MainWindow(QWidget* parent) :
     //mdiArea->setViewport(te_widget);
 
     //QMdiSubWindow* subWindow = mdiArea->addSubWindow(te_widget, Qt::FramelessWindowHint );
-    mdiArea->addSubWindow(te_widget, Qt::WindowTitleHint );
+    mdiArea->addSubWindow(te_widget, Qt::CustomizeWindowHint | Qt::WindowMinMaxButtonsHint );
     //subWindow->showMaximized();
 
     mdiArea->setSizeAdjustPolicy (QAbstractScrollArea::AdjustToContents);
@@ -282,6 +283,8 @@ void MainWindow::direct_open(QString filename)
         updateTable();
 
         table->resizeColumnsToContents();
+
+        isModified=false;
     }
     else
     {
@@ -440,6 +443,7 @@ void MainWindow::direct_save(QString filename)
         QTextStream out(&file);
         out << textData;
 
+        isModified=false;
     }
     else
     {
@@ -1281,6 +1285,7 @@ void MainWindow::direct_new(int sx,int sy)
     connect(model,SIGNAL(dataChanged(const QModelIndex&,const QModelIndex&)),this,SLOT(updateTable(const QModelIndex&,const QModelIndex&)));
 
     setCurrentFilename("");
+    isModified=false;
     updateTable();
 }
 
@@ -1293,6 +1298,7 @@ void MainWindow::setCurrentFilename(QString filename)
 void MainWindow::fileModified()
 {
     this->setWindowTitle(QString("Graphy %1 : %2*").arg(graphyVersion).arg(current_filename));
+    isModified=true;
 }
 
 void MainWindow::resizeEvent(QResizeEvent* event)
@@ -2389,6 +2395,25 @@ void MainWindow::getRowColSelectedRanges(QCPRange &range_row,QCPRange &range_col
             else if(visualIndexRows>range_row.upper)range_row.upper=visualIndexRows;
             if(visualIndexCols<range_col.lower)range_col.lower=visualIndexCols;
             else if(visualIndexCols>range_col.upper)range_col.upper=visualIndexCols;
+        }
+    }
+}
+
+void MainWindow::closeEvent (QCloseEvent *event)
+{
+    if(isModified)
+    {
+        QMessageBox::StandardButton resBtn =
+        QMessageBox::question( this, "File is not saved" ,tr("Are you sure?\n"),
+        QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
+        QMessageBox::Yes);
+        if (resBtn != QMessageBox::Yes)
+        {
+            event->ignore();
+        }
+       else
+        {
+            event->accept();
         }
     }
 }

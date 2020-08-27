@@ -75,13 +75,13 @@ MainWindow::MainWindow(QWidget* parent) :
     a_copy->setShortcut(QKeySequence("Ctrl+C"));
     a_paste->setShortcut(QKeySequence("Ctrl+V"));
 
-    this->addAction(a_copy);
-    this->addAction(a_paste);
-    this->addAction(a_newColumn);
-    this->addAction(a_newRow);
-    this->addAction(a_newRows);
-    this->addAction(a_delete);
-    this->addAction(a_updateColumns);
+    table->addAction(a_copy);
+    table->addAction(a_paste);
+    table->addAction(a_newColumn);
+    table->addAction(a_newRow);
+    table->addAction(a_newRows);
+    table->addAction(a_delete);
+    table->addAction(a_updateColumns);
 
     connect(table->horizontalHeader(),&QHeaderView::sectionDoubleClicked,this,&MainWindow::slot_sectionDoubleClicked);
     connect(a_newColumn,&QAction::triggered,this,&MainWindow::slot_editColumn);
@@ -100,8 +100,11 @@ MainWindow::MainWindow(QWidget* parent) :
     te_widget->addTab(table,"Data");
     te_widget->addTab(te_results,"Results");
 
-    mdiArea->setViewport(te_widget);
-    //mdiArea->addSubWindow(te_widget);
+    //mdiArea->setViewport(te_widget);
+
+    //QMdiSubWindow* subWindow = mdiArea->addSubWindow(te_widget, Qt::FramelessWindowHint );
+    mdiArea->addSubWindow(te_widget, Qt::WindowTitleHint );
+    //subWindow->showMaximized();
 
     mdiArea->setSizeAdjustPolicy (QAbstractScrollArea::AdjustToContents);
     table->setSizeAdjustPolicy   (QAbstractScrollArea::AdjustToContents);
@@ -1406,10 +1409,7 @@ void MainWindow::slot_plot_y()
             }
         }
 
-        QMdiSubWindow* subWindow = new QMdiSubWindow;
-        subWindow->setWidget(viewer1d);
-        subWindow->setAttribute(Qt::WA_DeleteOnClose);
-        mdiArea->addSubWindow(subWindow);
+        mdiArea->addSubWindow(viewer1d);
         //subWindow->show();
         viewer1d->show();
     }

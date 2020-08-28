@@ -106,6 +106,8 @@ public slots:
     void slot_colourize();
 
 private:
+    Viewer1D* createViewerId();
+
     void closeEvent (QCloseEvent *event);
 
     QStringList extractToken(QString fileLine);

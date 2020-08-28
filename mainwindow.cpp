@@ -108,11 +108,10 @@ MainWindow::MainWindow(QWidget* parent) :
     //subWindow->showMaximized();
 
     mdiArea->setSizeAdjustPolicy (QAbstractScrollArea::AdjustToContents);
-    table->setSizeAdjustPolicy   (QAbstractScrollArea::AdjustToContents);
+    //table->setSizeAdjustPolicy   (QAbstractScrollArea::AdjustToContents);
 
 
-    direct_new(3,3);
-
+    direct_new(10,10);
 
     loadShortcuts();
 
@@ -763,6 +762,8 @@ void MainWindow::slot_newColumn(QString name,Eigen::VectorXd data)
         setColumn(index,toQVectorStr(data));
         model->setHorizontalHeaderItem(index, new QStandardItem(name));
         table->setModel(model);
+
+        fileModified();
     }
 }
 
@@ -774,6 +775,8 @@ void MainWindow::slot_results(QString results)
 
 void MainWindow::slot_delete()
 {
+    QElapsedTimer timer;
+    timer.start();
     QModelIndexList id_list_cols=table->selectionModel()->selectedColumns();
 
     //////////////////////////////////////////////
@@ -846,7 +849,7 @@ void MainWindow::slot_delete()
     }
 
 
-
+    std::cout<<"remove rows1"<<std::endl;
 
     QModelIndexList id_list_rows=table->selectionModel()->selectedRows();
 
@@ -860,9 +863,13 @@ void MainWindow::slot_delete()
     std::sort(indexs_rows.begin(),indexs_rows.end());
     std::sort(indexs_rows_visual.begin(),indexs_rows_visual.end());
 
+
+    std::cout<<"remove rows2"<<std::endl;
+
     //////////////////////////////////////////////
     if (indexs_rows.size()>=1)
     {
+        std::cout<<"remove rows3"<<std::endl;
         //-----------------------------------------------------logical
         for (int i=0; i<indexs_rows.size();)
         {
@@ -882,11 +889,13 @@ void MainWindow::slot_delete()
                 }
             }
 
+            std::cout<<"n="<<n<<" "<<indexa-i<<std::endl;
             model->removeRows(indexa-i,n);
 
             i+=n;
         }
 
+        std::cout<<"remove rows4"<<std::endl;
         //-----------------------------------------------------visual
         for (int i=0; i<indexs_rows_visual.size();)
         {
@@ -906,6 +915,7 @@ void MainWindow::slot_delete()
                 }
             }
 
+            std::cout<<"n="<<n<<" "<<indexa-i<<std::endl;
             removeRows(datatable,indexa-i,n);
 
             i+=n;
@@ -915,6 +925,7 @@ void MainWindow::slot_delete()
         fileModified();
     }
 
+    std::cout<<"dt="<<timer.nsecsElapsed()/1000000<<" ms"<<std::endl;
 
     //std::cout<<datatable<<std::endl;
     //dispVariables();
@@ -1261,18 +1272,23 @@ void MainWindow::clear()
 
 void MainWindow::direct_new(int sx,int sy)
 {
+    QElapsedTimer timer;
+    timer.start();
     clear();
 
     hasheader=false;
 
+    QStandardItem* items=new QStandardItem[sx*sy];
+    unsigned int index=0;
     for (int dx=0; dx<sx; dx++)
     {
         for (int dy=0; dy<sy; dy++)
         {
-            QStandardItem* item = new QStandardItem();
-            model->setItem(dx, dy, item);
+            model->setItem(dx, dy, &items[index]);
+            index++;
         }
     }
+    //model->set
 
     for (int j = 0; j < model->columnCount(); j++)
     {
@@ -1287,6 +1303,8 @@ void MainWindow::direct_new(int sx,int sy)
     setCurrentFilename("");
     isModified=false;
     updateTable();
+
+    std::cout<<"dt="<<timer.nsecsElapsed()*1e-9<<"s "<<std::endl;
 }
 
 void MainWindow::setCurrentFilename(QString filename)
@@ -1390,18 +1408,27 @@ int MainWindow::getColId(QString colName)
     return -1;
 }
 
+Viewer1D* MainWindow::createViewerId()
+{
+    Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
+    QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
+    QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
+    viewer1d->setMinimumSize(600,400);
+    viewer1d->setAttribute(Qt::WA_DeleteOnClose);
+
+    mdiArea->addSubWindow(viewer1d);
+    viewer1d->show();
+
+    return viewer1d;
+}
+
 void MainWindow::slot_plot_y()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
     if (id_list.size()>0)
     {
-        Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
-        QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
-        QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
-
-
-        viewer1d->setMinimumSize(600,400);
+        Viewer1D* viewer1d=createViewerId();
 
         for (int k=0; k<id_list.size(); k++)
         {
@@ -1413,11 +1440,7 @@ void MainWindow::slot_plot_y()
                                                 getColName(id_list[k  ].column()),
                                                 Curve2D::GRAPH));
             }
-        }
-
-        mdiArea->addSubWindow(viewer1d);
-        //subWindow->show();
-        viewer1d->show();
+        }        
     }
     else
     {
@@ -1437,11 +1460,7 @@ void MainWindow::slot_plot_graph_xy()
 
     if (id_list.size()%2==0 && id_list.size()>0)
     {
-        Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
-        QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
-        QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
-
-        viewer1d->setMinimumSize(600,400);
+        Viewer1D* viewer1d=createViewerId();
 
         for (int k=0; k<id_list.size(); k+=2)
         {
@@ -1463,12 +1482,6 @@ void MainWindow::slot_plot_graph_xy()
                 }
             }
         }
-
-        QMdiSubWindow* subWindow = new QMdiSubWindow;
-        subWindow->setWidget(viewer1d);
-        subWindow->setAttribute(Qt::WA_DeleteOnClose);
-        mdiArea->addSubWindow(subWindow);
-        viewer1d->show();
     }
     else
     {
@@ -1482,11 +1495,7 @@ void MainWindow::slot_plot_curve_xy()
 
     if (id_list.size()%2==0 && id_list.size()>0)
     {
-        Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
-        QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
-        QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
-
-        viewer1d->setMinimumSize(600,400);
+        Viewer1D* viewer1d=createViewerId();
 
         for (int k=0; k<id_list.size(); k+=2)
         {
@@ -1501,12 +1510,6 @@ void MainWindow::slot_plot_curve_xy()
                                         Curve2D::CURVE));
             }
         }
-
-        QMdiSubWindow* subWindow = new QMdiSubWindow;
-        subWindow->setWidget(viewer1d);
-        subWindow->setAttribute(Qt::WA_DeleteOnClose);
-        mdiArea->addSubWindow(subWindow);
-        viewer1d->show();
     }
     else
     {
@@ -1520,11 +1523,7 @@ void MainWindow::slot_plot_cloud_2D()
 
     if (id_list.size()%3==0 && id_list.size()>0)
     {
-        Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
-        QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
-        QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
-
-        viewer1d->setMinimumSize(600,400);
+        Viewer1D* viewer1d=createViewerId();
 
         for (int k=0; k<id_list.size(); k+=3)
         {
@@ -1544,12 +1543,6 @@ void MainWindow::slot_plot_cloud_2D()
                 viewer1d->slot_add_data(curve);
             }
         }
-
-        QMdiSubWindow* subWindow = new QMdiSubWindow;
-        subWindow->setWidget(viewer1d);
-        subWindow->setAttribute(Qt::WA_DeleteOnClose);
-        mdiArea->addSubWindow(subWindow);
-        viewer1d->show();
     }
     else
     {
@@ -1563,11 +1556,7 @@ void MainWindow::slot_plot_field_2D()
 
     if (id_list.size()%4==0 && id_list.size()>0)
     {
-        Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
-        QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
-        QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
-
-        viewer1d->setMinimumSize(600,400);
+        Viewer1D* viewer1d=createViewerId();
 
         for (int k=0; k<id_list.size(); k+=4)
         {
@@ -1599,12 +1588,6 @@ void MainWindow::slot_plot_field_2D()
                 viewer1d->slot_add_data(curve);
             }
         }
-
-        QMdiSubWindow* subWindow = new QMdiSubWindow;
-        subWindow->setWidget(viewer1d);
-        subWindow->setAttribute(Qt::WA_DeleteOnClose);
-        mdiArea->addSubWindow(subWindow);
-        viewer1d->show();
     }
     else
     {
@@ -1691,10 +1674,7 @@ void MainWindow::slot_plot_fft()
         int result=dialog->exec();
         if (result == QDialog::Accepted)
         {
-            Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
-            QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
-            QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
-            viewer1d->setMinimumSize(600,400);
+            Viewer1D* viewer1d=createViewerId();
 
             for (int k=0; k<id_list.size(); k++)
             {
@@ -1708,14 +1688,6 @@ void MainWindow::slot_plot_fft()
                     //slot_newColumn(QString("FFT_%1").arg(getColName(id_list[k  ].column())),fft.getY());
                 }
             }
-
-            QMdiSubWindow* subWindow = new QMdiSubWindow;
-            subWindow->setWidget(viewer1d);
-            subWindow->setAttribute(Qt::WA_DeleteOnClose);
-            mdiArea->addSubWindow(subWindow);
-            viewer1d->show();
-
-
         }
 
     }
@@ -1817,10 +1789,7 @@ void MainWindow::slot_plot_histogram()
 
     if (id_list.size()>0)
     {
-        Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
-        QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
-        QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
-        viewer1d->setMinimumSize(600,400);
+        Viewer1D* viewer1d=createViewerId();
 
         for (int k=0; k<id_list.size(); k++)
         {
@@ -1836,13 +1805,6 @@ void MainWindow::slot_plot_histogram()
                 }
             }
         }
-
-        QMdiSubWindow* subWindow = new QMdiSubWindow;
-        subWindow->setWidget(viewer1d);
-        subWindow->setAttribute(Qt::WA_DeleteOnClose);
-        mdiArea->addSubWindow(subWindow);
-        viewer1d->show();
-
     }
     else
     {

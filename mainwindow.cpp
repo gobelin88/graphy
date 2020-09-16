@@ -13,7 +13,9 @@ MainWindow::MainWindow(QWidget* parent) :
     ui->setupUi(this);
     mdiArea=new QMdiArea();
     table=new QTableView(mdiArea);
-    model=nullptr;
+
+    model = new QStandardItemModel;
+    //model = new MyModel;
 
     //  tableview.setSelectionBehavior(tableview.SelectRows)
     //  tableview.setSelectionMode(tableview.SingleSelection)
@@ -30,7 +32,7 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(table->horizontalHeader(),SIGNAL(sectionMoved(int,int,int)),this,SLOT(slot_hSectionMoved(int,int,int)));
     connect(table->verticalHeader(),SIGNAL(sectionMoved(int,int,int)),this,SLOT(slot_vSectionMoved(int,int,int)));
 
-    this->addAction(ui->actionSave);
+
 
     connect(ui->actionNew, &QAction::triggered,this,&MainWindow::slot_new);
     connect(ui->actionOpen, &QAction::triggered,this,&MainWindow::slot_open);
@@ -70,25 +72,29 @@ MainWindow::MainWindow(QWidget* parent) :
     a_newRow=new QAction(this);
     a_newRows=new QAction(this);
     a_delete=new QAction(this);
+    a_deleteColumnsRows=new QAction(this);
     a_copy=new QAction(this);
     a_paste=new QAction(this);
 
     a_copy->setShortcut(QKeySequence("Ctrl+C"));
     a_paste->setShortcut(QKeySequence("Ctrl+V"));
 
+    table->addAction(ui->actionSave);
     table->addAction(a_copy);
     table->addAction(a_paste);
     table->addAction(a_newColumn);
     table->addAction(a_newRow);
     table->addAction(a_newRows);
     table->addAction(a_delete);
+    table->addAction(a_deleteColumnsRows);
     table->addAction(a_updateColumns);
 
     connect(table->horizontalHeader(),&QHeaderView::sectionDoubleClicked,this,&MainWindow::slot_sectionDoubleClicked);
     connect(a_newColumn,&QAction::triggered,this,&MainWindow::slot_editColumn);
     connect(a_newRow,&QAction::triggered,this,&MainWindow::slot_newRow);
     connect(a_newRows,&QAction::triggered,this,&MainWindow::slot_newRows);
-    connect(a_delete,&QAction::triggered,this,&MainWindow::slot_delete);
+    connect(a_delete,&QAction::triggered,this,&MainWindow::slot_delete_selected);
+    connect(a_deleteColumnsRows,&QAction::triggered,this,&MainWindow::slot_delete_columns_and_rows);
     connect(a_updateColumns,&QAction::triggered,this,&MainWindow::slot_updateColumns);
 
     connect(a_copy,&QAction::triggered,this,&MainWindow::slot_copy);
@@ -103,9 +109,10 @@ MainWindow::MainWindow(QWidget* parent) :
 
     //mdiArea->setViewport(te_widget);
 
-    //QMdiSubWindow* subWindow = mdiArea->addSubWindow(te_widget, Qt::FramelessWindowHint );
-    mdiArea->addSubWindow(te_widget, Qt::CustomizeWindowHint | Qt::WindowMinMaxButtonsHint );
-    //subWindow->showMaximized();
+    QMdiSubWindow* subWindow = mdiArea->addSubWindow(te_widget, Qt::FramelessWindowHint );
+    //mdiArea->addSubWindow(te_widget, Qt::CustomizeWindowHint | Qt::WindowMinMaxButtonsHint );
+    subWindow->showMaximized();
+    mdiArea->setOption(QMdiArea::DontMaximizeSubWindowOnActivation);
 
     mdiArea->setSizeAdjustPolicy (QAbstractScrollArea::AdjustToContents);
     //table->setSizeAdjustPolicy   (QAbstractScrollArea::AdjustToContents);
@@ -584,6 +591,7 @@ bool MainWindow::editVariableAndExpression(int currentIndex)
             return false;
         }
 
+        fileModified();
         return true;
     }
     else
@@ -707,7 +715,6 @@ void MainWindow::slot_newRows()
         }
 
         std::cout<<timer.nsecsElapsed()*1e-9<<std::endl;
-
         addRows(datatable,N);
         table->setModel(model);
     }
@@ -773,10 +780,8 @@ void MainWindow::slot_results(QString results)
     te_results->append(results);
 }
 
-void MainWindow::slot_delete()
+void MainWindow::slot_delete_selectedColumns()
 {
-    QElapsedTimer timer;
-    timer.start();
     QModelIndexList id_list_cols=table->selectionModel()->selectedColumns();
 
     //////////////////////////////////////////////
@@ -847,10 +852,10 @@ void MainWindow::slot_delete()
         table->setModel(model);
         fileModified();
     }
+}
 
-
-    std::cout<<"remove rows1"<<std::endl;
-
+void MainWindow::slot_delete_selectedRows()
+{
     QModelIndexList id_list_rows=table->selectionModel()->selectedRows();
 
     //////////////////////////////////////////////
@@ -863,13 +868,9 @@ void MainWindow::slot_delete()
     std::sort(indexs_rows.begin(),indexs_rows.end());
     std::sort(indexs_rows_visual.begin(),indexs_rows_visual.end());
 
-
-    std::cout<<"remove rows2"<<std::endl;
-
     //////////////////////////////////////////////
     if (indexs_rows.size()>=1)
     {
-        std::cout<<"remove rows3"<<std::endl;
         //-----------------------------------------------------logical
         for (int i=0; i<indexs_rows.size();)
         {
@@ -889,13 +890,11 @@ void MainWindow::slot_delete()
                 }
             }
 
-            std::cout<<"n="<<n<<" "<<indexa-i<<std::endl;
             model->removeRows(indexa-i,n);
 
             i+=n;
         }
 
-        std::cout<<"remove rows4"<<std::endl;
         //-----------------------------------------------------visual
         for (int i=0; i<indexs_rows_visual.size();)
         {
@@ -915,7 +914,6 @@ void MainWindow::slot_delete()
                 }
             }
 
-            std::cout<<"n="<<n<<" "<<indexa-i<<std::endl;
             removeRows(datatable,indexa-i,n);
 
             i+=n;
@@ -924,8 +922,29 @@ void MainWindow::slot_delete()
         table->setModel(model);
         fileModified();
     }
+}
 
-    std::cout<<"dt="<<timer.nsecsElapsed()/1000000<<" ms"<<std::endl;
+void MainWindow::slot_delete_selected()
+{
+    QModelIndexList selectedIndexes = table->selectionModel()->selectedIndexes();
+
+    for (int i = 0; i < selectedIndexes.count(); ++i)
+    {
+        QModelIndex current = selectedIndexes[i];
+        model->item(current.row(),current.column())->setText("");
+    }
+    fileModified();
+}
+
+void MainWindow::slot_delete_columns_and_rows()
+{
+    QElapsedTimer timer;
+    timer.start();
+
+    slot_delete_selectedColumns();
+    slot_delete_selectedRows();
+
+    std::cout<<"dt="<<timer.nsecsElapsed()*1e-9<<"s "<<std::endl;
 
     //std::cout<<datatable<<std::endl;
     //dispVariables();
@@ -943,7 +962,14 @@ void MainWindow::dispVariables()
 QString MainWindow::fromNumber(double value)
 {
     //return QString::number(value,'f',internal_precision);//Mauvaise idée
-    return QString::number(value);
+    if(!std::isnan(value))
+    {
+        return QString::number(value);
+    }
+    else
+    {
+        return QString("");
+    }
 }
 QString MainWindow::fromNumber(double value,int precision)
 {
@@ -1262,12 +1288,8 @@ void MainWindow::addModelRow(const Eigen::VectorXd & value_row)
 void MainWindow::clear()
 {
     registerClear();
-    if (model)
-    {
-        model->removeRows(0,model->rowCount());
-        model->removeColumns(0,model->columnCount());
-    }
-    model = new QStandardItemModel;
+    model->removeRows(0,model->rowCount());
+    model->removeColumns(0,model->columnCount());
 }
 
 void MainWindow::direct_new(int sx,int sy)
@@ -1278,14 +1300,11 @@ void MainWindow::direct_new(int sx,int sy)
 
     hasheader=false;
 
-    QStandardItem* items=new QStandardItem[sx*sy];
-    unsigned int index=0;
     for (int dx=0; dx<sx; dx++)
     {
         for (int dy=0; dy<sy; dy++)
         {
-            model->setItem(dx, dy, &items[index]);
-            index++;
+            model->setItem(dx, dy, new QStandardItem);
         }
     }
     //model->set
@@ -1416,7 +1435,7 @@ Viewer1D* MainWindow::createViewerId()
     viewer1d->setMinimumSize(600,400);
     viewer1d->setAttribute(Qt::WA_DeleteOnClose);
 
-    mdiArea->addSubWindow(viewer1d);
+    mdiArea->addSubWindow(viewer1d,Qt::WindowStaysOnTopHint);
     viewer1d->show();
 
     return viewer1d;
@@ -1614,7 +1633,7 @@ void MainWindow::slot_plot_map_2D()
             QMdiSubWindow* subWindow = new QMdiSubWindow;
             subWindow->setWidget(viewer2d);
             subWindow->setAttribute(Qt::WA_DeleteOnClose);
-            mdiArea->addSubWindow(subWindow);
+            mdiArea->addSubWindow(subWindow,Qt::WindowStaysOnTopHint);
             viewer2d->show();
             viewer2d->slot_setData(datatable,BoxPlot(512,512,
                                                      static_cast<unsigned int>(id_list[0].column()),
@@ -1738,7 +1757,7 @@ void MainWindow::slot_plot_cloud_3D()
             //view3d->setCloudScalar(*cloud);
         }
 
-        mdiArea->addSubWindow(view3d->getContainer());
+        mdiArea->addSubWindow(view3d->getContainer(),Qt::WindowStaysOnTopHint);
         view3d->getContainer()->show();
 
         //        view3d->show();
@@ -1774,7 +1793,7 @@ void MainWindow::slot_plot_gain_phase()
             }
         }
 
-        mdiArea->addSubWindow(viewer_bode);
+        mdiArea->addSubWindow(viewer_bode,Qt::WindowStaysOnTopHint);
         viewer_bode->show();
     }
     else
@@ -2088,6 +2107,7 @@ void MainWindow::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     shortcuts_links.insert(QString("New-row"),a_newRow);
     shortcuts_links.insert(QString("New-rows"),a_newRows);
     shortcuts_links.insert(QString("Delete"),a_delete);
+    shortcuts_links.insert(QString("Delete-cols-rows"),a_deleteColumnsRows);
     shortcuts_links.insert(QString("Filter"),ui->actionFilter);
 
 

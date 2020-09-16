@@ -25,6 +25,7 @@
 #include "3d_viewer.h"
 #include "view3d.h"
 #include "qgradientcombobox.h"
+#include "mytablemodel.h"
 
 #include "exprtk/exprtk.hpp"
 
@@ -56,7 +57,11 @@ public slots:
     void slot_editColumn();
     void slot_sectionDoubleClicked(int value);
 
-    void slot_delete();
+    void slot_delete_columns_and_rows();
+    void slot_delete_selectedRows();
+    void slot_delete_selectedColumns();
+    void slot_delete_selected();
+
     void slot_newRow();
     void slot_newRows();
     void slot_updateColumns();
@@ -125,7 +130,8 @@ private:
     QTableView* table;
     QString current_filename;
     QMdiArea* mdiArea;
-    QStandardItemModel* model;
+    QStandardItemModel * model;
+    //MyModel * model;
     bool hasheader;
     Eigen::MatrixXd datatable;
     Curve2D shared;
@@ -134,6 +140,7 @@ private:
     QAction* a_newRow;
     QAction* a_newRows;
     QAction* a_delete;
+    QAction* a_deleteColumnsRows;
     QAction* a_updateColumns;
     QAction* a_copy;
     QAction* a_paste;
@@ -173,7 +180,7 @@ private:
     QTextEdit* te_results;
 
     //
-    const float graphyVersion=3.3f;
+    const float graphyVersion=3.4f;
 
     //selections
     QString getSelectionPattern();

@@ -17129,9 +17129,13 @@ namespace exprtk
          if (!valid())
             return false;
          else if (!valid_symbol(variable_name))
+         {
             return false;
+         }
          else if (symbol_exists(variable_name))
+         {
             return false;
+         }
          else
             return local_data().variable_store.add(variable_name, t, is_constant);
       }
@@ -17685,8 +17689,6 @@ namespace exprtk
          }
       }
 
-   private:
-
       inline bool valid_symbol(const std::string& symbol, const bool check_reserved_symb = true) const
       {
          if (symbol.empty())
@@ -17712,6 +17714,8 @@ namespace exprtk
 
          return (check_reserved_symb) ? (!local_data().is_reserved_symbol(symbol)) : true;
       }
+
+   private:
 
       inline bool valid_function(const std::string& symbol) const
       {

@@ -222,10 +222,9 @@ void MainWindow::direct_open(QString filename)
                     {
                         QString varname = varToken.at(j);
                         QString varexpr = expToken.at(j);
-                        if ( isValidVariable(varname,j))
+                        if ( registerNewVariable(varname,varexpr) )
                         {
                             model->setHorizontalHeaderItem(j, new QStandardItem(varname));
-                            registerNewVariable(varname,varexpr);
                         }
                         else
                         {
@@ -271,6 +270,7 @@ void MainWindow::direct_open(QString filename)
             }
         }
 
+
         if (!hasheader)//add default header
         {
             for (int j = 0; j < model->columnCount(); j++)
@@ -282,6 +282,7 @@ void MainWindow::direct_open(QString filename)
                 registerNewVariable(varname,varexpr);
             }
         }
+
 
         table->setModel(model);
         connect(model,SIGNAL(dataChanged(const QModelIndex&,const QModelIndex&)),this,SLOT(updateTable(const QModelIndex&,const QModelIndex&)));
@@ -485,7 +486,7 @@ bool MainWindow::isValidExpression(QString variableExpression)
     }
 }
 
-bool MainWindow::isValidVariable(QString variableName,int currentIndex)
+bool MainWindow::isValidVariable(QString variableName)
 {
     if (variableName.isEmpty())
     {
@@ -504,25 +505,14 @@ bool MainWindow::isValidVariable(QString variableName,int currentIndex)
         return false;
     }
 
-    if (variableName.contains("+") ||
-            variableName.contains("-") ||
-            variableName.contains("/") ||
-            variableName.contains("*") ||
-            variableName.contains("^") ||
-            variableName.contains(">") ||
-            variableName.contains("<"))
+    if (!symbolsTable.valid_symbol(variableName.toStdString()))
     {
-        QMessageBox::information(this,"Error",QString("%1 : Variables names can't have any of these characters : + - / * ^ > <").arg(variableName));
+        QMessageBox::information(this,"Error",QString("%1 : Invalid variable name.\nVariables names can't have any of these characters : + - / * ^ > < |").arg(variableName));
         return false;
     }
 
-    QStringList remainder=variables_names;
-    if (currentIndex>=0)
-    {
-        remainder.removeAt(currentIndex);
-    }
 
-    if (remainder.contains(variableName))
+    if (symbolsTable.symbol_exists(variableName.toStdString()))
     {
         QMessageBox::information(this,"Error",QString("%1 : This variable name is already used").arg(variableName));
         return false;
@@ -575,20 +565,19 @@ bool MainWindow::editVariableAndExpression(int currentIndex)
         newName=le_variableName->text();
         newExpression=le_variableExpression->text();
 
-        if (isValidVariable(newName,currentIndex) && isValidExpression(newExpression))
+        if (currentName.isEmpty()) //add New
         {
-            if (currentName.isEmpty()) //add New
+            if (!registerNewVariable(newName,newExpression) )
             {
-                registerNewVariable(newName,newExpression);
-            }
-            else //modify
-            {
-                registerRenameVariable(currentName,newName,currentExpression,newExpression);
+                return false;
             }
         }
-        else
+        else //modify
         {
-            return false;
+            if( !registerRenameVariable(currentName,newName,currentExpression,newExpression) )
+            {
+                return false;
+            }
         }
 
         fileModified();
@@ -611,12 +600,24 @@ void MainWindow::registerClear()
     symbolsTable.add_variable("Col",activeCol);
 }
 
-void MainWindow::registerNewVariable(QString varname,QString varexpr)
+bool MainWindow::registerNewVariable(QString varname,QString varexpr)
 {
+    if(!isValidExpression(varexpr))
+    {
+        return false;
+    }
+
+    if(!isValidVariable(varname))
+    {
+        return false;
+    }
+
+    symbolsTable.add_variable(varname.toStdString(),*variables.last());
     variables.push_back(new double(0.0));
     variables_names.push_back(varname);
     variables_expressions.push_back(varexpr);
-    symbolsTable.add_variable(varname.toStdString(),*variables.last());
+
+    return true;
 }
 
 void MainWindow::registerDelVariable(QString varname)
@@ -653,24 +654,37 @@ void MainWindow::moveVariable(int ida,int idb)
     }
 }
 
-void MainWindow::registerRenameVariable(QString old_varname,QString new_varname,QString oldExpression,QString newExpression)
+bool MainWindow::registerRenameVariable(QString old_varname,QString new_varname,QString oldExpression,QString newExpression)
 {
-    std::cout<<"registerRenameVariable 1"<< old_varname.toLocal8Bit().data() <<" -- "<<new_varname.toLocal8Bit().data() <<std::endl;
     int index=variables_names.indexOf(old_varname);
 
     if (oldExpression!=newExpression)
     {
-        variables_expressions[index]=newExpression;
+        if(isValidExpression(newExpression))
+        {
+                variables_expressions[index]=newExpression;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     if (old_varname!=new_varname)
     {
-        variables_names[index]=new_varname;
-        symbolsTable.add_variable(new_varname.toStdString(),symbolsTable.variable_ref(old_varname.toStdString()));
-        symbolsTable.remove_variable(old_varname.toStdString());
+        if(isValidVariable(new_varname))
+        {
+            variables_names[index]=new_varname;
+            symbolsTable.add_variable(new_varname.toStdString(),symbolsTable.variable_ref(old_varname.toStdString()));
+            symbolsTable.remove_variable(old_varname.toStdString());
+        }
+        else
+        {
+            return false;
+        }
     }
 
-    std::cout<<"registerRenameVariable 2"<<std::endl;
+    return true;
 }
 
 
@@ -1127,9 +1141,11 @@ bool MainWindow::custom_exp_parse(QString expression,int currentRow,QString& res
             int index1=variables_names.indexOf(sub_args1[0]);
             int index2=variables_names.indexOf(sub_args2[0]);
 
+
             if (index1>=0 && index2>=0)
             {
                 result=args[1];
+
                 if (sub_args1.size()==2 && sub_args2.size()==2)
                 {
                     if (sub_args1[1]=="#" && sub_args2[1]=="#")
@@ -1381,7 +1397,14 @@ QStandardItem* MainWindow::itemAt(int i,int j)
 
 QString MainWindow::at(int i,int j)
 {
-    return itemAt(i,j)->text();
+    if(itemAt(i,j))
+    {
+        return itemAt(i,j)->text();
+    }
+    else
+    {
+        return QString();
+    }
 }
 
 void MainWindow::updateTable(const QModelIndex& indexA,const QModelIndex& indexB)
@@ -1477,13 +1500,13 @@ void MainWindow::slot_plot_graph_xy()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-    if (id_list.size()%2==0 && id_list.size()>0)
+    if (id_list.size()>=2)
     {
         Viewer1D* viewer1d=createViewerId();
 
-        for (int k=0; k<id_list.size(); k+=2)
+        Eigen::VectorXd data_x=datatable.col(table->horizontalHeader()->visualIndex(id_list[0  ].column()));
+        for (int k=1; k<id_list.size(); k+=1)
         {
-            Eigen::VectorXd data_x=datatable.col(table->horizontalHeader()->visualIndex(id_list[k  ].column()));
             Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
 
             if (data_x.size()>0 && data_y.size()>0)
@@ -1504,7 +1527,7 @@ void MainWindow::slot_plot_graph_xy()
     }
     else
     {
-        QMessageBox::information(this,"Information","Please select 2 columns X and Y in order to plot X=f(Y)");
+        QMessageBox::information(this,"Information","Please select 2 columns or more X and Yi in order to plot (X,Yi)");
     }
 }
 
@@ -1512,13 +1535,13 @@ void MainWindow::slot_plot_curve_xy()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-    if (id_list.size()%2==0 && id_list.size()>0)
+    if (id_list.size()>=2)
     {
         Viewer1D* viewer1d=createViewerId();
 
-        for (int k=0; k<id_list.size(); k+=2)
-        {
-            Eigen::VectorXd data_x=datatable.col(table->horizontalHeader()->visualIndex(id_list[k  ].column()));
+        Eigen::VectorXd data_x=datatable.col(table->horizontalHeader()->visualIndex(id_list[0  ].column()));
+        for (int k=1; k<id_list.size(); k+=2)
+        {            
             Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
 
             if (data_x.size()>0 && data_y.size()>0)
@@ -1532,7 +1555,7 @@ void MainWindow::slot_plot_curve_xy()
     }
     else
     {
-        QMessageBox::information(this,"Information","Please select 2 columns X and Y in order to plot (X,Y)");
+        QMessageBox::information(this,"Information","Please select 2 columns or more X and Yi in order to plot (X,Yi)");
     }
 }
 

@@ -117,7 +117,7 @@ private:
 
     QStringList extractToken(QString fileLine);
     bool isValidExpression(QString variableExpression);
-    bool isValidVariable(QString variableName, int currentIndex);
+    bool isValidVariable(QString variableName);
     bool editVariableAndExpression(int currentIndex);
 
     void setCurrentFilename(QString filename);
@@ -156,9 +156,9 @@ private:
 
     void dispVariables();
     void registerClear();
-    void registerNewVariable(QString varname,QString varexpr);
+    bool registerNewVariable(QString varname,QString varexpr);
     void registerDelVariable(QString varname);
-    void registerRenameVariable(QString old_varname, QString new_varname, QString oldExpression, QString newExpression);
+    bool registerRenameVariable(QString old_varname, QString new_varname, QString oldExpression, QString newExpression);
     void swapVariables(int ida,int idb);
     void moveVariable(int ida,int idb);
     exprtk::symbol_table<double> symbolsTable;
@@ -180,7 +180,7 @@ private:
     QTextEdit* te_results;
 
     //
-    const float graphyVersion=3.4f;
+    const float graphyVersion=3.5f;
 
     //selections
     QString getSelectionPattern();

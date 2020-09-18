@@ -1009,8 +1009,6 @@ QString MainWindow::fromNumber(double value,int precision)
 
 QVector<QString> MainWindow::evalColumn(int colId)
 {
-    std::cout<<"evalColumn "<<colId<<std::endl;
-
     int logicalColId=colId;
     activeCol=colId;
 
@@ -1030,33 +1028,23 @@ QVector<QString> MainWindow::evalColumn(int colId)
         exprtk::expression<double> compiled_expression;
         compiled_expression.register_symbol_table(symbolsTable);
 
-        std::cout<<"evalColumn A : "<<variables_expressions[logicalColId].toLocal8Bit().data()<<std::endl;
-
         if (parser.compile(variables_expressions[logicalColId].toStdString(),compiled_expression))
         {
-            std::cout<<"evalColumn B"<<nbRows<<" "<<variables.size()<<" "<<datatable.rows()<<" "<<datatable.cols()<<std::endl;
-
             for (int i=0; i<nbRows; i++)
             {
                 activeRow=i;
                 for (int j=0; j<datatable.cols(); j++)
                 {
-                    std::cout<<i<<" "<<j<<" "<<*(variables[j])<<"="<<datatable(i,j)<<std::endl;
                     *(variables[j])=datatable(i,j);
                 }
 
 
-                std::cout<<"evalColumn B1"<<std::endl;
                 compiled_expression.value();
-                std::cout<<"evalColumn B2"<<std::endl;
                 colResults[i]=fromNumber(compiled_expression.value());
-                std::cout<<"evalColumn B3"<<std::endl;
             }
         }
         else
         {
-            std::cout<<"evalColumn C"<<std::endl;
-
             for (int i=0; i<nbRows; i++)
             {
                 activeRow=i;
@@ -1067,8 +1055,6 @@ QVector<QString> MainWindow::evalColumn(int colId)
                 custom_exp_parse(variables_expressions[logicalColId],i,colResults[i]);
             }
         }
-
-        std::cout<<"evalColumn "<<colId<<" end"<<std::endl;
 
         return colResults;
     }

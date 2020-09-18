@@ -1,6 +1,6 @@
 <header>
-alpha;sin;cos;
-row/100*2*pi;sin(alpha)+1;cos(alpha)+1;
+alpha;sinus;cosinus;
+Row/100*2*pi;sin(alpha)+1;cos(alpha)+1;
 </header>
 0;1;2;
 0.0628319;1.06279;1.99803;

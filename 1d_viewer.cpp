@@ -321,7 +321,7 @@ void Viewer1D::createPopup()
     menuScalarField=new QMenu("Scalar Field",this);
     menuScalarFieldFit=new QMenu("Fit",this);
     menuParameters=new QMenu("Parameters",this);
-    menuAnalyse=new QMenu("Anaylse",this);
+    menuAnalyse=new QMenu("Analyse",this);
     menuFilters=new QMenu("Filter",this);
 
     actCopy   = new QAction("Copy",  this);
@@ -815,7 +815,7 @@ void Viewer1D::slot_fit_sinusoide()
             slot_add_data(fit_curve);
 
             emit sig_displayResults(QString("Fit Sinusoid :\n%1\nF(X)=%2\nRms=%3").arg(result_str).arg(expression).arg(sinusoide.getRMS()));
-            emit sig_newColumn(QString("Err(Sinusoid)"),sinusoide.getErrNorm());
+            emit sig_newColumn(QString("Err_Sinusoid"),sinusoide.getErrNorm());
         }
     }
 }
@@ -852,7 +852,7 @@ void Viewer1D::slot_fit_sigmoid()
             slot_add_data(fit_curve);
 
             emit sig_displayResults(QString("Fit Sigmoid :\n%1\nF(X)=%2\nRms=%3").arg(result_str).arg(expression).arg(sigmoid.getRMS()));
-            emit sig_newColumn(QString("Err(Sigmoid)"),sigmoid.getErrNorm());
+            emit sig_newColumn(QString("Err_Sigmoid"),sigmoid.getErrNorm());
         }
     }
 }
@@ -887,7 +887,7 @@ void Viewer1D::slot_fit_gaussian()
             QString expression=QString("%3/(%1*sqrt(2*pi))*exp(-0.5*((X-%2)/%1)^2)").arg(gaussian.getS()).arg(gaussian.getM()).arg(gaussian.getK());
 
             emit sig_displayResults(QString("Fit Gaussian :\n%1 \nF(X)==%2 \n").arg(result_str).arg(expression));
-            emit sig_newColumn(QString("Err(Gaussian)"),gaussian.getErrNorm());
+            emit sig_newColumn(QString("Err_Gaussian"),gaussian.getErrNorm());
 
         }
 
@@ -1011,7 +1011,7 @@ void Viewer1D::slot_fit_polynomial()
 
                 slot_add_data(fit_curve);
                 emit sig_displayResults(QString("Fit Polynome :\nP(X)=%1\nRms=%2").arg(result_str).arg(rms));
-                emit sig_newColumn(QString("Err(Polynome)"),E);
+                emit sig_newColumn(QString("Err_Polynome"),E);
             }
         }
     }
@@ -1618,7 +1618,7 @@ void Viewer1D::slot_meanFilter()
 
                 Curve2D fit_curve(curves[k].getX(),Ymean,QString("Mean Filter: %1").arg(curves[k].getLegend()),Curve2D::GRAPH);
                 slot_add_data(fit_curve);
-                emit sig_newColumn(QString("Mean_%1").arg(curves[k].getLegend()),Ymean);
+                emit sig_newColumn(QString("Mean"),Ymean);
             }
         }
     }
@@ -1672,9 +1672,9 @@ void Viewer1D::slot_medianFilter()
                     Ymean[i]=values[values.size()/2];
                 }
 
-                Curve2D fit_curve(curves[k].getX(),Ymean,QString("Median Filter: %1").arg(curves[k].getLegend()),Curve2D::GRAPH);
+                Curve2D fit_curve(curves[k].getX(),Ymean,QString("Median Filter").arg(curves[k].getLegend()),Curve2D::GRAPH);
                 slot_add_data(fit_curve);
-                emit sig_newColumn(QString("Median_%1").arg(curves[k].getLegend()),Ymean);
+                emit sig_newColumn(QString("Median"),Ymean);
             }
         }
     }

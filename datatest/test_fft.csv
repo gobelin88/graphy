@@ -1,6 +1,6 @@
 <header>
 C0;C1;
-sin(10000*2*pi*1e-6*row);10*sin(20000*2*pi*1e-6*row);
+sin(10000*2*pi*1e-6*Row);10*sin(20000*2*pi*1e-6*Row);
 </header>
 0;0;
 0.0627905;1.25333;

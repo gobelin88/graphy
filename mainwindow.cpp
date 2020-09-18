@@ -3,10 +3,24 @@
 
 #include "FIR.h"
 
+///////////////////
+void MainWindow::createExperimental()
+{
+    experimental_table=new QTableView(mdiArea);
+    experimental_table->horizontalHeader()->setSectionsMovable(true);
+    experimental_table->verticalHeader()->setSectionsMovable(true);
+
+    experimental_model = new MyModel(3,3);
+    experimental_table->setModel(experimental_model);
+
+    te_widget->addTab(experimental_table,"Experimental");
+}
+
 MainWindow::MainWindow(QWidget* parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+
     isModified=false;
     separator=";";
 
@@ -122,6 +136,7 @@ MainWindow::MainWindow(QWidget* parent) :
 
     loadShortcuts();
 
+    //createExperimental();
 }
 
 MainWindow::~MainWindow()
@@ -612,8 +627,10 @@ bool MainWindow::registerNewVariable(QString varname,QString varexpr)
         return false;
     }
 
-    symbolsTable.add_variable(varname.toStdString(),*variables.last());
-    variables.push_back(new double(0.0));
+    double * p_double=new double(0.0);
+    variables.push_back(p_double);
+    symbolsTable.add_variable(varname.toStdString(),*p_double);
+
     variables_names.push_back(varname);
     variables_expressions.push_back(varexpr);
 
@@ -992,6 +1009,8 @@ QString MainWindow::fromNumber(double value,int precision)
 
 QVector<QString> MainWindow::evalColumn(int colId)
 {
+    std::cout<<"evalColumn "<<colId<<std::endl;
+
     int logicalColId=colId;
     activeCol=colId;
 
@@ -1010,20 +1029,34 @@ QVector<QString> MainWindow::evalColumn(int colId)
         exprtk::parser<double> parser;
         exprtk::expression<double> compiled_expression;
         compiled_expression.register_symbol_table(symbolsTable);
+
+        std::cout<<"evalColumn A : "<<variables_expressions[logicalColId].toLocal8Bit().data()<<std::endl;
+
         if (parser.compile(variables_expressions[logicalColId].toStdString(),compiled_expression))
         {
+            std::cout<<"evalColumn B"<<nbRows<<" "<<variables.size()<<" "<<datatable.rows()<<" "<<datatable.cols()<<std::endl;
+
             for (int i=0; i<nbRows; i++)
             {
                 activeRow=i;
                 for (int j=0; j<datatable.cols(); j++)
                 {
+                    std::cout<<i<<" "<<j<<" "<<*(variables[j])<<"="<<datatable(i,j)<<std::endl;
                     *(variables[j])=datatable(i,j);
                 }
+
+
+                std::cout<<"evalColumn B1"<<std::endl;
+                compiled_expression.value();
+                std::cout<<"evalColumn B2"<<std::endl;
                 colResults[i]=fromNumber(compiled_expression.value());
+                std::cout<<"evalColumn B3"<<std::endl;
             }
         }
         else
         {
+            std::cout<<"evalColumn C"<<std::endl;
+
             for (int i=0; i<nbRows; i++)
             {
                 activeRow=i;
@@ -1034,6 +1067,8 @@ QVector<QString> MainWindow::evalColumn(int colId)
                 custom_exp_parse(variables_expressions[logicalColId],i,colResults[i]);
             }
         }
+
+        std::cout<<"evalColumn "<<colId<<" end"<<std::endl;
 
         return colResults;
     }
@@ -1507,18 +1542,18 @@ void MainWindow::slot_plot_graph_xy()
         Eigen::VectorXd data_x=datatable.col(table->horizontalHeader()->visualIndex(id_list[0  ].column()));
         for (int k=1; k<id_list.size(); k+=1)
         {
-            Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
+            Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k].column()));
 
             if (data_x.size()>0 && data_y.size()>0)
             {
                 if (!asColumnStrings(table->horizontalHeader()->visualIndex(id_list[k  ].column())))
                 {
-                    Curve2D curve(data_x,data_y,QString("%2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),Curve2D::GRAPH);
+                    Curve2D curve(data_x,data_y,QString("%2=f(%1)").arg(getColName(id_list[0  ].column())).arg(getColName(id_list[k].column())),Curve2D::GRAPH);
                     viewer1d->slot_add_data(curve);
                 }
                 else
                 {
-                    Curve2D curve(data_y,QString("%2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),Curve2D::GRAPH);
+                    Curve2D curve(data_y,QString("%2=f(%1)").arg(getColName(id_list[0  ].column())).arg(getColName(id_list[k].column())),Curve2D::GRAPH);
                     curve.setLabelsField(getColumn(id_list[k  ].column()));
                     viewer1d->slot_add_data(curve);
                 }
@@ -1542,13 +1577,13 @@ void MainWindow::slot_plot_curve_xy()
         Eigen::VectorXd data_x=datatable.col(table->horizontalHeader()->visualIndex(id_list[0  ].column()));
         for (int k=1; k<id_list.size(); k+=2)
         {            
-            Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
+            Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k].column()));
 
             if (data_x.size()>0 && data_y.size()>0)
             {
                 viewer1d->slot_add_data(Curve2D(data_x,
                                                 data_y,
-                                                QString("(%1,%2)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),
+                                                QString("(%1,%2)").arg(getColName(id_list[0  ].column())).arg(getColName(id_list[k].column())),
                                         Curve2D::CURVE));
             }
         }

@@ -199,6 +199,12 @@ private:
 
     bool isModified;
     void getRowColSelectedRanges(QCPRange &range_row,QCPRange &range_col);
+
+
+    ///////////////////
+    void createExperimental();
+    QTableView* experimental_table;
+    MyModel * experimental_model;
 };
 
 #endif // MAINWINDOW_H

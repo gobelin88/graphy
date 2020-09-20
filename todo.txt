@@ -1,0 +1,13 @@
+//3.5
+-Custom model fit
+-Density estimation for scalar field
+-Set columns fit to content
+-QCompleter for custom expressions
+
+//3.6
+-fit circle
+-fit ellipse
+
+//4.0
+-complex support 
+-complex plots

@@ -1,6 +1,6 @@
 <header>
 t;sin1;sin2;Random;sin1_noisy;
-row;10*sin(0.01*2*pi*t+1);5*sin(0.05*2*pi*t+1);$rand;sin1+Random*3;
+Row;10*sin(0.01*2*pi*t+1);5*sin(0.05*2*pi*t+1);$rand;sin1+Random*3;
 </header>
 0;8.41471;4.20735;0.127171;8.79622;
 1;8.73736;4.83625;-0.613392;6.89718;

@@ -64,7 +64,7 @@ void ScatterDataModifier::setData(const Cloud& cloud)
     m_graph->axisZ()->setTitle("Z");
 
     QScatterDataArray* dataArray = new QScatterDataArray;
-    dataArray->resize(cloud.positions().size());
+    dataArray->resize(static_cast<int>(cloud.positions().size()));
     QScatterDataItem* ptrToDataArray = &dataArray->first();
 
     for (int k=0; k<cloud.positions().size(); k++)

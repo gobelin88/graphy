@@ -31,6 +31,8 @@
 
 #include <unsupported/Eigen/FFT>
 
+#include <random>
+
 namespace Ui {
 class MainWindow;
 }
@@ -55,7 +57,7 @@ public slots:
     void updateTableViewRows();
 
     void slot_editColumn();
-    void slot_sectionDoubleClicked(int value);
+    void slot_sectionDoubleClicked();
 
     void slot_delete_columns_and_rows();
     void slot_delete_selectedRows();
@@ -111,6 +113,8 @@ public slots:
     void slot_colourize();
 
 private:
+    void error(QString title,QString msg);
+
     Viewer1D* createViewerId();
 
     void closeEvent (QCloseEvent *event);
@@ -169,7 +173,8 @@ private:
     double activeRow;
     double activeCol;
 
-    bool custom_exp_parse(QString expression, int currentRow, QString& result);
+    QStringList getCustomExpressionList();
+    bool customExpressionParse(QString expression, int currentRow, QString& result);
 
     QMap<QString,QKeySequence> shortcuts;
     void applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
@@ -205,6 +210,12 @@ private:
     void createExperimental();
     QTableView* experimental_table;
     MyModel * experimental_model;
+
+    //
+    std::default_random_engine generator;
+    std::normal_distribution<double> * noise_normal;
+    std::uniform_real<double> * noise_uniform;
+
 };
 
 #endif // MAINWINDOW_H

@@ -357,8 +357,8 @@ void View3D::setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode)
     camera_params->setBoundingRadius( 1.20f );
 
     //Set Data Buffers
-    cloud3D->positionAttribute->setCount(cloud->positions().size());
-    cloud3D->cloudColorsAttribute->setCount(cloud->positions().size());
+    cloud3D->positionAttribute->setCount(static_cast<unsigned int>(cloud->positions().size()));
+    cloud3D->cloudColorsAttribute->setCount(static_cast<unsigned int>(cloud->positions().size()));
 
     // mesh
     slot_setPrimitiveType(primitiveMode);

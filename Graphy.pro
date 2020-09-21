@@ -99,8 +99,15 @@ FORMS += \
 INCLUDEPATH += $$(EIGEN_PATH)/
 
 QMAKE_CXXFLAGS += -Dexprtk_disable_caseinsensitivity
-QMAKE_CXXFLAGS += -openmp
-QMAKE_LFLAGS +=  -openmp
+
+msvc {
+  QMAKE_CXXFLAGS += -openmp
+}
+
+gcc {
+  QMAKE_CXXFLAGS += -fopenmp
+}
+
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

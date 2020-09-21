@@ -56,6 +56,8 @@ SurfaceDataModifier::~SurfaceDataModifier()
 
 void SurfaceDataModifier::setData(const Cloud& cloud)
 {
+    Q_UNUSED(cloud);
+
     //fillSqrtSinProxy();
     Eigen::MatrixXd surface(100,100);//=cloud.getExtrapolated();
 

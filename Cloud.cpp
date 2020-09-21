@@ -96,7 +96,7 @@ QCPRange Cloud::getScalarFieldRange()
 {
     if (rangeS.lower==rangeS.upper)
     {
-        QCPRange(-1,1);
+        return QCPRange(-1,1);
     }
     else
     {
@@ -193,7 +193,7 @@ QByteArray Cloud::getColorBuffer(QCPRange range)
     gradient.colorize(scalarField.data(),range,colors.data(),scalarField.size());
 
     QByteArray bufferBytes;
-    bufferBytes.resize(2 * 3 * ( pts.size() ) * sizeof(float));
+    bufferBytes.resize(2 * 3 * ( static_cast<int>(pts.size()) ) * sizeof(float));
     float* vertices = reinterpret_cast<float*>(bufferBytes.data());
 
     for (int i=0; i<pts.size(); i++)

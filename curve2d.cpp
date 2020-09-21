@@ -375,8 +375,8 @@ uint Curve2D::getMaxIndex()
 Curve2D Curve2D::getFFT(FFTMode fft_mode, double fe,bool normalize_flag)
 {
     std::vector<double> data_y=toStdVector(y);
-    unsigned double N=data_y.size();
-    unsigned double sqrtN=sqrt(N);
+    double N=static_cast<double>(data_y.size());
+    double sqrtN=sqrt(N);
     std::vector< double > time=std::vector< double >(data_y.size()/2, 0);
     for (unsigned int i=0; i<time.size(); i++)
     {

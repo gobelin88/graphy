@@ -22,7 +22,7 @@ Curve2D_GainPhase::Curve2D_GainPhase(const Eigen::VectorXd& f,
 Eigen::VectorXd Curve2D_GainPhase::buildFQVector(unsigned int sz)
 {
     Eigen::VectorXd qv(sz);
-    for (int i=0; i<sz; i++)
+    for (unsigned int i=0; i<sz; i++)
     {
         qv[i]=(double)i;
     }

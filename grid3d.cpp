@@ -54,7 +54,7 @@ Grid3D::Grid3D(Qt3DCore::QEntity* rootEntity,unsigned int N,QColor color)
     entity->addComponent(gridMaterial);
 }
 
-QByteArray Grid3D::getGridBuffer(bool xy_swap,bool xz_swap,bool yz_swap,int N)
+QByteArray Grid3D::getGridBuffer(bool xy_swap,bool xz_swap,bool yz_swap,unsigned int N)
 {
     unsigned int n=(N+1)*3;
 

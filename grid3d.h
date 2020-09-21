@@ -10,7 +10,7 @@
 struct Grid3D:public Base3D
 {
     Grid3D(Qt3DCore::QEntity* rootEntity,unsigned int N,QColor color);
-    QByteArray getGridBuffer(bool xy_swap,bool xz_swap,bool yz_swap,int N);
+    QByteArray getGridBuffer(bool xy_swap,bool xz_swap,bool yz_swap,unsigned int N);
 
     Qt3DRender::QBuffer* gridIndexBuffer;
     Qt3DRender::QAttribute* gridIndexAttribute;

@@ -137,6 +137,9 @@ MainWindow::MainWindow(QWidget* parent) :
     loadShortcuts();
 
     //createExperimental();
+
+    noise_normal=new std::normal_distribution<double>(0.0,1.0);
+    noise_uniform=new std::uniform_real<double>(0.0,1.0);
 }
 
 MainWindow::~MainWindow()
@@ -250,7 +253,7 @@ void MainWindow::direct_open(QString filename)
                 }
                 else
                 {
-                    QMessageBox::warning(this,"Error",QString("Number of expressions (%1) and number of variables (%2) are different.").arg(expToken.size()).arg(varToken.size()));
+                    error("Open",QString("Number of expressions (%1) and number of variables (%2) are different.").arg(expToken.size()).arg(varToken.size()));
                     return;
                 }
 
@@ -279,7 +282,7 @@ void MainWindow::direct_open(QString filename)
                 }
                 else
                 {
-                    QMessageBox::warning(this,"Error",QString("Error line %1 detected\n%2 elements expected got %3 elements").arg(lineindex+1).arg(numberOfColumns).arg(valuesToken.size()));
+                    error("Open",QString("Error line %1 detected\n%2 elements expected got %3 elements").arg(lineindex+1).arg(numberOfColumns).arg(valuesToken.size()));
                     return;
                 }
             }
@@ -482,7 +485,7 @@ bool MainWindow::isValidExpression(QString variableExpression)
     else if (variableExpression.startsWith("$"))
     {
         QString result;
-        return custom_exp_parse(variableExpression,0,result);
+        return customExpressionParse(variableExpression,0,result);
     }
     else
     {
@@ -493,8 +496,7 @@ bool MainWindow::isValidExpression(QString variableExpression)
 
         if (!ok)
         {
-            QString error_str=QString::fromStdString(parser.error());
-            QMessageBox::information(this,"Error",QString("Invalid formula : ")+variableExpression+QString("\nError : ")+error_str);
+            error("Invalid formula",variableExpression+QString("\nError : ")+QString::fromStdString(parser.error()));
         }
 
         return ok;
@@ -510,26 +512,25 @@ bool MainWindow::isValidVariable(QString variableName)
 
     if (variableName.begin()->isDigit())
     {
-        QMessageBox::information(this,"Error",QString("%1 : Variables names can't start with a number").arg(variableName));
+        error("Variable",QString("%1 : Variables names can't start with a number").arg(variableName));
         return false;
     }
 
     if (variableName.contains(" "))
     {
-        QMessageBox::information(this,"Error",QString("%1 : Variables names can't have any space").arg(variableName));
+        error("Variable",QString("%1 : Variables names can't have any space").arg(variableName));
         return false;
     }
 
     if (!symbolsTable.valid_symbol(variableName.toStdString()))
     {
-        QMessageBox::information(this,"Error",QString("%1 : Invalid variable name.\nVariables names can't have any of these characters : + - / * ^ > < |").arg(variableName));
+        error("Variable",QString("%1 : Invalid variable name.\nVariables names can't have any of these characters :\n+ - / * ^ > < | & ...etc").arg(variableName));
         return false;
     }
 
-
     if (symbolsTable.symbol_exists(variableName.toStdString()))
     {
-        QMessageBox::information(this,"Error",QString("%1 : This variable name is already used").arg(variableName));
+        error("Variable",QString("%1 : This variable name is already used").arg(variableName));
         return false;
     }
 
@@ -554,6 +555,9 @@ bool MainWindow::editVariableAndExpression(int currentIndex)
 
     QLineEdit* le_variableName=new QLineEdit(currentName);
     QLineEdit* le_variableExpression=new QLineEdit(currentExpression);
+
+    QCompleter * completer= new QCompleter(getCustomExpressionList(), this);
+    le_variableExpression->setCompleter(completer);
 
     QDialog* dialog=new QDialog;
     dialog->setLocale(QLocale("C"));
@@ -751,7 +755,7 @@ void MainWindow::slot_newRows()
     }
 }
 
-void MainWindow::slot_sectionDoubleClicked(int value)
+void MainWindow::slot_sectionDoubleClicked()
 {
     slot_editColumn();
 }
@@ -1052,7 +1056,7 @@ QVector<QString> MainWindow::evalColumn(int colId)
                 {
                     *(variables[j])=datatable(i,j);
                 }
-                custom_exp_parse(variables_expressions[logicalColId],i,colResults[i]);
+                customExpressionParse(variables_expressions[logicalColId],i,colResults[i]);
             }
         }
 
@@ -1089,20 +1093,39 @@ void scanDir(QDir dir,QStringList filters,QString name,QString& result,int depth
     }
 }
 
-bool MainWindow::custom_exp_parse(QString expression,int currentRow,QString& result)
+QStringList MainWindow::getCustomExpressionList()
+{
+    QStringList customExpList;
+    customExpList<<"$uniform";
+    customExpList<<"$normal";
+    customExpList<<"$search ";
+    customExpList<<"$str";
+
+    return customExpList;
+}
+
+bool MainWindow::customExpressionParse(QString expression,int currentRow,QString& result)
 {
     expression.remove('$');
     QStringList args=expression.split(" ");
     if (args.size()>0)
     {
 
-        if (args[0]=="rand" && args.size()==1)
+        if (args[0]=="uniform" && args.size()==1)
         {
-            result=fromNumber(2.0*(static_cast<double>(rand())/RAND_MAX-0.5));
+            result=fromNumber((*noise_uniform)(generator));
+            return true;
+        }
+        else if (args[0]=="normal" && args.size()==1)
+        {
+            result=fromNumber((*noise_normal)(generator));
             return true;
         }
         else if (args[0]=="search" && args.size()>=5)
         {
+            //0      1    2      3 4     5      6      i
+            //search what filter ? depth where1 where2 wherei...
+
             QString search_for_name;
             int index1=variables_names.indexOf(args[1]);
             if (index1>=0)
@@ -1217,25 +1240,30 @@ bool MainWindow::custom_exp_parse(QString expression,int currentRow,QString& res
             }
             else
             {
-                std::cout<<"Bad variable indexes :"<<index1<<" "<<index2<<std::endl;
+                error("Bad variable indexes",QString("Indexes : %1 %2").arg(index1).arg(index2));
                 return false;
             }
         }
         else
         {
-            std::cout<<"Bad custom expression "<<expression.toLocal8Bit().data()<<std::endl;
+            error("Bad custom expression",QString("Expression : ")+expression);
             return false;
         }
     }
     else
     {
-        std::cout<<"Bad custom expression "<<expression.toLocal8Bit().data()<<std::endl;
+        error("Bad custom expression",QString("Expression : ")+expression);
         return false;
     }
 
     return false;
 }
 
+void MainWindow::error(QString title,QString msg)
+{
+    QMessageBox::information(this,QString("Error : ")+title,msg);
+    std::cout<<"Error : "<<msg.toLocal8Bit().data()<<std::endl;
+}
 
 
 QVector<QString> MainWindow::getColumn(int idCol)
@@ -2124,14 +2152,14 @@ bool MainWindow::loadShortcuts()
             }
             else
             {
-                QMessageBox::information(this,"Error",QString("Bad line in shortcut configuration file : ")+lineraw);
+                error("Shortcuts",QString("Bad line in shortcut configuration file : ")+lineraw);
             }
         }
         file.close();
     }
     else
     {
-        QMessageBox::critical(this,"Error",QString("Can't find shorcuts configuration file : ")+shorcuts_cfg);
+        error("Shortcuts",QString("Can't find shorcuts configuration file : ")+shorcuts_cfg);
     }
 
     applyShortcuts(shortcuts);
@@ -2189,7 +2217,8 @@ void MainWindow::saveShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     }
     else
     {
-        QMessageBox::critical(this,"Error",QString("Can't find shorcuts configuration file : ")+shorcuts_cfg);
+        //QMessageBox::critical(this,"Error",QString("Can't find shorcuts configuration file : ")+shorcuts_cfg);
+        error("Configuration",QString("Can't find shorcuts configuration file : ")+shorcuts_cfg);
     }
 
     applyShortcuts(shortcuts);
@@ -2215,12 +2244,14 @@ Eigen::VectorXd MainWindow::toSafeDouble(QVector<QString> vec_col_str)
 
 void MainWindow::slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex)
 {
+    Q_UNUSED(logicalIndex);
     moveRow(datatable,oldVisualIndex,newVisualIndex);
     fileModified();
 }
 
 void MainWindow::slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex)
 {
+    Q_UNUSED(logicalIndex);
     moveVariable(oldVisualIndex,newVisualIndex);
     moveColumn(datatable,oldVisualIndex,newVisualIndex);
     fileModified();

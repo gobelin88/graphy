@@ -250,7 +250,7 @@ void sortBy(Eigen::MatrixXd& matrix, int colId,SortMode mode)
 void thresholdBy(Eigen::MatrixXd& matrix, int colId,ThresholdMode mode,double value)
 {
     std::vector<Eigen::VectorXd> vec;
-    for (int64_t i = 0; i < matrix.rows(); ++i)
+    for (unsigned int i = 0; i < matrix.rows(); ++i)
     {
         if(mode==KEEP_GREATER)
         {
@@ -268,7 +268,7 @@ void thresholdBy(Eigen::MatrixXd& matrix, int colId,ThresholdMode mode,double va
         }
     }
 
-    for (int64_t i = 0; i < vec.size(); ++i)
+    for (unsigned int i = 0; i < vec.size(); ++i)
     {
         matrix.row(i) = vec[i];
     }

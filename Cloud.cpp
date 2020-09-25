@@ -182,9 +182,9 @@ QVector3D Cloud::toQVec3D(Eigen::Vector3d p)
     return QVector3D(p[0],p[1],p[2]);
 }
 
-void Cloud::fit(Shape<Eigen::Vector3d>* model)
+void Cloud::fit(Shape<Eigen::Vector3d>* model,int it)
 {
-    model->fit(pts,10000);
+    model->fit(pts,it);
 }
 
 QByteArray Cloud::getColorBuffer(QCPRange range)

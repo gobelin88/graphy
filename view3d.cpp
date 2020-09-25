@@ -259,7 +259,7 @@ void View3D::slot_fitCustomMesh()
     obj.setScalePosAtt(cloud->getBoundingRadius()/obj.getRadius(),
                        QPosAtt(cloud->getBarycenter()-obj.getBox().middle(),Eigen::Quaterniond(1,0,0,0)));
 
-    cloud->fit(&obj);
+    cloud->fit(&obj,100);
 
     QFileInfo info(filename);
 

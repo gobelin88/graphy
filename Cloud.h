@@ -56,7 +56,7 @@ public:
     static QVector3D toQVec3D(Eigen::Vector3d p);
 
     //Fit a model
-    void fit(Shape<Eigen::Vector3d>* model);
+    void fit(Shape<Eigen::Vector3d>* model, int it=10000);
 
 private:
     void calcBarycenterAndBoundingRadius();

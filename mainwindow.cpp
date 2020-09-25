@@ -29,7 +29,7 @@ MainWindow::MainWindow(QWidget* parent) :
     table=new QTableView(mdiArea);
 
     model=nullptr;
-    old_model=nullptr;
+    old_model=table->model();
 
     //  tableview.setSelectionBehavior(tableview.SelectRows)
     //  tableview.setSelectionMode(tableview.SingleSelection)
@@ -141,7 +141,7 @@ MainWindow::MainWindow(QWidget* parent) :
     std::cout<<"E"<<std::endl;
     loadShortcuts();
 
-    //createExperimental();
+    createExperimental();
 
     noise_normal=new std::normal_distribution<double>(0.0,1.0);
     noise_uniform=new std::uniform_real<double>(0.0,1.0);
@@ -758,8 +758,6 @@ void MainWindow::slot_newRow()
 
     model->appendRow(items);
     addRow(datatable,Eigen::VectorXd::Zero(items.size()));
-
-    table->setModel(model);
 }
 
 void MainWindow::slot_newRows()
@@ -788,7 +786,6 @@ void MainWindow::slot_newRows()
 
         std::cout<<timer.nsecsElapsed()*1e-9<<std::endl;
         addRows(datatable,N);
-        table->setModel(model);
     }
 }
 
@@ -815,8 +812,6 @@ void MainWindow::slot_editColumn()
 
         model->setHorizontalHeaderItem(currentColIndex, new QStandardItem(variables_names[visualIndex]));
 
-        table->setModel(model);
-
         hasheader=true;
     }
 }
@@ -839,7 +834,6 @@ void MainWindow::slot_newColumn(QString name,Eigen::VectorXd data)
         registerNewVariable(name,"");
         setColumn(index,toQVectorStr(data));
         model->setHorizontalHeaderItem(index, new QStandardItem(name));
-        table->setModel(model);
 
         fileModified();
     }
@@ -853,6 +847,8 @@ void MainWindow::slot_results(QString results)
 
 void MainWindow::slot_delete_selectedColumns()
 {
+    //table->setModel(new QStandardItemModel);
+
     QModelIndexList id_list_cols=table->selectionModel()->selectedColumns();
 
     //////////////////////////////////////////////
@@ -865,12 +861,15 @@ void MainWindow::slot_delete_selectedColumns()
     std::sort(indexs_cols.begin(),indexs_cols.end());
     std::sort(indexs_cols_visual.begin(),indexs_cols_visual.end());
 
-
-
     //////////////////////////////////////////////
     if (indexs_cols.size()>=1)
     {
+        modelMute();
         //-----------------------------------------------------logical
+        std::cout<<"ok A"<<std::endl;
+
+        QAbstractItemModel * pabstract_model=model;
+
         for (int i=0; i<indexs_cols.size();)
         {
             int indexa=indexs_cols[i];
@@ -889,10 +888,13 @@ void MainWindow::slot_delete_selectedColumns()
                 }
             }
 
-            model->removeColumns(indexa-i,n);
+            pabstract_model->removeColumns(indexa-i,n);
+
 
             i+=n;
         }
+
+        std::cout<<"ok B"<<std::endl;
 
         //-----------------------------------------------------visual
         for (int i=0; i<indexs_cols_visual.size();)
@@ -922,13 +924,18 @@ void MainWindow::slot_delete_selectedColumns()
 
             i+=n;
         }
-        table->setModel(model);
+
+        std::cout<<"ok C"<<std::endl;
+
         fileModified();
+        modelUnMute();
     }
 }
 
 void MainWindow::slot_delete_selectedRows()
 {
+
+
     QModelIndexList id_list_rows=table->selectionModel()->selectedRows();
 
     //////////////////////////////////////////////
@@ -944,6 +951,8 @@ void MainWindow::slot_delete_selectedRows()
     //////////////////////////////////////////////
     if (indexs_rows.size()>=1)
     {
+        modelMute();
+
         //-----------------------------------------------------logical
         for (int i=0; i<indexs_rows.size();)
         {
@@ -992,9 +1001,12 @@ void MainWindow::slot_delete_selectedRows()
             i+=n;
         }
 
-        table->setModel(model);
+
         fileModified();
+        modelUnMute();
     }
+
+
 }
 
 void MainWindow::slot_delete_selected()
@@ -1323,6 +1335,7 @@ void MainWindow::setColumn(int idCol,const QVector<QString>& vec_col)
 
     if (idCol<model->columnCount()) //set
     {
+        modelMute();
         if (vec_col.size()>0)
         {
             for (int i=0; i<nbRows; i++)
@@ -1335,9 +1348,11 @@ void MainWindow::setColumn(int idCol,const QVector<QString>& vec_col)
             }
             datatable.col(idCol)=toSafeDouble(vec_col);
         }
+        modelUnMute();
     }
     else//new column
     {
+        modelMute();
         if (vec_col.size()==0)
         {
             for (int i=0; i<nbRows; i++)
@@ -1356,6 +1371,7 @@ void MainWindow::setColumn(int idCol,const QVector<QString>& vec_col)
             addColumn(datatable,toSafeDouble(vec_col));
             model->appendColumn(items);
         }
+        modelUnMute();
     }
 }
 
@@ -1417,12 +1433,22 @@ void MainWindow::affectModel()
     connect(model,SIGNAL(dataChanged(const QModelIndex&,const QModelIndex&)),this,SLOT(updateTable(const QModelIndex&,const QModelIndex&)));
 }
 
+void MainWindow::modelMute()
+{
+    table->setUpdatesEnabled(false);
+    model->blockSignals(true);
+}
+
+void MainWindow::modelUnMute()
+{
+    model->blockSignals(false);
+    table->setUpdatesEnabled(true);
+    model->layoutChanged();
+}
+
 void MainWindow::direct_new(int sx,int sy)
 {
     createModel();
-
-    //table->setModel(model);
-    //table->setUpdatesEnabled(false);
 
     QElapsedTimer timer;
     timer.start();
@@ -1430,8 +1456,6 @@ void MainWindow::direct_new(int sx,int sy)
 
     hasheader=false;
 
-    //model->setRowCount(sx);
-    //model->setColumnCount(sy);
     //QStandardItem * new_items=new QStandardItem[sx*sy];
     for (int dx=0,id=0; dx<sx; dx++)
     {

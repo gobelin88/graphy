@@ -115,6 +115,8 @@ public slots:
 private:
     void createModel();
     void affectModel();
+    void modelMute();
+    void modelUnMute();
 
     void error(QString title,QString msg);
 
@@ -140,7 +142,7 @@ private:
     QString current_filename;
     QMdiArea* mdiArea;
     QStandardItemModel * model;
-    QStandardItemModel * old_model;
+    QAbstractItemModel * old_model;
     //MyModel * model;
     bool hasheader;
     Eigen::MatrixXd datatable;

@@ -28,8 +28,8 @@ MainWindow::MainWindow(QWidget* parent) :
     mdiArea=new QMdiArea();
     table=new QTableView(mdiArea);
 
-    model = new QStandardItemModel;
-    //model = new MyModel;
+    model=nullptr;
+    old_model=nullptr;
 
     //  tableview.setSelectionBehavior(tableview.SelectRows)
     //  tableview.setSelectionMode(tableview.SingleSelection)
@@ -46,7 +46,7 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(table->horizontalHeader(),SIGNAL(sectionMoved(int,int,int)),this,SLOT(slot_hSectionMoved(int,int,int)));
     connect(table->verticalHeader(),SIGNAL(sectionMoved(int,int,int)),this,SLOT(slot_vSectionMoved(int,int,int)));
 
-
+    std::cout<<"A"<<std::endl;
 
     connect(ui->actionNew, &QAction::triggered,this,&MainWindow::slot_new);
     connect(ui->actionOpen, &QAction::triggered,this,&MainWindow::slot_open);
@@ -70,6 +70,7 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(ui->actionSelection_Pattern, &QAction::triggered,this,&MainWindow::slot_select);
     connect(ui->actionColourize, &QAction::triggered,this,&MainWindow::slot_colourize);
 
+    std::cout<<"B"<<std::endl;
 
     //    connect(ui->actionTile,&QAction::triggered,mdiArea,&QMdiArea::tileSubWindows);
     //    connect(ui->actionCascade,&QAction::triggered,mdiArea,&QMdiArea::cascadeSubWindows);
@@ -103,6 +104,8 @@ MainWindow::MainWindow(QWidget* parent) :
     table->addAction(a_deleteColumnsRows);
     table->addAction(a_updateColumns);
 
+    std::cout<<"C"<<std::endl;
+
     connect(table->horizontalHeader(),&QHeaderView::sectionDoubleClicked,this,&MainWindow::slot_sectionDoubleClicked);
     connect(a_newColumn,&QAction::triggered,this,&MainWindow::slot_editColumn);
     connect(a_newRow,&QAction::triggered,this,&MainWindow::slot_newRow);
@@ -131,9 +134,11 @@ MainWindow::MainWindow(QWidget* parent) :
     mdiArea->setSizeAdjustPolicy (QAbstractScrollArea::AdjustToContents);
     //table->setSizeAdjustPolicy   (QAbstractScrollArea::AdjustToContents);
 
+    std::cout<<"D"<<std::endl;
+    direct_new(3,3);
 
-    direct_new(10,10);
 
+    std::cout<<"E"<<std::endl;
     loadShortcuts();
 
     //createExperimental();
@@ -210,6 +215,8 @@ QStringList MainWindow::extractToken(QString fileLine)
 
 void MainWindow::direct_open(QString filename)
 {
+    createModel();
+
     QFile file(filename);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -232,7 +239,21 @@ void MainWindow::direct_open(QString filename)
                 QString varLine = in.readLine();
                 QString expLine = in.readLine();
                 QStringList varToken = extractToken(varLine);
-                QStringList expToken = extractToken(expLine);
+                dataLine=expLine;
+
+                QStringList expToken;
+                if(expLine!=QString("</header>"))
+                {
+                    expToken = extractToken(expLine);
+                }
+                else
+                {
+                    for(int i=0;i<varToken.size();i++)
+                    {
+                        expToken.push_back(QString(""));
+                    }
+                }
+
 
                 if(varToken.size()==expToken.size())
                 {
@@ -257,11 +278,11 @@ void MainWindow::direct_open(QString filename)
                     return;
                 }
 
-                do
+                while (dataLine!="</header>" && !in.atEnd())
                 {
                     dataLine = in.readLine();
                 }
-                while (dataLine!="</header>" && !in.atEnd());
+
             }
             else
             {
@@ -302,8 +323,9 @@ void MainWindow::direct_open(QString filename)
         }
 
 
-        table->setModel(model);
-        connect(model,SIGNAL(dataChanged(const QModelIndex&,const QModelIndex&)),this,SLOT(updateTable(const QModelIndex&,const QModelIndex&)));
+        affectModel();
+
+
         setCurrentFilename(filename);
         updateTable();
 
@@ -537,24 +559,10 @@ bool MainWindow::isValidVariable(QString variableName)
     return true;
 }
 
-bool MainWindow::editVariableAndExpression(int currentIndex)
+int MainWindow::getVarExpDialog(QString currentName, QString currentExpression, QString & newName, QString & newExpression)
 {
-    QString currentName,currentExpression;
-    QString newName,newExpression;
-
-    if (currentIndex<variables.size() && currentIndex>=0) //fetch variable and expression
-    {
-        currentName=variables_names[currentIndex];
-        currentExpression=variables_expressions[currentIndex];
-    }
-    else
-    {
-        currentName.clear();
-        currentExpression.clear();
-    }
-
-    QLineEdit* le_variableName=new QLineEdit(currentName);
-    QLineEdit* le_variableExpression=new QLineEdit(currentExpression);
+    QLineEdit* le_variableName=new QLineEdit(newName);
+    QLineEdit* le_variableExpression=new QLineEdit(newExpression);
 
     QCompleter * completer= new QCompleter(getCustomExpressionList(), this);
     le_variableExpression->setCompleter(completer);
@@ -588,24 +596,53 @@ bool MainWindow::editVariableAndExpression(int currentIndex)
         {
             if (!registerNewVariable(newName,newExpression) )
             {
-                return false;
+                return -1;
             }
         }
         else //modify
         {
             if( !registerRenameVariable(currentName,newName,currentExpression,newExpression) )
             {
-                return false;
+                return -1;
             }
         }
 
         fileModified();
-        return true;
+        return 1;
     }
     else
     {
-        return false;
+        return 0;
     }
+}
+
+bool MainWindow::editVariableAndExpression(int currentIndex)
+{
+    QString currentName,currentExpression;
+    QString newName,newExpression;
+
+    if (currentIndex<variables.size() && currentIndex>=0) //fetch variable and expression
+    {
+        currentName=variables_names[currentIndex];
+        currentExpression=variables_expressions[currentIndex];
+    }
+    else
+    {
+        currentName.clear();
+        currentExpression.clear();
+    }
+    newName=currentName;
+    newExpression=currentExpression;
+
+    int ret=0;
+    do
+    {
+       ret=getVarExpDialog(currentName,currentExpression, newName, newExpression);
+    }
+    while(ret==-1);
+
+    return bool(ret);
+
 }
 
 void MainWindow::registerClear()
@@ -772,8 +809,7 @@ void MainWindow::slot_editColumn()
         visualIndex=table->horizontalHeader()->visualIndex( id_list[0].column() );
     }
 
-    bool var=editVariableAndExpression(visualIndex);
-    if (var)
+    if (editVariableAndExpression(visualIndex))
     {
         setColumn(visualIndex,evalColumn(visualIndex));
 
@@ -828,6 +864,8 @@ void MainWindow::slot_delete_selectedColumns()
     }
     std::sort(indexs_cols.begin(),indexs_cols.end());
     std::sort(indexs_cols_visual.begin(),indexs_cols_visual.end());
+
+
 
     //////////////////////////////////////////////
     if (indexs_cols.size()>=1)
@@ -1353,26 +1391,57 @@ void MainWindow::addModelRow(const Eigen::VectorXd & value_row)
 void MainWindow::clear()
 {
     registerClear();
-    model->removeRows(0,model->rowCount());
-    model->removeColumns(0,model->columnCount());
+    //model->removeRows(0,model->rowCount());
+    //model->removeColumns(0,model->columnCount());
+
+    model->clear();
+}
+
+void MainWindow::createModel()
+{
+    if(model)
+    {
+        old_model=model;
+    }
+    model = new QStandardItemModel;
+}
+
+void MainWindow::affectModel()
+{
+    table->setModel(model);
+    if(old_model)
+    {
+        disconnect(old_model,SIGNAL(dataChanged(const QModelIndex&,const QModelIndex&)),this,SLOT(updateTable(const QModelIndex&,const QModelIndex&)));
+        delete old_model;
+    }
+    connect(model,SIGNAL(dataChanged(const QModelIndex&,const QModelIndex&)),this,SLOT(updateTable(const QModelIndex&,const QModelIndex&)));
 }
 
 void MainWindow::direct_new(int sx,int sy)
 {
+    createModel();
+
+    //table->setModel(model);
+    //table->setUpdatesEnabled(false);
+
     QElapsedTimer timer;
     timer.start();
     clear();
 
     hasheader=false;
 
-    for (int dx=0; dx<sx; dx++)
+    //model->setRowCount(sx);
+    //model->setColumnCount(sy);
+    //QStandardItem * new_items=new QStandardItem[sx*sy];
+    for (int dx=0,id=0; dx<sx; dx++)
     {
         for (int dy=0; dy<sy; dy++)
         {
+            //model->setItem(dx, dy, new_items+id);
             model->setItem(dx, dy, new QStandardItem);
+            id++;
         }
     }
-    //model->set
 
     for (int j = 0; j < model->columnCount(); j++)
     {
@@ -1381,14 +1450,16 @@ void MainWindow::direct_new(int sx,int sy)
         model->setHorizontalHeaderItem(j, new QStandardItem(value));
     }
 
-    table->setModel(model);
-    connect(model,SIGNAL(dataChanged(const QModelIndex&,const QModelIndex&)),this,SLOT(updateTable(const QModelIndex&,const QModelIndex&)));
+
+    //table->setUpdatesEnabled(true);
+
+    affectModel();
 
     setCurrentFilename("");
     isModified=false;
     updateTable();
 
-    std::cout<<"dt="<<timer.nsecsElapsed()*1e-9<<"s "<<std::endl;
+    std::cout<<"direct_new() dt="<<timer.nsecsElapsed()*1e-9<<"s "<<std::endl;
 }
 
 void MainWindow::setCurrentFilename(QString filename)

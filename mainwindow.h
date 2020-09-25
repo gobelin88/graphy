@@ -113,6 +113,9 @@ public slots:
     void slot_colourize();
 
 private:
+    void createModel();
+    void affectModel();
+
     void error(QString title,QString msg);
 
     Viewer1D* createViewerId();
@@ -123,6 +126,8 @@ private:
     bool isValidExpression(QString variableExpression);
     bool isValidVariable(QString variableName);
     bool editVariableAndExpression(int currentIndex);
+
+    int getVarExpDialog(QString currentName, QString currentExpression, QString & newName, QString & newExpression);
 
     void setCurrentFilename(QString filename);
     void fileModified();
@@ -135,6 +140,7 @@ private:
     QString current_filename;
     QMdiArea* mdiArea;
     QStandardItemModel * model;
+    QStandardItemModel * old_model;
     //MyModel * model;
     bool hasheader;
     Eigen::MatrixXd datatable;
@@ -216,6 +222,7 @@ private:
     std::normal_distribution<double> * noise_normal;
     std::uniform_real<double> * noise_uniform;
 
+    //QStandardItem * new_items;
 };
 
 #endif // MAINWINDOW_H

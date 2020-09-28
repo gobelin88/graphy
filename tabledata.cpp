@@ -53,51 +53,7 @@ void addColumn(Eigen::MatrixXd& matrix, Eigen::VectorXd colToAdd)
     matrix.col(numCols-1)=colToAdd;
 }
 
-void swapColumns(Eigen::MatrixXd& matrix,int ida,int idb)
-{
-    matrix.col(ida).swap(matrix.col(idb));
-}
 
-void moveColumn(Eigen::MatrixXd& matrix,int ida,int idb)
-{
-    if (ida<idb)
-    {
-        for (int k=ida; k<idb; k++)
-        {
-            swapColumns(matrix,k,k+1);
-        }
-    }
-    else if (ida>idb)
-    {
-        for (int k=ida; k>idb; k--)
-        {
-            swapColumns(matrix,k,k-1);
-        }
-    }
-}
-
-void swapRows(Eigen::MatrixXd& matrix,int ida,int idb)
-{
-    matrix.row(ida).swap(matrix.row(idb));
-}
-
-void moveRow(Eigen::MatrixXd& matrix,int ida,int idb)
-{
-    if (ida<idb)
-    {
-        for (int k=ida; k<idb; k++)
-        {
-            swapRows(matrix,k,k+1);
-        }
-    }
-    else if (ida>idb)
-    {
-        for (int k=ida; k>idb; k--)
-        {
-            swapRows(matrix,k,k-1);
-        }
-    }
-}
 
 
 void interpolate(const Eigen::MatrixXd& data,const BoxPlot& box,QCPColorMap* map,size_t knn,InterpolationMode mode)

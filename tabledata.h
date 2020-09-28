@@ -32,10 +32,6 @@ void removeColumns(Eigen::MatrixXd& matrix, unsigned int colToRemove, unsigned i
 void addRow(Eigen::MatrixXd& matrix, Eigen::VectorXd rowToAdd);
 void addRows(Eigen::MatrixXd& matrix, int n);
 void addColumn(Eigen::MatrixXd& matrix, Eigen::VectorXd colToAdd);
-void swapColumns(Eigen::MatrixXd& matrix,int ida,int idb);
-void moveColumn(Eigen::MatrixXd& matrix,int ida,int idb);
-void swapRows(Eigen::MatrixXd& matrix,int ida,int idb);
-void moveRow(Eigen::MatrixXd& matrix,int ida,int idb);
 
 void interpolate(const Eigen::MatrixXd& data,const BoxPlot& box,QCPColorMap* map,size_t knn,InterpolationMode mode);
 double getMin(const Eigen::MatrixXd& data,int id);
@@ -54,4 +50,54 @@ QString toString(const Eigen::MatrixXd& v);
 void sortBy(Eigen::MatrixXd& matrix, int colId,SortMode mode);
 void thresholdBy(Eigen::MatrixXd& matrix, int colId, ThresholdMode mode, double value);
 
+
+template<typename Derived>
+void swapColumns(Eigen::MatrixBase<Derived> &matrix, int ida, int idb)
+{
+    matrix.col(ida).swap(matrix.col(idb));
+}
+
+template<typename Derived>
+void moveColumn(Eigen::MatrixBase<Derived> & matrix,int ida,int idb)
+{
+    if (ida<idb)
+    {
+        for (int k=ida; k<idb; k++)
+        {
+            swapColumns(matrix,k,k+1);
+        }
+    }
+    else if (ida>idb)
+    {
+        for (int k=ida; k>idb; k--)
+        {
+            swapColumns(matrix,k,k-1);
+        }
+    }
+}
+
+template<typename Derived>
+void swapRows(Eigen::MatrixBase<Derived> &matrix, int ida, int idb)
+{
+    matrix.row(ida).swap(matrix.row(idb));
+}
+
+template<typename Derived>
+void moveRow(Eigen::MatrixBase<Derived> & matrix,int ida,int idb)
+{
+    if (ida<idb)
+    {
+        for (int k=ida; k<idb; k++)
+        {
+            swapRows(matrix,k,k+1);
+        }
+    }
+    else if (ida>idb)
+    {
+        for (int k=ida; k>idb; k--)
+        {
+            swapRows(matrix,k,k-1);
+        }
+    }
+}
 #endif // TABLEDATA_H

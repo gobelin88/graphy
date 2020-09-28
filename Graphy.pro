@@ -54,7 +54,9 @@ SOURCES += \
         object3d.cpp \
         qcustomplot.cpp \
         qgradientcombobox.cpp \
+        register.cpp \
         tabledata.cpp \
+        value.cpp \
         view3d.cpp \
         qPosAtt.cpp
 
@@ -88,7 +90,9 @@ HEADERS += \
         object3d.h \
         qcustomplot.h \
         qgradientcombobox.h \
+        register.h \
         tabledata.h \
+        value.h \
         view3d.h \
         exprtk\exprtk.hpp \
         qPosAtt.h

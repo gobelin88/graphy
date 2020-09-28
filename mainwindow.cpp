@@ -7,10 +7,10 @@
 void MainWindow::createExperimental()
 {
     experimental_table=new QTableView(mdiArea);
-    experimental_table->horizontalHeader()->setSectionsMovable(true);
-    experimental_table->verticalHeader()->setSectionsMovable(true);
 
     experimental_model = new MyModel(3,3);
+    experimental_table->setHorizontalHeader(experimental_model->horizontalHeader());
+    experimental_table->setVerticalHeader(experimental_model->verticalHeader());
     experimental_table->setModel(experimental_model);
 
     te_widget->addTab(experimental_table,"Experimental");
@@ -141,7 +141,7 @@ MainWindow::MainWindow(QWidget* parent) :
     std::cout<<"E"<<std::endl;
     loadShortcuts();
 
-    createExperimental();
+    //createExperimental();
 
     noise_normal=new std::normal_distribution<double>(0.0,1.0);
     noise_uniform=new std::uniform_real<double>(0.0,1.0);
@@ -506,8 +506,9 @@ bool MainWindow::isValidExpression(QString variableExpression)
     }
     else if (variableExpression.startsWith("$"))
     {
-        QString result;
-        return customExpressionParse(variableExpression,0,result);
+        //QString result;
+        //return customExpressionParse(variableExpression,0,result);
+        return true;
     }
     else
     {

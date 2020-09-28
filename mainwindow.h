@@ -22,14 +22,10 @@
 #include "1d_cplx_viewer.h"
 #include "bode_viewer.h"
 #include "2d_viewer.h"
-#include "3d_viewer.h"
+//#include "3d_viewer.h"
 #include "view3d.h"
 #include "qgradientcombobox.h"
 #include "mytablemodel.h"
-
-#include "exprtk/exprtk.hpp"
-
-#include <unsupported/Eigen/FFT>
 
 #include <random>
 
@@ -58,17 +54,14 @@ public slots:
 
     void slot_editColumn();
     void slot_sectionDoubleClicked();
-
     void slot_delete_columns_and_rows();
     void slot_delete_selectedRows();
     void slot_delete_selectedColumns();
     void slot_delete_selected();
-
     void slot_newRow();
     void slot_newRows();
     void slot_updateColumns();
     void slot_newColumn(QString name,Eigen::VectorXd data);
-
     void slot_copy();
     void slot_paste();
 
@@ -90,7 +83,6 @@ public slots:
     void slot_plot_curve_xy();
     void slot_plot_fft();
     void slot_plot_histogram();
-
     void slot_plot_cloud_2D();
     void slot_plot_field_2D();
     void slot_plot_map_2D();
@@ -100,54 +92,32 @@ public slots:
     //data
     void slot_filter();
     void slot_select();
-
-    //Misc
     void slot_parameters();
     void slot_results(QString results);
+    void slot_colourize();
 
     //
     void slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
     void slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
 
-    //
-    void slot_colourize();
 
 private:
-    void createModel();
-    void affectModel();
-    void modelMute();
-    void modelUnMute();
-
-    void error(QString title,QString msg);
-
-    Viewer1D* createViewerId();
-
+    //Close
     void closeEvent (QCloseEvent *event);
 
-    QStringList extractToken(QString fileLine);
-    bool isValidExpression(QString variableExpression);
-    bool isValidVariable(QString variableName);
-    bool editVariableAndExpression(int currentIndex);
+    //Error
+    void error(QString title,QString msg);
 
-    int getVarExpDialog(QString currentName, QString currentExpression, QString & newName, QString & newExpression);
+    //Register
+    Register reg;
 
-    void setCurrentFilename(QString filename);
-    void fileModified();
-
-    void resizeEvent(QResizeEvent* event);
-
+    //View & Gui
+    QTextEdit* te_results;
     QTabWidget* te_widget;
     Ui::MainWindow* ui;
     QTableView* table;
-    QString current_filename;
-    QMdiArea* mdiArea;
-    QStandardItemModel * model;
-    QAbstractItemModel * old_model;
-    //MyModel * model;
-    bool hasheader;
-    Eigen::MatrixXd datatable;
-    Curve2D shared;
-
+    void resizeEvent(QResizeEvent* event);
+    Viewer1D* createViewerId();
     QAction* a_newColumn;
     QAction* a_newRow;
     QAction* a_newRows;
@@ -156,9 +126,34 @@ private:
     QAction* a_updateColumns;
     QAction* a_copy;
     QAction* a_paste;
+    QMdiArea* mdiArea;
+
+    //Model
+    void createModel();
+    void affectModel();
+    void modelMute();
+    void modelUnMute();
+    QStandardItemModel * model;
+    QAbstractItemModel * old_model;
+
+    //Io
+    bool hasheader;
+    bool isModified;
+    QString separator;
+    QString current_filename;
+    QStringList extractToken(QString fileLine);
+    bool editVariableAndExpression(int currentIndex);
+    int getVarExpDialog(QString currentName, QString currentExpression, QString & newName, QString & newExpression);
+    void setCurrentFilename(QString filename);
+    void fileModified();
+
+    //Data
+    Eigen::MatrixXd datatable;
+    Curve2D shared;
 
     //Col/row
     QVector<QString> getColumn(int idCol);
+    QVector<QString> getRow(int idRow);
     void setColumn(int idCol,const QVector<QString>& vec_col);
     void addModelRow(const QStringList& str_row);
     void addModelRow(const Eigen::VectorXd & value_row);
@@ -166,33 +161,13 @@ private:
     //expr
     QVector<QString> evalColumn(int colId);
 
-    void dispVariables();
-    void registerClear();
-    bool registerNewVariable(QString varname,QString varexpr);
-    void registerDelVariable(QString varname);
-    bool registerRenameVariable(QString old_varname, QString new_varname, QString oldExpression, QString newExpression);
-    void swapVariables(int ida,int idb);
-    void moveVariable(int ida,int idb);
-    exprtk::symbol_table<double> symbolsTable;
-    QVector<double*> variables;
-    QStringList variables_names;
-    QStringList variables_expressions;
-
-    double activeRow;
-    double activeCol;
-
-    QStringList getCustomExpressionList();
-    bool customExpressionParse(QString expression, int currentRow, QString& result);
-
+    //Shortcuts
     QMap<QString,QKeySequence> shortcuts;
     void applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
     bool loadShortcuts();
     void saveShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
 
-    //Results
-    QTextEdit* te_results;
-
-    //
+    //Constants
     const float graphyVersion=3.5f;
 
     //selections
@@ -204,27 +179,13 @@ private:
     double toSafeDouble(const QString& str) const;
     QString fromNumber(double value);
     QString fromNumber(double value,int precision);
-    const int internal_precision=12;
     bool asColumnStrings(int idCol);
-
-    QString separator;
-
-
-    bool isModified;
     void getRowColSelectedRanges(QCPRange &range_row,QCPRange &range_col);
 
-
-    ///////////////////
+    //Experimental
     void createExperimental();
     QTableView* experimental_table;
     MyModel * experimental_model;
-
-    //
-    std::default_random_engine generator;
-    std::normal_distribution<double> * noise_normal;
-    std::uniform_real<double> * noise_uniform;
-
-    //QStandardItem * new_items;
 };
 
 #endif // MAINWINDOW_H

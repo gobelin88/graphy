@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include <functional>
+
 #include "FIR.h"
 
 ///////////////////
@@ -142,9 +144,6 @@ MainWindow::MainWindow(QWidget* parent) :
     loadShortcuts();
 
     //createExperimental();
-
-    noise_normal=new std::normal_distribution<double>(0.0,1.0);
-    noise_uniform=new std::uniform_real<double>(0.0,1.0);
 }
 
 MainWindow::~MainWindow()
@@ -233,6 +232,8 @@ void MainWindow::direct_open(QString filename)
             // read one line from textstream(separated by "\n")
             QString dataLine = in.readLine();
 
+            std::cout<<dataLine.toLocal8Bit().data()<<std::endl;
+
             if (dataLine=="<header>")
             {
                 hasheader=true;
@@ -261,13 +262,14 @@ void MainWindow::direct_open(QString filename)
                     {
                         QString varname = varToken.at(j);
                         QString varexpr = expToken.at(j);
-                        if ( registerNewVariable(varname,varexpr) )
+                        if ( reg.newVariable(varname,varexpr) )
                         {
                             model->setHorizontalHeaderItem(j, new QStandardItem(varname));
                         }
                         else
                         {
                             clear();
+                            affectModel();
                             return;
                         }
                     }
@@ -275,6 +277,8 @@ void MainWindow::direct_open(QString filename)
                 else
                 {
                     error("Open",QString("Number of expressions (%1) and number of variables (%2) are different.").arg(expToken.size()).arg(varToken.size()));
+                    clear();
+                    affectModel();
                     return;
                 }
 
@@ -293,7 +297,7 @@ void MainWindow::direct_open(QString filename)
                 }
                 else if (lineindex==0 && hasheader)
                 {
-                    numberOfColumns=variables_names.size();
+                    numberOfColumns=reg.variablesNames().size();
                 }
 
                 if(valuesToken.size()==numberOfColumns)
@@ -318,7 +322,7 @@ void MainWindow::direct_open(QString filename)
                 QString varexpr =QString("");
                 QStandardItem* item = new QStandardItem(varname);
                 model->setHorizontalHeaderItem(j, item);
-                registerNewVariable(varname,varexpr);
+                reg.newVariable(varname,varexpr);
             }
         }
 
@@ -463,13 +467,13 @@ void MainWindow::direct_save(QString filename)
             textData += "<header>\n";
             for (int j = 0; j < columns; j++)
             {
-                textData+=variables_names[j];
+                textData+=reg.variablesNames()[j];
                 textData += separator;
             }
             textData += "\n";
             for (int j = 0; j < columns; j++)
             {
-                textData+=variables_expressions[j];
+                textData+=reg.variablesExpressions()[j];
                 textData += separator;
             }
             textData += "\n";
@@ -498,74 +502,12 @@ void MainWindow::direct_save(QString filename)
     }
 }
 
-bool MainWindow::isValidExpression(QString variableExpression)
-{
-    if (variableExpression.isEmpty())
-    {
-        return true;
-    }
-    else if (variableExpression.startsWith("$"))
-    {
-        //QString result;
-        //return customExpressionParse(variableExpression,0,result);
-        return true;
-    }
-    else
-    {
-        exprtk::parser<double> parser;
-        exprtk::expression<double> expression;
-        expression.register_symbol_table(symbolsTable);
-        bool ok=parser.compile(variableExpression.toStdString(),expression);
-
-        if (!ok)
-        {
-            error("Invalid formula",variableExpression+QString("\nError : ")+QString::fromStdString(parser.error()));
-        }
-
-        return ok;
-    }
-}
-
-bool MainWindow::isValidVariable(QString variableName)
-{
-    if (variableName.isEmpty())
-    {
-        return false;
-    }
-
-    if (variableName.begin()->isDigit())
-    {
-        error("Variable",QString("%1 : Variables names can't start with a number").arg(variableName));
-        return false;
-    }
-
-    if (variableName.contains(" "))
-    {
-        error("Variable",QString("%1 : Variables names can't have any space").arg(variableName));
-        return false;
-    }
-
-    if (!symbolsTable.valid_symbol(variableName.toStdString()))
-    {
-        error("Variable",QString("%1 : Invalid variable name.\nVariables names can't have any of these characters :\n+ - / * ^ > < | & ...etc").arg(variableName));
-        return false;
-    }
-
-    if (symbolsTable.symbol_exists(variableName.toStdString()))
-    {
-        error("Variable",QString("%1 : This variable name is already used").arg(variableName));
-        return false;
-    }
-
-    return true;
-}
-
 int MainWindow::getVarExpDialog(QString currentName, QString currentExpression, QString & newName, QString & newExpression)
 {
     QLineEdit* le_variableName=new QLineEdit(newName);
     QLineEdit* le_variableExpression=new QLineEdit(newExpression);
 
-    QCompleter * completer= new QCompleter(getCustomExpressionList(), this);
+    QCompleter * completer= new QCompleter(reg.getCustomExpressionList(), this);
     le_variableExpression->setCompleter(completer);
 
     QDialog* dialog=new QDialog;
@@ -595,14 +537,14 @@ int MainWindow::getVarExpDialog(QString currentName, QString currentExpression, 
 
         if (currentName.isEmpty()) //add New
         {
-            if (!registerNewVariable(newName,newExpression) )
+            if (!reg.newVariable(newName,newExpression) )
             {
                 return -1;
             }
         }
         else //modify
         {
-            if( !registerRenameVariable(currentName,newName,currentExpression,newExpression) )
+            if( !reg.renameVariable(currentName,newName,currentExpression,newExpression) )
             {
                 return -1;
             }
@@ -622,10 +564,10 @@ bool MainWindow::editVariableAndExpression(int currentIndex)
     QString currentName,currentExpression;
     QString newName,newExpression;
 
-    if (currentIndex<variables.size() && currentIndex>=0) //fetch variable and expression
+    if (currentIndex<reg.size() && currentIndex>=0) //fetch variable and expression
     {
-        currentName=variables_names[currentIndex];
-        currentExpression=variables_expressions[currentIndex];
+        currentName=reg.variablesNames()[currentIndex];
+        currentExpression=reg.variablesExpressions()[currentIndex];
     }
     else
     {
@@ -645,107 +587,6 @@ bool MainWindow::editVariableAndExpression(int currentIndex)
     return bool(ret);
 
 }
-
-void MainWindow::registerClear()
-{
-    variables_names.clear();
-    variables_expressions.clear();
-    variables.clear();
-    symbolsTable.clear();
-    symbolsTable.add_pi();
-    symbolsTable.add_variable("Row",activeRow);
-    symbolsTable.add_variable("Col",activeCol);
-}
-
-bool MainWindow::registerNewVariable(QString varname,QString varexpr)
-{
-    if(!isValidExpression(varexpr))
-    {
-        return false;
-    }
-
-    if(!isValidVariable(varname))
-    {
-        return false;
-    }
-
-    double * p_double=new double(0.0);
-    variables.push_back(p_double);
-    symbolsTable.add_variable(varname.toStdString(),*p_double);
-
-    variables_names.push_back(varname);
-    variables_expressions.push_back(varexpr);
-
-    return true;
-}
-
-void MainWindow::registerDelVariable(QString varname)
-{
-    int index=variables_names.indexOf(varname);
-    variables_names.removeAt(index);
-    variables_expressions.removeAt(index);
-    variables.erase(variables.begin()+index);
-    symbolsTable.remove_variable(varname.toStdString());
-}
-
-void MainWindow::swapVariables(int ida,int idb)
-{
-    std::swap(variables[ida],variables[idb]);
-    variables_names.swap(ida,idb);
-    variables_expressions.swap(ida,idb);
-}
-
-void MainWindow::moveVariable(int ida,int idb)
-{
-    if (ida<idb)
-    {
-        for (int k=ida; k<idb; k++)
-        {
-            swapVariables(k,k+1);
-        }
-    }
-    else if (ida>idb)
-    {
-        for (int k=ida; k>idb; k--)
-        {
-            swapVariables(k,k-1);
-        }
-    }
-}
-
-bool MainWindow::registerRenameVariable(QString old_varname,QString new_varname,QString oldExpression,QString newExpression)
-{
-    int index=variables_names.indexOf(old_varname);
-
-    if (oldExpression!=newExpression)
-    {
-        if(isValidExpression(newExpression))
-        {
-                variables_expressions[index]=newExpression;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    if (old_varname!=new_varname)
-    {
-        if(isValidVariable(new_varname))
-        {
-            variables_names[index]=new_varname;
-            symbolsTable.add_variable(new_varname.toStdString(),symbolsTable.variable_ref(old_varname.toStdString()));
-            symbolsTable.remove_variable(old_varname.toStdString());
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 
 void MainWindow::slot_newRow()
 {
@@ -811,7 +652,7 @@ void MainWindow::slot_editColumn()
     {
         setColumn(visualIndex,evalColumn(visualIndex));
 
-        model->setHorizontalHeaderItem(currentColIndex, new QStandardItem(variables_names[visualIndex]));
+        model->setHorizontalHeaderItem(currentColIndex, new QStandardItem(reg.variablesNames()[visualIndex]));
 
         hasheader=true;
     }
@@ -832,7 +673,7 @@ void MainWindow::slot_newColumn(QString name,Eigen::VectorXd data)
     if (data.size()==datatable.rows())
     {
         int index=datatable.cols();
-        registerNewVariable(name,"");
+        reg.newVariable(name,"");
         setColumn(index,toQVectorStr(data));
         model->setHorizontalHeaderItem(index, new QStandardItem(name));
 
@@ -918,7 +759,7 @@ void MainWindow::slot_delete_selectedColumns()
 
             for (int k=0; k<n; k++)
             {
-                registerDelVariable(variables_names[indexa-i]);
+                reg.delVariable(reg.variablesNames()[indexa-i]);
             }
 
             removeColumns(datatable,indexa-i,n);
@@ -1036,14 +877,6 @@ void MainWindow::slot_delete_columns_and_rows()
     //dispVariables();
 }
 
-void MainWindow::dispVariables()
-{
-    for (int i=0; i<variables_names.size(); i++)
-    {
-        std::cout<<variables_names[i].toLocal8Bit().data()<<"="<<variables_expressions[i].toLocal8Bit().data()<<"="<<*(variables[i])<<" ("<<(variables[i]) <<") ";
-    }
-    std::cout<<std::endl;
-}
 
 QString MainWindow::fromNumber(double value)
 {
@@ -1065,11 +898,11 @@ QString MainWindow::fromNumber(double value,int precision)
 QVector<QString> MainWindow::evalColumn(int colId)
 {
     int logicalColId=colId;
-    activeCol=colId;
+    reg.setActiveCol(colId);
 
     assert(logicalColId<variables_expressions.size());
 
-    if (variables_expressions[logicalColId].isEmpty())
+    if (reg.variablesExpressions()[logicalColId].isEmpty())
     {
         return QVector<QString>();
     }
@@ -1079,35 +912,36 @@ QVector<QString> MainWindow::evalColumn(int colId)
 
         QVector<QString> colResults(nbRows);
 
-        exprtk::parser<double> parser;
-        exprtk::expression<double> compiled_expression;
-        compiled_expression.register_symbol_table(symbolsTable);
 
-        if (parser.compile(variables_expressions[logicalColId].toStdString(),compiled_expression))
+        if (reg.compileExpression(logicalColId))
         {
             for (int i=0; i<nbRows; i++)
             {
-                activeRow=i;
+                reg.setActiveRow(i);
                 for (int j=0; j<datatable.cols(); j++)
                 {
-                    *(variables[j])=datatable(i,j);
+                    reg.setVariable(j,datatable(i,j));
                 }
 
 
-                compiled_expression.value();
-                colResults[i]=fromNumber(compiled_expression.value());
+                colResults[i]=fromNumber(reg.currentCompiledExpressionValue());
             }
         }
         else
         {
             for (int i=0; i<nbRows; i++)
             {
-                activeRow=i;
+                reg.setActiveRow(i);
                 for (int j=0; j<datatable.cols(); j++)
                 {
-                    *(variables[j])=datatable(i,j);
+                    reg.setVariable(j,datatable(i,j));
                 }
-                customExpressionParse(variables_expressions[logicalColId],i,colResults[i]);
+
+
+                // store a call to a member function and object ptr
+                using std::placeholders::_1;
+                using std::placeholders::_2;
+                reg.customExpressionParse(logicalColId,colResults[i],  std::bind( &MainWindow::at, this, _1, _2 ),i);
             }
         }
 
@@ -1115,207 +949,11 @@ QVector<QString> MainWindow::evalColumn(int colId)
     }
 }
 
-void scanDir(QDir dir,QStringList filters,QString name,QString& result,int depth)
-{
-    if (depth==0)
-    {
-        return;
-    }
-
-    dir.setNameFilters(filters);
-    dir.setFilter(QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks);
-
-    QStringList fileList = dir.entryList();
-    for ( int i=0; i<fileList.size(); i++)
-    {
-        if ( fileList[i] .contains(name) )
-        {
-            result=fileList[i];
-            return;
-        }
-    }
-
-    dir.setFilter(QDir::AllDirs | QDir::NoDotAndDotDot | QDir::NoSymLinks);
-    QStringList dirList = dir.entryList();
-    for (int i=0; i<dirList.size(); ++i)
-    {
-        QString newPath = QString("%1/%2").arg(dir.absolutePath()).arg(dirList.at(i));
-        scanDir(QDir(newPath),filters,name,result,depth-1);
-    }
-}
-
-QStringList MainWindow::getCustomExpressionList()
-{
-    QStringList customExpList;
-    customExpList<<"$uniform";
-    customExpList<<"$normal";
-    customExpList<<"$search ";
-    customExpList<<"$str";
-
-    return customExpList;
-}
-
-bool MainWindow::customExpressionParse(QString expression,int currentRow,QString& result)
-{
-    expression.remove('$');
-    QStringList args=expression.split(" ");
-    if (args.size()>0)
-    {
-
-        if (args[0]=="uniform" && args.size()==1)
-        {
-            result=fromNumber((*noise_uniform)(generator));
-            return true;
-        }
-        else if (args[0]=="normal" && args.size()==1)
-        {
-            result=fromNumber((*noise_normal)(generator));
-            return true;
-        }
-        else if (args[0]=="search" && args.size()>=5)
-        {
-            //0      1    2      3 4     5      6      i
-            //search what filter ? depth where1 where2 wherei...
-
-            QString search_for_name;
-            int index1=variables_names.indexOf(args[1]);
-            if (index1>=0)
-            {
-                search_for_name=at(currentRow,index1);
-            }
-            else
-            {
-                return false;
-            }
-
-            result="none";
-            for (int i=4; i<args.size(); i++)
-            {
-                QStringList filters;
-                filters<<args[2];
-                scanDir(args[i],filters,search_for_name,result,args[4].toInt());
-            }
-
-            return true;
-        }
-        else if (args[0]=="str" && args.size()==3)
-        {
-            QStringList sub_args1=args[2].split(',');
-            int index1=variables_names.indexOf(sub_args1[0]);
-
-            if (index1>=0)
-            {
-                result=args[1];
-                if (sub_args1.size()==2 )
-                {
-                    if (sub_args1[1]=="#" )
-                    {
-                        result=result.arg(at(currentRow,index1));
-                    }
-                    else if (sub_args1[1]=="#")
-                    {
-                        result=result.arg(at(currentRow,index1));
-                    }
-                    else
-                    {
-                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0');
-                    }
-                }
-                else if (sub_args1.size()==1)
-                {
-                    result=result.arg(*(variables[index1]));
-                }
-
-                return true;
-            }
-        }
-        else if (args[0]=="str" && args.size()==4)
-        {
-            QStringList sub_args1=args[2].split(',');
-            QStringList sub_args2=args[3].split(',');
-            int index1=variables_names.indexOf(sub_args1[0]);
-            int index2=variables_names.indexOf(sub_args2[0]);
-
-
-            if (index1>=0 && index2>=0)
-            {
-                result=args[1];
-
-                if (sub_args1.size()==2 && sub_args2.size()==2)
-                {
-                    if (sub_args1[1]=="#" && sub_args2[1]=="#")
-                    {
-                        result=result.arg(at(currentRow,index1)).arg(at(currentRow,index2));
-                    }
-                    else if (sub_args1[1]=="#")
-                    {
-                        result=result.arg(at(currentRow,index1)).arg(*(variables[index2]),sub_args2[1].toInt(),'g',-1,'0');
-                    }
-                    else if (sub_args2[1]=="#")
-                    {
-                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0').arg(at(currentRow,index2));
-                    }
-                    else
-                    {
-                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0').arg(*(variables[index2]),sub_args2[1].toInt(),'g',-1,'0');
-                    }
-                }
-                else if (sub_args1.size()==2 && sub_args2.size()==1)
-                {
-                    if (sub_args1[1]=="#")
-                    {
-                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0').arg(*(variables[index2]));
-                    }
-                    else
-                    {
-                        result=result.arg(at(currentRow,index1)).arg(*(variables[index2]));
-                    }
-                }
-                else if (sub_args1.size()==1 && sub_args2.size()==2)
-                {
-                    if (sub_args2[1]=="#")
-                    {
-                        result=result.arg(*(variables[index1])).arg(at(currentRow,index2));
-                    }
-                    else
-                    {
-                        result=result.arg(*(variables[index1])).arg(*(variables[index2]),sub_args2[1].toInt(),'g',-1,'0');
-                    }
-                }
-                else if (sub_args1.size()==1 && sub_args2.size()==1)
-                {
-                    result=result.arg(*(variables[index1])).arg(*(variables[index2]));
-                }
-
-                return true;
-            }
-            else
-            {
-                error("Bad variable indexes",QString("Indexes : %1 %2").arg(index1).arg(index2));
-                return false;
-            }
-        }
-        else
-        {
-            error("Bad custom expression",QString("Expression : ")+expression);
-            return false;
-        }
-    }
-    else
-    {
-        error("Bad custom expression",QString("Expression : ")+expression);
-        return false;
-    }
-
-    return false;
-}
-
 void MainWindow::error(QString title,QString msg)
 {
     QMessageBox::information(this,QString("Error : ")+title,msg);
     std::cout<<"Error : "<<msg.toLocal8Bit().data()<<std::endl;
 }
-
 
 QVector<QString> MainWindow::getColumn(int idCol)
 {
@@ -1326,6 +964,17 @@ QVector<QString> MainWindow::getColumn(int idCol)
         contentCol[i]=at(i,idCol);
     }
     return contentCol;
+}
+
+QVector<QString> MainWindow::getRow(int idRow)
+{
+    int nbCols=model->columnCount();
+    QVector<QString> contentRow(nbCols);
+    for (int i=0; i<nbCols; i++)
+    {
+        contentRow[i]=at(idRow,i);
+    }
+    return contentRow;
 }
 
 void MainWindow::setColumn(int idCol,const QVector<QString>& vec_col)
@@ -1407,7 +1056,7 @@ void MainWindow::addModelRow(const Eigen::VectorXd & value_row)
 
 void MainWindow::clear()
 {
-    registerClear();
+    reg.clear();
     //model->removeRows(0,model->rowCount());
     //model->removeColumns(0,model->columnCount());
 
@@ -1471,7 +1120,7 @@ void MainWindow::direct_new(int sx,int sy)
     for (int j = 0; j < model->columnCount(); j++)
     {
         QString value = QString("C%1").arg(j+1);
-        registerNewVariable(value,"");
+        reg.newVariable(value,"");
         model->setHorizontalHeaderItem(j, new QStandardItem(value));
     }
 
@@ -2033,10 +1682,10 @@ void MainWindow::slot_parameters()
     QTableView* tableVariables=new QTableView();
     QStandardItemModel* modelParametersVariables = new QStandardItemModel;
 
-    for (int i=0; i<variables_names.size(); i++)
+    for (int i=0; i<reg.variablesNames().size(); i++)
     {
-        QStandardItem* itemA=new QStandardItem(variables_names[i]);
-        QStandardItem* itemB=new QStandardItem(variables_expressions[i]);
+        QStandardItem* itemA=new QStandardItem(reg.variablesNames()[i]);
+        QStandardItem* itemB=new QStandardItem(reg.variablesExpressions()[i]);
         itemA->setEditable(false);
         itemB->setEditable(false);
         modelParametersVariables->setItem(i,0,itemA);
@@ -2348,11 +1997,11 @@ void MainWindow::slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newV
 void MainWindow::slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex)
 {
     Q_UNUSED(logicalIndex);
-    moveVariable(oldVisualIndex,newVisualIndex);
+    reg.moveVariable(oldVisualIndex,newVisualIndex);
     moveColumn(datatable,oldVisualIndex,newVisualIndex);
     fileModified();
 
-    dispVariables();
+    reg.dispVariables();
 }
 
 void MainWindow::slot_colourize()

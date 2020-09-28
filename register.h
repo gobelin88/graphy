@@ -28,9 +28,26 @@ public:
     void setActiveRow(int i){this->activeRow=i;}
     void setActiveCol(int i){this->activeCol=i;}
 
+    QStringList getCustomExpressionList();
+    bool customExpressionParse(unsigned int id, QString& result, std::function<QString(int,int)> at, int currentRow);
+
+    const QStringList & variablesNames();
+    const QStringList & variablesExpressions();
+
+    unsigned int size();
+
+    exprtk::symbol_table<double> & symbols();
+
+    void setVariable(int i,double value);
+
+    bool compileExpression(int id);
+    double currentCompiledExpressionValue();
+
 private:
     //Exprtk
+    exprtk::parser<double> parser;
     exprtk::symbol_table<double> symbolsTable;
+    exprtk::expression<double> current_compiled_expression;
     QVector<double*> variables;
     QStringList variables_names;
     QStringList variables_expressions;
@@ -49,6 +66,8 @@ private:
 
     //Misc
     QString fromNumber(double value);
+
+
 };
 
 #endif // REGISTER_H

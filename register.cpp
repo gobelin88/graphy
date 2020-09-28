@@ -9,6 +9,7 @@ Register::Register()
     noise_uniform=new std::uniform_real<double>(0.0,1.0);
 
     clear();
+    current_compiled_expression.register_symbol_table(symbolsTable);
 }
 
 void Register::swapVariables(int ida,int idb)
@@ -86,6 +87,40 @@ void Register::delVariable(QString varname)
     variables.erase(variables.begin()+index);
     symbolsTable.remove_variable(varname.toStdString());
 }
+
+bool Register::renameVariable(QString old_varname,QString new_varname,QString oldExpression,QString newExpression)
+{
+    int index=variables_names.indexOf(old_varname);
+
+    if (oldExpression!=newExpression)
+    {
+        if(isValidExpression(newExpression))
+        {
+            variables_expressions[index]=newExpression;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    if (old_varname!=new_varname)
+    {
+        if(isValidVariable(new_varname))
+        {
+            variables_names[index]=new_varname;
+            symbolsTable.add_variable(new_varname.toStdString(),symbolsTable.variable_ref(old_varname.toStdString()));
+            symbolsTable.remove_variable(old_varname.toStdString());
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 
 bool Register::isValidExpression(QString variableExpression)
 {
@@ -165,3 +200,239 @@ QString Register::fromNumber(double value)
         return QString("");
     }
 }
+
+const QStringList & Register::variablesNames()
+{
+    return variables_names;
+}
+
+const QStringList & Register::variablesExpressions()
+{
+    return variables_expressions;
+}
+
+unsigned int Register::size()
+{
+    return variables.size();
+}
+
+exprtk::symbol_table<double> & Register::symbols()
+{
+    return symbolsTable;
+}
+
+void Register::setVariable(int i,double value)
+{
+    if(i<variables.size())
+    {
+        *(variables[i])=value;
+    }
+}
+
+bool Register::compileExpression(int id)
+{
+
+
+    return parser.compile(variables_expressions[id].toStdString(),current_compiled_expression);
+}
+
+double Register::currentCompiledExpressionValue()
+{
+    return current_compiled_expression.value();
+}
+
+QStringList Register::getCustomExpressionList()
+{
+    QStringList customExpList;
+    customExpList<<"$uniform";
+    customExpList<<"$normal";
+    customExpList<<"$search ";
+    customExpList<<"$str";
+    return customExpList;
+}
+
+void custom_scanDir(QDir dir,QStringList filters,QString name,QString& result,int depth)
+{
+    if (depth==0)
+    {
+        return;
+    }
+
+    dir.setNameFilters(filters);
+    dir.setFilter(QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks);
+
+    QStringList fileList = dir.entryList();
+    for ( int i=0; i<fileList.size(); i++)
+    {
+        if ( fileList[i] .contains(name) )
+        {
+            result=fileList[i];
+            return;
+        }
+    }
+
+    dir.setFilter(QDir::AllDirs | QDir::NoDotAndDotDot | QDir::NoSymLinks);
+    QStringList dirList = dir.entryList();
+    for (int i=0; i<dirList.size(); ++i)
+    {
+        QString newPath = QString("%1/%2").arg(dir.absolutePath()).arg(dirList.at(i));
+        custom_scanDir(QDir(newPath),filters,name,result,depth-1);
+    }
+}
+
+bool Register::customExpressionParse(unsigned int id,QString& result,std::function<QString(int,int)> at,int currentRow)
+{
+    QString expression=variables_expressions[id];
+    expression.remove('$');
+    QStringList args=expression.split(" ");
+    if (args.size()>0)
+    {
+
+        if (args[0]=="uniform" && args.size()==1)
+        {
+            result=fromNumber((*noise_uniform)(generator));
+            return true;
+        }
+        else if (args[0]=="normal" && args.size()==1)
+        {
+            result=fromNumber((*noise_normal)(generator));
+            return true;
+        }
+        else if (args[0]=="search" && args.size()>=5)
+        {
+            //0      1    2      3  4     5      6      i
+            //search what filter depth where0 where1 where2 wherei...
+
+            QString search_for_name;
+            int index1=variables_names.indexOf(args[1]);
+            if (index1>=0)
+            {
+                search_for_name=at(currentRow,index1);
+            }
+            else
+            {
+                return false;
+            }
+
+            result="none";
+            for (int i=4; i<args.size(); i++)
+            {
+                QStringList filters;
+                filters<<args[2];
+                custom_scanDir(args[i],filters,search_for_name,result,args[4].toInt());
+            }
+
+            return true;
+        }
+        else if (args[0]=="str" && args.size()==3)
+        {
+            QStringList sub_args1=args[2].split(',');
+            int index1=variables_names.indexOf(sub_args1[0]);
+
+            if (index1>=0)
+            {
+                result=args[1];
+                if (sub_args1.size()==2 )
+                {
+                    if (sub_args1[1]=="#" )
+                    {
+                        result=result.arg(at(currentRow,index1));
+                    }
+                    else if (sub_args1[1]=="#")
+                    {
+                        result=result.arg(at(currentRow,index1));
+                    }
+                    else
+                    {
+                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0');
+                    }
+                }
+                else if (sub_args1.size()==1)
+                {
+                    result=result.arg(*(variables[index1]));
+                }
+
+                return true;
+            }
+        }
+        else if (args[0]=="str" && args.size()==4)
+        {
+            QStringList sub_args1=args[2].split(',');
+            QStringList sub_args2=args[3].split(',');
+            int index1=variables_names.indexOf(sub_args1[0]);
+            int index2=variables_names.indexOf(sub_args2[0]);
+
+
+            if (index1>=0 && index2>=0)
+            {
+                result=args[1];
+
+                if (sub_args1.size()==2 && sub_args2.size()==2)
+                {
+                    if (sub_args1[1]=="#" && sub_args2[1]=="#")
+                    {
+                        result=result.arg(at(currentRow,index1)).arg(at(currentRow,index2));
+                    }
+                    else if (sub_args1[1]=="#")
+                    {
+                        result=result.arg(at(currentRow,index1)).arg(*(variables[index2]),sub_args2[1].toInt(),'g',-1,'0');
+                    }
+                    else if (sub_args2[1]=="#")
+                    {
+                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0').arg(at(currentRow,index2));
+                    }
+                    else
+                    {
+                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0').arg(*(variables[index2]),sub_args2[1].toInt(),'g',-1,'0');
+                    }
+                }
+                else if (sub_args1.size()==2 && sub_args2.size()==1)
+                {
+                    if (sub_args1[1]=="#")
+                    {
+                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0').arg(*(variables[index2]));
+                    }
+                    else
+                    {
+                        result=result.arg(at(currentRow,index1)).arg(*(variables[index2]));
+                    }
+                }
+                else if (sub_args1.size()==1 && sub_args2.size()==2)
+                {
+                    if (sub_args2[1]=="#")
+                    {
+                        result=result.arg(*(variables[index1])).arg(at(currentRow,index2));
+                    }
+                    else
+                    {
+                        result=result.arg(*(variables[index1])).arg(*(variables[index2]),sub_args2[1].toInt(),'g',-1,'0');
+                    }
+                }
+                else if (sub_args1.size()==1 && sub_args2.size()==1)
+                {
+                    result=result.arg(*(variables[index1])).arg(*(variables[index2]));
+                }
+
+                return true;
+            }
+            else
+            {
+                error("Bad variable indexes",QString("Indexes : %1 %2").arg(index1).arg(index2));
+                return false;
+            }
+        }
+        else
+        {
+            error("Bad custom expression",QString("Expression : ")+expression);
+            return false;
+        }
+    }
+    else
+    {
+        error("Bad custom expression",QString("Expression : ")+expression);
+        return false;
+    }
+
+    return false;
+}
+

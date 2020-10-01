@@ -100,6 +100,7 @@ public slots:
     void slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
     void slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
 
+    void fileModified();
 
 private:
     //Close
@@ -142,10 +143,8 @@ private:
     QString separator;
     QString current_filename;
     QStringList extractToken(QString fileLine);
-    bool editVariableAndExpression(int currentIndex);
-    int getVarExpDialog(QString currentName, QString currentExpression, QString & newName, QString & newExpression);
     void setCurrentFilename(QString filename);
-    void fileModified();
+
 
     //Data
     Eigen::MatrixXd datatable;

@@ -1,7 +1,7 @@
 #include "mytablemodel.h"
 
 //-----------------------------------------------------------------
-MyModel::MyModel(int nbRows, int nbCols, QObject *parent): QAbstractTableModel(parent)
+MyModel::MyModel(int nbRows, int nbCols,QObject *parent): QAbstractTableModel(parent)
 {
    create(nbRows, nbCols) ;
 }
@@ -12,13 +12,65 @@ void MyModel::create(int nbRows, int nbCols)
 
     h_header=new QHeaderView(Qt::Horizontal);
     v_header=new QHeaderView(Qt::Vertical);
+    h_header->setAccessibleName("Variables");
     h_header->setSectionsMovable(true);
     v_header->setSectionsMovable(true);
+    h_header->setHighlightSections(true);
+    v_header->setHighlightSections(true);
+    h_header->setVisible(true);
+    v_header->setVisible(true);
 
-    //connect(h_header,&QHeaderView::sectionDoubleClicked,this,&MainWindow::slot_sectionDoubleClicked);
-    connect(h_header,SIGNAL(sectionMoved(int,int,int)),this,SLOT(slot_hSectionMoved(int,int,int)));
-    connect(v_header,SIGNAL(sectionMoved(int,int,int)),this,SLOT(slot_vSectionMoved(int,int,int)));
+    connect(h_header,&QHeaderView::sectionDoubleClicked,this,&MyModel::slot_editColumn);
+    connect(h_header,&QHeaderView::sectionMoved        ,this,&MyModel::slot_hSectionMoved);
+    connect(v_header,&QHeaderView::sectionMoved        ,this,&MyModel::slot_vSectionMoved);
+
+    for(int i=0;i<nbCols;i++)
+    {
+        QString value = QString("C%1").arg(i+1);
+        reg.newVariable(value,"");
+    }
+
 }
+
+QVariant MyModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    if (role != Qt::DisplayRole)
+             return QVariant();
+
+    if (orientation == Qt::Horizontal)
+    {
+        //Les columnes ont les noms des variables.
+        if ( (section>=0) && (section < reg.variablesNames().size()) )
+        {
+            //return QVariant();
+            return reg.variablesNames()[h_header->visualIndex(section)];
+        }
+        else
+        {
+            return QVariant();
+        }
+    }
+    else if (orientation == Qt::Vertical)
+    {
+        //Les numéro des lignes sont toujours dans l'ordre.
+        return QString("R%1").arg(v_header->visualIndex(section)+1);
+    }
+    else
+    {
+        return QVariant();
+    }
+}
+
+void MyModel::slot_editColumn(int logicalIndex)
+{
+    int visualIndex=h_header->visualIndex( logicalIndex );
+
+    if (reg.editVariableAndExpression(visualIndex))
+    {
+
+    }
+}
+
 //-----------------------------------------------------------------
 void MyModel::slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex)
 {
@@ -33,14 +85,15 @@ void MyModel::slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisu
 void MyModel::slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex)
 {
     Q_UNUSED(logicalIndex);
-    //reg.moveVariable(oldVisualIndex,newVisualIndex);
+    reg.moveVariable(oldVisualIndex,newVisualIndex);
     dataMoveColumn(m_data,oldVisualIndex,newVisualIndex);
 
     std::cout<<"---------------"<<std::endl;
     std::cout<<m_data<<std::endl;
 
-    //reg.dispVariables();
+    reg.dispVariables();
 }
+
 //-----------------------------------------------------------------
 QHeaderView * MyModel::horizontalHeader()
 {
@@ -64,18 +117,20 @@ int MyModel::columnCount(const QModelIndex & /*parent*/) const
 //-----------------------------------------------------------------
 QVariant MyModel::data(const QModelIndex &index_logical, int role) const
 {
-    std::cout<<"data"<<std::endl;
-    QModelIndex index=toVisualIndex(index_logical);
-
-    if (role == Qt::DisplayRole && checkIndex(index))
+    if (role == Qt::DisplayRole)
     {
-        if(m_data(index.row(),index.column()).isDouble)
+        QModelIndex index=toVisualIndex(index_logical);
+
+        if (checkIndex(index))
         {
-            return m_data(index.row(),index.column()).val;
-        }
-        else
-        {
-            return m_data(index.row(),index.column()).str;
+            if(m_data(index.row(),index.column()).isDouble)
+            {
+                return m_data(index.row(),index.column()).val;
+            }
+            else
+            {
+                return m_data(index.row(),index.column()).str;
+            }
         }
     }
     return QVariant();
@@ -83,11 +138,10 @@ QVariant MyModel::data(const QModelIndex &index_logical, int role) const
 //-----------------------------------------------------------------
 bool MyModel::setData(const QModelIndex &index_logical, const QVariant &value, int role)
 {
-    std::cout<<"setData"<<std::endl;
-    QModelIndex index=toVisualIndex(index_logical);
 
     if (role == Qt::EditRole)
     {
+        QModelIndex index=toVisualIndex(index_logical);
         if (!checkIndex(index))
         {
             return false;
@@ -178,4 +232,5 @@ QModelIndex MyModel::toLogicalIndex(const QModelIndex &index)const
     return createIndex(v_header->logicalIndex(index.row()),h_header->logicalIndex(index.column()),nullptr);
     //return Index2D(v_header->logicalIndex(index.row()),h_header->logicalIndex(index.column()));
 }
+
 

@@ -1,4 +1,5 @@
 #include <QString>
+#include <QObject>
 #include <QDir>
 #include <QVector>
 #include "exprtk/exprtk.hpp"
@@ -8,14 +9,16 @@
 #define REGISTER_H
 
 
-class Register
+class Register:public QObject
 {
+    Q_OBJECT
 public:
     Register();
 
     void swapVariables(int ida,int idb);
     void moveVariable(int ida,int idb);
     void dispVariables();
+    bool editVariableAndExpression(int currentIndex);
 
     void clear();
     bool newVariable(QString varname,QString varexpr);
@@ -31,8 +34,8 @@ public:
     QStringList getCustomExpressionList();
     bool customExpressionParse(unsigned int id, QString& result, std::function<QString(int,int)> at, int currentRow);
 
-    const QStringList & variablesNames();
-    const QStringList & variablesExpressions();
+    const QStringList & variablesNames()const;
+    const QStringList & variablesExpressions()const;
 
     unsigned int size();
 
@@ -42,6 +45,9 @@ public:
 
     bool compileExpression(int id);
     double currentCompiledExpressionValue();
+
+signals:
+    void sig_modified();
 
 private:
     //Exprtk
@@ -67,7 +73,7 @@ private:
     //Misc
     QString fromNumber(double value);
 
-
+    int getVarExpDialog(QString currentName, QString currentExpression, QString & newName, QString & newExpression);
 };
 
 #endif // REGISTER_H

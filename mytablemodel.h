@@ -2,6 +2,7 @@
 #include <QHeaderView>
 #include <QModelIndex>
 #include <Eigen/Dense>
+#include <QTableView>
 #include <iostream>
 
 #include "register.h"
@@ -18,12 +19,13 @@ class MyModel : public QAbstractTableModel
 {
     Q_OBJECT
 public:
-    MyModel(int nbRows,int nbCols,QObject *parent = nullptr);
+    MyModel(int nbRows,int nbCols,QObject *parent=nullptr);
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index_logical, int role = Qt::DisplayRole) const override;
     bool setData(const QModelIndex &index_logical, const QVariant &value, int role = Qt::EditRole) override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
+    QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 
     //
     void create(int nbRows, int nbCols);
@@ -32,6 +34,7 @@ public:
     QHeaderView * verticalHeader();
 
 public slots:
+    void slot_editColumn(int logicalIndex);
     void slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
     void slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
 
@@ -53,6 +56,7 @@ private:
     //
     QModelIndex toVisualIndex(const QModelIndex &index) const;
     QModelIndex toLogicalIndex(const QModelIndex &index) const;
+
 };
 
 #endif // MYTABLEMODEL_H

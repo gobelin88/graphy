@@ -118,6 +118,8 @@ MainWindow::MainWindow(QWidget* parent) :
 
     connect(a_copy,&QAction::triggered,this,&MainWindow::slot_copy);
     connect(a_paste,&QAction::triggered,this,&MainWindow::slot_paste);
+
+    connect(&reg,&Register::sig_modified,this,&MainWindow::fileModified);
     //------------------------------------------------------------------------------
 
     te_results=new QTextEdit;
@@ -232,7 +234,7 @@ void MainWindow::direct_open(QString filename)
             // read one line from textstream(separated by "\n")
             QString dataLine = in.readLine();
 
-            std::cout<<dataLine.toLocal8Bit().data()<<std::endl;
+            //std::cout<<dataLine.toLocal8Bit().data()<<std::endl;
 
             if (dataLine=="<header>")
             {
@@ -502,92 +504,6 @@ void MainWindow::direct_save(QString filename)
     }
 }
 
-int MainWindow::getVarExpDialog(QString currentName, QString currentExpression, QString & newName, QString & newExpression)
-{
-    QLineEdit* le_variableName=new QLineEdit(newName);
-    QLineEdit* le_variableExpression=new QLineEdit(newExpression);
-
-    QCompleter * completer= new QCompleter(reg.getCustomExpressionList(), this);
-    le_variableExpression->setCompleter(completer);
-
-    QDialog* dialog=new QDialog;
-    dialog->setLocale(QLocale("C"));
-    dialog->setWindowTitle((currentName.isEmpty())?"Add variable":"Edit variable");
-
-    dialog->setMinimumWidth(400);
-    QGridLayout* gbox = new QGridLayout();
-
-    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-
-    QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
-    QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
-
-    gbox->addWidget(le_variableName,0,1);
-    gbox->addWidget(le_variableExpression,1,1);
-    gbox->addWidget(new QLabel("Variable name"),0,0);
-    gbox->addWidget(new QLabel("Variable formula"),1,0);
-    gbox->addWidget(buttonBox,2,0,1,2);
-
-    dialog->setLayout(gbox);
-    int result=dialog->exec();
-    if (result == QDialog::Accepted)
-    {
-        newName=le_variableName->text();
-        newExpression=le_variableExpression->text();
-
-        if (currentName.isEmpty()) //add New
-        {
-            if (!reg.newVariable(newName,newExpression) )
-            {
-                return -1;
-            }
-        }
-        else //modify
-        {
-            if( !reg.renameVariable(currentName,newName,currentExpression,newExpression) )
-            {
-                return -1;
-            }
-        }
-
-        fileModified();
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-}
-
-bool MainWindow::editVariableAndExpression(int currentIndex)
-{
-    QString currentName,currentExpression;
-    QString newName,newExpression;
-
-    if (currentIndex<reg.size() && currentIndex>=0) //fetch variable and expression
-    {
-        currentName=reg.variablesNames()[currentIndex];
-        currentExpression=reg.variablesExpressions()[currentIndex];
-    }
-    else
-    {
-        currentName.clear();
-        currentExpression.clear();
-    }
-    newName=currentName;
-    newExpression=currentExpression;
-
-    int ret=0;
-    do
-    {
-       ret=getVarExpDialog(currentName,currentExpression, newName, newExpression);
-    }
-    while(ret==-1);
-
-    return bool(ret);
-
-}
-
 void MainWindow::slot_newRow()
 {
     int nbCols=model->columnCount();
@@ -648,12 +564,10 @@ void MainWindow::slot_editColumn()
         visualIndex=table->horizontalHeader()->visualIndex( id_list[0].column() );
     }
 
-    if (editVariableAndExpression(visualIndex))
+    if (reg.editVariableAndExpression(visualIndex))
     {
         setColumn(visualIndex,evalColumn(visualIndex));
-
         model->setHorizontalHeaderItem(currentColIndex, new QStandardItem(reg.variablesNames()[visualIndex]));
-
         hasheader=true;
     }
 }

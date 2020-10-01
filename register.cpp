@@ -1,6 +1,12 @@
 #include "register.h"
 
 #include <QMessageBox>
+#include <QLineEdit>
+#include <QCompleter>
+#include <QGridLayout>
+#include <QDialogButtonBox>
+#include <QLocale>
+#include <QLabel>
 #include <iostream>
 
 Register::Register()
@@ -201,12 +207,12 @@ QString Register::fromNumber(double value)
     }
 }
 
-const QStringList & Register::variablesNames()
+const QStringList & Register::variablesNames() const
 {
     return variables_names;
 }
 
-const QStringList & Register::variablesExpressions()
+const QStringList & Register::variablesExpressions() const
 {
     return variables_expressions;
 }
@@ -434,5 +440,91 @@ bool Register::customExpressionParse(unsigned int id,QString& result,std::functi
     }
 
     return false;
+}
+
+int Register::getVarExpDialog(QString currentName, QString currentExpression, QString & newName, QString & newExpression)
+{
+    QLineEdit* le_variableName=new QLineEdit(newName);
+    QLineEdit* le_variableExpression=new QLineEdit(newExpression);
+
+    QCompleter * completer= new QCompleter(getCustomExpressionList(), nullptr);
+    le_variableExpression->setCompleter(completer);
+
+    QDialog* dialog=new QDialog;
+    dialog->setLocale(QLocale("C"));
+    dialog->setWindowTitle((currentName.isEmpty())?"Add variable":"Edit variable");
+
+    dialog->setMinimumWidth(400);
+    QGridLayout* gbox = new QGridLayout();
+
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+
+    QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+    gbox->addWidget(le_variableName,0,1);
+    gbox->addWidget(le_variableExpression,1,1);
+    gbox->addWidget(new QLabel("Variable name"),0,0);
+    gbox->addWidget(new QLabel("Variable formula"),1,0);
+    gbox->addWidget(buttonBox,2,0,1,2);
+
+    dialog->setLayout(gbox);
+    int result=dialog->exec();
+    if (result == QDialog::Accepted)
+    {
+        newName=le_variableName->text();
+        newExpression=le_variableExpression->text();
+
+        if (currentName.isEmpty()) //add New
+        {
+            if (!newVariable(newName,newExpression) )
+            {
+                return -1;
+            }
+        }
+        else //modify
+        {
+            if( !renameVariable(currentName,newName,currentExpression,newExpression) )
+            {
+                return -1;
+            }
+        }
+
+        emit sig_modified();
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+bool Register::editVariableAndExpression(int currentIndex)
+{
+    QString currentName,currentExpression;
+    QString newName,newExpression;
+
+    if (currentIndex<this->size() && currentIndex>=0) //fetch variable and expression
+    {
+        currentName=this->variablesNames()[currentIndex];
+        currentExpression=this->variablesExpressions()[currentIndex];
+    }
+    else
+    {
+        currentName.clear();
+        currentExpression.clear();
+    }
+    newName=currentName;
+    newExpression=currentExpression;
+
+    int ret=0;
+    do
+    {
+       ret=getVarExpDialog(currentName,currentExpression, newName, newExpression);
+    }
+    while(ret==-1);
+
+    return bool(ret);
+
 }
 

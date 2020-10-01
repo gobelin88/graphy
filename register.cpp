@@ -506,8 +506,8 @@ bool Register::editVariableAndExpression(int currentIndex)
 
     if (currentIndex<this->size() && currentIndex>=0) //fetch variable and expression
     {
-        currentName=this->variablesNames()[currentIndex];
-        currentExpression=this->variablesExpressions()[currentIndex];
+        currentName=variables_names[currentIndex];
+        currentExpression=variables_expressions[currentIndex];
     }
     else
     {

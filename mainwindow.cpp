@@ -139,7 +139,7 @@ MainWindow::MainWindow(QWidget* parent) :
     //table->setSizeAdjustPolicy   (QAbstractScrollArea::AdjustToContents);
 
     std::cout<<"D"<<std::endl;
-    direct_new(3,3);
+    directNew(3,3);
 
 
     std::cout<<"E"<<std::endl;
@@ -185,7 +185,7 @@ void MainWindow::slot_new()
 
     if (result == QDialog::Accepted)
     {
-        direct_new(sb_sx->value(),sb_sy->value());
+        directNew(sb_sx->value(),sb_sy->value());
     }
 }
 
@@ -1010,7 +1010,7 @@ void MainWindow::modelUnMute()
     model->layoutChanged();
 }
 
-void MainWindow::direct_new(int sx,int sy)
+void MainWindow::directNew(int sx,int sy)
 {
     createModel();
 

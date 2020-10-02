@@ -50,6 +50,7 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
         mytablemodel.cpp \
+        mytableview.cpp \
         obj.cpp \
         object3d.cpp \
         qcustomplot.cpp \
@@ -86,6 +87,7 @@ HEADERS += \
         light3d.h \
         mainwindow.h \
         mytablemodel.h \
+        mytableview.h \
         obj.h \
         object3d.h \
         qcustomplot.h \

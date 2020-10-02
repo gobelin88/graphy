@@ -1,12 +1,12 @@
 #include "mytablemodel.h"
 
 //-----------------------------------------------------------------
-MyModel::MyModel(int nbRows, int nbCols,QObject *parent): QAbstractTableModel(parent)
+MyModel::MyModel(int nbRows, int nbCols, int rowSpan, QObject *parent): QAbstractTableModel(parent)
 {
-   create(nbRows, nbCols) ;
+   create(nbRows, nbCols,rowSpan) ;
 }
 //-----------------------------------------------------------------
-void MyModel::create(int nbRows, int nbCols)
+void MyModel::create(int nbRows, int nbCols,int rowSpan)
 {
     m_data=MatrixXv(nbRows,nbCols);
 
@@ -30,6 +30,131 @@ void MyModel::create(int nbRows, int nbCols)
         reg.newVariable(value,"");
     }
 
+    setRowSpan(rowSpan);
+    setRowOffset(0);
+}
+
+bool MyModel::open(QString filename)
+{
+    bool ok=true;
+    QFile file(filename);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        reg.clear();
+
+        QStringList content=QString(file.readAll()).split("\n",QString::SkipEmptyParts);
+
+        if(content.size()>0)
+        {
+
+            //Parse Header-----------------------------------
+            int headerSize=0;
+
+            std::cout<<content[0].toLocal8Bit().data()<<std::endl;
+
+            if(content[0]==QString("<header>"))
+            {
+                if(content[2]==QString("</header>"))
+                {
+                    QStringList variablesNames=content[1].split(";");
+                    for(int i=0;i<variablesNames.size();i++)
+                    {
+                        reg.newVariable(variablesNames[i],"");
+                    }
+                    headerSize=3;
+                }
+                else if(content[3]==QString("</header>"))
+                {
+                    QStringList variablesNames=content[1].split(";");
+                    QStringList variablesExpressions=content[2].split(";");
+
+                    if(variablesNames.size()==variablesExpressions.size())
+                    {
+                        for(int i=0;i<variablesNames.size();i++)
+                        {
+                            reg.newVariable(variablesNames[i],variablesExpressions[i]);
+                        }
+                    }
+                    else
+                    {
+                        error("Open",QString("Number of expressions (%1) and number of variables (%2) are different.").arg(variablesExpressions.size()).arg(variablesNames.size()));
+                        ok=false;
+                    }
+                    headerSize=4;
+                }
+                else
+                {
+                    error("Open",QString("Bad Header."));
+                    ok=false;
+                }
+            }
+            else
+            {
+                QStringList data=content[0].split(";");
+                for(int i=0;i<data.size();i++)
+                {
+                    reg.newVariable(QString("C%1").arg(i),"");
+                }
+            }
+
+            //Parse Data-----------------------------------
+            if(ok)
+            {
+                int nbCols=reg.size(),nbRows=content.size()-headerSize;
+                m_data=MatrixXv(nbRows,nbCols);
+
+                for(int i=headerSize;i<content.size();i++)
+                {
+                    QStringList valueList=content[i].split(";");
+
+                    if(valueList.size()>=nbCols)
+                    {
+                        for(int j=0;j<nbCols;j++)
+                        {
+                            bool isd=false;
+                            double datad=valueList[j].toDouble(&isd);
+                            if(isd)
+                            {
+                                m_data(i-headerSize,j).val = datad;
+                            }
+                            else
+                            {
+                                m_data(i-headerSize,j).str = valueList[j];
+                            }
+                            m_data(i-headerSize,j).isDouble=isd;
+                        }
+                    }
+                    else
+                    {
+                        error("Open",QString("Bad data size at line : %1").arg(i));
+                        ok=false;
+                        break;
+                    }
+                }
+            }
+
+        }
+        else
+        {
+            error("Open",QString("Empty file."));
+            ok=false;
+        }
+        file.close();
+    }
+    else
+    {
+        error("Open",QString("Unable to load file : %1").arg(filename));
+        ok=false;
+    }
+
+    emit layoutChanged();
+
+    return ok;
+}
+
+const MatrixXv & MyModel::tableData()
+{
+    return m_data;
 }
 
 QVariant MyModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -53,7 +178,7 @@ QVariant MyModel::headerData(int section, Qt::Orientation orientation, int role)
     else if (orientation == Qt::Vertical)
     {
         //Les numéro des lignes sont toujours dans l'ordre.
-        return QString("R%1").arg(v_header->visualIndex(section)+1);
+        return QString("R%1 ").arg(v_header->visualIndex(section)+1+m_rowOffset);
     }
     else
     {
@@ -75,7 +200,7 @@ void MyModel::slot_editColumn(int logicalIndex)
 void MyModel::slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex)
 {
     Q_UNUSED(logicalIndex);
-    dataMoveRow(m_data,oldVisualIndex,newVisualIndex);
+    dataMoveRow(m_data,oldVisualIndex+m_rowOffset,newVisualIndex+m_rowOffset);
 
     std::cout<<"---------------"<<std::endl;
     std::cout<<m_data<<std::endl;
@@ -107,7 +232,15 @@ QHeaderView * MyModel::verticalHeader()
 //-----------------------------------------------------------------
 int MyModel::rowCount(const QModelIndex & /*parent*/) const
 {
-    return m_data.rows();
+    int rowRemainder=m_data.rows()-m_rowOffset;
+    if( rowRemainder>=m_rowSpan )
+    {
+        return m_rowSpan ;
+    }
+    else
+    {
+        return rowRemainder;
+    }
 }
 //-----------------------------------------------------------------
 int MyModel::columnCount(const QModelIndex & /*parent*/) const
@@ -123,13 +256,13 @@ QVariant MyModel::data(const QModelIndex &index_logical, int role) const
 
         if (checkIndex(index))
         {
-            if(m_data(index.row(),index.column()).isDouble)
+            if(m_data(index.row()+m_rowOffset,index.column()).isDouble)
             {
-                return m_data(index.row(),index.column()).val;
+                return m_data(index.row()+m_rowOffset,index.column()).val;
             }
             else
             {
-                return m_data(index.row(),index.column()).str;
+                return m_data(index.row()+m_rowOffset,index.column()).str;
             }
         }
     }
@@ -150,13 +283,13 @@ bool MyModel::setData(const QModelIndex &index_logical, const QVariant &value, i
         double datad=value.toDouble(&isd);
         if(isd)
         {
-            m_data(index.row(),index.column()).val = datad;
+            m_data(index.row()+m_rowOffset,index.column()).val = datad;
         }
         else
         {
-            m_data(index.row(),index.column()).str = value.toString();
+            m_data(index.row()+m_rowOffset,index.column()).str = value.toString();
         }
-        m_data(index.row(),index.column()).isDouble=isd;
+        m_data(index.row()+m_rowOffset,index.column()).isDouble=isd;
 
         std::cout<<"---------------"<<std::endl;
         std::cout<<m_data<<std::endl;
@@ -233,4 +366,29 @@ QModelIndex MyModel::toLogicalIndex(const QModelIndex &index)const
     //return Index2D(v_header->logicalIndex(index.row()),h_header->logicalIndex(index.column()));
 }
 
+int MyModel::getRowOffsetMax()
+{
+    return (m_data.rows()-1);
+}
 
+void MyModel::setRowOffset(int rowOffset)
+{
+    m_rowOffset=rowOffset;
+    if(m_rowOffset<0)m_rowOffset=0;
+    if(m_rowOffset>getRowOffsetMax())m_rowOffset=getRowOffsetMax();
+
+    emit layoutChanged();
+}
+
+void MyModel::setRowSpan(int rowSpan)
+{
+    this->m_rowSpan=rowSpan;
+
+    emit layoutChanged();
+}
+
+void MyModel::error(QString title,QString msg)
+{
+    QMessageBox::information(nullptr,QString("Error : ")+title,msg);
+    std::cout<<"Error : "<<msg.toLocal8Bit().data()<<std::endl;
+}

@@ -8,13 +8,7 @@
 ///////////////////
 void MainWindow::createExperimental()
 {
-    experimental_table=new QTableView(mdiArea);
-
-    experimental_model = new MyModel(3,3);
-    experimental_table->setHorizontalHeader(experimental_model->horizontalHeader());
-    experimental_table->setVerticalHeader(experimental_model->verticalHeader());
-    experimental_table->setModel(experimental_model);
-
+    experimental_table=new MyTableView(100,4,10,mdiArea);
     te_widget->addTab(experimental_table,"Experimental");
 }
 
@@ -145,7 +139,7 @@ MainWindow::MainWindow(QWidget* parent) :
     std::cout<<"E"<<std::endl;
     loadShortcuts();
 
-    //createExperimental();
+    createExperimental();
 }
 
 MainWindow::~MainWindow()
@@ -216,6 +210,8 @@ QStringList MainWindow::extractToken(QString fileLine)
 
 void MainWindow::direct_open(QString filename)
 {
+    experimental_table->directOpen(filename);
+
     createModel();
 
     QFile file(filename);

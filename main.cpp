@@ -4,6 +4,14 @@
 
 int main(int argc, char* argv[])
 {
+//    Eigen::Quaterniond q;
+
+//    for(int i=0;i<4;i++)
+//    {
+//        q=Eigen::Quaterniond( Eigen::AngleAxisd((i-1.5)*M_PI/6, Eigen::Vector3d::UnitX()) );
+//        std::cout<<q.w()<<";"<<q.x()<<";"<<q.y()<<";"<<q.z()<<std::endl;
+//    }
+
     QApplication a(argc, argv);
 
     QStringList args=a.arguments();

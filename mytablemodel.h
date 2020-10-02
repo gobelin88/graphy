@@ -2,6 +2,7 @@
 #include <QHeaderView>
 #include <QModelIndex>
 #include <Eigen/Dense>
+#include <QMessageBox>
 #include <QTableView>
 #include <iostream>
 
@@ -19,7 +20,7 @@ class MyModel : public QAbstractTableModel
 {
     Q_OBJECT
 public:
-    MyModel(int nbRows,int nbCols,QObject *parent=nullptr);
+    MyModel(int nbRows,int nbCols,int rowSpan,QObject *parent=nullptr);
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index_logical, int role = Qt::DisplayRole) const override;
@@ -28,10 +29,18 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 
     //
-    void create(int nbRows, int nbCols);
+    void create(int nbRows, int nbCols, int rowSpan);
+    bool open(QString filename);
+    const MatrixXv & tableData();
 
     QHeaderView * horizontalHeader();
     QHeaderView * verticalHeader();
+
+    int getRowOffset(){return m_rowOffset;}
+    int getRowSpan(){return m_rowSpan;}
+    void setRowOffset(int rowOffset);
+    void setRowSpan(int rowSpan);
+    int getRowOffsetMax();
 
 public slots:
     void slot_editColumn(int logicalIndex);
@@ -39,6 +48,9 @@ public slots:
     void slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
 
 private:
+    int m_rowOffset;
+    int m_rowSpan;
+
     MatrixXv m_data;
 
     QHeaderView * h_header;
@@ -57,6 +69,7 @@ private:
     QModelIndex toVisualIndex(const QModelIndex &index) const;
     QModelIndex toLogicalIndex(const QModelIndex &index) const;
 
+    void error(QString title,QString msg);
 };
 
 #endif // MYTABLEMODEL_H

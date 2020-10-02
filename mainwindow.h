@@ -26,6 +26,7 @@
 #include "view3d.h"
 #include "qgradientcombobox.h"
 #include "mytablemodel.h"
+#include "mytableview.h"
 
 #include <random>
 
@@ -75,7 +76,7 @@ public slots:
     void direct_open(QString filename);
     void direct_save(QString filename);
     void direct_export(QString filename);
-    void direct_new(int sx,int sy);
+    void directNew(int sx,int sy);
 
     //Graphs
     void slot_plot_y();
@@ -183,8 +184,8 @@ private:
 
     //Experimental
     void createExperimental();
-    QTableView* experimental_table;
-    MyModel * experimental_model;
+    MyTableView * experimental_table;
+
 };
 
 #endif // MAINWINDOW_H

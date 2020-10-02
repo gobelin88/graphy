@@ -8,38 +8,32 @@ MyTableView::MyTableView(int nbRow,
                          QWidget *parent):QTableView(parent)
 {
     createNew(nbRow,nbCols,rowsSpan);
+
+    //this->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectColumns);
 }
 
 void MyTableView::createNew(int nbRow,int nbCols,int rowsSpan)
 {
-    model = new MyModel(nbRow,nbCols,rowsSpan);
-    setHorizontalHeader(model->horizontalHeader());
-    setVerticalHeader(model->verticalHeader());
-    setModel(model);
-}
-
-bool MyTableView::directOpen(QString filename)
-{
-    return model->open(filename);
-}
-
-const MatrixXv & MyTableView::tableData()
-{
-    return model->tableData();
+    m_model = new MyModel(nbRow,nbCols,rowsSpan);
+    setHorizontalHeader(m_model->horizontalHeader());
+    setVerticalHeader(m_model->verticalHeader());
+    setModel(m_model);
 }
 
 void MyTableView::wheelEvent(QWheelEvent * event)
 {
     if(event->delta()>0)
     {
-        model->setRowOffset(model->getRowOffset()+1);
+        m_model->setRowOffset(m_model->getRowOffset()+1);
     }
     else
     {
-        model->setRowOffset(model->getRowOffset()-1);
+        m_model->setRowOffset(m_model->getRowOffset()-1);
     }
+}
 
-
-   //this->model->submit();
-   //this->update();
+void MyTableView::slot_deleteSelected()
+{
+    QModelIndexList selectedIndexes=selectionModel()->selectedIndexes();
+    m_model->clearLogicalIndexes(selectedIndexes);
 }

@@ -15,14 +15,17 @@ public:
                 QWidget * parent);
 
     void createNew(int nbRow,int nbCols,int rowsSpan);
-    bool directOpen(QString filename);
-    const MatrixXv & tableData();
+
+    MyModel * model(){return m_model;}
+
+public slots:
+    void slot_deleteSelected();
 
 protected:
     void wheelEvent(QWheelEvent * event);
 
 private:
-    MyModel * model;
+    MyModel * m_model;
 };
 
 #endif // MYTABLEVIEW_H

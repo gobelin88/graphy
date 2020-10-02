@@ -5,6 +5,8 @@
 #include "exprtk/exprtk.hpp"
 #include "random"
 
+#include "value.h"
+
 #ifndef REGISTER_H
 #define REGISTER_H
 
@@ -33,11 +35,12 @@ public:
 
     QStringList getCustomExpressionList();
     bool customExpressionParse(unsigned int id, QString& result, std::function<QString(int,int)> at, int currentRow);
+    bool customExpressionParse2(const MatrixXv & data,unsigned int id, ValueContainer & result, int currentRow);
 
     const QStringList & variablesNames()const;
     const QStringList & variablesExpressions()const;
 
-    unsigned int size();
+    int size();
 
     exprtk::symbol_table<double> & symbols();
 

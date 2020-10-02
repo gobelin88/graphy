@@ -2,8 +2,6 @@
 #include <QHeaderView>
 #include <QModelIndex>
 #include <Eigen/Dense>
-#include <QMessageBox>
-#include <QTableView>
 #include <iostream>
 
 #include "register.h"
@@ -11,10 +9,6 @@
 
 #ifndef MYTABLEMODEL_H
 #define MYTABLEMODEL_H
-
-using namespace Eigen;
-
-using MatrixXv=Matrix<Value,Eigen::Dynamic,Eigen::Dynamic>;
 
 class MyModel : public QAbstractTableModel
 {
@@ -28,11 +22,17 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const override;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 
-    //
+    //I/O
     void create(int nbRows, int nbCols, int rowSpan);
     bool open(QString filename);
-    const MatrixXv & tableData();
+    bool save(QString filename);
 
+    //Data
+    void clearLogicalIndexes(const QModelIndexList & selectedIndexes);
+    const MatrixXv & tableData();
+    VectorXv eval(int visualIndex);
+
+    //Gui
     QHeaderView * horizontalHeader();
     QHeaderView * verticalHeader();
 
@@ -44,10 +44,16 @@ public:
 
 public slots:
     void slot_editColumn(int logicalIndex);
+    void slot_newRow();
+    void slot_newRows();
+    void slot_updateColumns();
+
     void slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
     void slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
 
 private:
+    ValueContainer & at(QModelIndex indexLogical);
+
     int m_rowOffset;
     int m_rowSpan;
 
@@ -59,13 +65,15 @@ private:
     //Variables---------------------------------------
     Register reg;
 
-    //
+    //Data management
     void dataSwapColumns(MatrixXv &matrix, int ida, int idb);
     void dataMoveColumn(MatrixXv & matrix,int ida,int idb);
     void dataSwapRows(MatrixXv &matrix, int ida, int idb);
     void dataMoveRow(MatrixXv & matrix,int ida,int idb);
+    void dataAddRow(MatrixXv & matrix, VectorXv rowToAdd);
+    void dataAddRows(MatrixXv & matrix, int n);
+    void dataAddColumn(MatrixXv & matrix, VectorXv colToAdd);
 
-    //
     QModelIndex toVisualIndex(const QModelIndex &index) const;
     QModelIndex toLogicalIndex(const QModelIndex &index) const;
 

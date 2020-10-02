@@ -217,7 +217,7 @@ const QStringList & Register::variablesExpressions() const
     return variables_expressions;
 }
 
-unsigned int Register::size()
+int Register::size()
 {
     return variables.size();
 }
@@ -441,6 +441,171 @@ bool Register::customExpressionParse(unsigned int id,QString& result,std::functi
 
     return false;
 }
+
+bool Register::customExpressionParse2(const MatrixXv & m_data,unsigned int id, ValueContainer & result, int currentRow)
+{
+    QString expression=variables_expressions[id];
+        expression.remove('$');
+        QStringList args=expression.split(" ");
+        if (args.size()>0)
+        {
+
+            if (args[0]=="uniform" && args.size()==1)
+            {
+                result.num=(*noise_uniform)(generator);
+                result.isDouble=true;
+                return true;
+            }
+            else if (args[0]=="normal" && args.size()==1)
+            {
+                result.num=(*noise_normal)(generator);
+                result.isDouble=true;
+                return true;
+            }
+            else if (args[0]=="search" && args.size()>=5)
+            {
+                result.isDouble=false;
+                result.str="none";
+
+                //0      1    2      3  4     5      6      i
+                //search what filter depth where0 where1 where2 wherei...
+
+                QString search_for_name;
+                int index1=variables_names.indexOf(args[1]);
+                if (index1>=0)
+                {
+                    search_for_name=m_data(currentRow,index1).str;
+                }
+                else
+                {
+                    return false;
+                }
+
+                for (int i=4; i<args.size(); i++)
+                {
+                    QStringList filters;
+                    filters<<args[2];
+                    custom_scanDir(args[i],filters,search_for_name,result.str,args[4].toInt());
+                }
+
+                return true;
+            }
+            else if (args[0]=="str" && args.size()==3)
+            {
+                result.isDouble=false;
+
+                QStringList sub_args1=args[2].split(',');
+                int index1=variables_names.indexOf(sub_args1[0]);
+
+                if (index1>=0)
+                {
+                    result.str=args[1];
+                    if (sub_args1.size()==2 )
+                    {
+                        if (sub_args1[1]=="#" )
+                        {
+                            result.str=result.str.arg(m_data(currentRow,index1).str);
+                        }
+                        else if (sub_args1[1]=="#")
+                        {
+                            result.str=result.str.arg(m_data(currentRow,index1).str);
+                        }
+                        else
+                        {
+                            result.str=result.str.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0');
+                        }
+                    }
+                    else if (sub_args1.size()==1)
+                    {
+                        result.str=result.str.arg(*(variables[index1]));
+                    }
+
+                    return true;
+                }
+            }
+            else if (args[0]=="str" && args.size()==4)
+            {
+                result.isDouble=false;
+
+                QStringList sub_args1=args[2].split(',');
+                QStringList sub_args2=args[3].split(',');
+                int index1=variables_names.indexOf(sub_args1[0]);
+                int index2=variables_names.indexOf(sub_args2[0]);
+
+
+                if (index1>=0 && index2>=0)
+                {
+                    result.str=args[1];
+
+                    if (sub_args1.size()==2 && sub_args2.size()==2)
+                    {
+                        if (sub_args1[1]=="#" && sub_args2[1]=="#")
+                        {
+                            result.str=result.str.arg(m_data(currentRow,index1).str).arg(m_data(currentRow,index2).str);
+                        }
+                        else if (sub_args1[1]=="#")
+                        {
+                            result.str=result.str.arg(m_data(currentRow,index1).str).arg(*(variables[index2]),sub_args2[1].toInt(),'g',-1,'0');
+                        }
+                        else if (sub_args2[1]=="#")
+                        {
+                            result.str=result.str.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0').arg(m_data(currentRow,index2).str);
+                        }
+                        else
+                        {
+                            result.str=result.str.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0').arg(*(variables[index2]),sub_args2[1].toInt(),'g',-1,'0');
+                        }
+                    }
+                    else if (sub_args1.size()==2 && sub_args2.size()==1)
+                    {
+                        if (sub_args1[1]=="#")
+                        {
+                            result.str=result.str.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0').arg(*(variables[index2]));
+                        }
+                        else
+                        {
+                            result.str=result.str.arg(m_data(currentRow,index1).str).arg(*(variables[index2]));
+                        }
+                    }
+                    else if (sub_args1.size()==1 && sub_args2.size()==2)
+                    {
+                        if (sub_args2[1]=="#")
+                        {
+                            result.str=result.str.arg(*(variables[index1])).arg(m_data(currentRow,index2).str);
+                        }
+                        else
+                        {
+                            result.str=result.str.arg(*(variables[index1])).arg(*(variables[index2]),sub_args2[1].toInt(),'g',-1,'0');
+                        }
+                    }
+                    else if (sub_args1.size()==1 && sub_args2.size()==1)
+                    {
+                        result.str=result.str.arg(*(variables[index1])).arg(*(variables[index2]));
+                    }
+
+                    return true;
+                }
+                else
+                {
+                    error("Bad variable indexes",QString("Indexes : %1 %2").arg(index1).arg(index2));
+                    return false;
+                }
+            }
+            else
+            {
+                error("Bad custom expression",QString("Expression : ")+expression);
+                return false;
+            }
+        }
+        else
+        {
+            error("Bad custom expression",QString("Expression : ")+expression);
+            return false;
+        }
+
+        return false;
+}
+
 
 int Register::getVarExpDialog(QString currentName, QString currentExpression, QString & newName, QString & newExpression)
 {

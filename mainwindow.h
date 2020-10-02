@@ -53,14 +53,14 @@ public slots:
     void updateTable(const QModelIndex& indexA, const QModelIndex& indexB);
     void updateTableViewRows();
 
-    void slot_editColumn();
-    void slot_sectionDoubleClicked();
+    void slot_editColumn();//ok
+    void slot_sectionDoubleClicked();//ok
     void slot_delete_columns_and_rows();
     void slot_delete_selectedRows();
     void slot_delete_selectedColumns();
     void slot_delete_selected();
-    void slot_newRow();
-    void slot_newRows();
+    void slot_newRow();//ok
+    void slot_newRows();//ok
     void slot_updateColumns();
     void slot_newColumn(QString name,Eigen::VectorXd data);
     void slot_copy();

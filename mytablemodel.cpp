@@ -1,3 +1,7 @@
+#include <QTextStream>
+#include <QMessageBox>
+#include <QInputDialog>
+
 #include "mytablemodel.h"
 
 //-----------------------------------------------------------------
@@ -17,6 +21,8 @@ void MyModel::create(int nbRows, int nbCols,int rowSpan)
     v_header->setSectionsMovable(true);
     h_header->setHighlightSections(true);
     v_header->setHighlightSections(true);
+    v_header->setSectionsClickable(true);
+    h_header->setSectionsClickable(true);
     h_header->setVisible(true);
     v_header->setVisible(true);
 
@@ -115,7 +121,7 @@ bool MyModel::open(QString filename)
                             double datad=valueList[j].toDouble(&isd);
                             if(isd)
                             {
-                                m_data(i-headerSize,j).val = datad;
+                                m_data(i-headerSize,j).num = datad;
                             }
                             else
                             {
@@ -152,9 +158,115 @@ bool MyModel::open(QString filename)
     return ok;
 }
 
+bool MyModel::save(QString filename)
+{
+    QFile file(filename);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QString textData;
+
+        textData += "<header>\n";
+        for (int j = 0; j < reg.variablesNames().size(); j++)
+        {
+            textData+=reg.variablesNames()[j];
+            textData += ";";
+        }
+        textData += "\n";
+        for (int j = 0; j < reg.variablesExpressions().size(); j++)
+        {
+            textData+=reg.variablesExpressions()[j];
+            textData += ";";
+        }
+        textData += "\n";
+        textData += "</header>\n";
+
+        for (int i = 0; i < m_data.rows(); i++)
+        {
+            for (int j = 0; j < m_data.cols(); j++)
+            {
+
+                textData += m_data(i,j).toString();
+                textData += ";";      // for .csv file format
+            }
+            textData += "\n";             // (optional: for new line segmentation)
+        }
+
+        QTextStream out(&file);
+        out << textData;
+
+        file.close();
+        return true;
+    }
+    else
+    {
+        error("Save",QString("Unable to save the file : ")+filename);
+        return false;
+    }
+}
+
 const MatrixXv & MyModel::tableData()
 {
     return m_data;
+}
+
+ValueContainer & MyModel::at(QModelIndex indexLogical)
+{
+    QModelIndex indexVisual= toVisualIndex(indexLogical);
+    return m_data(indexVisual.row()+m_rowOffset,indexVisual.column());
+}
+
+void MyModel::clearLogicalIndexes(const QModelIndexList & selectedIndexes)
+{
+    for (int i = 0; i < selectedIndexes.count(); ++i)
+    {
+        at(selectedIndexes[i])=ValueContainer();
+    }
+    emit layoutChanged();
+}
+
+VectorXv MyModel::eval(int visualIndex)
+{
+    reg.setActiveCol(visualIndex);
+
+    if (reg.variablesExpressions()[visualIndex].isEmpty())
+    {
+        return VectorXv(m_data.rows());
+    }
+    else
+    {
+        VectorXv colResults(m_data.rows());
+
+        if (reg.compileExpression(visualIndex))
+        {
+            for (int i=0; i<m_data.rows(); i++)
+            {
+                reg.setActiveRow(i);
+                for (int j=0; j<m_data.cols(); j++)
+                {
+                    reg.setVariable(j,m_data(i,j).num);
+                }
+
+                colResults[i].num=reg.currentCompiledExpressionValue();
+                colResults[i].isDouble=true;
+            }
+        }
+        else
+        {
+            for (int i=0; i<m_data.rows(); i++)
+            {
+                reg.setActiveRow(i);
+                for (int j=0; j<m_data.cols(); j++)
+                {
+                    reg.setVariable(j,m_data(i,j).num);
+                }
+
+                // store a call to a member function and object ptr
+                reg.customExpressionParse2(m_data,visualIndex,colResults[i],i);
+            }
+        }
+
+        return colResults;
+    }
 }
 
 QVariant MyModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -192,7 +304,39 @@ void MyModel::slot_editColumn(int logicalIndex)
 
     if (reg.editVariableAndExpression(visualIndex))
     {
+        if(visualIndex==-1)//new col
+        {
+            visualIndex=m_data.cols();
+            dataAddColumn(m_data,VectorXv(m_data.rows()));
+        }
+        m_data.col(visualIndex)=eval(visualIndex);
+        emit layoutChanged();
+    }
+}
 
+void MyModel::slot_newRow()
+{
+    dataAddRows(m_data,1);
+    emit layoutChanged();
+}
+
+void MyModel::slot_newRows()
+{
+    bool ok=false;
+    int N=QInputDialog::getInt(nullptr,"Number of rows","Number of rows to add",1,1,10000000,1,&ok);
+
+    if (ok)
+    {
+        dataAddRows(m_data,N);
+        emit layoutChanged();
+    }
+}
+
+void MyModel::slot_updateColumns()
+{
+    for (int i=0; i<m_data.cols(); i++)
+    {
+        m_data.col(i)=eval(i);
     }
 }
 
@@ -202,8 +346,8 @@ void MyModel::slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisu
     Q_UNUSED(logicalIndex);
     dataMoveRow(m_data,oldVisualIndex+m_rowOffset,newVisualIndex+m_rowOffset);
 
-    std::cout<<"---------------"<<std::endl;
-    std::cout<<m_data<<std::endl;
+//    std::cout<<"---------------"<<std::endl;
+//    std::cout<<m_data<<std::endl;
 }
 
 //-----------------------------------------------------------------
@@ -213,8 +357,8 @@ void MyModel::slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisu
     reg.moveVariable(oldVisualIndex,newVisualIndex);
     dataMoveColumn(m_data,oldVisualIndex,newVisualIndex);
 
-    std::cout<<"---------------"<<std::endl;
-    std::cout<<m_data<<std::endl;
+//    std::cout<<"---------------"<<std::endl;
+//    std::cout<<m_data<<std::endl;
 
     reg.dispVariables();
 }
@@ -258,7 +402,7 @@ QVariant MyModel::data(const QModelIndex &index_logical, int role) const
         {
             if(m_data(index.row()+m_rowOffset,index.column()).isDouble)
             {
-                return m_data(index.row()+m_rowOffset,index.column()).val;
+                return m_data(index.row()+m_rowOffset,index.column()).num;
             }
             else
             {
@@ -283,7 +427,7 @@ bool MyModel::setData(const QModelIndex &index_logical, const QVariant &value, i
         double datad=value.toDouble(&isd);
         if(isd)
         {
-            m_data(index.row()+m_rowOffset,index.column()).val = datad;
+            m_data(index.row()+m_rowOffset,index.column()).num = datad;
         }
         else
         {
@@ -301,7 +445,7 @@ bool MyModel::setData(const QModelIndex &index_logical, const QVariant &value, i
 //-----------------------------------------------------------------
 Qt::ItemFlags MyModel::flags(const QModelIndex &index) const
 {
-    return Qt::ItemIsEditable | QAbstractTableModel::flags(index);
+    return Qt::ItemIsEditable | QAbstractTableModel::flags(index) | Qt::ItemIsSelectable ;
 }
 
 //-----------------------------------------------------------------
@@ -352,6 +496,30 @@ void MyModel::dataMoveRow(MatrixXv & matrix,int ida,int idb)
             dataSwapRows(matrix,k,k-1);
         }
     }
+}
+
+void MyModel::dataAddRow(MatrixXv& matrix, VectorXv rowToAdd)
+{
+    unsigned int numRows = matrix.rows()+1;
+    unsigned int numCols = matrix.cols();
+    matrix.conservativeResize(numRows,numCols);
+    matrix.row(numRows-1)=rowToAdd;
+}
+
+void MyModel::dataAddRows(MatrixXv& matrix, int n)
+{
+    unsigned int numRows = matrix.rows()+n;
+    unsigned int numCols = matrix.cols();
+    matrix.conservativeResize(numRows,numCols);
+    matrix.block(numRows-n,0,n,numCols);
+}
+
+void MyModel::dataAddColumn(MatrixXv& matrix, VectorXv colToAdd)
+{
+    unsigned int numRows = matrix.rows();
+    unsigned int numCols = matrix.cols()+1;
+    matrix.conservativeResize(numRows,numCols);
+    matrix.col(numCols-1)=colToAdd;
 }
 
 QModelIndex MyModel::toVisualIndex(const QModelIndex &index)const

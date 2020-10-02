@@ -1,24 +1,31 @@
 #include "value.h"
 
-Value::Value()
+ValueContainer::ValueContainer()
 {
-    val=0.0;
+    num=0.0;
     str.clear();
-    isDouble=true;
+    isDouble=false;
 }
 
-void Value::operator=(const Value & other)
+void ValueContainer::operator=(const ValueContainer & other)
 {
-    val=other.val;
-    str=other.str;
     isDouble=other.isDouble;
+
+    if(isDouble)
+    {
+        num=other.num;
+    }
+    else
+    {
+        str=other.str;
+    }
 }
 
-std::ostream& operator<< (std::ostream &out,const Value & value)
+std::ostream& operator<< (std::ostream &out,const ValueContainer & value)
 {
     if(value.isDouble)
     {
-        out<<value.val;
+        out<<value.num;
     }
     else
     {
@@ -27,7 +34,19 @@ std::ostream& operator<< (std::ostream &out,const Value & value)
     return out;
 }
 
-double log10(const Value &value)
+QString ValueContainer::toString()const
 {
-    return log10(value.val);
+    if(isDouble)
+    {
+        return QString::number(num);
+    }
+    else
+    {
+        return str;
+    }
+}
+
+double log10(const ValueContainer &value)
+{
+    return log10(value.num);
 }

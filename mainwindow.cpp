@@ -10,6 +10,16 @@ void MainWindow::createExperimental()
 {
     experimental_table=new MyTableView(100,4,10,mdiArea);
     te_widget->addTab(experimental_table,"Experimental");
+
+    experimental_table->addAction(a_newRow);
+    experimental_table->addAction(a_newRows);
+    experimental_table->addAction(a_updateColumns);
+    experimental_table->addAction(a_delete);
+
+    connect(a_newRow,&QAction::triggered,experimental_table->model(),&MyModel::slot_newRow);
+    connect(a_newRows,&QAction::triggered,experimental_table->model(),&MyModel::slot_newRows);
+    connect(a_updateColumns,&QAction::triggered,experimental_table->model(),&MyModel::slot_updateColumns);
+    connect(a_delete,&QAction::triggered,experimental_table,&MyTableView::slot_deleteSelected);
 }
 
 MainWindow::MainWindow(QWidget* parent) :
@@ -45,9 +55,9 @@ MainWindow::MainWindow(QWidget* parent) :
     std::cout<<"A"<<std::endl;
 
     connect(ui->actionNew, &QAction::triggered,this,&MainWindow::slot_new);
-    connect(ui->actionOpen, &QAction::triggered,this,&MainWindow::slot_open);
-    connect(ui->actionSave, &QAction::triggered,this,&MainWindow::slot_save);
-    connect(ui->actionSaveAs, &QAction::triggered,this,&MainWindow::slot_save_as);
+    connect(ui->actionOpen, &QAction::triggered,this,&MainWindow::slot_open);//ok
+    connect(ui->actionSave, &QAction::triggered,this,&MainWindow::slot_save);//ok
+    connect(ui->actionSaveAs, &QAction::triggered,this,&MainWindow::slot_save_as);//ok
     connect(ui->actionExport, &QAction::triggered,this,&MainWindow::slot_export);
     connect(ui->actionParameters, &QAction::triggered,this,&MainWindow::slot_parameters);
 
@@ -210,7 +220,7 @@ QStringList MainWindow::extractToken(QString fileLine)
 
 void MainWindow::direct_open(QString filename)
 {
-    experimental_table->directOpen(filename);
+    experimental_table->model()->open(filename);
 
     createModel();
 
@@ -451,6 +461,12 @@ void MainWindow::direct_export(QString filename)
 
 void MainWindow::direct_save(QString filename)
 {
+//    if(experimental_table->model()->save(filename))
+//    {
+//        setCurrentFilename(filename);
+//        isModified=false;
+//    }
+
     QFile file(filename);
     if (file.open(QIODevice::WriteOnly | QIODevice::Text))
     {

@@ -28,6 +28,8 @@ public:
     bool save(QString filename);
 
     //Data
+    void removeLogicalIndexesRows(const QModelIndexList & selectedIndexesRows);
+    void removeLogicalIndexesCols(const QModelIndexList & selectedIndexesCols);
     void clearLogicalIndexes(const QModelIndexList & selectedIndexes);
     const MatrixXv & tableData();
     VectorXv eval(int visualIndex);
@@ -73,6 +75,8 @@ private:
     void dataAddRow(MatrixXv & matrix, VectorXv rowToAdd);
     void dataAddRows(MatrixXv & matrix, int n);
     void dataAddColumn(MatrixXv & matrix, VectorXv colToAdd);
+    void dataRemoveRows(MatrixXv& matrix, unsigned int rowToRemove, unsigned int nbRow);
+    void dataRemoveColumns(MatrixXv& matrix, unsigned int colToRemove,unsigned int nbCol);
 
     QModelIndex toVisualIndex(const QModelIndex &index) const;
     QModelIndex toLogicalIndex(const QModelIndex &index) const;

@@ -55,7 +55,7 @@ public slots:
 
     void slot_editColumn();//ok
     void slot_sectionDoubleClicked();//ok
-    void slot_delete_columns_and_rows();
+    void slot_remove_columns_and_rows();
     void slot_delete_selectedRows();
     void slot_delete_selectedColumns();
     void slot_delete_selected();
@@ -124,7 +124,7 @@ private:
     QAction* a_newRow;
     QAction* a_newRows;
     QAction* a_delete;
-    QAction* a_deleteColumnsRows;
+    QAction* a_removeColumnsRows;
     QAction* a_updateColumns;
     QAction* a_copy;
     QAction* a_paste;

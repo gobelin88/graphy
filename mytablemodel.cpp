@@ -215,6 +215,93 @@ ValueContainer & MyModel::at(QModelIndex indexLogical)
     return m_data(indexVisual.row()+m_rowOffset,indexVisual.column());
 }
 
+void MyModel::removeLogicalIndexesRows(const QModelIndexList & selectedIndexesRows)
+{
+     if(selectedIndexesRows.size()==0)
+     {
+        return;
+     }
+
+     std::vector<unsigned int> visualIndexsRows(selectedIndexesRows.size());
+     for(int i=0;i<visualIndexsRows.size();i++)
+     {
+        visualIndexsRows[i]=v_header->visualIndex(selectedIndexesRows[i].row())+m_rowOffset;
+     }
+     std::sort(visualIndexsRows.begin(),visualIndexsRows.end());
+
+     //remove consecutives rows
+     for (int i=0; i<visualIndexsRows.size();)
+     {
+         int indexa=visualIndexsRows[i];
+
+         int n=1;
+         if ((i+n)<visualIndexsRows.size())
+         {
+             int indexb=visualIndexsRows[i+n];
+             while ((i+n)<visualIndexsRows.size() && indexb==indexa+n)
+             {
+                 n++;
+                 if ((i+n)<visualIndexsRows.size())
+                 {
+                     indexb=visualIndexsRows[i+n];
+                 }
+             }
+         }
+
+         dataRemoveRows(m_data,indexa-i,n);
+
+         i+=n;
+     }
+
+     emit layoutChanged();
+}
+
+void MyModel::removeLogicalIndexesCols(const QModelIndexList & selectedIndexesCols)
+{
+    if(selectedIndexesCols.size()==0)
+    {
+       return;
+    }
+
+    std::vector<unsigned int> visualIndexsCols(selectedIndexesCols.size());
+    for(int i=0;i<visualIndexsCols.size();i++)
+    {
+       visualIndexsCols[i]=h_header->visualIndex(selectedIndexesCols[i].column());
+    }
+    std::sort(visualIndexsCols.begin(),visualIndexsCols.end());
+
+    //remove consecutives columns
+    for (int i=0; i<visualIndexsCols.size();)
+    {
+        int indexa=visualIndexsCols[i];
+
+        int n=1;
+        if ((i+n)<visualIndexsCols.size())
+        {
+            int indexb=visualIndexsCols[i+n];
+            while ((i+n)<visualIndexsCols.size() && indexb==indexa+n)
+            {
+                n++;
+                if ((i+n)<visualIndexsCols.size())
+                {
+                    indexb=visualIndexsCols[i+n];
+                }
+            }
+        }
+
+        for (int k=0; k<n; k++)
+        {
+            reg.delVariable(reg.variablesNames()[indexa-i]);
+        }
+
+        dataRemoveColumns(m_data,indexa-i,n);
+
+        i+=n;
+    }
+
+    emit layoutChanged();
+}
+
 void MyModel::clearLogicalIndexes(const QModelIndexList & selectedIndexes)
 {
     for (int i = 0; i < selectedIndexes.count(); ++i)
@@ -520,6 +607,30 @@ void MyModel::dataAddColumn(MatrixXv& matrix, VectorXv colToAdd)
     unsigned int numCols = matrix.cols()+1;
     matrix.conservativeResize(numRows,numCols);
     matrix.col(numCols-1)=colToAdd;
+}
+
+void MyModel::dataRemoveRows(MatrixXv& matrix, unsigned int rowToRemove, unsigned int nbRow)
+{
+    unsigned int numRows = matrix.rows()-nbRow;
+    unsigned int numCols = matrix.cols();
+
+    if ( rowToRemove < numRows )
+    {
+        matrix.block(rowToRemove,0,numRows-rowToRemove,numCols) = matrix.block(rowToRemove+nbRow,0,numRows-rowToRemove,numCols);
+    }
+    matrix.conservativeResize(numRows,numCols);
+}
+
+void MyModel::dataRemoveColumns(MatrixXv& matrix, unsigned int colToRemove,unsigned int nbCol)
+{
+    unsigned int numRows = matrix.rows();
+    unsigned int numCols = matrix.cols()-nbCol;
+
+    if ( colToRemove < numCols )
+    {
+        matrix.block(0,colToRemove,numRows,numCols-colToRemove) = matrix.block(0,colToRemove+nbCol,numRows,numCols-colToRemove);
+    }
+    matrix.conservativeResize(numRows,numCols);
 }
 
 QModelIndex MyModel::toVisualIndex(const QModelIndex &index)const

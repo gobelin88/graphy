@@ -37,3 +37,12 @@ void MyTableView::slot_deleteSelected()
     QModelIndexList selectedIndexes=selectionModel()->selectedIndexes();
     m_model->clearLogicalIndexes(selectedIndexes);
 }
+
+void MyTableView::slot_removeSelectedRowsAndCols()
+{
+    QModelIndexList selectedColsIndexes=selectionModel()->selectedColumns();
+    QModelIndexList selectedRowsIndexes=selectionModel()->selectedRows();
+
+    m_model->removeLogicalIndexesCols(selectedColsIndexes);
+    m_model->removeLogicalIndexesRows(selectedRowsIndexes);
+}

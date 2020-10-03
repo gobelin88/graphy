@@ -20,6 +20,7 @@ public:
 
 public slots:
     void slot_deleteSelected();
+    void slot_removeSelectedRowsAndCols();
 
 protected:
     void wheelEvent(QWheelEvent * event);

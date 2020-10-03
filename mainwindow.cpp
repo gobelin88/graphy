@@ -15,11 +15,15 @@ void MainWindow::createExperimental()
     experimental_table->addAction(a_newRows);
     experimental_table->addAction(a_updateColumns);
     experimental_table->addAction(a_delete);
+    experimental_table->addAction(a_removeColumnsRows);
+
 
     connect(a_newRow,&QAction::triggered,experimental_table->model(),&MyModel::slot_newRow);
     connect(a_newRows,&QAction::triggered,experimental_table->model(),&MyModel::slot_newRows);
     connect(a_updateColumns,&QAction::triggered,experimental_table->model(),&MyModel::slot_updateColumns);
     connect(a_delete,&QAction::triggered,experimental_table,&MyTableView::slot_deleteSelected);
+    connect(a_removeColumnsRows,&QAction::triggered,experimental_table,&MyTableView::slot_removeSelectedRowsAndCols);
+
 }
 
 MainWindow::MainWindow(QWidget* parent) :
@@ -93,7 +97,7 @@ MainWindow::MainWindow(QWidget* parent) :
     a_newRow=new QAction(this);
     a_newRows=new QAction(this);
     a_delete=new QAction(this);
-    a_deleteColumnsRows=new QAction(this);
+    a_removeColumnsRows=new QAction(this);
     a_copy=new QAction(this);
     a_paste=new QAction(this);
 
@@ -107,7 +111,7 @@ MainWindow::MainWindow(QWidget* parent) :
     table->addAction(a_newRow);
     table->addAction(a_newRows);
     table->addAction(a_delete);
-    table->addAction(a_deleteColumnsRows);
+    table->addAction(a_removeColumnsRows);
     table->addAction(a_updateColumns);
 
     std::cout<<"C"<<std::endl;
@@ -117,7 +121,7 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(a_newRow,&QAction::triggered,this,&MainWindow::slot_newRow);
     connect(a_newRows,&QAction::triggered,this,&MainWindow::slot_newRows);
     connect(a_delete,&QAction::triggered,this,&MainWindow::slot_delete_selected);
-    connect(a_deleteColumnsRows,&QAction::triggered,this,&MainWindow::slot_delete_columns_and_rows);
+    connect(a_removeColumnsRows,&QAction::triggered,this,&MainWindow::slot_remove_columns_and_rows);
     connect(a_updateColumns,&QAction::triggered,this,&MainWindow::slot_updateColumns);
 
     connect(a_copy,&QAction::triggered,this,&MainWindow::slot_copy);
@@ -789,7 +793,7 @@ void MainWindow::slot_delete_selected()
     fileModified();
 }
 
-void MainWindow::slot_delete_columns_and_rows()
+void MainWindow::slot_remove_columns_and_rows()
 {
     QElapsedTimer timer;
     timer.start();
@@ -1850,7 +1854,7 @@ void MainWindow::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     shortcuts_links.insert(QString("New-row"),a_newRow);
     shortcuts_links.insert(QString("New-rows"),a_newRows);
     shortcuts_links.insert(QString("Delete"),a_delete);
-    shortcuts_links.insert(QString("Delete-cols-rows"),a_deleteColumnsRows);
+    shortcuts_links.insert(QString("Delete-cols-rows"),a_removeColumnsRows);
     shortcuts_links.insert(QString("Filter"),ui->actionFilter);
 
 

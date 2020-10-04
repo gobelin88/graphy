@@ -1,6 +1,11 @@
 #include <QTextStream>
 #include <QMessageBox>
 #include <QInputDialog>
+#include <QGridLayout>
+#include <QComboBox>
+#include <QDoubleSpinBox>
+#include <QDialog>
+#include <QDialogButtonBox>
 
 #include "mytablemodel.h"
 
@@ -12,8 +17,6 @@ MyModel::MyModel(int nbRows, int nbCols, int rowSpan, QObject *parent): QAbstrac
 //-----------------------------------------------------------------
 void MyModel::create(int nbRows, int nbCols,int rowSpan)
 {
-    m_data=MatrixXv(nbRows,nbCols);
-
     h_header=new QHeaderView(Qt::Horizontal);
     v_header=new QHeaderView(Qt::Vertical);
     h_header->setAccessibleName("Variables");
@@ -30,14 +33,69 @@ void MyModel::create(int nbRows, int nbCols,int rowSpan)
     connect(h_header,&QHeaderView::sectionMoved        ,this,&MyModel::slot_hSectionMoved);
     connect(v_header,&QHeaderView::sectionMoved        ,this,&MyModel::slot_vSectionMoved);
 
+    createEmpty(nbRows,nbCols);
+
+    setRowSpan(rowSpan);
+    setRowOffset(0);
+}
+
+void MyModel::createEmpty(int nbRows, int nbCols)
+{
+    reg.clear();
+    m_data=MatrixXv(nbRows,nbCols);
     for(int i=0;i<nbCols;i++)
     {
         QString value = QString("C%1").arg(i+1);
         reg.newVariable(value,"");
     }
 
-    setRowSpan(rowSpan);
-    setRowOffset(0);
+    emit layoutChanged();
+}
+
+void MyModel::exportLatex(QString filename)
+{
+    QFile file(filename);
+
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QString textData;
+
+        textData+= QString("\\begin{tabular}{|*{%1}{c|}} \n").arg(m_data.cols());
+        textData += "\\hline \n";
+
+        for (int j = 0; j < m_data.cols(); j++)
+        {
+            textData+="$"+reg.variablesNames()[j]+"$";
+            if (j!=m_data.cols()-1)
+            {
+                textData += "&";
+            }
+        }
+        textData += "\\\\ \\hline \n";
+
+        for (int i = 0; i < m_data.rows(); i++)
+        {
+            for (int j = 0; j < m_data.cols(); j++)
+            {
+                textData += m_data(i,j).toString();
+
+                if (j!=m_data.cols()-1)
+                {
+                    textData += "&";
+                }
+            }
+            textData += "\\\\ \\hline \n";             // (optional: for new line segmentation)
+        }
+
+        textData+=QString("\\end{tabular}");
+
+        QTextStream out(&file);
+        out << textData;
+    }
+    else
+    {
+        error("Export Latex",QString("Impossible d'ouvrir le fichier : ")+filename);
+    }
 }
 
 bool MyModel::open(QString filename)
@@ -209,10 +267,172 @@ const MatrixXv & MyModel::tableData()
     return m_data;
 }
 
+QString MyModel::copy(int x0,int y0,int nrows,int ncols)
+{
+    QString clipboardBuffer;
+    Eigen::Matrix<QString,Eigen::Dynamic,Eigen::Dynamic> content(nrows,ncols);
+
+    for (int i = 0; i < nrows; ++i)
+    {
+        for (int j = 0; j < ncols; ++j)
+        {
+            content(i,j)=m_data(i+x0,j+y0).toString();
+        }
+    }
+
+    for(int i=0;i<nrows;i++)
+    {
+        for(int j=0;j<ncols;j++)
+        {
+            clipboardBuffer+=content(i,j);
+            if(j!=ncols-1)
+            {
+                    clipboardBuffer+=QString(";");
+            }
+        }
+        clipboardBuffer+="\n";
+    }
+
+    return clipboardBuffer;
+}
+
+void MyModel::paste(int x0,int y0,QString buffer)
+{
+    QStringList lines=buffer.split("\n",QString::SkipEmptyParts);
+    for(int i=0.0;i<lines.size();i++)
+    {
+        QStringList valuesToken=lines[i].split(";");
+        for(int j=0;j<valuesToken.size();j++)
+        {
+            int indexRow=i+x0;
+            int indexCol=j+y0;
+
+            if(indexRow<m_data.rows() && indexCol<m_data.cols())
+            {
+                m_data(indexRow,indexCol)=valuesToken[j];
+            }
+        }
+    }
+
+    emit layoutChanged();
+}
+
 ValueContainer & MyModel::at(QModelIndex indexLogical)
 {
     QModelIndex indexVisual= toVisualIndex(indexLogical);
     return m_data(indexVisual.row()+m_rowOffset,indexVisual.column());
+}
+
+bool MyModel::asColumnStrings(int idCol)
+{
+    for(int i=0;i<m_data.rows();i++)
+    {
+        if(m_data(i,idCol).isDouble==false)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+QString MyModel::getLogicalColName(int logicalIndex)
+{
+    return getVisualColName(h_header->visualIndex(logicalIndex));
+}
+
+QString MyModel::getVisualColName(int visualIndex)
+{
+    return reg.variablesNames()[visualIndex];
+}
+
+Eigen::VectorXd MyModel::getColLogicalDataDouble(int logicalIndex)const
+{
+    return getColVisualDataDouble(h_header->visualIndex(logicalIndex));
+}
+
+Eigen::VectorXd MyModel::getColVisualDataDouble(int visualIndex)const
+{
+    //something better to be done here
+
+    Eigen::VectorXd v(m_data.rows());
+
+    for(int i=0;i<v.rows();i++)
+    {
+        v[i]=m_data(i,visualIndex).num;
+    }
+
+    return v;
+}
+
+void MyModel::applyFilters(const QModelIndexList & selectedColsIndexes)
+{
+    if (selectedColsIndexes.size()>0)
+    {
+        int visualIndex=h_header->visualIndex(selectedColsIndexes[0].column());
+
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle(QString("Filter by : %1").arg(reg.variablesNames()[visualIndex]));
+        QGridLayout* gbox = new QGridLayout();
+
+        QComboBox* cb_mode=new QComboBox(dialog);
+        cb_mode->addItem("Ascending sort");
+        cb_mode->addItem("Decending sort");
+        cb_mode->addItem("Keep greater than threshold");
+        cb_mode->addItem("Keep lower than threshold");
+
+        QDoubleSpinBox* sb_threshold=new QDoubleSpinBox(dialog);
+        sb_threshold->setPrefix("Threshold=");
+        sb_threshold->setRange(-1e100,1e100);
+
+        double defaultThresholdValue=getColVisualDataDouble(visualIndex).mean();
+        if(std::isnan(defaultThresholdValue))
+        {
+            sb_threshold->setValue(0);
+        }
+        else
+        {
+            sb_threshold->setValue(defaultThresholdValue);
+        }
+        //sb_threshold->setEnabled(false);
+
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                           | QDialogButtonBox::Cancel);
+
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+
+        gbox->addWidget(cb_mode,0,0);
+        gbox->addWidget(sb_threshold,0,1);
+        gbox->addWidget(buttonBox,2,0,1,2);
+
+        dialog->setLayout(gbox);
+        dialog->setMinimumWidth(300);
+        dialog->adjustSize();
+        int result=dialog->exec();
+        if (result == QDialog::Accepted)
+        {
+            if(cb_mode->currentIndex()==0)
+            {
+                dataSortBy(m_data,visualIndex,MyModel::SortMode::ASCENDING);
+            }
+            else if(cb_mode->currentIndex()==1)
+            {
+                dataSortBy(m_data,visualIndex,MyModel::SortMode::DECENDING);
+            }
+            else if(cb_mode->currentIndex()==2)
+            {
+                dataThresholdBy(m_data,visualIndex,MyModel::ThresholdMode::KEEP_GREATER,sb_threshold->value());
+            }
+            else if(cb_mode->currentIndex()==3)
+            {
+                dataThresholdBy(m_data,visualIndex,MyModel::ThresholdMode::KEEP_LOWER,sb_threshold->value());
+            }
+        }
+
+        emit layoutChanged();
+    }
 }
 
 void MyModel::removeLogicalIndexesRows(const QModelIndexList & selectedIndexesRows)
@@ -356,7 +576,7 @@ VectorXv MyModel::eval(int visualIndex)
     }
 }
 
-QVariant MyModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant MyModel::headerData(int logicalIndex, Qt::Orientation orientation, int role) const
 {
     if (role != Qt::DisplayRole)
              return QVariant();
@@ -364,10 +584,10 @@ QVariant MyModel::headerData(int section, Qt::Orientation orientation, int role)
     if (orientation == Qt::Horizontal)
     {
         //Les columnes ont les noms des variables.
-        if ( (section>=0) && (section < reg.variablesNames().size()) )
+        if ( (logicalIndex>=0) && (logicalIndex < reg.variablesNames().size()) )
         {
             //return QVariant();
-            return reg.variablesNames()[h_header->visualIndex(section)];
+            return reg.variablesNames()[h_header->visualIndex(logicalIndex)];
         }
         else
         {
@@ -377,7 +597,7 @@ QVariant MyModel::headerData(int section, Qt::Orientation orientation, int role)
     else if (orientation == Qt::Vertical)
     {
         //Les numéro des lignes sont toujours dans l'ordre.
-        return QString("R%1 ").arg(v_header->visualIndex(section)+1+m_rowOffset);
+        return QString("R%1 ").arg(v_header->visualIndex(logicalIndex)+1+m_rowOffset);
     }
     else
     {
@@ -425,6 +645,7 @@ void MyModel::slot_updateColumns()
     {
         m_data.col(i)=eval(i);
     }
+    emit layoutChanged();
 }
 
 //-----------------------------------------------------------------
@@ -522,8 +743,8 @@ bool MyModel::setData(const QModelIndex &index_logical, const QVariant &value, i
         }
         m_data(index.row()+m_rowOffset,index.column()).isDouble=isd;
 
-        std::cout<<"---------------"<<std::endl;
-        std::cout<<m_data<<std::endl;
+//        std::cout<<"---------------"<<std::endl;
+//        std::cout<<m_data<<std::endl;
 
         return true;
     }
@@ -631,6 +852,54 @@ void MyModel::dataRemoveColumns(MatrixXv& matrix, unsigned int colToRemove,unsig
         matrix.block(0,colToRemove,numRows,numCols-colToRemove) = matrix.block(0,colToRemove+nbCol,numRows,numCols-colToRemove);
     }
     matrix.conservativeResize(numRows,numCols);
+}
+
+void MyModel::dataSortBy(MatrixXv & matrix, int colId,SortMode mode)
+{
+    std::vector<VectorXv> vec;
+    for (int64_t i = 0; i < matrix.rows(); ++i)
+        vec.push_back(matrix.row(i));
+
+    if(mode==ASCENDING)
+    {
+        std::sort(vec.begin(), vec.end(), [&colId](VectorXv const& t1, VectorXv const& t2){ return t1(colId).num < t2(colId).num; } );
+    }
+    else if(mode==DECENDING)
+    {
+        std::sort(vec.begin(), vec.end(), [&colId](VectorXv const& t1, VectorXv const& t2){ return t1(colId).num > t2(colId).num; } );
+    }
+
+    for (int64_t i = 0; i < matrix.rows(); ++i)
+        matrix.row(i) = vec[i];
+}
+
+void MyModel::dataThresholdBy(MatrixXv & matrix, int colId,ThresholdMode mode,double thresholdValue)
+{
+    std::vector<VectorXv> vec;
+    for (unsigned int i = 0; i < matrix.rows(); ++i)
+    {
+        if(mode==KEEP_GREATER)
+        {
+            if(matrix(i,colId).num>thresholdValue)//KEEP_GREATER
+            {
+                vec.push_back(matrix.row(i));
+            }
+        }
+        else
+        {
+            if(matrix(i,colId).num<thresholdValue)//KEEP_LOWER
+            {
+                vec.push_back(matrix.row(i));
+            }
+        }
+    }
+
+    for (unsigned int i = 0; i < vec.size(); ++i)
+    {
+        matrix.row(i) = vec[i];
+    }
+
+    matrix.conservativeResize(vec.size(),matrix.cols());
 }
 
 QModelIndex MyModel::toVisualIndex(const QModelIndex &index)const

@@ -21,6 +21,22 @@ void ValueContainer::operator=(const ValueContainer & other)
     }
 }
 
+void ValueContainer::operator=(const QVariant & other)
+{
+    num=other.toDouble(&isDouble);
+
+    if(!isDouble)
+    {
+        str=other.toString();
+    }
+}
+
+void ValueContainer::operator=(const QString & other)
+{
+    isDouble=false;
+    str=other;
+}
+
 std::ostream& operator<< (std::ostream &out,const ValueContainer & value)
 {
     if(value.isDouble)

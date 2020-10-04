@@ -1,4 +1,5 @@
 #include <QString>
+#include <QVariant>
 #include <iostream>
 #include <Eigen/Dense>
 
@@ -10,6 +11,8 @@ class ValueContainer
 public:
     ValueContainer();
     void operator=(const ValueContainer & other);
+    void operator=(const QVariant & other);
+    void operator=(const QString & other);
 
     QString toString()const;
 

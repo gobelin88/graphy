@@ -1,5 +1,6 @@
 #include <QTableView>
 #include "mytablemodel.h"
+#include "qcustomplot.h"
 
 #ifndef MYTABLEVIEW_H
 #define MYTABLEVIEW_H
@@ -18,14 +19,25 @@ public:
 
     MyModel * model(){return m_model;}
 
+    Eigen::VectorXd getColDataDouble(int logicalColId);
+    QString getColName(int logicalColId);
+
+    QString getSelectionPattern();
+    void setSelectionPattern(QString pattern);
+
 public slots:
     void slot_deleteSelected();
     void slot_removeSelectedRowsAndCols();
+    void slot_filter();
+    void slot_copy();
+    void slot_paste();
 
 protected:
     void wheelEvent(QWheelEvent * event);
 
 private:
+    void getVisualRowColSelectedRanges(QCPRange &range_row,QCPRange &range_col);
+
     MyModel * m_model;
 };
 

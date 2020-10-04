@@ -14,25 +14,46 @@ class MyModel : public QAbstractTableModel
 {
     Q_OBJECT
 public:
+    enum SortMode
+    {
+        ASCENDING,
+        DECENDING
+    };
+
+    enum ThresholdMode
+    {
+        KEEP_GREATER,
+        KEEP_LOWER
+    };
+
     MyModel(int nbRows,int nbCols,int rowSpan,QObject *parent=nullptr);
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index_logical, int role = Qt::DisplayRole) const override;
     bool setData(const QModelIndex &index_logical, const QVariant &value, int role = Qt::EditRole) override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
-    QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
+    QVariant headerData(int logicalIndex, Qt::Orientation orientation, int role) const override;
 
     //I/O
-    void create(int nbRows, int nbCols, int rowSpan);
+    void createEmpty(int nbRows, int nbCols);
     bool open(QString filename);
     bool save(QString filename);
+    void exportLatex(QString filename);
 
     //Data
+    QString getLogicalColName(int logicalIndex);
+    QString getVisualColName(int visualIndex);
+    Eigen::VectorXd getColLogicalDataDouble(int logicalIndex)const;
+    Eigen::VectorXd getColVisualDataDouble(int visualIndex)const;
+    bool asColumnStrings(int idCol);
+    void applyFilters(const QModelIndexList & selectedColsIndexes);
     void removeLogicalIndexesRows(const QModelIndexList & selectedIndexesRows);
     void removeLogicalIndexesCols(const QModelIndexList & selectedIndexesCols);
     void clearLogicalIndexes(const QModelIndexList & selectedIndexes);
-    const MatrixXv & tableData();
+    const MatrixXv &tableData();
     VectorXv eval(int visualIndex);
+    QString copy(int x0,int y0,int nrows,int ncols);
+    void paste(int x0,int y0,QString buffer);
 
     //Gui
     QHeaderView * horizontalHeader();
@@ -44,6 +65,11 @@ public:
     void setRowSpan(int rowSpan);
     int getRowOffsetMax();
 
+    //register
+    const Register & getRegister(){return reg;}
+
+    //copy/paste
+
 public slots:
     void slot_editColumn(int logicalIndex);
     void slot_newRow();
@@ -54,6 +80,7 @@ public slots:
     void slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
 
 private:
+    void create(int nbRows, int nbCols, int rowSpan);
     ValueContainer & at(QModelIndex indexLogical);
 
     int m_rowOffset;
@@ -77,6 +104,8 @@ private:
     void dataAddColumn(MatrixXv & matrix, VectorXv colToAdd);
     void dataRemoveRows(MatrixXv& matrix, unsigned int rowToRemove, unsigned int nbRow);
     void dataRemoveColumns(MatrixXv& matrix, unsigned int colToRemove,unsigned int nbCol);
+    void dataSortBy(MatrixXv& matrix, int colId, SortMode mode);
+    void dataThresholdBy(MatrixXv & matrix, int colId,ThresholdMode mode,double thresholdValue);
 
     QModelIndex toVisualIndex(const QModelIndex &index) const;
     QModelIndex toLogicalIndex(const QModelIndex &index) const;

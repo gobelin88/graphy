@@ -18,8 +18,10 @@ public:
     void createNew(int nbRow,int nbCols,int rowsSpan);
 
     MyModel * model(){return m_model;}
+    QWidget * getContainer(){return container;}
 
     Eigen::VectorXd getColDataDouble(int logicalColId);
+    QVector<QString> getColDataString(int logicalColId);
     QString getColName(int logicalColId);
 
     QString getSelectionPattern();
@@ -33,12 +35,13 @@ public slots:
     void slot_paste();
 
 protected:
-    void wheelEvent(QWheelEvent * event);
+    //void wheelEvent(QWheelEvent * event);
 
 private:
     void getVisualRowColSelectedRanges(QCPRange &range_row,QCPRange &range_col);
 
     MyModel * m_model;
+    QWidget * container;
 };
 
 #endif // MYTABLEVIEW_H

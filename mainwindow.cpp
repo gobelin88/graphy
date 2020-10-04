@@ -22,7 +22,7 @@ MainWindow::MainWindow(QWidget* parent) :
 
     te_results=new QTextEdit;
     te_widget=new QTabWidget();
-    te_widget->addTab(table,"Data");
+    te_widget->addTab(table->getContainer(),"Data");
     te_widget->addTab(te_results,"Results");
     QMdiSubWindow* subWindow = mdiArea->addSubWindow(te_widget, Qt::FramelessWindowHint );
     subWindow->showMaximized();
@@ -262,143 +262,143 @@ void MainWindow::slot_plot_y()
 
 void MainWindow::slot_plot_graph_xy()
 {
-//    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-//    if (id_list.size()>=2)
-//    {
-//        Viewer1D* viewer1d=createViewerId();
+    if (id_list.size()>=2)
+    {
+        Viewer1D* viewer1d=createViewerId();
 
-//        Eigen::VectorXd data_x=datatable.col(table->horizontalHeader()->visualIndex(id_list[0  ].column()));
-//        for (int k=1; k<id_list.size(); k+=1)
-//        {
-//            Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k].column()));
+        Eigen::VectorXd data_x=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[0  ].column()));
+        for (int k=1; k<id_list.size(); k+=1)
+        {
+            Eigen::VectorXd data_y=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k].column()));
 
-//            if (data_x.size()>0 && data_y.size()>0)
-//            {
-//                if (!asColumnStrings(table->horizontalHeader()->visualIndex(id_list[k  ].column())))
-//                {
-//                    Curve2D curve(data_x,data_y,QString("%2=f(%1)").arg(getColName(id_list[0  ].column())).arg(getColName(id_list[k].column())),Curve2D::GRAPH);
-//                    viewer1d->slot_add_data(curve);
-//                }
-//                else
-//                {
-//                    Curve2D curve(data_y,QString("%2=f(%1)").arg(getColName(id_list[0  ].column())).arg(getColName(id_list[k].column())),Curve2D::GRAPH);
-//                    curve.setLabelsField(getColumn(id_list[k  ].column()));
-//                    viewer1d->slot_add_data(curve);
-//                }
-//            }
-//        }
-//    }
-//    else
-//    {
-//        QMessageBox::information(this,"Information","Please select 2 columns or more X and Yi in order to plot (X,Yi)");
-//    }
+            if (data_x.size()>0 && data_y.size()>0)
+            {
+                if (!table->model()->asColumnStrings(table->horizontalHeader()->visualIndex(id_list[k  ].column())))
+                {
+                    Curve2D curve(data_x,data_y,QString("%2=f(%1)").arg(table->getColName(id_list[0  ].column())).arg(table->getColName(id_list[k].column())),Curve2D::GRAPH);
+                    viewer1d->slot_add_data(curve);
+                }
+                else
+                {
+                    Curve2D curve(data_y,QString("%2=f(%1)").arg(table->getColName(id_list[0  ].column())).arg(table->getColName(id_list[k].column())),Curve2D::GRAPH);
+                    curve.setLabelsField(table->getColDataString(table->horizontalHeader()->visualIndex(id_list[k  ].column())));
+                    viewer1d->slot_add_data(curve);
+                }
+            }
+        }
+    }
+    else
+    {
+        QMessageBox::information(this,"Information","Please select 2 columns or more X and Yi in order to plot (X,Yi)");
+    }
 }
 
 void MainWindow::slot_plot_curve_xy()
 {
-//    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-//    if (id_list.size()>=2)
-//    {
-//        Viewer1D* viewer1d=createViewerId();
+    if (id_list.size()>=2)
+    {
+        Viewer1D* viewer1d=createViewerId();
 
-//        Eigen::VectorXd data_x=datatable.col(table->horizontalHeader()->visualIndex(id_list[0  ].column()));
-//        for (int k=1; k<id_list.size(); k+=2)
-//        {
-//            Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k].column()));
+        Eigen::VectorXd data_x=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[0  ].column()));
+        for (int k=1; k<id_list.size(); k+=2)
+        {
+            Eigen::VectorXd data_y=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k].column()));
 
-//            if (data_x.size()>0 && data_y.size()>0)
-//            {
-//                viewer1d->slot_add_data(Curve2D(data_x,
-//                                                data_y,
-//                                                QString("(%1,%2)").arg(getColName(id_list[0  ].column())).arg(getColName(id_list[k].column())),
-//                                        Curve2D::CURVE));
-//            }
-//        }
-//    }
-//    else
-//    {
-//        QMessageBox::information(this,"Information","Please select 2 columns or more X and Yi in order to plot (X,Yi)");
-//    }
+            if (data_x.size()>0 && data_y.size()>0)
+            {
+                viewer1d->slot_add_data(Curve2D(data_x,
+                                                data_y,
+                                                QString("(%1,%2)").arg(table->getColName(id_list[0  ].column())).arg(table->getColName(id_list[k].column())),
+                                        Curve2D::CURVE));
+            }
+        }
+    }
+    else
+    {
+        QMessageBox::information(this,"Information","Please select 2 columns or more X and Yi in order to plot (X,Yi)");
+    }
 }
 
 void MainWindow::slot_plot_cloud_2D()
 {
-//    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-//    if (id_list.size()%3==0 && id_list.size()>0)
-//    {
-//        Viewer1D* viewer1d=createViewerId();
+    if (id_list.size()%3==0 && id_list.size()>0)
+    {
+        Viewer1D* viewer1d=createViewerId();
 
-//        for (int k=0; k<id_list.size(); k+=3)
-//        {
-//            Eigen::VectorXd data_x=datatable.col(table->horizontalHeader()->visualIndex(id_list[k  ].column()));
-//            Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
-//            Eigen::VectorXd data_s=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+2].column()));
+        for (int k=0; k<id_list.size(); k+=3)
+        {
+            Eigen::VectorXd data_x=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k  ].column()));
+            Eigen::VectorXd data_y=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
+            Eigen::VectorXd data_s=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k+2].column()));
 
-//            if (data_x.size()>0 && data_y.size()>0)
-//            {
-//                Curve2D curve(data_x,
-//                              data_y,
-//                              QString("(%1,%2)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),
-//                        Curve2D::CURVE);
-//                curve.setScalarField(data_s);
-//                curve.getStyle().mLineStyle=QCPCurve::lsNone;
-//                curve.getStyle().mScatterShape=QCPScatterStyle::ssDisc;
-//                viewer1d->slot_add_data(curve);
-//            }
-//        }
-//    }
-//    else
-//    {
-//        QMessageBox::information(this,"Information","Please select 3 columns P(X,Y) and Scalarfield S in order to plot S(P)");
-//    }
+            if (data_x.size()>0 && data_y.size()>0)
+            {
+                Curve2D curve(data_x,
+                              data_y,
+                              QString("(%1,%2)").arg(table->getColName(id_list[k  ].column())).arg(table->getColName(id_list[k+1].column())),
+                        Curve2D::CURVE);
+                curve.setScalarField(data_s);
+                curve.getStyle().mLineStyle=QCPCurve::lsNone;
+                curve.getStyle().mScatterShape=QCPScatterStyle::ssDisc;
+                viewer1d->slot_add_data(curve);
+            }
+        }
+    }
+    else
+    {
+        QMessageBox::information(this,"Information","Please select 3 columns P(X,Y) and Scalarfield S in order to plot S(P)");
+    }
 }
 
 void MainWindow::slot_plot_field_2D()
 {
-//    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-//    if (id_list.size()%4==0 && id_list.size()>0)
-//    {
-//        Viewer1D* viewer1d=createViewerId();
+    if (id_list.size()%4==0 && id_list.size()>0)
+    {
+        Viewer1D* viewer1d=createViewerId();
 
-//        for (int k=0; k<id_list.size(); k+=4)
-//        {
-//            Eigen::VectorXd data_x=datatable.col(table->horizontalHeader()->visualIndex(id_list[k  ].column()));
-//            Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
-//            Eigen::VectorXd data_vx=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+2].column()));
-//            Eigen::VectorXd data_vy=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+3].column()));
+        for (int k=0; k<id_list.size(); k+=4)
+        {
+            Eigen::VectorXd data_x =table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k  ].column()));
+            Eigen::VectorXd data_y =table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
+            Eigen::VectorXd data_vx=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k+2].column()));
+            Eigen::VectorXd data_vy=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k+3].column()));
 
-//            Eigen::VectorXd data_a(data_vx.size());
-//            Eigen::VectorXd data_s(data_vx.size());
+            Eigen::VectorXd data_a(data_vx.size());
+            Eigen::VectorXd data_s(data_vx.size());
 
-//            for (int i=0; i<data_a.size(); i++)
-//            {
-//                data_a[i]=atan2(data_vx[i],data_vy[i])-M_PI/2;
-//                data_s[i]=sqrt(data_vy[i]*data_vy[i]+data_vx[i]*data_vx[i]);
-//            }
+            for (int i=0; i<data_a.size(); i++)
+            {
+                data_a[i]=atan2(data_vx[i],data_vy[i])-M_PI/2;
+                data_s[i]=sqrt(data_vy[i]*data_vy[i]+data_vx[i]*data_vx[i]);
+            }
 
-//            if (data_x.size()>0 && data_y.size()>0)
-//            {
-//                Curve2D curve(data_x,
-//                              data_y,
-//                              QString("V(%3,%4)=f(%1,%2)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())).arg(getColName(id_list[k+2].column())).arg(getColName(id_list[k+3].column())),
-//                        Curve2D::CURVE);
-//                curve.setScalarField(data_s);
-//                curve.setAlphaField(data_a);
-//                curve.getStyle().mLineStyle=QCPCurve::lsNone;
-//                curve.getStyle().mScatterShape=QCPScatterStyle::ssArrow;
-//                curve.getStyle().mScatterSize=20;
-//                viewer1d->slot_add_data(curve);
-//            }
-//        }
-//    }
-//    else
-//    {
-//        QMessageBox::information(this,"Information","Please select 4 columns P(X,Y) and V(X,Y) in order to plot vector 2d field V(P)");
-//    }
+            if (data_x.size()>0 && data_y.size()>0)
+            {
+                Curve2D curve(data_x,
+                              data_y,
+                              QString("V(%3,%4)=f(%1,%2)").arg(table->getColName(id_list[k  ].column())).arg(table->getColName(id_list[k+1].column())).arg(table->getColName(id_list[k+2].column())).arg(table->getColName(id_list[k+3].column())),
+                        Curve2D::CURVE);
+                curve.setScalarField(data_s);
+                curve.setAlphaField(data_a);
+                curve.getStyle().mLineStyle=QCPCurve::lsNone;
+                curve.getStyle().mScatterShape=QCPScatterStyle::ssArrow;
+                curve.getStyle().mScatterSize=20;
+                viewer1d->slot_add_data(curve);
+            }
+        }
+    }
+    else
+    {
+        QMessageBox::information(this,"Information","Please select 4 columns P(X,Y) and V(X,Y) in order to plot vector 2d field V(P)");
+    }
 }
 
 
@@ -408,9 +408,9 @@ void MainWindow::slot_plot_map_2D()
 
 //    if (id_list.size()==3)
 //    {
-//        Eigen::VectorXd data_x=datatable.col(table->horizontalHeader()->visualIndex(id_list[0].column()));
-//        Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[1].column()));
-//        Eigen::VectorXd data_z=datatable.col(table->horizontalHeader()->visualIndex(id_list[2].column()));
+//        Eigen::VectorXd data_x=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[0].column()));
+//        Eigen::VectorXd data_y=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[1].column()));
+//        Eigen::VectorXd data_z=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[2].column()));
 
 //        if (data_x.size()>0 && data_y.size()>0 && data_z.size()>0)
 //        {
@@ -436,186 +436,186 @@ void MainWindow::slot_plot_map_2D()
 
 void MainWindow::slot_plot_fft()
 {
-//    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-//    if (id_list.size()>0)
-//    {
-//        QDialog* dialog=new QDialog;
-//        dialog->setLocale(QLocale("C"));
-//        dialog->setWindowTitle("FFT : Fast Fourier Transform parameters");
-//        QGridLayout* gbox = new QGridLayout();
+    if (id_list.size()>0)
+    {
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("FFT : Fast Fourier Transform parameters");
+        QGridLayout* gbox = new QGridLayout();
 
-//        QComboBox* cb_mode=new QComboBox(dialog);
-//        cb_mode->addItem("RECTANGLE");
-//        cb_mode->addItem("BLACKMAN");
-//        cb_mode->addItem("HANN");
-//        cb_mode->addItem("FLAT_TOP");
+        QComboBox* cb_mode=new QComboBox(dialog);
+        cb_mode->addItem("RECTANGLE");
+        cb_mode->addItem("BLACKMAN");
+        cb_mode->addItem("HANN");
+        cb_mode->addItem("FLAT_TOP");
 
-//        QDoubleSpinBox* sb_fe=new QDoubleSpinBox(dialog);
-//        sb_fe->setPrefix("Fe=");
-//        sb_fe->setValue(1.0);
-//        sb_fe->setRange(0.0,1e100);
-//        sb_fe->setSuffix(" [Hz]");
+        QDoubleSpinBox* sb_fe=new QDoubleSpinBox(dialog);
+        sb_fe->setPrefix("Fe=");
+        sb_fe->setValue(1.0);
+        sb_fe->setRange(0.0,1e100);
+        sb_fe->setSuffix(" [Hz]");
 
-//        QCheckBox* cb_normalize=new QCheckBox("Normalized");
-//        cb_normalize->setToolTip("Parseval theorem don't apply if normalized");
-//        cb_normalize->setChecked(true);
+        QCheckBox* cb_normalize=new QCheckBox("Normalized");
+        cb_normalize->setToolTip("Parseval theorem don't apply if normalized");
+        cb_normalize->setChecked(true);
 
-//        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
-//                                                           | QDialogButtonBox::Cancel);
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                           | QDialogButtonBox::Cancel);
 
-//        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
-//        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
 
-//        gbox->addWidget(new QLabel("Windows type : "),0,0);
-//        gbox->addWidget(cb_mode,0,1);
-//        gbox->addWidget(new QLabel("Sample frequency : "),1,0);
-//        gbox->addWidget(sb_fe,1,1);
-//        gbox->addWidget(cb_normalize,2,0,1,2);
-//        gbox->addWidget(buttonBox,3,0,1,2);
+        gbox->addWidget(new QLabel("Windows type : "),0,0);
+        gbox->addWidget(cb_mode,0,1);
+        gbox->addWidget(new QLabel("Sample frequency : "),1,0);
+        gbox->addWidget(sb_fe,1,1);
+        gbox->addWidget(cb_normalize,2,0,1,2);
+        gbox->addWidget(buttonBox,3,0,1,2);
 
-//        dialog->setLayout(gbox);
+        dialog->setLayout(gbox);
 
-//        int result=dialog->exec();
-//        if (result == QDialog::Accepted)
-//        {
-//            Viewer1D* viewer1d=createViewerId();
+        int result=dialog->exec();
+        if (result == QDialog::Accepted)
+        {
+            Viewer1D* viewer1d=createViewerId();
 
-//            for (int k=0; k<id_list.size(); k++)
-//            {
-//                Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k  ].column()));
-//                Curve2D curve(data_y,QString("%1").arg(getColName(id_list[k  ].column())),Curve2D::GRAPH);
+            for (int k=0; k<id_list.size(); k++)
+            {
+                Eigen::VectorXd data_y=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k  ].column()));
+                Curve2D curve(data_y,QString("%1").arg(table->getColName(id_list[k  ].column())),Curve2D::GRAPH);
 
-//                if (data_y.size()>0)
-//                {
-//                    Curve2D fft=curve.getFFT((Curve2D::FFTMode)cb_mode->currentIndex(),sb_fe->value(),cb_normalize->isChecked());
-//                    viewer1d->slot_add_data(fft);
-//                    //slot_newColumn(QString("FFT_%1").arg(getColName(id_list[k  ].column())),fft.getY());
-//                }
-//            }
-//        }
+                if (data_y.size()>0)
+                {
+                    Curve2D fft=curve.getFFT((Curve2D::FFTMode)cb_mode->currentIndex(),sb_fe->value(),cb_normalize->isChecked());
+                    viewer1d->slot_add_data(fft);
+                    //slot_newColumn(QString("FFT_%1").arg(getColName(id_list[k  ].column())),fft.getY());
+                }
+            }
+        }
 
-//    }
-//    else
-//    {
-//        QMessageBox::information(this,"Information","Please select 1 columns");
-//    }
+    }
+    else
+    {
+        QMessageBox::information(this,"Information","Please select 1 columns");
+    }
 }
 
 void MainWindow::slot_plot_cloud_3D()
 {
-//    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-//    if (id_list.size()==3 || id_list.size()==4)
-//    {
-//        View3D* view3d=new View3D;
+    if (id_list.size()==3 || id_list.size()==4)
+    {
+        View3D* view3d=new View3D;
 
-//        QObject::connect(view3d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
-//        QObject::connect(view3d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
+        QObject::connect(view3d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
+        QObject::connect(view3d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
 
-//        Eigen::VectorXd data_x=datatable.col(table->horizontalHeader()->visualIndex(id_list[0].column()));
-//        Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[1].column()));
-//        Eigen::VectorXd data_z=datatable.col(table->horizontalHeader()->visualIndex(id_list[2].column()));
+        Eigen::VectorXd data_x=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[0].column()));
+        Eigen::VectorXd data_y=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[1].column()));
+        Eigen::VectorXd data_z=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[2].column()));
 
-//        Cloud* cloud=nullptr;
+        Cloud* cloud=nullptr;
 
-//        if (id_list.size()==3)
-//        {
-//            cloud=new Cloud(data_x,data_y,data_z,
-//                            getColName(id_list[0].column()),
-//                    getColName(id_list[1].column()),
-//                    getColName(id_list[2].column()));
+        if (id_list.size()==3)
+        {
+            cloud=new Cloud(data_x,data_y,data_z,
+                            table->getColName(id_list[0].column()),
+                    table->getColName(id_list[1].column()),
+                    table->getColName(id_list[2].column()));
 
-//        }
-//        else if (id_list.size()==4)
-//        {
-//            Eigen::VectorXd data_s=datatable.col(table->horizontalHeader()->visualIndex(id_list[3].column()));
-//            cloud=new Cloud(data_x,data_y,data_z,data_s,
-//                            getColName(id_list[0].column()),
-//                    getColName(id_list[1].column()),
-//                    getColName(id_list[2].column()),
-//                    getColName(id_list[3].column()));
-//        }
+        }
+        else if (id_list.size()==4)
+        {
+            Eigen::VectorXd data_s=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[3].column()));
+            cloud=new Cloud(data_x,data_y,data_z,data_s,
+                            table->getColName(id_list[0].column()),
+                    table->getColName(id_list[1].column()),
+                    table->getColName(id_list[2].column()),
+                    table->getColName(id_list[3].column()));
+        }
 
-//        if (cloud)
-//        {
-//            view3d->setCloudScalar(cloud,View3D::PrimitiveMode::MODE_POINTS);
-//            //view3d->setCloudScalar(*cloud);
-//        }
+        if (cloud)
+        {
+            view3d->setCloudScalar(cloud,View3D::PrimitiveMode::MODE_POINTS);
+            //view3d->setCloudScalar(*cloud);
+        }
 
-//        mdiArea->addSubWindow(view3d->getContainer(),Qt::WindowStaysOnTopHint);
-//        view3d->getContainer()->show();
+        mdiArea->addSubWindow(view3d->getContainer(),Qt::WindowStaysOnTopHint);
+        view3d->getContainer()->show();
 
-//        //        view3d->show();
+        //        view3d->show();
 
-//    }
-//    else
-//    {
-//        QMessageBox::information(this,"Information","Please select 3 columns (x,y,z) or 4 columns (x,y,z,scalar)");
-//    }
+    }
+    else
+    {
+        QMessageBox::information(this,"Information","Please select 3 columns (x,y,z) or 4 columns (x,y,z,scalar)");
+    }
 }
 
 void MainWindow::slot_plot_gain_phase()
 {
-//    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-//    if (id_list.size()%3==0 && id_list.size()>0)
-//    {
-//        ViewerBode * viewer_bode=new ViewerBode(&shared,shortcuts,this);
-//        viewer_bode->setMinimumSize(600,400);
+    if (id_list.size()%3==0 && id_list.size()>0)
+    {
+        ViewerBode * viewer_bode=new ViewerBode(&shared,shortcuts,this);
+        viewer_bode->setMinimumSize(600,400);
 
-//        for (int k=0; k<id_list.size(); k+=3)
-//        {
-//            Eigen::VectorXd data_f=datatable.col(table->horizontalHeader()->visualIndex(id_list[k].column()));
-//            Eigen::VectorXd data_module=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
-//            Eigen::VectorXd data_phase=datatable.col(table->horizontalHeader()->visualIndex(id_list[k+2].column()));
+        for (int k=0; k<id_list.size(); k+=3)
+        {
+            Eigen::VectorXd data_f=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k].column()));
+            Eigen::VectorXd data_module=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
+            Eigen::VectorXd data_phase=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k+2].column()));
 
-//            if (data_f.size()>0 && data_module.size()>0 && data_phase.size()>0)
-//            {
-//                Curve2D curve_module(data_f,data_module,QString("%2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+1].column())),Curve2D::GRAPH);
-//                Curve2D curve_phase (data_f,data_phase,QString("%2=f(%1)").arg(getColName(id_list[k  ].column())).arg(getColName(id_list[k+2].column())),Curve2D::GRAPH);
+            if (data_f.size()>0 && data_module.size()>0 && data_phase.size()>0)
+            {
+                Curve2D curve_module(data_f,data_module,QString("%2=f(%1)").arg(table->getColName(id_list[k  ].column())).arg(table->getColName(id_list[k+1].column())),Curve2D::GRAPH);
+                Curve2D curve_phase (data_f,data_phase,QString("%2=f(%1)").arg(table->getColName(id_list[k  ].column())).arg(table->getColName(id_list[k+2].column())),Curve2D::GRAPH);
 
-//                viewer_bode->slot_add_data(Curve2DModulePhase(curve_module,curve_phase));
-//            }
-//        }
+                viewer_bode->slot_add_data(Curve2DModulePhase(curve_module,curve_phase));
+            }
+        }
 
-//        mdiArea->addSubWindow(viewer_bode,Qt::WindowStaysOnTopHint);
-//        viewer_bode->show();
-//    }
-//    else
-//    {
-//        QMessageBox::information(this,"Information","Please select 3 columns (frequency,module,phase)");
-//    }
+        mdiArea->addSubWindow(viewer_bode,Qt::WindowStaysOnTopHint);
+        viewer_bode->show();
+    }
+    else
+    {
+        QMessageBox::information(this,"Information","Please select 3 columns (frequency,module,phase)");
+    }
 }
 
 void MainWindow::slot_plot_histogram()
 {
-//    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-//    if (id_list.size()>0)
-//    {
-//        Viewer1D* viewer1d=createViewerId();
+    if (id_list.size()>0)
+    {
+        Viewer1D* viewer1d=createViewerId();
 
-//        for (int k=0; k<id_list.size(); k++)
-//        {
-//            Eigen::VectorXd data_y=datatable.col(table->horizontalHeader()->visualIndex(id_list[k].column()));
+        for (int k=0; k<id_list.size(); k++)
+        {
+            Eigen::VectorXd data_y=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k].column()));
 
-//            if (data_y.size()>0)
-//            {
-//                bool ok;
-//                int nbbins=QInputDialog::getInt(this,"Number of bins","Nb bins=",100,2,10000,1,&ok);
-//                if (ok)
-//                {
-//                    viewer1d->slot_histogram(data_y,QString("Histogram %1").arg(getColName(id_list[k  ].column())),nbbins);
-//                }
-//            }
-//        }
-//    }
-//    else
-//    {
-//        QMessageBox::information(this,"Information","Please select k columns (k>1)");
-//    }
+            if (data_y.size()>0)
+            {
+                bool ok;
+                int nbbins=QInputDialog::getInt(this,"Number of bins","Nb bins=",100,2,10000,1,&ok);
+                if (ok)
+                {
+                    viewer1d->slot_histogram(data_y,QString("Histogram %1").arg(table->getColName(id_list[k  ].column())),nbbins);
+                }
+            }
+        }
+    }
+    else
+    {
+        QMessageBox::information(this,"Information","Please select k columns (k>1)");
+    }
 
 }
 

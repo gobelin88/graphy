@@ -26,5 +26,6 @@ double log10(const ValueContainer & value);
 
 using MatrixXv=Eigen::Matrix<ValueContainer,Eigen::Dynamic,Eigen::Dynamic>;
 using VectorXv=Eigen::Matrix<ValueContainer,Eigen::Dynamic,1>;
+using VectorXs=Eigen::Matrix<QString,Eigen::Dynamic,1>;
 
 #endif // VALUE_H

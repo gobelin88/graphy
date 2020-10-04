@@ -2,6 +2,7 @@
 #include <QHeaderView>
 #include <QModelIndex>
 #include <Eigen/Dense>
+#include <QScrollBar>
 #include <iostream>
 
 #include "register.h"
@@ -41,6 +42,9 @@ public:
     void exportLatex(QString filename);
 
     //Data
+    QVector<QString> getColLogicalDataString(int logicalIndex)const;
+    QVector<QString> getColVisualDataString(int visualIndex)const;
+
     QString getLogicalColName(int logicalIndex);
     QString getVisualColName(int visualIndex);
     Eigen::VectorXd getColLogicalDataDouble(int logicalIndex)const;
@@ -58,10 +62,10 @@ public:
     //Gui
     QHeaderView * horizontalHeader();
     QHeaderView * verticalHeader();
+    QScrollBar * verticalScrollBar();
 
     int getRowOffset(){return m_rowOffset;}
     int getRowSpan(){return m_rowSpan;}
-    void setRowOffset(int rowOffset);
     void setRowSpan(int rowSpan);
     int getRowOffsetMax();
 
@@ -71,6 +75,8 @@ public:
     //copy/paste
 
 public slots:
+    void setRowOffset(int rowOffset);
+
     void slot_editColumn(int logicalIndex);
     void slot_newRow();
     void slot_newRows();
@@ -80,6 +86,7 @@ public slots:
     void slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
 
 private:
+    void contentResized();
     void create(int nbRows, int nbCols, int rowSpan);
     ValueContainer & at(QModelIndex indexLogical);
 
@@ -90,6 +97,8 @@ private:
 
     QHeaderView * h_header;
     QHeaderView * v_header;
+    QScrollBar * v_scrollBar;
+
 
     //Variables---------------------------------------
     Register reg;
@@ -111,6 +120,8 @@ private:
     QModelIndex toLogicalIndex(const QModelIndex &index) const;
 
     void error(QString title,QString msg);
+
+
 };
 
 #endif // MYTABLEMODEL_H

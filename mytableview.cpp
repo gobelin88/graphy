@@ -8,6 +8,7 @@ MyTableView::MyTableView(int nbRow,
 {
     createNew(nbRow,nbCols,rowsSpan);
 
+
     //this->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectColumns);
 }
 
@@ -16,20 +17,27 @@ void MyTableView::createNew(int nbRow,int nbCols,int rowsSpan)
     m_model = new MyModel(nbRow,nbCols,rowsSpan);
     setHorizontalHeader(m_model->horizontalHeader());
     setVerticalHeader(m_model->verticalHeader());
+
+    container=new QWidget();
+    QHBoxLayout * layout=new QHBoxLayout(container);
+    layout->addWidget(m_model->verticalScrollBar());
+    layout->addWidget(this);
+
+    setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     setModel(m_model);
 }
 
-void MyTableView::wheelEvent(QWheelEvent * event)
-{
-    if(event->delta()>0)
-    {
-        m_model->setRowOffset(m_model->getRowOffset()+1);
-    }
-    else
-    {
-        m_model->setRowOffset(m_model->getRowOffset()-1);
-    }
-}
+//void MyTableView::wheelEvent(QWheelEvent * event)
+//{
+//    if(event->delta()>0)
+//    {
+//        m_model->setRowOffset(m_model->getRowOffset()+1);
+//    }
+//    else
+//    {
+//        m_model->setRowOffset(m_model->getRowOffset()-1);
+//    }
+//}
 
 void MyTableView::slot_deleteSelected()
 {
@@ -121,6 +129,11 @@ void MyTableView::getVisualRowColSelectedRanges(QCPRange &range_row,QCPRange &ra
 Eigen::VectorXd MyTableView::getColDataDouble(int logicalColId)
 {
     return m_model->getColLogicalDataDouble(logicalColId);
+}
+
+QVector<QString> MyTableView::getColDataString(int logicalColId)
+{
+    return m_model->getColLogicalDataString(logicalColId);
 }
 
 QString MyTableView::getColName(int logicalColId)

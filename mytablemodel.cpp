@@ -17,6 +17,8 @@ MyModel::MyModel(int nbRows, int nbCols, int rowSpan, QObject *parent): QAbstrac
 //-----------------------------------------------------------------
 void MyModel::create(int nbRows, int nbCols,int rowSpan)
 {
+
+    v_scrollBar=new QScrollBar();
     h_header=new QHeaderView(Qt::Horizontal);
     v_header=new QHeaderView(Qt::Vertical);
     h_header->setAccessibleName("Variables");
@@ -29,14 +31,17 @@ void MyModel::create(int nbRows, int nbCols,int rowSpan)
     h_header->setVisible(true);
     v_header->setVisible(true);
 
-    connect(h_header,&QHeaderView::sectionDoubleClicked,this,&MyModel::slot_editColumn);
-    connect(h_header,&QHeaderView::sectionMoved        ,this,&MyModel::slot_hSectionMoved);
-    connect(v_header,&QHeaderView::sectionMoved        ,this,&MyModel::slot_vSectionMoved);
-
     createEmpty(nbRows,nbCols);
 
     setRowSpan(rowSpan);
     setRowOffset(0);
+    v_scrollBar->setRange(0,getRowOffsetMax());
+
+    connect(h_header,&QHeaderView::sectionDoubleClicked,this,&MyModel::slot_editColumn);
+    connect(h_header,&QHeaderView::sectionMoved        ,this,&MyModel::slot_hSectionMoved);
+    connect(v_header,&QHeaderView::sectionMoved        ,this,&MyModel::slot_vSectionMoved);
+    connect(v_scrollBar,&QScrollBar::valueChanged      ,this,&MyModel::setRowOffset);
+
 }
 
 void MyModel::createEmpty(int nbRows, int nbCols)
@@ -49,7 +54,7 @@ void MyModel::createEmpty(int nbRows, int nbCols)
         reg.newVariable(value,"");
     }
 
-    emit layoutChanged();
+    contentResized();
 }
 
 void MyModel::exportLatex(QString filename)
@@ -211,7 +216,7 @@ bool MyModel::open(QString filename)
         ok=false;
     }
 
-    emit layoutChanged();
+    contentResized();
 
     return ok;
 }
@@ -350,6 +355,25 @@ Eigen::VectorXd MyModel::getColLogicalDataDouble(int logicalIndex)const
     return getColVisualDataDouble(h_header->visualIndex(logicalIndex));
 }
 
+QVector<QString> MyModel::getColLogicalDataString(int logicalIndex)const
+{
+    return getColVisualDataString(h_header->visualIndex(logicalIndex));
+}
+
+QVector<QString> MyModel::getColVisualDataString(int visualIndex)const
+{
+    //something better to be done here
+
+    QVector<QString> v(m_data.rows());
+
+    for(int i=0;i<v.size();i++)
+    {
+        v[i]=m_data(i,visualIndex).str;
+    }
+
+    return v;
+}
+
 Eigen::VectorXd MyModel::getColVisualDataDouble(int visualIndex)const
 {
     //something better to be done here
@@ -431,8 +455,15 @@ void MyModel::applyFilters(const QModelIndexList & selectedColsIndexes)
             }
         }
 
-        emit layoutChanged();
+
+        contentResized();
     }
+}
+
+void MyModel::contentResized()
+{
+    v_scrollBar->setRange(0,getRowOffsetMax());
+    emit layoutChanged();
 }
 
 void MyModel::removeLogicalIndexesRows(const QModelIndexList & selectedIndexesRows)
@@ -473,7 +504,7 @@ void MyModel::removeLogicalIndexesRows(const QModelIndexList & selectedIndexesRo
          i+=n;
      }
 
-     emit layoutChanged();
+     contentResized();
 }
 
 void MyModel::removeLogicalIndexesCols(const QModelIndexList & selectedIndexesCols)
@@ -519,7 +550,7 @@ void MyModel::removeLogicalIndexesCols(const QModelIndexList & selectedIndexesCo
         i+=n;
     }
 
-    emit layoutChanged();
+    contentResized();
 }
 
 void MyModel::clearLogicalIndexes(const QModelIndexList & selectedIndexes)
@@ -624,7 +655,7 @@ void MyModel::slot_editColumn(int logicalIndex)
 void MyModel::slot_newRow()
 {
     dataAddRows(m_data,1);
-    emit layoutChanged();
+    contentResized();
 }
 
 void MyModel::slot_newRows()
@@ -635,7 +666,7 @@ void MyModel::slot_newRows()
     if (ok)
     {
         dataAddRows(m_data,N);
-        emit layoutChanged();
+        contentResized();
     }
 }
 
@@ -681,6 +712,11 @@ QHeaderView * MyModel::verticalHeader()
 {
     return v_header;
 }
+QScrollBar * MyModel::verticalScrollBar()
+{
+    return v_scrollBar;
+}
+
 //-----------------------------------------------------------------
 int MyModel::rowCount(const QModelIndex & /*parent*/) const
 {

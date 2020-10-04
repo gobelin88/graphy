@@ -562,6 +562,30 @@ void MyModel::clearLogicalIndexes(const QModelIndexList & selectedIndexes)
     emit layoutChanged();
 }
 
+void MyModel::clearLogicalIndexesCols(const QModelIndexList & selectedIndexesCols)
+{
+    if(selectedIndexesCols.size()==0)
+    {
+        return;
+    }
+
+    std::vector<unsigned int> visualIndexsCols(selectedIndexesCols.size());
+    for(int i=0;i<visualIndexsCols.size();i++)
+    {
+       visualIndexsCols[i]=h_header->visualIndex(selectedIndexesCols[i].column());
+    }
+
+    for(int j=0;j<visualIndexsCols.size();j++)
+    {
+        for (int i = 0; i < m_data.rows(); ++i)
+        {
+            m_data(i,visualIndexsCols[j])=ValueContainer();
+        }
+    }
+
+    emit layoutChanged();
+}
+
 VectorXv MyModel::eval(int visualIndex)
 {
     reg.setActiveCol(visualIndex);
@@ -599,7 +623,10 @@ VectorXv MyModel::eval(int visualIndex)
                 }
 
                 // store a call to a member function and object ptr
-                reg.customExpressionParse2(m_data,visualIndex,colResults[i],i);
+                if(!reg.customExpressionParse2(m_data,visualIndex,colResults[i],i))
+                {
+                    break;
+                }
             }
         }
 
@@ -961,6 +988,22 @@ void MyModel::setRowOffset(int rowOffset)
     if(m_rowOffset<0)m_rowOffset=0;
     if(m_rowOffset>getRowOffsetMax())m_rowOffset=getRowOffsetMax();
 
+    emit layoutChanged();
+}
+
+void MyModel::slot_newColumn(QString varName,Eigen::VectorXd dataCol)
+{
+    reg.newVariable(varName,"");
+
+    VectorXv dataColv(dataCol.rows());
+
+    for(int i=0;i<dataCol.rows();i++)
+    {
+        dataColv[i].num=dataCol[i];
+        dataColv[i].isDouble=true;
+    }
+
+    dataAddColumn(m_data,dataColv);
     emit layoutChanged();
 }
 

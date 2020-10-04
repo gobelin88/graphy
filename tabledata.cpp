@@ -56,14 +56,20 @@ void addColumn(Eigen::MatrixXd& matrix, Eigen::VectorXd colToAdd)
 
 
 
-void interpolate(const Eigen::MatrixXd& data,const BoxPlot& box,QCPColorMap* map,size_t knn,InterpolationMode mode)
+void interpolate(const Eigen::VectorXd& dataX,
+                 const Eigen::VectorXd& dataY,
+                 const Eigen::VectorXd& dataZ,
+                 const Resolution& box,
+                 QCPColorMap* map,
+                 size_t knn,
+                 InterpolationMode mode)
 {
-    Eigen::MatrixXd datapoints(2,data.col(box.idX).size());
+    Eigen::MatrixXd datapoints(2,dataX.size());
 
     for (int i=0; i<datapoints.cols(); i++)
     {
-        datapoints(0,i)=data.col(box.idX)[i];
-        datapoints(1,i)=data.col(box.idY)[i];
+        datapoints(0,i)=dataX[i];
+        datapoints(1,i)=dataY[i];
     }
 
     std::cout<<"data[box.idX].size()="<<datapoints.cols()<<std::endl;
@@ -91,7 +97,7 @@ void interpolate(const Eigen::MatrixXd& data,const BoxPlot& box,QCPColorMap* map
                 {
                     if (idx(k,0)>=0)
                     {
-                        value+=(1.0/dists(k,0))* data.col(box.idZ)[idx(k,0)];
+                        value+=(1.0/dists(k,0))* dataZ[idx(k,0)];
                         weight_sum+=(1.0/dists(k,0));
                     }
                 }
@@ -102,7 +108,7 @@ void interpolate(const Eigen::MatrixXd& data,const BoxPlot& box,QCPColorMap* map
                 kdtree.query(queryPoints, 1, idx, dists);
                 if (idx(0,0)>=0)
                 {
-                    value=data.col(box.idZ)[idx(0,0)];
+                    value=dataZ[idx(0,0)];
                 }
             }
 
@@ -111,21 +117,9 @@ void interpolate(const Eigen::MatrixXd& data,const BoxPlot& box,QCPColorMap* map
     }
 }
 
-double getMin(const Eigen::MatrixXd& data,int id)
+QCPRange getRange(const Eigen::VectorXd& data)
 {
-    return  data.col(id).minCoeff();
-}
-
-double getMax(const Eigen::MatrixXd& data,int id)
-{
-    return  data.col(id).maxCoeff();
-}
-
-QCPRange getRange(const Eigen::MatrixXd& data, int id)
-{
-    std::cout<<getMin(data,id)<<" "<<getMax(data,id)<<std::endl;
-
-    return  QCPRange(getMin(data,id),getMax(data,id));
+    return  QCPRange(data.minCoeff(),data.maxCoeff());
 }
 
 std::vector<double> toStdVector(const Eigen::VectorXd& v)

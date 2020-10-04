@@ -159,9 +159,14 @@ void Viewer2D::resetRange()
     this->replot();
 }
 
-void Viewer2D::slot_setData(const Eigen::MatrixXd& data, const BoxPlot& box)
+void Viewer2D::slot_setData(const Eigen::VectorXd & dataX,
+                            const Eigen::VectorXd & dataY,
+                            const Eigen::VectorXd & dataZ,
+                            const Resolution& box)
 {
-    this->data=data;
+    this->dataX=dataX;
+    this->dataY=dataY;
+    this->dataZ=dataZ;
     this->box=box;
     slot_updateData();
 }
@@ -170,8 +175,8 @@ void Viewer2D::slot_updateData()
 {
     colorMap->data()->clear();
     colorMap->data()->setSize(box.pX_res,box.pY_res);
-    setRange(getRange(data,box.idX),getRange(data,box.idY));
-    interpolate(data,box,colorMap,knn,mode);
+    setRange(getRange(dataX),getRange(dataY));
+    interpolate(dataX,dataY,dataZ,box,colorMap,knn,mode);
     resetRange();
 }
 

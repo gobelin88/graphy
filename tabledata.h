@@ -33,10 +33,8 @@ void addRow(Eigen::MatrixXd& matrix, Eigen::VectorXd rowToAdd);
 void addRows(Eigen::MatrixXd& matrix, int n);
 void addColumn(Eigen::MatrixXd& matrix, Eigen::VectorXd colToAdd);
 
-void interpolate(const Eigen::MatrixXd& data,const BoxPlot& box,QCPColorMap* map,size_t knn,InterpolationMode mode);
-double getMin(const Eigen::MatrixXd& data,int id);
-double getMax(const Eigen::MatrixXd& data,int id);
-QCPRange getRange(const Eigen::MatrixXd& data,int id);
+void interpolate(const Eigen::VectorXd &dataX, const Eigen::VectorXd &dataY, const Eigen::VectorXd &dataZ, const Resolution& box, QCPColorMap* map, size_t knn, InterpolationMode mode);
+QCPRange getRange(const Eigen::VectorXd &data);
 
 std::vector<double> toStdVector(const Eigen::VectorXd& v);
 QVector<double> toQVector(const Eigen::VectorXd& v);

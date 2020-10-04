@@ -20,8 +20,8 @@ void MyTableView::createNew(int nbRow,int nbCols,int rowsSpan)
 
     container=new QWidget();
     QHBoxLayout * layout=new QHBoxLayout(container);
-    layout->addWidget(m_model->verticalScrollBar());
     layout->addWidget(this);
+    layout->addWidget(m_model->verticalScrollBar());
 
     setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     setModel(m_model);
@@ -42,7 +42,10 @@ void MyTableView::createNew(int nbRow,int nbCols,int rowsSpan)
 void MyTableView::slot_deleteSelected()
 {
     QModelIndexList selectedIndexes=selectionModel()->selectedIndexes();
+    QModelIndexList selectedColsIndexes=selectionModel()->selectedColumns();
+
     m_model->clearLogicalIndexes(selectedIndexes);
+    m_model->clearLogicalIndexesCols(selectedColsIndexes);
 }
 
 void MyTableView::slot_removeSelectedRowsAndCols()
@@ -83,6 +86,11 @@ void MyTableView::slot_paste()
         //---------------------------------------------------------------------------------
         m_model->paste(range_row.lower,range_col.lower,clipboardbuffer);
     }
+}
+
+void MyTableView::slot_newColumn(QString varName,Eigen::VectorXd data)
+{
+    m_model->slot_newColumn(varName,data);
 }
 
 void MyTableView::getVisualRowColSelectedRanges(QCPRange &range_row,QCPRange &range_col)

@@ -221,7 +221,7 @@ void MainWindow::fileModified()
 Viewer1D* MainWindow::createViewerId()
 {
     Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
-    QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
+    QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),table,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
     QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
     viewer1d->setMinimumSize(600,400);
     viewer1d->setAttribute(Qt::WA_DeleteOnClose);
@@ -404,34 +404,31 @@ void MainWindow::slot_plot_field_2D()
 
 void MainWindow::slot_plot_map_2D()
 {
-//    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-//    if (id_list.size()==3)
-//    {
-//        Eigen::VectorXd data_x=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[0].column()));
-//        Eigen::VectorXd data_y=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[1].column()));
-//        Eigen::VectorXd data_z=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[2].column()));
+    if (id_list.size()==3)
+    {
+        Eigen::VectorXd data_x=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[0].column()));
+        Eigen::VectorXd data_y=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[1].column()));
+        Eigen::VectorXd data_z=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[2].column()));
 
-//        if (data_x.size()>0 && data_y.size()>0 && data_z.size()>0)
-//        {
-//            Viewer2D* viewer2d=new Viewer2D();
-//            viewer2d->setMinimumSize(600,400);
+        if (data_x.size()>0 && data_y.size()>0 && data_z.size()>0)
+        {
+            Viewer2D* viewer2d=new Viewer2D();
+            viewer2d->setMinimumSize(600,400);
 
-//            QMdiSubWindow* subWindow = new QMdiSubWindow;
-//            subWindow->setWidget(viewer2d);
-//            subWindow->setAttribute(Qt::WA_DeleteOnClose);
-//            mdiArea->addSubWindow(subWindow,Qt::WindowStaysOnTopHint);
-//            viewer2d->show();
-//            viewer2d->slot_setData(datatable,BoxPlot(512,512,
-//                                                     static_cast<unsigned int>(id_list[0].column()),
-//                                   static_cast<unsigned int>(id_list[1].column()),
-//                    static_cast<unsigned int>(id_list[2].column())));
-//        }
-//    }
-//    else
-//    {
-//        QMessageBox::information(this,"Information","Please select 3 columns P(X,Y) and S in order to plot S(P)");
-//    }
+            QMdiSubWindow* subWindow = new QMdiSubWindow;
+            subWindow->setWidget(viewer2d);
+            subWindow->setAttribute(Qt::WA_DeleteOnClose);
+            mdiArea->addSubWindow(subWindow,Qt::WindowStaysOnTopHint);
+            viewer2d->show();
+            viewer2d->slot_setData(data_x,data_y,data_z,Resolution(512,512));
+        }
+    }
+    else
+    {
+        QMessageBox::information(this,"Information","Please select 3 columns P(X,Y) and S in order to plot S(P)");
+    }
 }
 
 void MainWindow::slot_plot_fft()
@@ -511,7 +508,7 @@ void MainWindow::slot_plot_cloud_3D()
     {
         View3D* view3d=new View3D;
 
-        QObject::connect(view3d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
+        QObject::connect(view3d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),table,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
         QObject::connect(view3d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
 
         Eigen::VectorXd data_x=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[0].column()));

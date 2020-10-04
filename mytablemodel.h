@@ -53,7 +53,10 @@ public:
     void applyFilters(const QModelIndexList & selectedColsIndexes);
     void removeLogicalIndexesRows(const QModelIndexList & selectedIndexesRows);
     void removeLogicalIndexesCols(const QModelIndexList & selectedIndexesCols);
+
     void clearLogicalIndexes(const QModelIndexList & selectedIndexes);
+    void clearLogicalIndexesCols(const QModelIndexList & selectedIndexesCols);
+
     const MatrixXv &tableData();
     VectorXv eval(int visualIndex);
     QString copy(int x0,int y0,int nrows,int ncols);
@@ -76,6 +79,8 @@ public:
 
 public slots:
     void setRowOffset(int rowOffset);
+
+    void slot_newColumn(QString varName, Eigen::VectorXd dataCol);
 
     void slot_editColumn(int logicalIndex);
     void slot_newRow();

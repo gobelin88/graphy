@@ -11,8 +11,9 @@ MainWindow::MainWindow(QWidget* parent) :
 {
     //Gui--------------------------------------------------------------------------
     ui->setupUi(this);
+    setCurrentFilename("empty");
     mdiArea=new QMdiArea();
-    table=new MyTableView(100,4,20,mdiArea);
+    table=new MyTableView(100,4,25,mdiArea);
     //  tableview.setSelectionBehavior(tableview.SelectRows)
     //  tableview.setSelectionMode(tableview.SingleSelection)
     //  table->setDragDropMode(QTableView::InternalMove);
@@ -84,6 +85,8 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(ui->actionPlot_Cloud_3D, &QAction::triggered,this,&MainWindow::slot_plot_cloud_3D);
     connect(ui->actionFFT, &QAction::triggered,this,&MainWindow::slot_plot_fft);
     connect(ui->actionPlot_Gain_Phase, &QAction::triggered,this,&MainWindow::slot_plot_gain_phase);
+
+    connect(table->model(),&MyModel::sig_dataChanged,this,&MainWindow::fileModified);
 
     //------------------------------------------------------------------------------
 
@@ -166,7 +169,7 @@ void MainWindow::slot_save()
 
 void MainWindow::slot_save_as()
 {
-    QString filename=QFileDialog::getSaveFileName(this,"Save data",current_filename,"*.csv");
+    QString filename=QFileDialog::getSaveFileName(this,"Save data",current_filename,tr("Data file (*.csv *.graphy)"));
 
     if (!filename.isEmpty())
     {
@@ -208,8 +211,11 @@ void MainWindow::error(QString title,QString msg)
 
 void MainWindow::setCurrentFilename(QString filename)
 {
+
     current_filename=filename;
     this->setWindowTitle(QString("Graphy %1 : %2").arg(graphyVersion).arg(current_filename));
+
+    std::cout<<this->windowTitle().toLocal8Bit().data()<<std::endl;
 }
 
 void MainWindow::fileModified()

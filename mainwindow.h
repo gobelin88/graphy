@@ -111,7 +111,7 @@ private:
     void saveShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
 
     //Constants
-    const float graphyVersion=3.5f;
+    const float graphyVersion=4.0f;
 
     //selections
 

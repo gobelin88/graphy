@@ -90,6 +90,9 @@ public slots:
     void slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
     void slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
 
+signals:
+    void sig_dataChanged();
+
 private:
     void contentResized();
     void create(int nbRows, int nbCols, int rowSpan);

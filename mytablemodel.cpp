@@ -55,6 +55,7 @@ void MyModel::createEmpty(int nbRows, int nbCols)
     }
 
     contentResized();
+    emit sig_dataChanged();
 }
 
 void MyModel::exportLatex(QString filename)
@@ -320,6 +321,7 @@ void MyModel::paste(int x0,int y0,QString buffer)
     }
 
     emit layoutChanged();
+    emit sig_dataChanged();
 }
 
 ValueContainer & MyModel::at(QModelIndex indexLogical)
@@ -457,6 +459,7 @@ void MyModel::applyFilters(const QModelIndexList & selectedColsIndexes)
 
 
         contentResized();
+        emit sig_dataChanged();
     }
 }
 
@@ -505,6 +508,7 @@ void MyModel::removeLogicalIndexesRows(const QModelIndexList & selectedIndexesRo
      }
 
      contentResized();
+     emit sig_dataChanged();
 }
 
 void MyModel::removeLogicalIndexesCols(const QModelIndexList & selectedIndexesCols)
@@ -551,6 +555,7 @@ void MyModel::removeLogicalIndexesCols(const QModelIndexList & selectedIndexesCo
     }
 
     contentResized();
+    emit sig_dataChanged();
 }
 
 void MyModel::clearLogicalIndexes(const QModelIndexList & selectedIndexes)
@@ -560,6 +565,7 @@ void MyModel::clearLogicalIndexes(const QModelIndexList & selectedIndexes)
         at(selectedIndexes[i])=ValueContainer();
     }
     emit layoutChanged();
+    emit sig_dataChanged();
 }
 
 void MyModel::clearLogicalIndexesCols(const QModelIndexList & selectedIndexesCols)
@@ -584,6 +590,7 @@ void MyModel::clearLogicalIndexesCols(const QModelIndexList & selectedIndexesCol
     }
 
     emit layoutChanged();
+    emit sig_dataChanged();
 }
 
 VectorXv MyModel::eval(int visualIndex)
@@ -676,6 +683,7 @@ void MyModel::slot_editColumn(int logicalIndex)
         }
         m_data.col(visualIndex)=eval(visualIndex);
         emit layoutChanged();
+        emit sig_dataChanged();
     }
 }
 
@@ -704,6 +712,7 @@ void MyModel::slot_updateColumns()
         m_data.col(i)=eval(i);
     }
     emit layoutChanged();
+    emit sig_dataChanged();
 }
 
 //-----------------------------------------------------------------
@@ -714,6 +723,7 @@ void MyModel::slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisu
 
 //    std::cout<<"---------------"<<std::endl;
 //    std::cout<<m_data<<std::endl;
+    emit sig_dataChanged();
 }
 
 //-----------------------------------------------------------------
@@ -727,6 +737,7 @@ void MyModel::slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisu
 //    std::cout<<m_data<<std::endl;
 
     reg.dispVariables();
+    emit sig_dataChanged();
 }
 
 //-----------------------------------------------------------------
@@ -1005,6 +1016,7 @@ void MyModel::slot_newColumn(QString varName,Eigen::VectorXd dataCol)
 
     dataAddColumn(m_data,dataColv);
     emit layoutChanged();
+    emit sig_dataChanged();
 }
 
 void MyModel::setRowSpan(int rowSpan)

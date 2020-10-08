@@ -114,6 +114,18 @@ bool MyModel::open(QString filename)
 
         QStringList content=QString(file.readAll()).split("\n",QString::SkipEmptyParts);
 
+        for(int i=0;i<content.size();)
+        {
+            if(content[i].startsWith("#"))
+            {
+                content.removeAt(i);
+            }
+            else
+            {
+                i++;
+            }
+        }
+
         if(content.size()>0)
         {
 

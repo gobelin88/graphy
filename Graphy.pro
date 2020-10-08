@@ -49,6 +49,7 @@ SOURCES += \
         light3d.cpp \
         main.cpp \
         mainwindow.cpp \
+        myitemdelegate.cpp \
         mytablemodel.cpp \
         mytableview.cpp \
         obj.cpp \
@@ -86,6 +87,7 @@ HEADERS += \
         label3d.h \
         light3d.h \
         mainwindow.h \
+        myitemdelegate.h \
         mytablemodel.h \
         mytableview.h \
         obj.h \

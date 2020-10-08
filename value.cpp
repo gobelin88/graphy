@@ -5,6 +5,7 @@ ValueContainer::ValueContainer()
     num=0.0;
     str.clear();
     isDouble=false;
+    background=qRgb(255,255,255);
 }
 
 void ValueContainer::operator=(const ValueContainer & other)
@@ -33,8 +34,12 @@ void ValueContainer::operator=(const QVariant & other)
 
 void ValueContainer::operator=(const QString & other)
 {
-    isDouble=false;
-    str=other;
+    num=other.toDouble(&isDouble);
+
+    if(!isDouble)
+    {
+        str=other;
+    }
 }
 
 std::ostream& operator<< (std::ostream &out,const ValueContainer & value)

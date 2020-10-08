@@ -1,7 +1,11 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include <functional>
+#include <QFile>
+#include <QFileDialog>
+#include <QGridLayout>
+#include <QTextStream>
+#include <QMessageBox>
 
 #include "FIR.h"
 
@@ -13,7 +17,7 @@ MainWindow::MainWindow(QWidget* parent) :
     ui->setupUi(this);
     setCurrentFilename("empty");
     mdiArea=new QMdiArea();
-    table=new MyTableView(100,4,25,mdiArea);
+    table=new MyTableView(100,4,24,mdiArea);
     //  tableview.setSelectionBehavior(tableview.SelectRows)
     //  tableview.setSelectionMode(tableview.SingleSelection)
     //  table->setDragDropMode(QTableView::InternalMove);
@@ -819,102 +823,87 @@ void MainWindow::saveShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
 
 void MainWindow::slot_colourize()
 {
-//    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-//    if (id_list.size()>0)
-//    {
-//        //Dialog
-//        QDialog* dialog=new QDialog;
-//        dialog->setLocale(QLocale("C"));
-//        dialog->setWindowTitle("Colourize");
+    if (id_list.size()>0)
+    {
+        //Dialog
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("Colourize");
 
-//        dialog->setMinimumWidth(400);
-//        QGridLayout* gbox = new QGridLayout();
+        dialog->setMinimumWidth(400);
+        QGridLayout* gbox = new QGridLayout();
 
-//        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel );
-//        QPushButton * pb_clear=new QPushButton("Clear");
-//        pb_clear->setCheckable(true);
-//        buttonBox->addButton(pb_clear,QDialogButtonBox::ButtonRole::AcceptRole);
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel );
+        QPushButton * pb_clear=new QPushButton("Clear");
+        pb_clear->setCheckable(true);
+        buttonBox->addButton(pb_clear,QDialogButtonBox::ButtonRole::AcceptRole);
 
-//        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
-//        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
-//        QGradientComboBox * cb_gradients=new QGradientComboBox(this);
+        QGradientComboBox * cb_gradients=new QGradientComboBox(this);
 
-//        QCheckBox * cb_percolumns=new QCheckBox("Range per columns");
-//        cb_percolumns->setChecked(false);
+        QCheckBox * cb_percolumns=new QCheckBox("Range per columns");
+        cb_percolumns->setChecked(false);
 
-//        gbox->addWidget(cb_gradients,0,0);
-//        gbox->addWidget(cb_percolumns,1,0);
-//        gbox->addWidget(buttonBox,2,0);
+        gbox->addWidget(cb_gradients,0,0);
+        gbox->addWidget(cb_percolumns,1,0);
+        gbox->addWidget(buttonBox,2,0);
 
-//        dialog->setLayout(gbox);
-//        int result=dialog->exec();
+        dialog->setLayout(gbox);
+        int result=dialog->exec();
 
-//        if (result == QDialog::Accepted)
-//        {
-//            //Range
-//            QCPRange range;
-//            if(!cb_percolumns->isChecked())
-//            {
-//                for(int i=0;i<id_list.size();i++)
-//                {
-//                    int logicalindex=id_list[i].column();
-//                    int index=table->horizontalHeader()->visualIndex(logicalindex);
+        if (result == QDialog::Accepted)
+        {
+            //Range
+            QCPRange range;
+            if(!cb_percolumns->isChecked())
+            {
+                for(int i=0;i<id_list.size();i++)
+                {
+                    int logicalIndex=id_list[i].column();
+                    int visualIndex=table->horizontalHeader()->visualIndex(logicalIndex);
+                    Eigen::VectorXd colData=table->getColDataDouble(visualIndex);
 
-//                    if(i==0)
-//                    {
-//                        range=QCPRange (datatable.col(index).minCoeff(),datatable.col(index).maxCoeff());
-//                    }
-//                    else
-//                    {
-//                        range=QCPRange (std::min(range.lower,datatable.col(index).minCoeff()),
-//                                        std::max(range.upper,datatable.col(index).maxCoeff()));
-//                    }
-//                }
-//            }
-//            std::cout<<range.lower<<" "<<range.upper<<std::endl;
+                    if(i==0)
+                    {
+                        range=QCPRange (colData.minCoeff(),colData.maxCoeff());
+                    }
+                    else
+                    {
+                        range=QCPRange (std::min(range.lower,colData.minCoeff()),
+                                        std::max(range.upper,colData.maxCoeff()));
+                    }
+                }
+            }
+            std::cout<<range.lower<<" "<<range.upper<<std::endl;
 
-//            //Process
-//            for(int i=0;i<id_list.size();i++)
-//            {
-//                int logicalindex=id_list[i].column();
-//                int index=table->horizontalHeader()->visualIndex(logicalindex);
+            //Process
+            for(int i=0;i<id_list.size();i++)
+            {
+                int logicalIndex=id_list[i].column();
+                int visualIndex=table->horizontalHeader()->visualIndex(logicalIndex);
+                Eigen::VectorXd colData=table->getColDataDouble(visualIndex);
 
-//                if(cb_percolumns->isChecked())
-//                {
-//                    range=QCPRange (datatable.col(index).minCoeff(),datatable.col(index).maxCoeff());
-//                }
+                if(cb_percolumns->isChecked())
+                {
+                    range=QCPRange (colData.minCoeff(),colData.maxCoeff());
+                }
 
-//                if(!pb_clear->isChecked())
-//                {
-//                    std::vector<QRgb> colors=cb_gradients->colourize(datatable.col(index),range);
-//                    for(int j=0;j<datatable.rows();j++)
-//                    {
-//                        if(qGray(colors[j])>100)
-//                        {
-//                            model->item(j,logicalindex)->setForeground(QColor(Qt::black));
-//                        }
-//                        else
-//                        {
-//                            std::cout<<qGray(colors[j])<<std::endl;
-//                            model->item(j,logicalindex)->setForeground(QColor(Qt::white));
-//                        }
-
-//                        model->item(j,logicalindex)->setBackground(QColor(colors[j]));
-//                    }
-//                }
-//                else
-//                {
-//                    for(int j=0;j<datatable.rows();j++)
-//                    {
-//                        model->item(j,logicalindex)->setForeground(QColor(Qt::black));
-//                        model->item(j,logicalindex)->setBackground(QColor(Qt::white));
-//                    }
-//                }
-//            }
-//        }
-//    }
+                if(!pb_clear->isChecked())
+                {
+                    std::vector<QRgb> colors=cb_gradients->colourize(colData,range);
+                    table->model()->colourizeCol(visualIndex,colors);
+                }
+                else
+                {
+                    table->model()->colourizeCol(visualIndex,qRgb(255,255,255));
+                }
+            }
+        }
+    }
 }
 
 

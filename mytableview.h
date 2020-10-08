@@ -1,5 +1,6 @@
 #include <QTableView>
 #include "mytablemodel.h"
+#include "myitemdelegate.h"
 #include "qcustomplot.h"
 
 #ifndef MYTABLEVIEW_H
@@ -17,7 +18,7 @@ public:
 
     void createNew(int nbRow,int nbCols,int rowsSpan);
 
-    MyModel * model(){return m_model;}
+    MyModel * model() {return m_model;}
     QWidget * getContainer(){return container;}
 
     Eigen::VectorXd getColDataDouble(int logicalColId);
@@ -42,6 +43,7 @@ private:
     void getVisualRowColSelectedRanges(QCPRange &range_row,QCPRange &range_col);
 
     MyModel * m_model;
+    MyItemDelegate * m_delegate;
     QWidget * container;
 };
 

@@ -681,7 +681,12 @@ void MyModel::slot_editColumn(int logicalIndex)
             visualIndex=m_data.cols();
             dataAddColumn(m_data,VectorXv(m_data.rows()));
         }
-        m_data.col(visualIndex)=eval(visualIndex);
+
+        if(!reg.variablesExpressions()[visualIndex].isEmpty())
+        {
+            m_data.col(visualIndex)=eval(visualIndex);
+        }
+
         emit layoutChanged();
         emit sig_dataChanged();
     }
@@ -709,7 +714,10 @@ void MyModel::slot_updateColumns()
 {
     for (int i=0; i<m_data.cols(); i++)
     {
-        m_data.col(i)=eval(i);
+        if(!reg.variablesExpressions()[i].isEmpty())
+        {
+            m_data.col(i)=eval(i);
+        }
     }
     emit layoutChanged();
     emit sig_dataChanged();
@@ -792,8 +800,48 @@ QVariant MyModel::data(const QModelIndex &index_logical, int role) const
             }
         }
     }
+    if (role == Qt::BackgroundRole)
+    {
+        QModelIndex index=toVisualIndex(index_logical);
+        QRgb backgroundColor=m_data(index.row()+m_rowOffset,index.column()).background;
+        return QBrush(QColor(backgroundColor));
+    }
+    if (role == Qt::ForegroundRole)
+    {
+        QModelIndex index=toVisualIndex(index_logical);
+        QRgb backgroundColor=m_data(index.row()+m_rowOffset,index.column()).background;
+        if(qGray(backgroundColor)>100)
+        {
+            return QBrush(QColor(Qt::black));
+        }
+        else
+        {
+            return QBrush(QColor(Qt::white));
+        }
+    }
+
     return QVariant();
 }
+
+void MyModel::colourizeCol(unsigned int visualColIndex,const std::vector<QRgb> &colors)
+{
+    if(m_data.rows()==colors.size() && visualColIndex<m_data.cols())
+    {
+        for(int i=0;i<m_data.rows();i++)
+        {
+            m_data(i,visualColIndex).background=colors[i];
+        }
+    }
+}
+
+void MyModel::colourizeCol(unsigned int visualColIndex,QRgb color)
+{
+    for(int i=0;i<m_data.rows();i++)
+    {
+        m_data(i,visualColIndex).background=color;
+    }
+}
+
 //-----------------------------------------------------------------
 bool MyModel::setData(const QModelIndex &index_logical, const QVariant &value, int role)
 {
@@ -820,8 +868,11 @@ bool MyModel::setData(const QModelIndex &index_logical, const QVariant &value, i
 //        std::cout<<"---------------"<<std::endl;
 //        std::cout<<m_data<<std::endl;
 
+        emit sig_dataChanged();
+
         return true;
     }
+
     return false;
 }
 //-----------------------------------------------------------------

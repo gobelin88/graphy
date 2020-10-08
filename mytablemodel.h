@@ -42,6 +42,9 @@ public:
     void exportLatex(QString filename);
 
     //Data
+    void colourizeCol(unsigned int visualColIndex, const std::vector<QRgb> &colors);
+    void colourizeCol(unsigned int visualColIndex, QRgb color);
+
     QVector<QString> getColLogicalDataString(int logicalIndex)const;
     QVector<QString> getColVisualDataString(int visualIndex)const;
 

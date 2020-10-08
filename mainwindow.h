@@ -3,32 +3,17 @@
 
 #include <QMainWindow>
 #include <QTableView>
-#include <QFile>
-#include <QFileDialog>
-#include <QStandardItemModel>
-#include <QTextStream>
-#include <QMessageBox>
-#include <QGridLayout>
 #include <QTabWidget>
-#include <QVector>
 #include <QMdiArea>
-#include <QResizeEvent>
-#include <QScrollArea>
-
-#include <QDirIterator>
-#include <QDir>
 
 #include "1d_viewer.h"
-#include "1d_cplx_viewer.h"
-#include "bode_viewer.h"
 #include "2d_viewer.h"
-//#include "3d_viewer.h"
+#include "bode_viewer.h"
 #include "view3d.h"
 #include "qgradientcombobox.h"
 #include "mytablemodel.h"
 #include "mytableview.h"
 
-#include <random>
 
 namespace Ui {
 class MainWindow;
@@ -69,7 +54,6 @@ public slots:
     void slot_parameters();
     void slot_results(QString results);
     void slot_colourize();
-
     void fileModified();
 
 private:
@@ -84,7 +68,6 @@ private:
     QTabWidget* te_widget;
     Ui::MainWindow* ui;
     MyTableView * table;
-
     Viewer1D* createViewerId();
     QAction* a_newColumn;
     QAction* a_newRow;
@@ -112,9 +95,6 @@ private:
 
     //Constants
     const float graphyVersion=4.0f;
-
-    //selections
-
 };
 
 #endif // MAINWINDOW_H

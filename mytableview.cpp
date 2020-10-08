@@ -18,6 +18,9 @@ void MyTableView::createNew(int nbRow,int nbCols,int rowsSpan)
     setHorizontalHeader(m_model->horizontalHeader());
     setVerticalHeader(m_model->verticalHeader());
 
+    m_delegate=new MyItemDelegate(this);
+    setItemDelegate(m_delegate);
+
     container=new QWidget();
     QHBoxLayout * layout=new QHBoxLayout(container);
     layout->addWidget(this);

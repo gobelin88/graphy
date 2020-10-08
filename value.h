@@ -2,6 +2,7 @@
 #include <QVariant>
 #include <iostream>
 #include <Eigen/Dense>
+#include <QRgb>
 
 #ifndef VALUE_H
 #define VALUE_H
@@ -19,6 +20,7 @@ public:
     double num;
     QString str;
     bool isDouble;
+    QRgb background;
 };
 
 std::ostream& operator<< (std::ostream &out,const ValueContainer & value);

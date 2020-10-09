@@ -137,17 +137,17 @@ void MyTableView::getVisualRowColSelectedRanges(QCPRange &range_row,QCPRange &ra
     }
 }
 
-Eigen::VectorXd MyTableView::getColDataDouble(int logicalColId)
+Eigen::VectorXd MyTableView::getLogicalColDataDouble(int logicalColId)
 {
     return m_model->getColLogicalDataDouble(logicalColId);
 }
 
-QVector<QString> MyTableView::getColDataString(int logicalColId)
+QVector<QString> MyTableView::getLogicalColDataString(int logicalColId)
 {
     return m_model->getColLogicalDataString(logicalColId);
 }
 
-QString MyTableView::getColName(int logicalColId)
+QString MyTableView::getLogicalColName(int logicalColId)
 {
     return m_model->getLogicalColName(logicalColId);
 }

@@ -21,9 +21,9 @@ public:
     MyModel * model() {return m_model;}
     QWidget * getContainer(){return container;}
 
-    Eigen::VectorXd getColDataDouble(int logicalColId);
-    QVector<QString> getColDataString(int logicalColId);
-    QString getColName(int logicalColId);
+    Eigen::VectorXd getLogicalColDataDouble(int logicalColId);
+    QVector<QString> getLogicalColDataString(int logicalColId);
+    QString getLogicalColName(int logicalColId);
 
     QString getSelectionPattern();
     void setSelectionPattern(QString pattern);

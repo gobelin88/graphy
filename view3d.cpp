@@ -323,8 +323,8 @@ void View3D::slot_ScaleChanged()
     S.setScale3D(customContainer->getScaleInv());
     cloud3D->cloudTransform->setMatrix( S.matrix()*T.matrix() );//->setMatrix(t.matrix().inverted());
 
-    dispMat(T.matrix()*S.matrix());
-    dispMat(S.matrix()*T.matrix());
+    //dispMat(T.matrix()*S.matrix());
+    //dispMat(S.matrix()*T.matrix());
 
     for (int i=0; i<transforms.size(); i++)
     {

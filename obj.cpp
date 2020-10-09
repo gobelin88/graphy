@@ -297,7 +297,6 @@ const Eigen::VectorXd& Object::getParams()
 
 Vector3d Object::nearest(const Vector3d& p) const
 {
-    Vector3d p_nearest;
     std::vector<Vector3d> projected_p(faces.size());
     VectorXd distances(faces.size());
 

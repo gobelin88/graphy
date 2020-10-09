@@ -252,12 +252,12 @@ void MainWindow::slot_plot_y()
 
         for (int k=0; k<id_list.size(); k++)
         {
-            Eigen::VectorXd data_y=table->getColDataDouble(id_list[k].column()); //getCol(id_list[k].column(),datatable);
+            Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[k].column()); //getCol(id_list[k].column(),datatable);
 
             if (data_y.size()>0)
             {
                 viewer1d->slot_add_data(Curve2D(data_y,
-                                                table->getColName(id_list[k  ].column()),
+                                                table->getLogicalColName(id_list[k  ].column()),
                                                 Curve2D::GRAPH));
             }
         }        
@@ -278,22 +278,22 @@ void MainWindow::slot_plot_graph_xy()
     {
         Viewer1D* viewer1d=createViewerId();
 
-        Eigen::VectorXd data_x=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[0  ].column()));
+        Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[0  ].column());
         for (int k=1; k<id_list.size(); k+=1)
         {
-            Eigen::VectorXd data_y=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k].column()));
+            Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[k].column());
 
             if (data_x.size()>0 && data_y.size()>0)
             {
                 if (!table->model()->asColumnStrings(table->horizontalHeader()->visualIndex(id_list[k  ].column())))
                 {
-                    Curve2D curve(data_x,data_y,QString("%2=f(%1)").arg(table->getColName(id_list[0  ].column())).arg(table->getColName(id_list[k].column())),Curve2D::GRAPH);
+                    Curve2D curve(data_x,data_y,QString("%2=f(%1)").arg(table->getLogicalColName(id_list[0  ].column())).arg(table->getLogicalColName(id_list[k].column())),Curve2D::GRAPH);
                     viewer1d->slot_add_data(curve);
                 }
                 else
                 {
-                    Curve2D curve(data_y,QString("%2=f(%1)").arg(table->getColName(id_list[0  ].column())).arg(table->getColName(id_list[k].column())),Curve2D::GRAPH);
-                    curve.setLabelsField(table->getColDataString(table->horizontalHeader()->visualIndex(id_list[k  ].column())));
+                    Curve2D curve(data_y,QString("%2=f(%1)").arg(table->getLogicalColName(id_list[0  ].column())).arg(table->getLogicalColName(id_list[k].column())),Curve2D::GRAPH);
+                    curve.setLabelsField(table->getLogicalColDataString(table->horizontalHeader()->visualIndex(id_list[k  ].column())));
                     viewer1d->slot_add_data(curve);
                 }
             }
@@ -313,16 +313,16 @@ void MainWindow::slot_plot_curve_xy()
     {
         Viewer1D* viewer1d=createViewerId();
 
-        Eigen::VectorXd data_x=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[0  ].column()));
+        Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[0  ].column());
         for (int k=1; k<id_list.size(); k+=2)
         {
-            Eigen::VectorXd data_y=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k].column()));
+            Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[k].column());
 
             if (data_x.size()>0 && data_y.size()>0)
             {
                 viewer1d->slot_add_data(Curve2D(data_x,
                                                 data_y,
-                                                QString("(%1,%2)").arg(table->getColName(id_list[0  ].column())).arg(table->getColName(id_list[k].column())),
+                                                QString("(%1,%2)").arg(table->getLogicalColName(id_list[0  ].column())).arg(table->getLogicalColName(id_list[k].column())),
                                         Curve2D::CURVE));
             }
         }
@@ -343,15 +343,15 @@ void MainWindow::slot_plot_cloud_2D()
 
         for (int k=0; k<id_list.size(); k+=3)
         {
-            Eigen::VectorXd data_x=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k  ].column()));
-            Eigen::VectorXd data_y=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
-            Eigen::VectorXd data_s=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k+2].column()));
+            Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[k  ].column());
+            Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[k+1].column());
+            Eigen::VectorXd data_s=table->getLogicalColDataDouble(id_list[k+2].column());
 
             if (data_x.size()>0 && data_y.size()>0)
             {
                 Curve2D curve(data_x,
                               data_y,
-                              QString("(%1,%2)").arg(table->getColName(id_list[k  ].column())).arg(table->getColName(id_list[k+1].column())),
+                              QString("(%1,%2)").arg(table->getLogicalColName(id_list[k  ].column())).arg(table->getLogicalColName(id_list[k+1].column())),
                         Curve2D::CURVE);
                 curve.setScalarField(data_s);
                 curve.getStyle().mLineStyle=QCPCurve::lsNone;
@@ -376,10 +376,10 @@ void MainWindow::slot_plot_field_2D()
 
         for (int k=0; k<id_list.size(); k+=4)
         {
-            Eigen::VectorXd data_x =table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k  ].column()));
-            Eigen::VectorXd data_y =table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
-            Eigen::VectorXd data_vx=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k+2].column()));
-            Eigen::VectorXd data_vy=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k+3].column()));
+            Eigen::VectorXd data_x =table->getLogicalColDataDouble(id_list[k  ].column());
+            Eigen::VectorXd data_y =table->getLogicalColDataDouble(id_list[k+1].column());
+            Eigen::VectorXd data_vx=table->getLogicalColDataDouble(id_list[k+2].column());
+            Eigen::VectorXd data_vy=table->getLogicalColDataDouble(id_list[k+3].column());
 
             Eigen::VectorXd data_a(data_vx.size());
             Eigen::VectorXd data_s(data_vx.size());
@@ -394,7 +394,7 @@ void MainWindow::slot_plot_field_2D()
             {
                 Curve2D curve(data_x,
                               data_y,
-                              QString("V(%3,%4)=f(%1,%2)").arg(table->getColName(id_list[k  ].column())).arg(table->getColName(id_list[k+1].column())).arg(table->getColName(id_list[k+2].column())).arg(table->getColName(id_list[k+3].column())),
+                              QString("V(%3,%4)=f(%1,%2)").arg(table->getLogicalColName(id_list[k  ].column())).arg(table->getLogicalColName(id_list[k+1].column())).arg(table->getLogicalColName(id_list[k+2].column())).arg(table->getLogicalColName(id_list[k+3].column())),
                         Curve2D::CURVE);
                 curve.setScalarField(data_s);
                 curve.setAlphaField(data_a);
@@ -418,9 +418,9 @@ void MainWindow::slot_plot_map_2D()
 
     if (id_list.size()==3)
     {
-        Eigen::VectorXd data_x=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[0].column()));
-        Eigen::VectorXd data_y=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[1].column()));
-        Eigen::VectorXd data_z=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[2].column()));
+        Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[0].column());
+        Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[1].column());
+        Eigen::VectorXd data_z=table->getLogicalColDataDouble(id_list[2].column());
 
         if (data_x.size()>0 && data_y.size()>0 && data_z.size()>0)
         {
@@ -491,8 +491,8 @@ void MainWindow::slot_plot_fft()
 
             for (int k=0; k<id_list.size(); k++)
             {
-                Eigen::VectorXd data_y=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k  ].column()));
-                Curve2D curve(data_y,QString("%1").arg(table->getColName(id_list[k  ].column())),Curve2D::GRAPH);
+                Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[k  ].column());
+                Curve2D curve(data_y,QString("%1").arg(table->getLogicalColName(id_list[k  ].column())),Curve2D::GRAPH);
 
                 if (data_y.size()>0)
                 {
@@ -521,28 +521,28 @@ void MainWindow::slot_plot_cloud_3D()
         QObject::connect(view3d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),table,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
         QObject::connect(view3d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
 
-        Eigen::VectorXd data_x=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[0].column()));
-        Eigen::VectorXd data_y=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[1].column()));
-        Eigen::VectorXd data_z=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[2].column()));
+        Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[0].column());
+        Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[1].column());
+        Eigen::VectorXd data_z=table->getLogicalColDataDouble(id_list[2].column());
 
         Cloud* cloud=nullptr;
 
         if (id_list.size()==3)
         {
             cloud=new Cloud(data_x,data_y,data_z,
-                            table->getColName(id_list[0].column()),
-                    table->getColName(id_list[1].column()),
-                    table->getColName(id_list[2].column()));
+                            table->getLogicalColName(id_list[0].column()),
+                    table->getLogicalColName(id_list[1].column()),
+                    table->getLogicalColName(id_list[2].column()));
 
         }
         else if (id_list.size()==4)
         {
-            Eigen::VectorXd data_s=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[3].column()));
+            Eigen::VectorXd data_s=table->getLogicalColDataDouble(id_list[3].column());
             cloud=new Cloud(data_x,data_y,data_z,data_s,
-                            table->getColName(id_list[0].column()),
-                    table->getColName(id_list[1].column()),
-                    table->getColName(id_list[2].column()),
-                    table->getColName(id_list[3].column()));
+                            table->getLogicalColName(id_list[0].column()),
+                    table->getLogicalColName(id_list[1].column()),
+                    table->getLogicalColName(id_list[2].column()),
+                    table->getLogicalColName(id_list[3].column()));
         }
 
         if (cloud)
@@ -574,14 +574,14 @@ void MainWindow::slot_plot_gain_phase()
 
         for (int k=0; k<id_list.size(); k+=3)
         {
-            Eigen::VectorXd data_f=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k].column()));
-            Eigen::VectorXd data_module=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k+1].column()));
-            Eigen::VectorXd data_phase=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k+2].column()));
+            Eigen::VectorXd data_f=table->getLogicalColDataDouble(id_list[k].column());
+            Eigen::VectorXd data_module=table->getLogicalColDataDouble(id_list[k+1].column());
+            Eigen::VectorXd data_phase=table->getLogicalColDataDouble(id_list[k+2].column());
 
             if (data_f.size()>0 && data_module.size()>0 && data_phase.size()>0)
             {
-                Curve2D curve_module(data_f,data_module,QString("%2=f(%1)").arg(table->getColName(id_list[k  ].column())).arg(table->getColName(id_list[k+1].column())),Curve2D::GRAPH);
-                Curve2D curve_phase (data_f,data_phase,QString("%2=f(%1)").arg(table->getColName(id_list[k  ].column())).arg(table->getColName(id_list[k+2].column())),Curve2D::GRAPH);
+                Curve2D curve_module(data_f,data_module,QString("%2=f(%1)").arg(table->getLogicalColName(id_list[k  ].column())).arg(table->getLogicalColName(id_list[k+1].column())),Curve2D::GRAPH);
+                Curve2D curve_phase (data_f,data_phase,QString("%2=f(%1)").arg(table->getLogicalColName(id_list[k  ].column())).arg(table->getLogicalColName(id_list[k+2].column())),Curve2D::GRAPH);
 
                 viewer_bode->slot_add_data(Curve2DModulePhase(curve_module,curve_phase));
             }
@@ -606,7 +606,7 @@ void MainWindow::slot_plot_histogram()
 
         for (int k=0; k<id_list.size(); k++)
         {
-            Eigen::VectorXd data_y=table->getColDataDouble(table->horizontalHeader()->visualIndex(id_list[k].column()));
+            Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[k].column());
 
             if (data_y.size()>0)
             {
@@ -614,7 +614,7 @@ void MainWindow::slot_plot_histogram()
                 int nbbins=QInputDialog::getInt(this,"Number of bins","Nb bins=",100,2,10000,1,&ok);
                 if (ok)
                 {
-                    viewer1d->slot_histogram(data_y,QString("Histogram %1").arg(table->getColName(id_list[k  ].column())),nbbins);
+                    viewer1d->slot_histogram(data_y,QString("Histogram %1").arg(table->getLogicalColName(id_list[k  ].column())),nbbins);
                 }
             }
         }
@@ -865,7 +865,7 @@ void MainWindow::slot_colourize()
                 {
                     int logicalIndex=id_list[i].column();
                     int visualIndex=table->horizontalHeader()->visualIndex(logicalIndex);
-                    Eigen::VectorXd colData=table->getColDataDouble(visualIndex);
+                    Eigen::VectorXd colData=table->getLogicalColDataDouble(visualIndex);
 
                     if(i==0)
                     {
@@ -885,7 +885,7 @@ void MainWindow::slot_colourize()
             {
                 int logicalIndex=id_list[i].column();
                 int visualIndex=table->horizontalHeader()->visualIndex(logicalIndex);
-                Eigen::VectorXd colData=table->getColDataDouble(visualIndex);
+                Eigen::VectorXd colData=table->getLogicalColDataDouble(visualIndex);
 
                 if(cb_percolumns->isChecked())
                 {

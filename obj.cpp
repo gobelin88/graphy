@@ -164,46 +164,44 @@ Vector3d Object::getBarycenter()
 
 Vector3d Object::nearest(int face_id, const Vector3d& p) const
 {
-    Face face=faces[face_id];
-    Vector3d N=getBase(face).col(2);
-    Vector3d Pp=p-N*N.dot(p-pts[face[0]]);
+    const Face & face=faces[face_id];
+    Vector3d Pp=p-normals[face_id]*normals[face_id].dot(p-pts[face[0]]);//projection de P sur le plan de la face
     double dmin=DBL_MAX;
     bool positif=false,inside=true;
     Vector3d pproj_poly;
+    unsigned int faces_size=face.size();
 
-    int nb_faces=face.size();
-
-    for (int j=0; j<nb_faces; j++)
+    for (int j=0; j<faces_size; j++)
     {
-        Vector3d Pa=pts[face[j]];
-        Vector3d Pb=pts[face[(j+1)%nb_faces]];
-        Vector3d Vpa=Pp-Pa;
-        Vector3d Vba=Pb-Pa;
+        unsigned int ind_j=face[j];
+        unsigned int ind_jp=face[(j+1)%faces_size];
+        Vector3d Vpa=Pp-pts[ind_j];
+        Vector3d Vba=pts[ind_jp]-pts[ind_j];
         double Vba_norm=Vba.norm();
         Vector3d Vba_normed=Vba/Vba_norm;
         Vector3d n=Vpa.cross(Vba_normed);
 
         double dot=Vba_normed.dot(Vpa);
 
-        if (dot>Vba_norm)
+        if (dot>Vba_norm)//Distance à B
         {
-            double d=(Pb-Pp).norm();
+            double d=(pts[ind_jp]-Pp).norm();
             if (d<dmin)
             {
                 dmin=d;
-                pproj_poly=Pb;
+                pproj_poly=pts[ind_jp];
             }
         }
-        else if (dot<0)
+        else if (dot<0)//Distance à A
         {
             double d=Vpa.norm();
             if (d<dmin)
             {
                 dmin=d;
-                pproj_poly=Pa;
+                pproj_poly=pts[ind_j];
             }
         }
-        else
+        else//Distance à AB
         {
             double d=n.norm();
             if (d<dmin)
@@ -213,7 +211,7 @@ Vector3d Object::nearest(int face_id, const Vector3d& p) const
             }
         }
 
-        if (n.dot(N)>0)
+        if (n.dot(normals[face_id])>0)//Savoir si est au dessus de la face
         {
             if (j==0)
             {
@@ -236,6 +234,8 @@ Vector3d Object::nearest(int face_id, const Vector3d& p) const
             }
         }
     }
+
+
     if (inside)
     {
         return Pp;
@@ -256,6 +256,7 @@ void Object::setParams(const Eigen::VectorXd& p)
     this->params=p;
     this->mat=getPosAtt().toMatrice(p[0]);
     transform();
+    computeNormals();
 }
 
 Vector3d Object::transform(const Vector3d& p)
@@ -330,26 +331,33 @@ double Object::getRadius()
 
 void Object::computeNormals()
 {
+    normals.resize(faces.size());
     for (int i=0; i<faces.size(); i++)
     {
         if (faces[i].size()>=3)
         {
-            Vector3d N=getBase(faces[i]).col(2);
+            normals[i]=getNormal(faces[i]);
 
-            if (N.dot(getBarycenter(faces[i]))>0)
-            {
-                normals.push_back(N);
-            }
-            else
-            {
-                normals.push_back(-N);
-            }
+//            if (N.dot(getBarycenter(faces[i]))>0)
+//            {
+//                normals.push_back(N);
+//            }
+//            else
+//            {
+//                normals.push_back(-N);
+//            }
         }
         else
         {
-            normals.push_back(Vector3d(0,1,0));
+            normals[i]=Vector3d(0,1,0);
         }
     }
+}
+
+Vector3d Object::getNormal(const Face& f)const
+{
+    Vector3d n=(pts[f[1]]-pts[f[0]]).cross(pts[f[2]]-pts[f[0]]);
+    return n/n.norm();
 }
 
 Base Object::getBase(const Face& f)const

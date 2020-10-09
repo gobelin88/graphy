@@ -22,7 +22,7 @@ using Eigen::Matrix3d;
 
 typedef Matrix3d Base;
 
-typedef QList<int> Face;
+typedef std::vector<int> Face;
 
 class BoundingBox
 {
@@ -87,6 +87,7 @@ public:
 private:
     //Misc
     void computeNormals();
+    Vector3d getNormal(const Face& f)const;
     Base getBase(const Face& f) const;
     Vector2d getCoord2D(const Base& b, Vector3d params, Vector3d bary) const;
     Vector3d getCoord3D(const Base& b, Vector2d params, Vector3d bary) const;

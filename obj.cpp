@@ -171,47 +171,49 @@ Vector3d Object::nearest(int face_id, const Vector3d& p) const
     Vector3d pproj_poly;
     unsigned int faces_size=face.size();
 
-    for (int j=0; j<faces_size; j++)
+    for (unsigned int j=0; j<faces_size; j++)
     {
         unsigned int ind_j=face[j];
         unsigned int ind_jp=face[(j+1)%faces_size];
         Vector3d Vpa=Pp-pts[ind_j];
         Vector3d Vba=pts[ind_jp]-pts[ind_j];
-        double Vba_norm=Vba.norm();
-        Vector3d Vba_normed=Vba/Vba_norm;
-        Vector3d n=Vpa.cross(Vba_normed);
 
-        double dot=Vba_normed.dot(Vpa);
+        Vector3d n=Vpa.cross(Vba);
+        double dot=Vpa.dot  (Vba);
 
-        if (dot>Vba_norm)//Distance à B
+        //Distance^2 à B-------------------------
+        if (dot>Vpa.squaredNorm())
         {
-            double d=(pts[ind_jp]-Pp).norm();
+            double d=(pts[ind_jp]-Pp).squaredNorm();
             if (d<dmin)
             {
                 dmin=d;
                 pproj_poly=pts[ind_jp];
             }
         }
-        else if (dot<0)//Distance à A
+        //Distance^2 à A--------------------------
+        else if (dot<0)
         {
-            double d=Vpa.norm();
+            double d=Vpa.squaredNorm();
             if (d<dmin)
             {
                 dmin=d;
                 pproj_poly=pts[ind_j];
             }
         }
-        else//Distance à AB
+        //Distance^2 à AB-------------------------
+        else
         {
-            double d=n.norm();
+            double d=n.squaredNorm()/Vba.squaredNorm();
             if (d<dmin)
             {
                 dmin=d;
-                pproj_poly=dot*Vba_normed;
+                pproj_poly=dot*Vba/Vba.norm();
             }
         }
 
-        if (n.dot(normals[face_id])>0)//Savoir si est au dessus de la face
+        //Savoir si est au dessus de la face----
+        if (n.dot(normals[face_id])>0)
         {
             if (j==0)
             {

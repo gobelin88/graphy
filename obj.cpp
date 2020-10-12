@@ -177,7 +177,7 @@ Vector3d Object::nearest(int face_id, const Vector3d& p) const
 {
     const Face & face=faces[face_id];
     const Vector3d & N=normals.col(face_id);
-    Vector3d Pp=p-N*N.dot(p-pts.col(face[0]));//projection de P sur le plan de la face
+    Vector3d P=p-N*N.dot(p-pts.col(face[0]));//projection de P sur le plan de la face
     double dmin=DBL_MAX;
     bool positif=false,inside=true;
     Vector3d pproj_poly;
@@ -185,47 +185,49 @@ Vector3d Object::nearest(int face_id, const Vector3d& p) const
 
     for (unsigned int j=0; j<faces_size; j++)
     {
-        unsigned int ind_j=face[j];
-        unsigned int ind_jp=face[(j+1)%faces_size];
-        Vector3d Vpa=Pp         -pts.col(ind_j);
-        Vector3d Vba=pts.col(ind_jp)-pts.col(ind_j);
+        unsigned int ind_a=face[j];
+        unsigned int ind_b=face[(j+1)%faces_size];
+        const Vector3d & A=pts.col(ind_a);
+        const Vector3d & B=pts.col(ind_b);
 
-        Vector3d n=Vpa.cross(Vba);
-        double dot=Vpa.dot  (Vba);
+        Vector3d Vap=P-A;
+        Vector3d Vab=B-A;
+
+        Vector3d n=Vap.cross(Vab);
+        double dot=Vap.dot(Vab);
 
         //Distance^2 à B-------------------------
-        if (dot>Vpa.squaredNorm())
+        if (dot>Vab.squaredNorm())
         {
-            double d=(pts.col(ind_jp)-Pp).squaredNorm();
+            double d=(B-P).squaredNorm();
             if (d<dmin)
             {
                 dmin=d;
-                pproj_poly=pts.col(ind_jp);
+                pproj_poly=B;//B
             }
         }
         //Distance^2 à A--------------------------
         else if (dot<0)
         {
-            double d=Vpa.squaredNorm();
+            double d=Vap.squaredNorm();
             if (d<dmin)
             {
                 dmin=d;
-                pproj_poly=pts.col(ind_j);
+                pproj_poly=A;//A
             }
         }
         //Distance^2 à AB-------------------------
         else
         {
-            double Vba_norm2=Vba.squaredNorm();
+            double Vba_norm2=Vab.squaredNorm();
             double d=n.squaredNorm()/Vba_norm2;
             if (d<dmin)
             {
                 dmin=d;
-                pproj_poly=dot*Vba/sqrt(Vba_norm2);
+                pproj_poly=dot*Vab/sqrt(Vba_norm2);
             }
         }
 
-        //Savoir si est au dessus de la face----
         if (n.dot(N)>0)
         {
             if (j==0)
@@ -250,10 +252,9 @@ Vector3d Object::nearest(int face_id, const Vector3d& p) const
         }
     }
 
-
     if (inside)
     {
-        return Pp;
+        return P;
     }
     else
     {

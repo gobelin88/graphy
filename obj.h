@@ -19,6 +19,7 @@ using Eigen::Vector3d;
 using Eigen::Vector2d;
 using Eigen::Matrix2d;
 using Eigen::Matrix3d;
+using Eigen::Quaterniond;
 
 typedef Matrix3d Base;
 
@@ -50,7 +51,7 @@ public:
 class Object:public Shape<Eigen::Vector3d>
 {
 public:
-    Object(QString filename, double scale, QPosAtt posatt);
+    Object(QString filename, QPosAtt scale_posatt);
 
     void disp();
 
@@ -60,8 +61,8 @@ public:
     double getRadius();
 
     //Algorithms
-    Vector3d nearest(int face_id, const Vector3d& params)const;
-    Vector3d nearest(const Vector3d& params)const;
+    Vector3d nearestDelta(const Vector3d& p) const;
+    Vector3d nearest(int face_id, const Vector3d& p) const;
 
     bool isOpen()
     {
@@ -73,10 +74,8 @@ public:
     int nb_params();
     void setParams(const Eigen::VectorXd& params);
     const Eigen::VectorXd& getParams();
-    Vector3d transform(const Vector3d& params);
-    void transform();
 
-    void setScalePosAtt(double scale,const QPosAtt& posatt);
+    void setScalePosAtt(const QPosAtt& scalePosatt);
 
     QPosAtt getPosAtt();
     double getScale();
@@ -97,10 +96,16 @@ private:
 
     QLineF clamp(QLineF line, QPolygonF r);
 
-    std::vector<Vector3d> pts_base;
-    std::vector<Vector3d> pts;
+    Matrix<double,3,Eigen::Dynamic> pts_base;
+    Matrix<double,3,Eigen::Dynamic> pts;
+
     std::vector<Face> faces;
-    std::vector<Vector3d> normals;
+//    std::vector<Vector3d> normals_base;
+//    std::vector<Vector3d> normals;
+
+    Matrix<double,3,Eigen::Dynamic> normals_base;
+    Matrix<double,3,Eigen::Dynamic> normals;
+
     std::vector< std::vector<Vector2d> >  texCoord;
     std::vector<Vector3d> wire;
 
@@ -111,8 +116,12 @@ private:
 
     bool open;
 
-    Eigen::VectorXd params;
-    Eigen::Matrix4d mat;
+    VectorXd params;
+
+    double Q_norm;
+    Quaterniond Q_transform;
+    Matrix3d R_transform;
+    Vector3d P_transform;
 };
 
 

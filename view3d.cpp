@@ -254,10 +254,9 @@ void View3D::slot_fitCustomMesh()
     QElapsedTimer timer;
     timer.start();
 
-    Object obj(filename,1.0,QPosAtt());
+    Object obj(filename,QPosAtt());
 
-    obj.setScalePosAtt(cloud->getBoundingRadius()/obj.getRadius(),
-                       QPosAtt(cloud->getBarycenter()-obj.getBox().middle(),Eigen::Quaterniond(1,0,0,0)));
+    obj.setScalePosAtt(QPosAtt(cloud->getBarycenter()-obj.getBox().middle(),Eigen::Quaterniond(cloud->getBoundingRadius()/obj.getRadius(),0,0,0)));
 
     cloud->fit(&obj,100);
 
@@ -270,10 +269,11 @@ void View3D::slot_fitCustomMesh()
 
     addObj(m_obj,QPosAtt(),1.0,QColor(64,64,64));
 
+    QPosAtt posatt=obj.getPosAtt();
     emit sig_displayResults( QString("Fit Mesh :\nScale=%1\nPosition=(%2,%3,%4)\nQ=(%5,%6,%7,%8)\nRms=%9\ndt=%10 ms")
                              .arg(obj.getScale())
-                             .arg(obj.getPosAtt().P[0]).arg(obj.getPosAtt().P[1]).arg(obj.getPosAtt().P[2])
-                             .arg(obj.getPosAtt().Q.w()).arg(obj.getPosAtt().Q.x()).arg(obj.getPosAtt().Q.y()).arg(obj.getPosAtt().Q.w())
+                             .arg(posatt.P[0]).arg(posatt.P[1]).arg(posatt.P[2])
+                             .arg(posatt.Q.w()).arg(posatt.Q.x()).arg(posatt.Q.y()).arg(posatt.Q.w())
                              .arg(obj.getRMS())
                              .arg(timer.nsecsElapsed()*1e-6));
 

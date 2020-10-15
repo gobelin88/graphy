@@ -674,7 +674,7 @@ QVariant MyModel::headerData(int logicalIndex, Qt::Orientation orientation, int 
     else if (orientation == Qt::Vertical)
     {
         //Les numéro des lignes sont toujours dans l'ordre.
-        return QString("R%1 ").arg(v_header->visualIndex(logicalIndex)+1+m_rowOffset);
+        return QString("R%1").arg(v_header->visualIndex(logicalIndex)+1+m_rowOffset);
     }
     else
     {
@@ -1067,19 +1067,37 @@ void MyModel::setRowOffset(int rowOffset)
 
 void MyModel::slot_newColumn(QString varName,Eigen::VectorXd dataCol)
 {
-    reg.newVariable(varName,"");
-
-    VectorXv dataColv(dataCol.rows());
-
-    for(int i=0;i<dataCol.rows();i++)
+    if(!reg.existVariable(varName))
     {
-        dataColv[i].num=dataCol[i];
-        dataColv[i].isDouble=true;
-    }
+        if(reg.newVariable(varName,""))
+        {
+            VectorXv dataColv(dataCol.rows());
 
-    dataAddColumn(m_data,dataColv);
-    emit layoutChanged();
-    emit sig_dataChanged();
+            for(int i=0;i<dataCol.rows();i++)
+            {
+                dataColv[i].num=dataCol[i];
+                dataColv[i].isDouble=true;
+            }
+
+            dataAddColumn(m_data,dataColv);
+            emit layoutChanged();
+            emit sig_dataChanged();
+        }
+        else
+        {
+            bool ok;
+            QString newVarName=QInputDialog::getText(nullptr,"Variable Name",varName,QLineEdit::Normal,varName,&ok);
+
+            if(ok)
+            {
+                slot_newColumn(newVarName,dataCol);
+            }
+        }
+    }
+    else
+    {
+        slot_newColumn(varName+QString("_%1").arg(reg.countVariable(varName)),dataCol);
+    }
 }
 
 void MyModel::setRowSpan(int rowSpan)

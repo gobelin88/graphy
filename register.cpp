@@ -154,6 +154,29 @@ bool Register::isValidExpression(QString variableExpression)
     }
 }
 
+int Register::countVariable(QString variableName)
+{
+    unsigned int cpt=0;
+    for(int i=0;i<variables_names.size();i++)
+    {
+        if(variables_names[i].contains(variableName))
+        {
+            cpt++;
+        }
+    }
+    return cpt;
+}
+
+bool Register::existVariable(QString variableName)
+{
+    if (symbolsTable.symbol_exists(variableName.toStdString()))
+    {
+        return true;
+    }
+
+    return false;
+}
+
 bool Register::isValidVariable(QString variableName)
 {
     if (variableName.isEmpty())

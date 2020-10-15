@@ -29,6 +29,8 @@ public:
 
     bool isValidExpression(QString variableExpression);
     bool isValidVariable(QString variableName);
+    bool existVariable(QString variableName);
+    int countVariable(QString variableName);
 
     void setActiveRow(int i){this->activeRow=i;}
     void setActiveCol(int i){this->activeCol=i;}

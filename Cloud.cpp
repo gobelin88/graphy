@@ -9,15 +9,13 @@ Cloud::Cloud(const Eigen::VectorXd& x,
 {
     for (int i=0; i<x.size(); i++)
     {
-        pts.push_back(Eigen::Vector3d(x[i],y[i],z[i]));
+        pts.push_back(Eigen::Vector4d(x[i],y[i],z[i],0.0));
     }
-    scalarField.resize(x.size());
-    scalarField.fill(0.0);
 
     rangeX=getRange(x);
     rangeY=getRange(y);
     rangeZ=getRange(z);
-    rangeS=getRange(scalarField);
+    rangeS=QCPRange(-1,1);
 
     setGradientPreset(QCPColorGradient::gpPolar);
 
@@ -40,9 +38,8 @@ Cloud::Cloud(const Eigen::VectorXd& x,
 {
     for (int i=0; i<x.size(); i++)
     {
-        pts.push_back(Eigen::Vector3d(x[i],y[i],z[i]));
+        pts.push_back(Eigen::Vector4d(x[i],y[i],z[i],s[i]));
     }
-    scalarField=s;
 
     rangeX=getRange(x);
     rangeY=getRange(y);
@@ -109,9 +106,21 @@ std::vector<QRgb>& Cloud::getColors()
     return colors;
 }
 
-const std::vector<Eigen::Vector3d>& Cloud::positions()const
+std::vector<Eigen::Vector3d> Cloud::positions()const
 {
-    return pts;
+    std::vector<Eigen::Vector3d> positions(pts.size());
+
+    for(int i=0;i<pts.size();i++)
+    {
+        positions[i]=pts[i].head<3>();
+    }
+
+    return positions;
+}
+
+int Cloud::size()const
+{
+    return pts.size();
 }
 
 void Cloud::operator=(const Cloud& other)
@@ -138,14 +147,14 @@ void Cloud::calcBarycenterAndBoundingRadius()
     {
         for (int i=0; i<pts.size(); i++)
         {
-            Barycenter+=pts[i];
+            Barycenter+=pts[i].head<3>();
         }
         Barycenter/=pts.size();
 
 
         for (int i=0; i<pts.size(); i++)
         {
-            double radius=(pts[i]-Barycenter).norm();
+            double radius=(pts[i].head<3>()-Barycenter).norm();
 
             if (radius>boundingRadius)
             {
@@ -182,15 +191,35 @@ QVector3D Cloud::toQVec3D(Eigen::Vector3d p)
     return QVector3D(p[0],p[1],p[2]);
 }
 
-void Cloud::fit(Shape<Eigen::Vector3d>* model,int it)
+void Cloud::fit(Shape<Eigen::Vector3d>* model,int it,double xtol)
 {
-    model->fit(pts,it);
+    model->fit(positions(),it,xtol);
 }
 
-QByteArray Cloud::getColorBuffer(QCPRange range)
+void Cloud::project(Shape<Eigen::Vector3d>* model)
 {
-    colors.resize(scalarField.size());
-    gradient.colorize(scalarField.data(),range,colors.data(),scalarField.size());
+    for(int i=0;i<pts.size();i++)
+    {
+        pts[i].head<3>()-=model->delta(pts[i].head<3>());
+    }
+}
+
+void Cloud::subSample(unsigned int nbPoints)
+{
+    int nbpoints_to_remove=(int)pts.size()-(int)nbPoints;
+
+    for(int i=0;i<nbpoints_to_remove;i++)
+    {
+        int random_index=rand()%pts.size();
+        pts.erase (pts.begin()+random_index);
+    }
+}
+
+QByteArray Cloud::getBuffer(QCPRange range)
+{
+    const double * colordata=(const double *)pts.data()+3;
+    colors.resize(pts.size());
+    gradient.colorize(colordata,range,colors.data(),pts.size(),4,false);
 
     QByteArray bufferBytes;
     bufferBytes.resize(2 * 3 * ( static_cast<int>(pts.size()) ) * sizeof(float));

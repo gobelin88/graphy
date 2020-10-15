@@ -80,13 +80,18 @@ public:
         points=points_list;
     }
 
-    void fit(std::vector<T> points, int it)
+    void fit(std::vector<T> points, int it, double xtol=-1)
     {
         Eigen::VectorXd p=this->getParams();
         this->setPointsList(points);
         Eigen::LevenbergMarquardt<Shape<T>,double> lm(*this);
         lm.parameters.maxfev = it;
         lm.parameters.factor = 2;
+
+        if(xtol>0)
+        {
+            lm.parameters.xtol= 1e-7;
+        }
         lm.minimize(p);
     }
 

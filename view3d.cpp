@@ -68,15 +68,30 @@ void View3D::init3D()
 void View3D::createPopup()
 {
     popup_menu=new QMenu();
+
+    menuParameters= new QMenu("Parameters");
+
     actSave   = new QAction("Save",  this);
     actSaveRevolution   = new QAction("Save a revolution",  this);
+
+    menuData= new QMenu("Point cloud");
+    actExport= new QAction("Export",  this);
 
     menuFit= new QMenu("Fit");
     actFitSphere= new QAction("Sphere",  this);
     actFitPlan= new QAction("Plan",  this);
     actFitMesh= new QAction("Custom mesh",  this);
 
-    menuParameters= new QMenu("Parameters");
+    menuProject= new QMenu("Project");
+    actProjectSphere= new QAction("Sphere",  this);
+    actProjectPlan= new QAction("Plan",  this);
+    actProjectMesh= new QAction("Custom mesh",  this);
+
+    menuSubSample= new QMenu("Subsample");
+    actRandomSubSample= new QAction("Random",  this);
+
+    menuView= new QMenu("View");
+    actRescale= new QAction("Rescale",  this);
 
     ///////////////////////////////////////////////
     QWidgetAction* actWidget=new QWidgetAction(popup_menu);
@@ -105,19 +120,42 @@ void View3D::createPopup()
     widget->setLayout(gbox);
 
     ///////////////////////////////////////////////
+    popup_menu->addMenu(menuParameters);
+    popup_menu->addMenu(menuView);
+    popup_menu->addSeparator();
+    popup_menu->addMenu(menuData);
+    popup_menu->addSeparator();
     popup_menu->addAction(actSave);
     popup_menu->addAction(actSaveRevolution);
-    popup_menu->addMenu(menuFit);
+
+    menuView->addAction(actRescale);
+    menuParameters->addAction(actWidget);
+    menuData->addMenu(menuFit);
+    menuData->addMenu(menuProject);
+    menuData->addMenu(menuSubSample);
+    menuData->addAction(actExport);
+
     menuFit->addAction(actFitSphere);
     menuFit->addAction(actFitPlan);
     menuFit->addAction(actFitMesh);
-    popup_menu->addMenu(menuParameters);
-    menuParameters->addAction(actWidget);
 
+    menuProject->addAction(actProjectSphere);
+    menuProject->addAction(actProjectPlan);
+    menuProject->addAction(actProjectMesh);
+
+    menuSubSample->addAction(actRandomSubSample);
+
+    QObject::connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_resetView()));
+
+    QObject::connect(actRandomSubSample,SIGNAL(triggered()),this,SLOT(slot_randomSubSamples()));
     QObject::connect(actSave,SIGNAL(triggered()),this,SLOT(slot_saveImage()));
     QObject::connect(actSaveRevolution,SIGNAL(triggered()),this,SLOT(slot_saveRevolution()));
     QObject::connect(sb_size, SIGNAL(valueChanged(double)), this, SLOT(slot_setPointSize(double)));
     QObject::connect(cb_mode, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setPrimitiveType(int)));
+
+    QObject::connect(actProjectMesh, SIGNAL(triggered() ), this, SLOT(slot_projectCustomMesh()));
+    QObject::connect(actProjectPlan, SIGNAL(triggered() ), this, SLOT(slot_projectPlan()));
+    QObject::connect(actProjectSphere, SIGNAL(triggered() ), this, SLOT(slot_projectSphere()));
 
     QObject::connect(actFitSphere, SIGNAL(triggered() ), this, SLOT(slot_fitSphere()));
     QObject::connect(actFitPlan, SIGNAL(triggered() ), this, SLOT(slot_fitPlan()));
@@ -196,6 +234,7 @@ void View3D::slot_fitSphere()
 
     addSphere(&sphere,QColor(64,64,64));
 
+
     //addSphere(QPosAtt(C,Eigen::Quaterniond(1,0,0,0)),1.0,QColor(64,64,64),sphere.getRadius());
 
     emit sig_displayResults( QString("Fit Sphere:\nCenter=(%1 , %2 , %3) Radius=%4\nRms=%5\n").arg(C[0]).arg(C[1]).arg(C[2]).arg(sphere.getRadius()).arg(sphere.getRMS()) );
@@ -245,6 +284,178 @@ void View3D::slot_fitPlan()
     emit sig_newColumn("Err_Plan",plan->getErrNorm());
 }
 
+
+void View3D::slot_projectPlan()
+{
+    QDialog* dialog=new QDialog;
+    dialog->setLocale(QLocale("C"));
+    dialog->setWindowTitle("project on a plan");
+    dialog->setMinimumWidth(400);
+    QGridLayout* gbox = new QGridLayout();
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+    QDoubleSpinBox* sb_nx=new QDoubleSpinBox(dialog);
+    sb_nx->setValue(1);
+    sb_nx->setPrefix("nx=");
+    sb_nx->setRange(-1,1);
+    QDoubleSpinBox* sb_ny=new QDoubleSpinBox(dialog);
+    sb_ny->setValue(0);
+    sb_ny->setPrefix("ny=");
+    sb_ny->setRange(-1,1);
+    QDoubleSpinBox* sb_nz=new QDoubleSpinBox(dialog);
+    sb_nz->setValue(0);
+    sb_nz->setPrefix("nz=");
+    sb_nz->setRange(-1,1);
+
+    Eigen::Vector3d barycenter=cloud->getBarycenter();
+    QDoubleSpinBox* sb_bx=new QDoubleSpinBox(dialog);
+    sb_bx->setValue(barycenter.x());
+    sb_bx->setPrefix("bx=");
+    sb_bx->setRange(-1e12,1e12);
+    QDoubleSpinBox* sb_by=new QDoubleSpinBox(dialog);
+    sb_by->setValue(barycenter.y());
+    sb_by->setPrefix("by=");
+    sb_by->setRange(-1e12,1e12);
+    QDoubleSpinBox* sb_bz=new QDoubleSpinBox(dialog);
+    sb_bz->setValue(barycenter.z());
+    sb_bz->setPrefix("bz=");
+    sb_bz->setRange(-1e12,1e12);
+
+    gbox->addWidget(new QLabel("Normal"),0,0);
+    gbox->addWidget(sb_nx,0,1);
+    gbox->addWidget(sb_ny,0,2);
+    gbox->addWidget(sb_nz,0,3);
+
+    gbox->addWidget(new QLabel("Barycenter"),1,0);
+    gbox->addWidget(sb_bx,1,1);
+    gbox->addWidget(sb_by,1,2);
+    gbox->addWidget(sb_bz,1,3);
+
+    gbox->addWidget(buttonBox,2,0,1,2);
+
+    dialog->setLayout(gbox);
+    int result=dialog->exec();
+
+    if (result == QDialog::Accepted)
+    {
+        Plan plan(Eigen::Vector3d(sb_nx->value(),sb_ny->value(),sb_nz->value()),
+                  Eigen::Vector3d(sb_bx->value(),sb_by->value(),sb_bz->value()));
+
+        cloud->project(&plan);
+        cloud3D->buffer->setData(cloud->getBuffer(customContainer->getColorScale()->dataRange()) );
+    }
+}
+
+void View3D::slot_projectSphere()
+{//todo dialog
+    QDialog* dialog=new QDialog;
+    dialog->setLocale(QLocale("C"));
+    dialog->setWindowTitle("project on a Sphere");
+    dialog->setMinimumWidth(400);
+    QGridLayout* gbox = new QGridLayout();
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+    QDoubleSpinBox* sb_radius=new QDoubleSpinBox(dialog);
+    sb_radius->setValue(cloud->getBoundingRadius());
+    sb_radius->setPrefix("radius=");
+    sb_radius->setRange(-10000000,10000000);
+
+    Eigen::Vector3d barycenter=cloud->getBarycenter();
+    QDoubleSpinBox* sb_bx=new QDoubleSpinBox(dialog);
+    sb_bx->setValue(barycenter.x());
+    sb_bx->setPrefix("bx=");
+    sb_bx->setRange(-1e12,1e12);
+    QDoubleSpinBox* sb_by=new QDoubleSpinBox(dialog);
+    sb_by->setValue(barycenter.y());
+    sb_by->setPrefix("by=");
+    sb_by->setRange(-1e12,1e12);
+    QDoubleSpinBox* sb_bz=new QDoubleSpinBox(dialog);
+    sb_bz->setValue(barycenter.z());
+    sb_bz->setPrefix("bz=");
+    sb_bz->setRange(-1e12,1e12);
+
+    gbox->addWidget(new QLabel("Radius"),0,0);
+    gbox->addWidget(sb_radius,0,1);
+
+    gbox->addWidget(new QLabel("Barycenter"),1,0);
+    gbox->addWidget(sb_bx,1,1);
+    gbox->addWidget(sb_by,1,2);
+    gbox->addWidget(sb_bz,1,3);
+
+    gbox->addWidget(buttonBox,2,0,1,2);
+
+    dialog->setLayout(gbox);
+    int result=dialog->exec();
+
+    if (result == QDialog::Accepted)
+    {
+        Sphere sphere(Eigen::Vector3d(sb_bx->value(),sb_by->value(),sb_bz->value()),
+                      sb_radius->value());
+
+        cloud->project(&sphere);
+        cloud3D->buffer->setData(cloud->getBuffer(customContainer->getColorScale()->dataRange()) );
+    }
+}
+
+void View3D::slot_projectCustomMesh()
+{
+    QString filename=QFileDialog::getOpenFileName(nullptr,"Project on 3D Mesh","./obj","Object (*.obj)");
+    std::cout<<filename.toLocal8Bit().data()<<std::endl;
+    if(filename.isEmpty())return;
+
+    Object obj(filename,QPosAtt());
+    cloud->project(&obj);
+
+    cloud3D->buffer->setData(cloud->getBuffer(customContainer->getColorScale()->dataRange()) );
+    //setCloudScalar(cloud,PrimitiveMode::MODE_POINTS);
+}
+
+void View3D::slot_randomSubSamples()
+{
+    QDialog* dialog=new QDialog;
+    dialog->setLocale(QLocale("C"));
+    dialog->setWindowTitle("Random Sub Samples");
+    dialog->setMinimumWidth(400);
+    QGridLayout* gbox = new QGridLayout();
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+    QSpinBox* sb_subSamples=new QSpinBox(dialog);
+    sb_subSamples->setValue(cloud->getBoundingRadius());
+    sb_subSamples->setPrefix("Samples=");
+    sb_subSamples->setRange(0,cloud->size());
+
+    QSlider* sb_slideSubSamples=new QSlider(Qt::Horizontal,dialog);
+    sb_slideSubSamples->setValue(cloud->getBoundingRadius());
+    sb_slideSubSamples->setRange(0,cloud->size());
+
+    QObject::connect(sb_slideSubSamples, SIGNAL(valueChanged(int)), sb_subSamples, SLOT(setValue(int)));
+    QObject::connect(sb_subSamples, SIGNAL(valueChanged(int)), sb_slideSubSamples, SLOT(setValue(int)));
+    sb_subSamples->setValue(cloud->size());
+
+    gbox->addWidget(sb_subSamples,0,0);
+    gbox->addWidget(sb_slideSubSamples,0,1,1,2);
+    gbox->addWidget(buttonBox,1,0,1,3);
+
+    dialog->setLayout(gbox);
+    int result=dialog->exec();
+
+    if (result == QDialog::Accepted)
+    {
+        cloud->subSample(sb_subSamples->value());
+
+        cloud3D->positionAttribute->setCount(static_cast<unsigned int>(cloud->size()));
+        cloud3D->cloudColorsAttribute->setCount(static_cast<unsigned int>(cloud->size()));
+
+        cloud3D->buffer->setData(cloud->getBuffer(customContainer->getColorScale()->dataRange()) );
+    }
+}
+
 void View3D::slot_fitCustomMesh()
 {
     QString filename=QFileDialog::getOpenFileName(nullptr,"3D Mesh","./obj","Object (*.obj)");
@@ -255,6 +466,8 @@ void View3D::slot_fitCustomMesh()
     timer.start();
 
     Object obj(filename,QPosAtt());
+
+
 
     obj.setScalePosAtt(QPosAtt(cloud->getBarycenter()-obj.getBox().middle(),Eigen::Quaterniond(cloud->getBoundingRadius()/obj.getRadius(),0,0,0)));
 
@@ -289,7 +502,7 @@ void View3D::slot_ColorScaleChanged(const QCPRange& range)
 {
     if (cloud && cloud3D->buffer)
     {
-        cloud3D->buffer->setData(cloud->getColorBuffer(range));
+        cloud3D->buffer->setData(cloud->getBuffer(range));
     }
 }
 
@@ -343,7 +556,7 @@ void View3D::slot_setGradient(int preset)
     {
         cloud->setGradientPreset(static_cast<QCPColorGradient::GradientPreset>(preset));
         customContainer->getColorScale()->setGradient(cloud->getGradient());
-        cloud3D->buffer->setData(cloud->getColorBuffer(customContainer->getColorScale()->dataRange()));
+        cloud3D->buffer->setData(cloud->getBuffer(customContainer->getColorScale()->dataRange()));
         customContainer->getColorScalePlot()->rescaleAxes();
         customContainer->getColorScalePlot()->replot();
     }
@@ -357,8 +570,8 @@ void View3D::setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode)
     camera_params->setBoundingRadius( 1.20f );
 
     //Set Data Buffers
-    cloud3D->positionAttribute->setCount(static_cast<unsigned int>(cloud->positions().size()));
-    cloud3D->cloudColorsAttribute->setCount(static_cast<unsigned int>(cloud->positions().size()));
+    cloud3D->positionAttribute->setCount(static_cast<unsigned int>(cloud->size()));
+    cloud3D->cloudColorsAttribute->setCount(static_cast<unsigned int>(cloud->size()));
 
     // mesh
     slot_setPrimitiveType(primitiveMode);
@@ -603,21 +816,26 @@ void View3D::mouseMoveEvent(QMouseEvent* event)
     }
 }
 
+void View3D::slot_resetView()
+{
+    camera_params->reset();
+
+    customContainer->getXAxis()->setRange(cloud->getXRange());
+    customContainer->getYAxis()->setRange(cloud->getYRange());
+    customContainer->getZAxis()->setRange(cloud->getZRange());
+    customContainer->getColorScale()->setDataRange(cloud->getScalarFieldRange());
+    customContainer->getColorScalePlot()->rescaleAxes();
+    customContainer->replot();
+
+
+    updateGridAndLabels();
+}
+
 void View3D::mouseDoubleClickEvent(QMouseEvent* event)
 {
     if (event->buttons()==Qt::LeftButton)
     {
-        camera_params->reset();
-
-        customContainer->getXAxis()->setRange(cloud->getXRange());
-        customContainer->getYAxis()->setRange(cloud->getYRange());
-        customContainer->getZAxis()->setRange(cloud->getZRange());
-        customContainer->getColorScale()->setDataRange(cloud->getScalarFieldRange());
-        customContainer->getColorScalePlot()->rescaleAxes();
-        customContainer->replot();
-
-
-        updateGridAndLabels();
+        slot_resetView();
     }
 }
 

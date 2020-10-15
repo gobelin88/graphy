@@ -30,7 +30,8 @@ public:
           QString labelS);
 
     void operator=(const Cloud& other);
-    const std::vector<Eigen::Vector3d>& positions()const;
+    std::vector<Eigen::Vector3d> positions()const;
+    int size() const;
 
     QCPRange getXRange();
     QCPRange getYRange();
@@ -46,7 +47,7 @@ public:
     Eigen::Vector3d getBarycenter();
     double getBoundingRadius();
 
-    QByteArray getColorBuffer(QCPRange range);
+    QByteArray getBuffer(QCPRange range);
 
     QString getLabelX();
     QString getLabelY();
@@ -56,15 +57,17 @@ public:
     static QVector3D toQVec3D(Eigen::Vector3d p);
 
     //Fit a model
-    void fit(Shape<Eigen::Vector3d>* model, int it=10000);
+    void fit(Shape<Eigen::Vector3d>* model, int it=10000,double xtol=-1);
+    void project(Shape<Eigen::Vector3d>* model);
+
+    void subSample(unsigned int nbPoints);
 
 private:
     void calcBarycenterAndBoundingRadius();
 
     QCPRange getRange(const Eigen::VectorXd& v);
 
-    std::vector<Eigen::Vector3d> pts;
-    Eigen::VectorXd scalarField;
+    std::vector<Eigen::Vector4d> pts;
     std::vector<QRgb> colors;
 
     QCPColorGradient gradient;

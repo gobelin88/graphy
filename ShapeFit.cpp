@@ -66,8 +66,7 @@ Sphere::Sphere(Eigen::Vector3d center, double radius)
 Eigen::Vector3d Sphere::delta(const Eigen::Vector3d& pt) const
 {
     Eigen::Vector3d u=pt-getCenter();
-    u.normalize();
-    return  (pt-getCenter())-u*getRadius();
+    return  u-u*getRadius()/u.norm();
 }
 
 int Sphere::nb_params()

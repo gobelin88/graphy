@@ -64,12 +64,13 @@ void ScatterDataModifier::setData(const Cloud& cloud)
     m_graph->axisZ()->setTitle("Z");
 
     QScatterDataArray* dataArray = new QScatterDataArray;
-    dataArray->resize(static_cast<int>(cloud.positions().size()));
+    dataArray->resize(static_cast<int>(cloud.size()));
     QScatterDataItem* ptrToDataArray = &dataArray->first();
 
-    for (int k=0; k<cloud.positions().size(); k++)
+    std::vector<Eigen::Vector3d> positions=cloud.positions();
+    for (int k=0; k<cloud.size(); k++)
     {
-        ptrToDataArray->setPosition(Cloud::toQVec3D(cloud.positions()[k]));
+        ptrToDataArray->setPosition(Cloud::toQVec3D(positions[k]));
         ptrToDataArray++;
     }
 

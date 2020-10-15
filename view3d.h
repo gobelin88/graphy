@@ -115,6 +115,14 @@ public slots:
     void slot_setGradient(int preset);
     void updateGridAndLabels();
 
+    void slot_projectCustomMesh();
+    void slot_projectPlan();
+    void slot_projectSphere();
+
+    void slot_randomSubSamples();
+
+    void slot_resetView();
+
 signals:
     void sig_newColumn(QString varName,Eigen::VectorXd data);
     void sig_displayResults(QString results);
@@ -175,9 +183,24 @@ private:
     QAction* actFitPlan;
     QAction* actFitMesh;
 
+    QMenu * menuProject;
+    QAction * actProjectSphere;
+    QAction * actProjectPlan;
+    QAction * actProjectMesh;
+
+    QMenu * menuSubSample;
+    QAction * actRandomSubSample;
+
+    QMenu * menuView;
+    QAction * actRescale;
+
+    QMenu * menuData;
+    QAction * actExport;
+
     QComboBox* c_gradient;
     QDoubleSpinBox* sb_size;
     QComboBox* cb_mode;
+
 
     //
     bool xy_reversed;

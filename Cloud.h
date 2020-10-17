@@ -31,6 +31,7 @@ public:
 
     void operator=(const Cloud& other);
     std::vector<Eigen::Vector3d> positions()const;
+    const std::vector<Eigen::Vector4d> & data()const;
     int size() const;
 
     QCPRange getXRange();

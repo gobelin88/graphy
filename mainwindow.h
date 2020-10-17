@@ -94,7 +94,7 @@ private:
     void saveShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
 
     //Constants
-    const float graphyVersion=4.0f;
+    const float graphyVersion=4.1f;
 };
 
 #endif // MAINWINDOW_H

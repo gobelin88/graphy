@@ -499,6 +499,41 @@ void Curve2D::operator=(const Curve2D& other)
     this->style=other.style;
 }
 
+void Curve2D::fromByteArray(QByteArray data)
+{
+    QBuffer buffer(&data);
+    buffer.open(QIODevice::ReadOnly);
+    QDataStream ds(&buffer);
+
+    ds>>x>>y>>s>>a;
+    ds>>l;
+    ds>>legendname;
+    style.read(ds);
+
+    buffer.close();
+
+    std::cout<<"toByteArray size="<<data.size()<<std::endl;
+}
+
+QByteArray Curve2D::toByteArray()
+{
+    QByteArray data;
+    QBuffer buffer(&data);
+    buffer.open(QIODevice::WriteOnly);
+    QDataStream ds(&buffer);
+
+    ds<<x<<y<<s<<a;
+    ds<<l;
+    ds<<legendname;
+    style.write(ds);
+
+
+    buffer.close();
+
+    std::cout<<"toByteArray size="<<data.size()<<std::endl;
+    return data;
+}
+
 QString Curve2D::getLegend() const
 {
     return legendname;

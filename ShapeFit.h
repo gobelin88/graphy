@@ -73,14 +73,14 @@ public:
         return 0;
     }
 
-    void setPointsList(std::vector<T> points_list)
+    void setPointsList(const std::vector<T> & points_list)
     {
         m_values=(int)points_list.size()*points_list[0].rows();
         m_inputs=nb_params();
         points=points_list;
     }
 
-    void fit(std::vector<T> points, int it, double xtol=-1)
+    void fit(const std::vector<T> & points, int it, double xtol=-1)
     {
         Eigen::VectorXd p=this->getParams();
         this->setPointsList(points);

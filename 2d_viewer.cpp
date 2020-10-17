@@ -175,7 +175,7 @@ void Viewer2D::slot_updateData()
 {
     colorMap->data()->clear();
     colorMap->data()->setSize(box.pX_res,box.pY_res);
-    setRange(getRange(dataX),getRange(dataY));
+    setRange(QCPRange(dataX.minCoeff(),dataX.maxCoeff()),QCPRange(dataY.minCoeff(),dataY.maxCoeff()));
     interpolate(dataX,dataY,dataZ,box,colorMap,knn,mode);
     resetRange();
 }

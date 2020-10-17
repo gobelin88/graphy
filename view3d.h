@@ -122,6 +122,7 @@ public slots:
     void slot_randomSubSamples();
 
     void slot_resetView();
+    void slot_export();
 
 signals:
     void sig_newColumn(QString varName,Eigen::VectorXd data);

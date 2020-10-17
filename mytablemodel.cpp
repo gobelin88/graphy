@@ -961,10 +961,14 @@ void MyModel::dataAddRows(MatrixXv& matrix, int n)
 
 void MyModel::dataAddColumn(MatrixXv& matrix, VectorXv colToAdd)
 {
+
     unsigned int numRows = matrix.rows();
     unsigned int numCols = matrix.cols()+1;
-    matrix.conservativeResize(numRows,numCols);
-    matrix.col(numCols-1)=colToAdd;
+    if(numRows==colToAdd.rows())
+    {
+        matrix.conservativeResize(numRows,numCols);
+        matrix.col(numCols-1)=colToAdd;
+    }
 }
 
 void MyModel::dataRemoveRows(MatrixXv& matrix, unsigned int rowToRemove, unsigned int nbRow)
@@ -1067,6 +1071,8 @@ void MyModel::setRowOffset(int rowOffset)
 
 void MyModel::slot_newColumn(QString varName,Eigen::VectorXd dataCol)
 {
+    if(dataCol.rows()!=m_data.rows())return;
+
     if(!reg.existVariable(varName))
     {
         if(reg.newVariable(varName,""))
@@ -1080,6 +1086,8 @@ void MyModel::slot_newColumn(QString varName,Eigen::VectorXd dataCol)
             }
 
             dataAddColumn(m_data,dataColv);
+
+
             emit layoutChanged();
             emit sig_dataChanged();
         }
@@ -1098,6 +1106,7 @@ void MyModel::slot_newColumn(QString varName,Eigen::VectorXd dataCol)
     {
         slot_newColumn(varName+QString("_%1").arg(reg.countVariable(varName)),dataCol);
     }
+    std::cout<<"slot_newColumn end"<<std::endl;
 }
 
 void MyModel::setRowSpan(int rowSpan)

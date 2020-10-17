@@ -397,7 +397,7 @@ void Viewer1D::createPopup()
     popup_menu->addMenu(menuAnalyse);
     popup_menu->addMenu(menuFilters);
     popup_menu->addMenu(menuFit);
-    popup_menu->addMenu(menuScalarField);    
+    popup_menu->addMenu(menuScalarField);
     popup_menu->addSeparator();
 
     menuFilters->addAction(actFilterMedian);
@@ -1363,19 +1363,42 @@ void Viewer1D::slot_copy()
 
     if (list.size()>0 && sharedBuf!=nullptr)
     {
-        *sharedBuf=list[0];
+        //*sharedBuf=list[0];
+        //sharedBuf
+
+
+        QMimeData * mimeData=new QMimeData();
+        QByteArray rawData=list[0].toByteArray();
+        mimeData->setData("Curve",rawData);
+        QApplication::clipboard()->setMimeData(mimeData);
+
     }
+
+
 }
 
 void Viewer1D::slot_paste()
 {
-    if (sharedBuf!=nullptr)
+    //    if (sharedBuf!=nullptr)
+    //    {
+    //        if (sharedBuf->getX().size()>0)
+    //        {
+    //            slot_add_data(*sharedBuf);
+    //        }
+    //    }
+    const QMimeData * mimeData=QApplication::clipboard()->mimeData();
+
+    if(mimeData)
     {
-        if (sharedBuf->getX().size()>0)
+        if(mimeData->hasFormat("Curve"))
         {
-            slot_add_data(*sharedBuf);
+            Curve2D curve;
+            QByteArray data=mimeData->data("Curve");
+            curve.fromByteArray(data);
+            slot_add_data(curve);
         }
     }
+
     slot_rescale();
 }
 
@@ -1474,14 +1497,14 @@ void Viewer1D::slot_statistiques()
         double max=curves[i].getY().maxCoeff();
 
         QString stat_str=QString("Statistiques : %1\nMin=%2\nMax=%3\nSpan=%4\nMean=%5\nStandard-Deviation=%6\nRoot-Mean-Squares=%7\n%8")
-                         .arg(curves[i].getLegend())
-                         .arg(min)
-                         .arg(max)
-                         .arg(max-min)
-                         .arg(mean)
-                         .arg( sqrt( (curves[i].getY()-Eigen::VectorXd::Constant(curves[i].getY().size(),mean)).cwiseAbs2().mean() ) )
-                         .arg( curves[i].getRms() )
-                         .arg(CIstr);
+                .arg(curves[i].getLegend())
+                .arg(min)
+                .arg(max)
+                .arg(max-min)
+                .arg(mean)
+                .arg( sqrt( (curves[i].getY()-Eigen::VectorXd::Constant(curves[i].getY().size(),mean)).cwiseAbs2().mean() ) )
+                .arg( curves[i].getRms() )
+                .arg(CIstr);
 
         emit sig_displayResults(stat_str);
     }

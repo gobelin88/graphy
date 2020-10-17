@@ -106,6 +106,11 @@ std::vector<QRgb>& Cloud::getColors()
     return colors;
 }
 
+const std::vector<Eigen::Vector4d> & Cloud::data()const
+{
+    return pts;
+}
+
 std::vector<Eigen::Vector3d> Cloud::positions()const
 {
     std::vector<Eigen::Vector3d> positions(pts.size());

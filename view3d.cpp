@@ -145,6 +145,7 @@ void View3D::createPopup()
 
     menuSubSample->addAction(actRandomSubSample);
 
+    QObject::connect(actExport,SIGNAL(triggered()),this,SLOT(slot_export()));
     QObject::connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_resetView()));
 
     QObject::connect(actRandomSubSample,SIGNAL(triggered()),this,SLOT(slot_randomSubSamples()));
@@ -160,6 +161,7 @@ void View3D::createPopup()
     QObject::connect(actFitSphere, SIGNAL(triggered() ), this, SLOT(slot_fitSphere()));
     QObject::connect(actFitPlan, SIGNAL(triggered() ), this, SLOT(slot_fitPlan()));
     QObject::connect(actFitMesh, SIGNAL(triggered() ), this, SLOT(slot_fitCustomMesh()));
+
     QObject::connect(c_gradient, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setGradient(int)));
 }
 
@@ -266,19 +268,9 @@ void View3D::slot_fitPlan()
         plan=&planC;
     }
 
-
     Eigen::Vector3d N=plan->getNormal();
 
-    QPosAtt posatt( barycenter,Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),N));
-
-//    addPlan(posatt,1.0,QColor(64,64,64),
-//            2*cloud->getBoundingRadius(),2*cloud->getBoundingRadius());
-
-    QCPRange xr=cloud->getXRange();
-    QCPRange yr=cloud->getYRange();
-
-    addPlan(plan,cloud->getBoundingRadius(),QColor(128,128,128));
-
+    addPlan(plan,cloud->getBoundingRadius()*2,QColor(128,128,128));
 
     emit sig_displayResults( QString("Fit Plan:\nNormal=+-(%1 , %2 , %3)\nRms=%4\n").arg(N[0]).arg(N[1]).arg(N[2]).arg(plan->getRMS()));
     emit sig_newColumn("Err_Plan",plan->getErrNorm());
@@ -447,10 +439,15 @@ void View3D::slot_randomSubSamples()
 
     if (result == QDialog::Accepted)
     {
-        cloud->subSample(sb_subSamples->value());
+        int nbPoints=sb_subSamples->value();
+        cloud3D->positionAttribute   ->setCount(static_cast<unsigned int>(nbPoints));
+        cloud3D->cloudColorsAttribute->setCount(static_cast<unsigned int>(nbPoints));
+        cloud->subSample(nbPoints);
 
-        cloud3D->positionAttribute->setCount(static_cast<unsigned int>(cloud->size()));
-        cloud3D->cloudColorsAttribute->setCount(static_cast<unsigned int>(cloud->size()));
+        if(nbPoints!=cloud->size())
+        {
+            std::cout<<"error : "<<nbPoints<<" "<<cloud->size()<<std::endl;
+        }
 
         cloud3D->buffer->setData(cloud->getBuffer(customContainer->getColorScale()->dataRange()) );
     }
@@ -813,6 +810,31 @@ void View3D::mouseMoveEvent(QMouseEvent* event)
 
         xp=event->x();
         yp=event->y();
+    }
+}
+
+void View3D::slot_export()
+{
+    QString filename=QFileDialog::getSaveFileName(nullptr,"Cloud export data","Cloud.graphy","*.graphy");
+
+    if(!filename.isEmpty())
+    {
+        QFile file(filename);
+
+        if(file.open(QIODevice::WriteOnly | QIODevice::Text ))
+        {
+            QTextStream ts(&file);
+
+            const std::vector<Eigen::Vector4d> & data=cloud->data();
+            ts<<"<header>\n";
+            ts<<"X;Y;Z;S;\n";
+            ts<<"</header>\n";
+            for(int i=0;i<cloud->size();i++)
+            {
+                ts<<data[i][0]<<";"<<data[i][1]<<";"<<data[i][2]<<";"<<data[i][3]<<";\n";
+            }
+            file.close();
+        }
     }
 }
 

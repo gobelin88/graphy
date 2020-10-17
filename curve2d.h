@@ -31,6 +31,27 @@ public:
         int mScatterShape;
         int mScatterSize;
         int gradientType;
+
+        void write(QDataStream & ds)
+        {
+            ds<<mLineStyle;
+            ds<<mScatterShape;
+            ds<<mScatterSize;
+            ds<<mScatterSize;
+            ds<<pen;
+            ds<<brush;
+        }
+
+        void read(QDataStream & ds)
+        {
+            ds>>mLineStyle;
+            ds>>mScatterShape;
+            ds>>mScatterSize;
+            ds>>mScatterSize;
+            ds>>pen;
+            ds>>brush;
+        }
+
     };
 
     enum CurveType
@@ -80,7 +101,7 @@ public:
     QVector<double> getQAlphaField()const;
 
     //Optional labelField
-    void setLabelsField(const QVector<QString>& l);
+    void setLabelsField(const QVector<QString> &l);
     QVector<QString> getLabelsField()const;
 
     //Fit a model
@@ -115,6 +136,9 @@ public:
     void getLinXY(int n, Eigen::VectorXd& valuesX, Eigen::VectorXd& valuesY);
 
     static Eigen::VectorXd buildX(int sz);
+
+    void fromByteArray(QByteArray data);
+    QByteArray toByteArray();
 
     void operator=(const Curve2D& other);
 

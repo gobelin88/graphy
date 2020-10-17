@@ -1,57 +1,12 @@
 #include "tabledata.h"
+#include "kdtree_eigen.h"
 
 void create(Eigen::MatrixXd& data, uint nbL,uint nbC)
 {
     data=Eigen::MatrixXd(nbL,nbC);
 }
 
-void removeRows(Eigen::MatrixXd& matrix, unsigned int rowToRemove, unsigned int nbRow)
-{
-    unsigned int numRows = matrix.rows()-nbRow;
-    unsigned int numCols = matrix.cols();
 
-    if ( rowToRemove < numRows )
-    {
-        matrix.block(rowToRemove,0,numRows-rowToRemove,numCols) = matrix.block(rowToRemove+nbRow,0,numRows-rowToRemove,numCols);
-    }
-    matrix.conservativeResize(numRows,numCols);
-}
-
-void removeColumns(Eigen::MatrixXd& matrix, unsigned int colToRemove,unsigned int nbCol)
-{
-    unsigned int numRows = matrix.rows();
-    unsigned int numCols = matrix.cols()-nbCol;
-
-    if ( colToRemove < numCols )
-    {
-        matrix.block(0,colToRemove,numRows,numCols-colToRemove) = matrix.block(0,colToRemove+nbCol,numRows,numCols-colToRemove);
-    }
-    matrix.conservativeResize(numRows,numCols);
-}
-
-void addRow(Eigen::MatrixXd& matrix, Eigen::VectorXd rowToAdd)
-{
-    unsigned int numRows = matrix.rows()+1;
-    unsigned int numCols = matrix.cols();
-    matrix.conservativeResize(numRows,numCols);
-    matrix.row(numRows-1)=rowToAdd;
-}
-
-void addRows(Eigen::MatrixXd& matrix, int n)
-{
-    unsigned int numRows = matrix.rows()+n;
-    unsigned int numCols = matrix.cols();
-    matrix.conservativeResize(numRows,numCols);
-    matrix.block(numRows-n,0,n,numCols);
-}
-
-void addColumn(Eigen::MatrixXd& matrix, Eigen::VectorXd colToAdd)
-{
-    unsigned int numRows = matrix.rows();
-    unsigned int numCols = matrix.cols()+1;
-    matrix.conservativeResize(numRows,numCols);
-    matrix.col(numCols-1)=colToAdd;
-}
 
 
 
@@ -117,11 +72,6 @@ void interpolate(const Eigen::VectorXd& dataX,
     }
 }
 
-QCPRange getRange(const Eigen::VectorXd& data)
-{
-    return  QCPRange(data.minCoeff(),data.maxCoeff());
-}
-
 std::vector<double> toStdVector(const Eigen::VectorXd& v)
 {
     std::vector<double> v_std(v.size());
@@ -154,16 +104,6 @@ QVector<double> toQVector(const Eigen::VectorXd& v)
     return v_q;
 }
 
-QVector<QString> toQVectorStr(const Eigen::VectorXd& v)
-{
-    QVector<QString> v_str(v.size());
-    for (int i=0; i<v.size(); i++)
-    {
-        v_str[i]=QString::number(v[i]);
-    }
-    return v_str;
-}
-
 Eigen::VectorXd fromStdVector(const std::vector<double>& v_std)
 {
     Eigen::VectorXd v(v_std.size());
@@ -178,50 +118,46 @@ Eigen::VectorXd fromQVector(const QVector<double>& v_q)
     return v;
 }
 
-void sortBy(Eigen::MatrixXd& matrix, int colId,SortMode mode)
+QDataStream & operator<<(QDataStream & ds,const Eigen::VectorXd & v)
 {
-    std::vector<Eigen::VectorXd> vec;
-    for (int64_t i = 0; i < matrix.rows(); ++i)
-        vec.push_back(matrix.row(i));
-
-    if(mode==ASCENDING)
+    ds<<v.rows();
+    for(int i=0;i<v.rows();i++)
     {
-        std::sort(vec.begin(), vec.end(), [&colId](Eigen::VectorXd const& t1, Eigen::VectorXd const& t2){ return t1(colId) < t2(colId); } );
+        ds<<v[i];
     }
-    else if(mode==DECENDING)
-    {
-        std::sort(vec.begin(), vec.end(), [&colId](Eigen::VectorXd const& t1, Eigen::VectorXd const& t2){ return t1(colId) > t2(colId); } );
-    }
-
-    for (int64_t i = 0; i < matrix.rows(); ++i)
-        matrix.row(i) = vec[i];
+    return ds;
 }
 
-void thresholdBy(Eigen::MatrixXd& matrix, int colId,ThresholdMode mode,double value)
+QDataStream & operator>>(QDataStream & ds,Eigen::VectorXd & v)
 {
-    std::vector<Eigen::VectorXd> vec;
-    for (unsigned int i = 0; i < matrix.rows(); ++i)
+    Eigen::Index nbRows;
+    ds>>nbRows;
+    v.resize(nbRows);
+    for(int i=0;i<v.rows();i++)
     {
-        if(mode==KEEP_GREATER)
-        {
-            if(matrix(i,colId)>value)//KEEP_GREATER
-            {
-                vec.push_back(matrix.row(i));
-            }
-        }
-        else
-        {
-            if(matrix(i,colId)<value)//KEEP_LOWER
-            {
-                vec.push_back(matrix.row(i));
-            }
-        }
+        ds>>v[i];
     }
+    return ds;
+}
 
-    for (unsigned int i = 0; i < vec.size(); ++i)
+QDataStream & operator<<(QDataStream & ds,const QVector<QString> & v)
+{
+    ds<<v.size();
+    for(int i=0;i<v.size();i++)
     {
-        matrix.row(i) = vec[i];
+        ds<<v[i];
     }
+    return ds;
+}
 
-    matrix.conservativeResize(vec.size(),matrix.cols());
+QDataStream & operator>>(QDataStream & ds,QVector<QString> & v)
+{
+    int size;
+    ds>>size;
+    v.resize(size);
+    for(int i=0;i<v.size();i++)
+    {
+        ds>>v[i];
+    }
+    return ds;
 }

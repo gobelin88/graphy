@@ -517,14 +517,10 @@ void Object::nearestPolygon(int face_id, const Vector3d& p, double *r) const
     }
 }
 
-inline double clampd(double v,double a,double b)
-{
-    if(v<a)return a;
-    else if(v>b)return b;
-    else
-    {
-        return v;
-    }
+
+inline double clampd(double d) {
+  const double t = d < 0.0 ? 0.0 : d;
+  return t > 1.0 ? 1.0 : t;
 }
 
 void Object::nearestTriangle(int face_id, const Vector3d& p ,double * r )const
@@ -565,25 +561,45 @@ void Object::nearestTriangle(int face_id, const Vector3d& p ,double * r )const
             {
                 if ( d < 0.f )
                 {
-                    s = clampd( -d/a, 0.f, 1.f );
+                    s = clampd( -d/a);
                     t = 0.f;
+
+                    r[0]= A[0] + s * AB[0];
+                    r[1]= A[1] + s * AB[1];
+                    r[2]= A[2] + s * AB[2];
+                    return;
                 }
                 else
                 {
                     s = 0.f;
-                    t = clampd( -e/c, 0.f, 1.f );
+                    t = clampd( -e/c);
+
+                    r[0]= A[0] + t * AC[0];
+                    r[1]= A[1] + t * AC[1];
+                    r[2]= A[2] + t * AC[2];
+                    return;
                 }
             }
             else
             {
                 s = 0.f;
-                t = clampd( -e/c, 0.f, 1.f );
+                t = clampd( -e/c);
+
+                r[0]= A[0] + t * AC[0];
+                r[1]= A[1] + t * AC[1];
+                r[2]= A[2] + t * AC[2];
+                return;
             }
         }
         else if ( t < 0.f )
         {
-            s = clampd( -d/a, 0.f, 1.f );
+            s = clampd( -d/a);
             t = 0.f;
+
+            r[0]= A[0] + s * AB[0];
+            r[1]= A[1] + s * AB[1];
+            r[2]= A[2] + s * AB[2];
+            return;
         }
         else
         {
@@ -602,13 +618,18 @@ void Object::nearestTriangle(int face_id, const Vector3d& p ,double * r )const
             {
                 double numer = tmp1 - tmp0;
                 double denom = a-2*b+c;
-                s = clampd( numer/denom, 0.f, 1.f );
+                s = clampd( numer/denom );
                 t = 1-s;
             }
             else
             {
-                t = clampd( -e/c, 0.f, 1.f );
+                t = clampd( -e/c);
                 s = 0.f;
+
+                r[0]= A[0] + t * AC[0];
+                r[1]= A[1] + t * AC[1];
+                r[2]= A[2] + t * AC[2];
+                return;
             }
         }
         else if ( t < 0.f )
@@ -617,20 +638,25 @@ void Object::nearestTriangle(int face_id, const Vector3d& p ,double * r )const
             {
                 double numer = c+e-b-d;
                 double denom = a-2*b+c;
-                s = clampd( numer/denom, 0.f, 1.f );
+                s = clampd( numer/denom );
                 t = 1-s;
             }
             else
             {
-                s = clampd( -e/c, 0.f, 1.f );
+                s = clampd( -e/c );
                 t = 0.f;
+
+                r[0]= A[0] + s * AB[0];
+                r[1]= A[1] + s * AB[1];
+                r[2]= A[2] + s * AB[2];
+                return;
             }
         }
         else
         {
             double numer = c+e-b-d;
             double denom = a-2*b+c;
-            s = clampd( numer/denom, 0.f, 1.f );
+            s = clampd( numer/denom );
             t = 1.f - s;
         }
     }

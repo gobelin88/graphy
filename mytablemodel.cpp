@@ -796,7 +796,12 @@ int MyModel::columnCount(const QModelIndex & /*parent*/) const
 //-----------------------------------------------------------------
 QVariant MyModel::data(const QModelIndex &index_logical, int role) const
 {
-    if (role == Qt::DisplayRole)
+    if(role==Qt::EditRole)
+    {
+        QModelIndex index=toVisualIndex(index_logical);
+        return m_data(index.row()+m_rowOffset,index.column()).toString();
+    }
+    else if (role == Qt::DisplayRole)
     {
         QModelIndex index=toVisualIndex(index_logical);
 

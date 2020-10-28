@@ -93,6 +93,10 @@ void View3D::createPopup()
     menuView= new QMenu("View");
     actRescale= new QAction("Rescale",  this);
 
+    menuMesh= new QMenu("Mesh");
+    actMeshLoad= new QAction("Load",  this);
+    actMeshCreateRotegrity= new QAction("Rotegrity",  this);;
+
     ///////////////////////////////////////////////
     QWidgetAction* actWidget=new QWidgetAction(popup_menu);
     QWidget* widget=new QWidget;
@@ -124,6 +128,7 @@ void View3D::createPopup()
     popup_menu->addMenu(menuView);
     popup_menu->addSeparator();
     popup_menu->addMenu(menuData);
+    popup_menu->addMenu(menuMesh);
     popup_menu->addSeparator();
     popup_menu->addAction(actSave);
     popup_menu->addAction(actSaveRevolution);
@@ -143,7 +148,13 @@ void View3D::createPopup()
     menuProject->addAction(actProjectPlan);
     menuProject->addAction(actProjectMesh);
 
+    menuMesh->addAction(actMeshLoad);
+    menuMesh->addAction(actMeshCreateRotegrity);
+
     menuSubSample->addAction(actRandomSubSample);
+
+    QObject::connect(actMeshLoad,SIGNAL(triggered()),this,SLOT(slot_addMesh()));
+    QObject::connect(actMeshCreateRotegrity,SIGNAL(triggered()),this,SLOT(slot_createRotegrity()));
 
     QObject::connect(actExport,SIGNAL(triggered()),this,SLOT(slot_export()));
     QObject::connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_resetView()));
@@ -465,8 +476,8 @@ void View3D::slot_fitCustomMesh()
     Object obj(filename,QPosAtt());
 
 
-
-    obj.setScalePosAtt(QPosAtt(cloud->getBarycenter()-obj.getBox().middle(),Eigen::Quaterniond(cloud->getBoundingRadius()/obj.getRadius(),0,0,0)));
+    Vector3d obj_center=obj.getBox().middle();
+    obj.setScalePosAtt(QPosAtt(cloud->getBarycenter()-obj_center,Eigen::Quaterniond(cloud->getBoundingRadius()/obj.getRadius(obj_center),0,0,0)));
 
     cloud->fit(&obj,100);
 
@@ -835,6 +846,133 @@ void View3D::slot_export()
             }
             file.close();
         }
+    }
+}
+
+void View3D::slot_addMesh()
+{
+    QString filename=QFileDialog::getOpenFileName(nullptr,"3D Mesh","./obj","Object (*.obj)");
+    std::cout<<filename.toLocal8Bit().data()<<std::endl;
+    if(filename.isEmpty())return;
+
+    Object obj(filename,QPosAtt());
+    BoundingBox bb=obj.getBox();
+    customContainer->getXAxis()->setRange(QCPRange(bb.Pmin[0],bb.Pmax[0]));
+    customContainer->getYAxis()->setRange(QCPRange(bb.Pmin[1],bb.Pmax[1]));
+    customContainer->getZAxis()->setRange(QCPRange(bb.Pmin[2],bb.Pmax[2]));
+
+    customContainer->adjustSize();
+    customContainer->replot();
+
+    auto* m_obj = new Qt3DRender::QMesh();
+    m_obj->setSource(QUrl(QString("file:///")+filename));
+
+    addObj(m_obj,QPosAtt(),1.0,QColor(64,64,64));
+}
+
+void View3D::slot_createRotegrity()
+{
+    QString filename=QFileDialog::getOpenFileName(nullptr,"3D Mesh","./obj","Object (*.obj)");
+    std::cout<<filename.toLocal8Bit().data()<<std::endl;
+    if(filename.isEmpty())return;
+
+
+    QDialog* dialog=new QDialog;
+    dialog->setLocale(QLocale("C"));
+    dialog->setWindowTitle("Generate rotegrity shape");
+    dialog->setMinimumWidth(400);
+    QGridLayout* gbox = new QGridLayout();
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+    QDoubleSpinBox* sb_angle=new QDoubleSpinBox(dialog);
+    sb_angle->setValue(25);
+    sb_angle->setPrefix("angle=");
+    sb_angle->setSuffix(" °");
+    sb_angle->setRange(-90,90);
+    QSpinBox* sb_subdivisions=new QSpinBox(dialog);
+    sb_subdivisions->setValue(100);
+    sb_subdivisions->setPrefix("subdivisions=");
+    sb_subdivisions->setRange(0,1000);
+    QDoubleSpinBox* sb_strech=new QDoubleSpinBox(dialog);
+    sb_strech->setValue(1.5);
+    sb_strech->setPrefix("strech=");
+    sb_strech->setRange(0,10);
+    QDoubleSpinBox* sb_radius_int=new QDoubleSpinBox(dialog);
+    sb_radius_int->setValue(60);
+    sb_radius_int->setPrefix("radius_int=");
+    sb_radius_int->setSuffix(" mm");
+    sb_radius_int->setRange(0,1000);
+    QDoubleSpinBox* sb_radius_dr=new QDoubleSpinBox(dialog);
+    sb_radius_dr->setValue(10);
+    sb_radius_dr->setPrefix("radius_dr=");
+    sb_radius_dr->setSuffix(" mm");
+    sb_radius_dr->setRange(0,1000);
+    QDoubleSpinBox* sb_width=new QDoubleSpinBox(dialog);
+    sb_width->setValue(3);
+    sb_width->setPrefix("width=");
+    sb_width->setSuffix(" mm");
+    sb_width->setRange(0,100);
+    QDoubleSpinBox* sb_encA=new QDoubleSpinBox(dialog);
+    sb_encA->setDecimals(3);
+    sb_encA->setValue(0.9);
+    sb_encA->setPrefix("encA=");
+    sb_encA->setSuffix(" ");
+    sb_encA->setRange(0,1);
+    QDoubleSpinBox* sb_encB=new QDoubleSpinBox(dialog);
+    sb_encB->setDecimals(3);
+    sb_encB->setValue(0.673);
+    sb_encB->setPrefix("encB=");
+    sb_encB->setSuffix(" ");
+    sb_encB->setRange(0,1);
+
+
+
+    gbox->addWidget(sb_angle,0,0);
+    gbox->addWidget(sb_subdivisions,0,1);
+    gbox->addWidget(sb_strech,1,0);
+    gbox->addWidget(sb_width,1,1);
+    gbox->addWidget(sb_radius_int,2,0);
+    gbox->addWidget(sb_radius_dr,2,1);
+    gbox->addWidget(sb_encA,3,0);
+    gbox->addWidget(sb_encB,3,1);
+
+    gbox->addWidget(buttonBox,4,0,1,2);
+
+    dialog->setLayout(gbox);
+    int result=dialog->exec();
+
+    if (result == QDialog::Accepted)
+    {
+
+        QFileInfo info(filename);
+        Object obj(filename,QPosAtt());
+        QString filename=info.path()+"/"+info.baseName()+"_rotegrity.obj";
+
+        obj.rotegrity(sb_angle->value(),
+                      sb_subdivisions->value(),
+                      sb_strech->value(),
+                      sb_radius_int->value(),
+                      sb_radius_dr->value(),
+                      sb_width->value(),
+                      sb_encA->value(),
+                      sb_encB->value());
+
+        obj.save(filename);
+
+        BoundingBox bb=obj.getBox();
+        customContainer->getXAxis()->setRange(QCPRange(bb.Pmin[0],bb.Pmax[0]));
+        customContainer->getYAxis()->setRange(QCPRange(bb.Pmin[1],bb.Pmax[1]));
+        customContainer->getZAxis()->setRange(QCPRange(bb.Pmin[2],bb.Pmax[2]));
+
+        auto* m_obj = new Qt3DRender::QMesh();
+        m_obj->setSource(QUrl(QString("file:///")+filename));
+
+        addObj(m_obj,QPosAtt(),1.0,QColor(64,64,64));
+
+        customContainer->adjustSize();
+        customContainer->replot();
     }
 }
 

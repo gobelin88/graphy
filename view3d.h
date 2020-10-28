@@ -124,6 +124,9 @@ public slots:
     void slot_resetView();
     void slot_export();
 
+    void slot_addMesh();
+    void slot_createRotegrity();
+
 signals:
     void sig_newColumn(QString varName,Eigen::VectorXd data);
     void sig_displayResults(QString results);
@@ -197,6 +200,10 @@ private:
 
     QMenu * menuData;
     QAction * actExport;
+
+    QMenu * menuMesh;
+    QAction * actMeshLoad;
+    QAction * actMeshCreateRotegrity;
 
     QComboBox* c_gradient;
     QDoubleSpinBox* sb_size;

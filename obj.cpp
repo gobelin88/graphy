@@ -89,6 +89,226 @@ Object::Object(QString filename, QPosAtt scale_posatt)
     }
 }
 
+void Object::exportEdges(QString filename)
+{
+    QFile file(filename);
+
+    if(file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QTextStream ts(&file);
+        ts<<"<header>\n";
+        ts<<"X;Y;Z;S\n";
+        ts<<"</header>\n";
+        for(int i=0;i<edges.size();i++)
+        {
+            Vector3d A=pts.col(edges[i][0]);
+            Vector3d B=pts.col(edges[i][1]);
+
+            ts<<A[0]<<";"<<A[1]<<";"<<A[2]<<";"<<edges[i].value<<";\n";
+            ts<<B[0]<<";"<<B[1]<<";"<<B[2]<<";"<<edges[i].value<<";\n";
+        }
+        file.close();
+    }
+}
+
+void Object::subdiviseEdges()
+{
+    int size=edges.size();
+    for(int i=0;i<size;i++)
+    {
+        int ida=edges[i][0];
+        int idb=edges[i][1];
+        Vector3d A=pts.col(ida);
+        Vector3d B=pts.col(idb);
+        Vector3d V=B-A;
+        Vector3d M=A+V*0.5;
+
+        dataAddColumn(pts,M);
+        edges[i][1]=pts.cols()-1;
+
+        edges.push_back(Edge(edges[i][1],idb,edges[i].value));
+    }
+    //pts=pts_base;
+}
+
+void Object::project(Shape<Eigen::Vector3d>* model)
+{
+    for(int i=0;i<pts.cols();i++)
+    {
+        pts.col(i)-=model->delta(pts.col(i));
+    }
+}
+
+void Object::projectOnBoundingSphere(Vector3d center)
+{
+    Sphere sphere(center,getRadius(center));
+    project(&sphere);
+}
+
+void Object::rotegrity(double angle,
+                       int nbsub,
+                       double strech,
+                       double radius_int,
+                       double radius_dr,
+                       double width,
+                       double delta_ext,
+                       double delta_int)
+{
+    computeEdges();
+    cutEdges();
+
+    //rotate all segments
+    Vector3d center(0,0,0);
+    for(int i=0;i<edges.size();i++)
+    {
+        Vector3d A=pts.col(edges[i][0]);
+        Vector3d B=pts.col(edges[i][1]);
+
+        Vector3d V=B-A;
+        Vector3d M=A+V*0.5;
+        Vector3d U=(M-center)/(M-center).norm();//Axe de rotation
+
+        AngleAxisd angleAxis(angle*M_PI/180.0,U);
+
+        pts.col(edges[i][0])=M+angleAxis._transformVector((A-M)*strech);
+        pts.col(edges[i][1])=M+angleAxis._transformVector((B-M)*strech);
+        edges[i].value=V.norm();
+    }
+
+    double radius_ext=radius_int+radius_dr;
+    faces.clear();
+    for(int i=0;i<edges.size();i++)
+    {
+        Vector3d A=pts.col(edges[i][0]);
+        Vector3d B=pts.col(edges[i][1]);
+        Vector3d V=B-A;
+
+        Vector3d N=V.cross(A);
+        N=N/N.norm();
+
+        groups.push_back(faces.size());
+
+        Vector3d Ap =A /A .norm()*(radius_ext+radius_int)*0.5;
+        Vector3d Bp =B /B .norm()*(radius_ext+radius_int)*0.5;
+
+        double delta_ext_size=width/(Bp-Ap).norm()*sqrt(2)*1.24;
+        double delta_int_size=width/(Bp-Ap).norm()*sqrt(2);
+
+        std::cout<<delta_ext_size<<" "<<delta_ext_size<<std::endl;
+
+        for(int j=0;j<nbsub;j++)
+        {
+            double alpha=double(j+0.5)/nbsub;
+            Vector3d P =V/nbsub*(j)  +A;
+            Vector3d Pp=V/nbsub*(j+1)+A;
+
+            double dr_ext=0.0;
+            if( (alpha>delta_ext && alpha<(delta_ext+delta_ext_size)) ||
+                (alpha<(1-delta_ext) && alpha>(1-(delta_ext+delta_ext_size))))
+            {
+                dr_ext=-radius_dr/2;
+            }
+
+            double dr_int=0.0;
+            if( (alpha>delta_int && alpha<(delta_int+delta_int_size)) ||
+                (alpha<(1-delta_int) && alpha>(1-(delta_int+delta_int_size))))
+            {
+                dr_int=radius_dr/2;
+            }
+
+
+            Vector3d Pa1 =P /P .norm()*(radius_ext+dr_ext) +N*width*0.5;//A-->B
+            Vector3d Pb1 =P /P .norm()*(radius_int+dr_int)+N*width*0.5;//B-->A
+            Vector3d Pap1=Pp/Pp.norm()*(radius_ext+dr_ext) +N*width*0.5;//A-->B
+            Vector3d Pbp1=Pp/Pp.norm()*(radius_int+dr_int)+N*width*0.5;//B-->A
+
+            Vector3d Pa2 =P /P .norm()*(radius_ext+dr_ext) -N*width*0.5;//A-->B
+            Vector3d Pb2 =P /P .norm()*(radius_int+dr_int)-N*width*0.5;//B-->A
+            Vector3d Pap2=Pp/Pp.norm()*(radius_ext+dr_ext) -N*width*0.5;//A-->B
+            Vector3d Pbp2=Pp/Pp.norm()*(radius_int+dr_int)-N*width*0.5;//B-->A
+
+            Face new_face1;
+            Face new_face2;
+            Face new_face3;
+            Face new_face4;
+
+            int id1[4],id2[4];
+
+            dataAddColumn(pts,Pa1) ;id1[0]=pts.cols()-1;
+            dataAddColumn(pts,Pb1) ;id1[1]=pts.cols()-1;
+            dataAddColumn(pts,Pbp1);id1[2]=pts.cols()-1;
+            dataAddColumn(pts,Pap1);id1[3]=pts.cols()-1;
+
+            dataAddColumn(pts,Pa2) ;id2[0]=pts.cols()-1;
+            dataAddColumn(pts,Pb2) ;id2[1]=pts.cols()-1;
+            dataAddColumn(pts,Pbp2);id2[2]=pts.cols()-1;
+            dataAddColumn(pts,Pap2);id2[3]=pts.cols()-1;
+
+            new_face1.push_back(id1[0]);
+            new_face1.push_back(id1[1]);
+            new_face1.push_back(id1[2]);
+            new_face1.push_back(id1[3]);
+
+            new_face2.push_back(id2[0]);
+            new_face2.push_back(id2[1]);
+            new_face2.push_back(id2[2]);
+            new_face2.push_back(id2[3]);
+
+            new_face3.push_back(id1[0]);
+            new_face3.push_back(id1[3]);
+            new_face3.push_back(id2[3]);
+            new_face3.push_back(id2[0]);
+
+            new_face4.push_back(id1[1]);
+            new_face4.push_back(id1[2]);
+            new_face4.push_back(id2[2]);
+            new_face4.push_back(id2[1]);
+
+            faces.push_back(new_face1);
+            faces.push_back(new_face2);
+            faces.push_back(new_face3);
+            faces.push_back(new_face4);
+
+            if(j==0)
+            {
+                Face new_face5;
+                new_face5.push_back(id1[0]);
+                new_face5.push_back(id1[1]);
+                new_face5.push_back(id2[1]);
+                new_face5.push_back(id2[0]);
+                faces.push_back(new_face5);
+            }
+
+            if(j==nbsub-1)
+            {
+                Face new_face5;
+                new_face5.push_back(id1[2]);
+                new_face5.push_back(id1[3]);
+                new_face5.push_back(id2[3]);
+                new_face5.push_back(id2[2]);
+                faces.push_back(new_face5);
+            }
+
+        }
+
+    }
+    computeNormals();
+}
+
+bool Object::isNewGroup(int i)
+{
+    std::vector<int>::iterator it=std::find(groups.begin(),groups.end(),i);
+
+    if (it != groups.end())
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 void Object::save(QString filename)
 {
     QFile file(filename);
@@ -102,15 +322,45 @@ void Object::save(QString filename)
             ts<<"v "<<pts.col(i).x()<<" "<<pts.col(i).y()<<" "<<pts.col(i).z()<<"\n";
         }
 
-        for(int i=0;i<faces.size();i++)
+        for(int i=0;i<normals.cols();i++)
         {
-            ts<<"f";
-            for(int j=0;j<faces[i].size();j++)
-            {
-                ts<<" "<<faces[i][j]+1;
-            }
-            ts<<"\n";
+            ts<<"vn "<<normals.col(i).x()<<" "<<normals.col(i).y()<<" "<<normals.col(i).z()<<"\n";
         }
+
+        if(normals.cols()==faces.size())
+        {
+            for(int i=0;i<faces.size();i++)
+            {
+                if(isNewGroup(i))
+                {
+                    ts<<"g "<<i<<"\n";
+                }
+                ts<<"f";
+                for(int j=0;j<faces[i].size();j++)
+                {
+                    ts<<" "<<faces[i][j]+1<<"//"<<i;
+                }
+                ts<<"\n";
+            }
+        }
+        else
+        {
+            for(int i=0;i<faces.size();i++)
+            {
+                if(isNewGroup(i))
+                {
+                    ts<<"g "<<i<<"\n";
+                }
+                ts<<"f";
+                for(int j=0;j<faces[i].size();j++)
+                {
+                    ts<<" "<<faces[i][j]+1;
+                }
+                ts<<"\n";
+            }
+        }
+
+
 
         file.close();
     }
@@ -173,9 +423,10 @@ Vector3d Object::getBarycenter()
     return pts.colwise().mean();
 }
 
-Vector3d Object::nearest(int face_id, const Vector3d& p) const
+void Object::nearestPolygon(int face_id, const Vector3d& p, double *r) const
 {
     const Face & face=faces[face_id];
+
     const Vector3d & N=normals.col(face_id);
     Vector3d P=p-N*N.dot(p-pts.col(face[0]));//projection de P sur le plan de la face
     double dmin=DBL_MAX;
@@ -254,12 +505,161 @@ Vector3d Object::nearest(int face_id, const Vector3d& p) const
 
     if (inside)
     {
-        return P;
+        r[0]=P[0];
+        r[1]=P[1];
+        r[2]=P[2];
     }
     else
     {
-        return pproj_poly;
+        r[0]=pproj_poly[0];
+        r[1]=pproj_poly[1];
+        r[2]=pproj_poly[2];
     }
+}
+
+inline double clampd(double v,double a,double b)
+{
+    if(v<a)return a;
+    else if(v>b)return b;
+    else
+    {
+        return v;
+    }
+}
+
+void Object::nearestTriangle(int face_id, const Vector3d& p ,double * r )const
+{
+    const Face & face=faces[face_id];
+    const double * P=p.data();
+    const double * A=pts.col(face[0]).data();
+    const double * B=pts.col(face[1]).data();
+    const double * C=pts.col(face[2]).data();
+
+    double AB[3]={B[0] - A[0],
+                     B[1] - A[1],
+                     B[2] - A[2]};
+
+    double AC[3]={C[0] - A[0],
+                     C[1] - A[1],
+                     C[2] - A[2]};
+
+    double PA[3] ={ A[0] - P[0],
+                    A[1] - P[1],
+                    A[2] - P[2]};
+
+    double a = AB[0]*AB[0]+AB[1]*AB[1]+AB[2]*AB[2];
+    double b = AB[0]*AC[0]+AB[1]*AC[1]+AB[2]*AC[2];
+    double c = AC[0]*AC[0]+AC[1]*AC[1]+AC[2]*AC[2];
+    double d = AB[0]*PA[0]+AB[1]*PA[1]+AB[2]*PA[2];
+    double e = AC[0]*PA[0]+AC[1]*PA[1]+AC[2]*PA[2];
+
+    double det = a*c - b*b;
+    double s = b*e - c*d;
+    double t = b*d - a*e;
+
+    if ( s + t < det )
+    {
+        if ( s < 0.f )
+        {
+            if ( t < 0.f )
+            {
+                if ( d < 0.f )
+                {
+                    s = clampd( -d/a, 0.f, 1.f );
+                    t = 0.f;
+                }
+                else
+                {
+                    s = 0.f;
+                    t = clampd( -e/c, 0.f, 1.f );
+                }
+            }
+            else
+            {
+                s = 0.f;
+                t = clampd( -e/c, 0.f, 1.f );
+            }
+        }
+        else if ( t < 0.f )
+        {
+            s = clampd( -d/a, 0.f, 1.f );
+            t = 0.f;
+        }
+        else
+        {
+            double invDet = 1.f / det;
+            s *= invDet;
+            t *= invDet;
+        }
+    }
+    else
+    {
+        if ( s < 0.f )
+        {
+            double tmp0 = b+d;
+            double tmp1 = c+e;
+            if ( tmp1 > tmp0 )
+            {
+                double numer = tmp1 - tmp0;
+                double denom = a-2*b+c;
+                s = clampd( numer/denom, 0.f, 1.f );
+                t = 1-s;
+            }
+            else
+            {
+                t = clampd( -e/c, 0.f, 1.f );
+                s = 0.f;
+            }
+        }
+        else if ( t < 0.f )
+        {
+            if ( a+d > b+e )
+            {
+                double numer = c+e-b-d;
+                double denom = a-2*b+c;
+                s = clampd( numer/denom, 0.f, 1.f );
+                t = 1-s;
+            }
+            else
+            {
+                s = clampd( -e/c, 0.f, 1.f );
+                t = 0.f;
+            }
+        }
+        else
+        {
+            double numer = c+e-b-d;
+            double denom = a-2*b+c;
+            s = clampd( numer/denom, 0.f, 1.f );
+            t = 1.f - s;
+        }
+    }
+
+
+    r[0]= A[0] + s * AB[0] + t * AC[0];
+    r[1]= A[1] + s * AB[1] + t * AC[1];
+    r[2]= A[2] + s * AB[2] + t * AC[2];
+
+}
+
+double Object::nearestDelta(int face_id, const Vector3d& p,Vector3d & delta) const
+{
+    double r[3];
+
+    if(faces[face_id].size()==3)
+    {
+        nearestTriangle(face_id,p,r);
+    }
+    else
+    {
+        nearestPolygon(face_id,p,r);
+    }
+
+    delta[0]=p[0]-r[0];
+    delta[1]=p[1]-r[1];
+    delta[2]=p[2]-r[2];
+
+    return delta.squaredNorm();
 }
 
 int Object::nb_params()
@@ -310,38 +710,120 @@ const Eigen::VectorXd& Object::getParams()
     return params;
 }
 
-Vector3d Object::nearestDelta(const Vector3d& p) const
+Vector3d Object::delta(const Vector3d& p) const
 {
     double dmin=DBL_MAX;
-    Vector3d nearestDelta;
+    Vector3d nDelta,delta;
     for (int i=0; i<faces.size(); i++)
     {
-        Vector3d delta=p-nearest(i,p);
-        double distance=delta.squaredNorm();
+        double distance=nearestDelta(i,p,delta);
 
         if(distance<dmin)
         {
             dmin=distance;
-            nearestDelta=delta;
+            nDelta=delta;
         }
     }
-    return nearestDelta;
+    return nDelta;
 }
 
-Vector3d Object::delta(const Vector3d& p) const
+double Object::getRadius(Vector3d center)
 {
-    return nearestDelta(p);
-}
-
-double Object::getRadius()
-{
-    Vector3d bary=getBox().middle();
     double radius=0.0;
     for (int i=0; i<pts.cols(); i++)
     {
-        radius+=(pts.col(i)-bary).norm();
+        double r=(pts.col(i)-center).norm();
+        if(r>radius)
+        {
+            radius=r;
+        }
     }
-    return radius/pts.cols();
+    return radius;
+}
+
+bool Object::isNewEdge(const Edge & edge)
+{
+    for(int i=0;i<edges.size();i++)
+    {
+        if((edges[i][0]==edge[0]) && (edges[i][1]==edge[1]))
+        {
+            return false;
+        }
+        else if((edges[i][0]==edge[1]) && (edges[i][1]==edge[0]))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+void Object::computeEdges()
+{
+    edges.clear();
+    for (int i=0; i<faces.size(); i++)
+    {
+        for (int a=0; a<faces[i].size(); a++)
+        {
+            int b=(a+1)%faces[i].size();
+            Edge edge(faces[i][a],faces[i][b]);
+
+            if(isNewEdge(edge))
+            {
+                edges.push_back(edge);
+            }
+
+        }
+    }
+}
+
+void Object::dataAddColumn(Matrix<double,3,Eigen::Dynamic> & matrix, Vector3d colToAdd)
+{
+    unsigned int numRows = matrix.rows();
+    unsigned int numCols = matrix.cols()+1;
+    if(numRows==colToAdd.rows())
+    {
+        matrix.conservativeResize(numRows,numCols);
+        matrix.col(numCols-1)=colToAdd;
+    }
+}
+
+void Object::cutEdge(int id_edge)
+{
+    int ida=edges[id_edge][0];
+    int idb=edges[id_edge][1];
+
+    for(int i=0;i<edges.size();i++)
+    {
+        if(i!=id_edge)
+        {
+            for(int j=0;j<2;j++)
+            {
+                if( (ida==edges[i][j]) || (idb==edges[i][j]) )
+                {
+                    dataAddColumn(pts,pts.col(edges[i][j]));
+                    edges[i][j]=pts.cols()-1;
+                }
+            }
+        }
+    }
+}
+
+void Object::dispEdges()
+{
+    std::cout<<"-------------pts.cols()="<<pts.cols()<<std::endl;
+    for(int i=0;i<edges.size();i++)
+    {
+        std::cout<<edges[i].transpose()<<" "<<pts.col(edges[i][0]).transpose()<<" "<<pts.col(edges[i][1]).transpose()<<std::endl;
+    }
+    std::cout<<"-------------"<<std::endl;
+}
+
+void Object::cutEdges()
+{
+    for(int i=0;i<edges.size();i++)
+    {
+        cutEdge(i);
+    }
 }
 
 void Object::computeNormals()

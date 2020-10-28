@@ -15,15 +15,37 @@
 #define TO_DEG   57.29577951308232087679
 #define TO_RAD   0.017453292519943295769
 
+using Eigen::Vector2i;
 using Eigen::Vector3d;
 using Eigen::Vector2d;
 using Eigen::Matrix2d;
 using Eigen::Matrix3d;
 using Eigen::Quaterniond;
+using Eigen::AngleAxisd;
 
 typedef Matrix3d Base;
 
-typedef std::vector<int> Face;
+class Edge:public Vector2i
+{
+public:
+    Edge(int a,int b):Vector2i(a,b)
+    {
+        value=0;
+    }
+    Edge(int a,int b,double value):Vector2i(a,b)
+    {
+        this->value=value;
+    }
+    double value;
+
+    void operator =(Edge & other)
+    {
+        *this=other;
+        value=other.value;
+    }
+};
+
+using Face=std::vector<int>;
 
 class BoundingBox
 {
@@ -58,11 +80,12 @@ public:
     //Bounding
     BoundingBox getBox();
     Vector3d getBarycenter();
-    double getRadius();
+    double getRadius(Vector3d center);
 
     //Algorithms
-    Vector3d nearestDelta(const Vector3d& p) const;
-    Vector3d nearest(int face_id, const Vector3d& p) const;
+    double nearestDelta(int face_id, const Vector3d& p, Vector3d & delta) const;
+    void nearestTriangle(int face_id, const Vector3d& p, double *r) const;
+    void nearestPolygon(int face_id, const Vector3d& p,double * r) const;
 
     bool isOpen()
     {
@@ -83,9 +106,31 @@ public:
     //I/O
     void save(QString filename);
 
+    //Misc
+    void rotegrity(double angle,
+                   int nbsub,
+                   double strech,
+                   double radius_int,
+                   double radius_dr,
+                   double width, double delta_ext, double delta_int);
+
+    void exportEdges(QString filename);
+
 private:
     //Misc
+    void project(Shape<Eigen::Vector3d>* model);
+
     void computeNormals();
+    void computeEdges();
+    bool isNewEdge(const Edge & edge);
+    void cutEdges();
+    void dispEdges();
+    void cutEdge(int id_edge);
+    void subdiviseEdges();
+    void projectOnBoundingSphere(Vector3d center);
+
+    void dataAddColumn(Matrix<double,3,Eigen::Dynamic> &matrix, Eigen::Vector3d colToAdd);
+
     Vector3d getNormal(const Face& f)const;
     Base getBase(const Face& f) const;
     Vector2d getCoord2D(const Base& b, Vector3d params, Vector3d bary) const;
@@ -108,6 +153,10 @@ private:
 
     std::vector< std::vector<Vector2d> >  texCoord;
     std::vector<Vector3d> wire;
+    std::vector<Edge> edges;
+
+    bool isNewGroup(int i);
+    std::vector<int> groups;
 
     Matrix3d Rx(double ang);
     Matrix3d Ry(double ang);

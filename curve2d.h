@@ -127,6 +127,7 @@ public:
     CurveType getType() const;
 
     //misc
+    void distance(int knn);
     Curve2D getFFT(FFTMode mode, double fe, bool normalize_flag);
     double getRms();
     double guessMainFrequency();

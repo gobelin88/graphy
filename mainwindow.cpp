@@ -337,32 +337,35 @@ void MainWindow::slot_plot_cloud_2D()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-    if (id_list.size()%3==0 && id_list.size()>0)
+    if (id_list.size()==3 || id_list.size()==2)
     {
         Viewer1D* viewer1d=createViewerId();
 
-        for (int k=0; k<id_list.size(); k+=3)
-        {
-            Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[k  ].column());
-            Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[k+1].column());
-            Eigen::VectorXd data_s=table->getLogicalColDataDouble(id_list[k+2].column());
+        Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[0].column());
+        Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[1].column());
+        Eigen::VectorXd data_s=Eigen::VectorXd::Zero(data_x.rows());
 
-            if (data_x.size()>0 && data_y.size()>0)
-            {
-                Curve2D curve(data_x,
-                              data_y,
-                              QString("(%1,%2)").arg(table->getLogicalColName(id_list[k  ].column())).arg(table->getLogicalColName(id_list[k+1].column())),
-                        Curve2D::CURVE);
-                curve.setScalarField(data_s);
-                curve.getStyle().mLineStyle=QCPCurve::lsNone;
-                curve.getStyle().mScatterShape=QCPScatterStyle::ssDisc;
-                viewer1d->slot_add_data(curve);
-            }
+        if(id_list.size()==3)
+        {
+            data_s=table->getLogicalColDataDouble(id_list[2].column());
+        }
+
+        if (data_x.size()>0 && data_y.size()>0)
+        {
+            Curve2D curve(data_x,
+                          data_y,
+                          QString("(%1,%2)").arg(table->getLogicalColName(id_list[0  ].column())).arg(table->getLogicalColName(id_list[1].column())),
+                    Curve2D::CURVE);
+
+            curve.setScalarField(data_s);
+            curve.getStyle().mLineStyle=QCPCurve::lsNone;
+            curve.getStyle().mScatterShape=QCPScatterStyle::ssDisc;
+            viewer1d->slot_add_data(curve);
         }
     }
     else
     {
-        QMessageBox::information(this,"Information","Please select 3 columns P(X,Y) and Scalarfield S in order to plot S(P)");
+        QMessageBox::information(this,"Information","Please select 2 or 3 columns P(X,Y) and Scalarfield S in order to plot S(P)");
     }
 }
 

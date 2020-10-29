@@ -1,6 +1,6 @@
 #include "curve2d.h"
-
-
+#include "kdtree_eigen.h"
+//#include "kdtree_flann.h"
 
 Curve2D::Curve2D()
 {
@@ -263,6 +263,32 @@ QString Curve2D::getPolynome2VString(const Eigen::VectorXd& C,unsigned int order
         }
     }
     return name;
+}
+
+void Curve2D::distance(int knn)
+{
+    s.resize(x.rows());
+
+    Eigen::MatrixXd datapoints(2,s.size());
+
+    for (int i=0; i<datapoints.cols(); i++)
+    {
+        datapoints(0,i)=x[i];
+        datapoints(1,i)=y[i];
+    }
+
+    kdt::KDTreed kdtree(datapoints);
+    kdtree.build();
+
+    kdt::KDTreed::Matrix dists;
+    kdt::KDTreed::MatrixI idx;
+
+    kdtree.query(datapoints, knn, idx, dists);
+
+    for(int i=0;i<s.rows();i++)
+    {
+        s[i]=dists.col(i).mean();
+    }
 }
 
 Eigen::VectorXd Curve2D::fit2d(unsigned int order)

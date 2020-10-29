@@ -343,7 +343,9 @@ void Viewer1D::createPopup()
     actFitGaussian= new QAction("Gaussian",  this);
     actFitSigmoid= new QAction("Sigmoid",  this);
     actFitSinusoide= new QAction("Sinusoide",  this);
-    actFitPolynomial2V= new QAction("Polynomial XY",  this);
+    actFitPolynomial2V= new QAction("Polynomial in two variables",  this);
+    actDistance= new QAction("Distances",  this);
+
     actAutoColor= new QAction("Auto color",  this);
     actFilterMedian=new QAction("Median Filter",this);
     actFilterMean=new QAction("Mean Filter",this);
@@ -395,9 +397,6 @@ void Viewer1D::createPopup()
     popup_menu->addMenu(menuGadgets);
     popup_menu->addSeparator();
     popup_menu->addMenu(menuAnalyse);
-    popup_menu->addMenu(menuFilters);
-    popup_menu->addMenu(menuFit);
-    popup_menu->addMenu(menuScalarField);
     popup_menu->addSeparator();
 
     menuFilters->addAction(actFilterMedian);
@@ -419,15 +418,20 @@ void Viewer1D::createPopup()
     menuLegend->addAction(actLegendLeftRight);
 
     menuScalarField->addMenu(menuScalarFieldFit);
+    menuScalarField->addAction(actDistance);
     menuScalarFieldFit->addAction(actFitPolynomial2V);
 
     menuParameters->addAction(actAutoColor);
     menuParameters->addMenu(menuLegend);
     menuParameters->addAction(createParametersWidget());
 
+    menuAnalyse->addMenu(menuFilters);
+    menuAnalyse->addMenu(menuFit);
+    menuAnalyse->addMenu(menuScalarField);
     menuAnalyse->addAction(actStatistiques);
     menuAnalyse->addAction(actSvd);
     menuAnalyse->addAction(actCovariance);
+
 
 
     connect(actGadgetMark,SIGNAL(triggered()),this,SLOT(slot_gadgetMark()));
@@ -437,6 +441,8 @@ void Viewer1D::createPopup()
     connect(actStatistiques,SIGNAL(triggered()),this,SLOT(slot_statistiques()));
     connect(actSvd,SIGNAL(triggered()),this,SLOT(slot_svd()));
     connect(actCovariance,SIGNAL(triggered()),this,SLOT(slot_covariance()));
+
+    connect(actDistance,SIGNAL(triggered()),this,SLOT(slot_Distance()));
 
     connect(actSave,SIGNAL(triggered()),this,SLOT(slot_save_image()));
     connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_rescale()));
@@ -1645,6 +1651,26 @@ void Viewer1D::slot_meanFilter()
             }
         }
     }
+}
+
+void Viewer1D::slot_Distance()
+{
+    QList<Curve2D> curves=getSelectedCurves();
+    QList<QCPCurve*> qcp_curves=getSelectedQCPCurves();
+    if (curves.size()>0)
+    {
+        bool ok;
+        double knn=QInputDialog::getInt(this,"Distances","Evaluate the mean distance of K nearest neighbors.\n\n K=",20,0,1e100,1,&ok);
+        if(ok)
+        {
+            curves[0].distance(knn);
+            qcp_curves[0]->setScalarField(curves[0].getQScalarField());
+            replot();
+
+            emit sig_newColumn(QString("Distances"),curves[0].getScalarField());
+        }
+    }
+
 }
 
 void Viewer1D::slot_medianFilter()

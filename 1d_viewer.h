@@ -86,6 +86,7 @@ public slots:
     void slot_meanFilter();
     void slot_medianFilter();
 
+    void slot_Distance();
 
 signals:
     void pick(double p0);
@@ -137,6 +138,8 @@ protected:
 
     QAction* actFitPolynomial;
     QAction* actFitPolynomial2V;
+    QAction* actDistance;
+
     QAction* actFitGaussian;
     QAction* actFitSigmoid;
     QAction* actFitSinusoide;

@@ -6196,7 +6196,15 @@ public:
     {
         double min = *std::min_element(scalarFieldData.constBegin(), scalarFieldData.constEnd());
         double max = *std::max_element(scalarFieldData.constBegin(), scalarFieldData.constEnd());
-        return QCPRange (min,max);
+
+        if(min!=max)
+        {
+            return QCPRange (min,max);
+        }
+        else
+        {
+            return QCPRange (min-1,max+1);
+        }
     }
 
     void setScalarField(const QVector<double>& scalarFieldData)

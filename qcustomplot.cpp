@@ -8489,6 +8489,20 @@ void QCPAxis::setScaleType(QCPAxis::ScaleType type)
     }
 }
 
+void QCPAxis::setScaleType(int type)
+{
+    if (mScaleType != static_cast<QCPAxis::ScaleType>(type))
+    {
+        mScaleType = static_cast<QCPAxis::ScaleType>(type);
+        if (mScaleType == stLogarithmic)
+        {
+            setRange(mRange.sanitizedForLogScale());
+        }
+        mCachedMarginValid = false;
+        emit scaleTypeChanged(mScaleType);
+    }
+}
+
 /*!
   Sets the range of the axis.
 

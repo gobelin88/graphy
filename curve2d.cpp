@@ -51,6 +51,9 @@ void Curve2D::clear()
     a.resize(0);
     s.resize(0);
     l.clear();
+
+    ptrGraph=nullptr;
+    ptrCurve=nullptr;
 }
 
 const Eigen::VectorXd & Curve2D::getX()const
@@ -89,7 +92,7 @@ void Curve2D::setScalarField(const Eigen::VectorXd& s)
 {
     this->s=s;
 }
-Eigen::VectorXd Curve2D::getScalarField()const
+const Eigen::VectorXd & Curve2D::getScalarField()const
 {
     return s;
 }
@@ -523,6 +526,9 @@ void Curve2D::operator=(const Curve2D& other)
     this->legendname=other.legendname;
     this->type=other.type;
     this->style=other.style;
+
+    this->ptrGraph=other.ptrGraph;
+    this->ptrCurve=other.ptrCurve;
 }
 
 void Curve2D::fromByteArray(QByteArray data)

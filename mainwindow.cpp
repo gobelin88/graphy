@@ -740,6 +740,16 @@ bool MainWindow::loadShortcuts()
         while (!file.atEnd())
         {
             QString lineraw=file.readLine();
+
+            if(lineraw.contains("<header>"))
+            {
+                while( !lineraw.contains("</header>") && !file.atEnd() )
+                {
+                    lineraw=file.readLine();
+                }
+                lineraw=file.readLine();
+            }
+
             if (lineraw.endsWith("\n"))
             {
                 lineraw.chop(1);

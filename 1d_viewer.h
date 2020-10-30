@@ -83,13 +83,24 @@ public slots:
     void slot_gadgetAddArrow(Eigen::Vector2d A,Eigen::Vector2d B);
     void slot_setScalarFieldGradientType(int type);
 
-    void slot_auto_color();
+    void slot_auto_color1();
+    void slot_auto_color2();
+    void slot_auto_color3();
+    void slot_auto_color4();
+    void slot_auto_color5();
+    void slot_auto_clear();
+
     //void slot_addXaxisLabel();
 
     void slot_meanFilter();
     void slot_medianFilter();
 
     void slot_Distance();
+
+    void slot_setAxisYMin(double value);
+    void slot_setAxisYMax(double value);
+    void slot_setAxisXMin(double value);
+    void slot_setAxisXMax(double value);
 
 signals:
     void pick(double p0);
@@ -126,7 +137,12 @@ protected:
     QAction* actLegendShowHide;
     QAction* actLegendTopBottom;
     QAction* actLegendLeftRight;
-    QAction* actAutoColor;
+    QAction* actAutoColor1;
+    QAction* actAutoColor2;
+    QAction* actAutoColor3;
+    QAction* actAutoColor4;
+    QAction* actAutoColor5;
+    QAction* actAutoColorClear;
 
     QMenu* menuParameters;
     QMenu* menuLegend;
@@ -135,6 +151,8 @@ protected:
     QMenu* menuScalarFieldFit;
     QMenu* menuAnalyse;
     QMenu* menuFilters;
+    QMenu* menuMisc;
+    QMenu* menuAutoColor;
 
     QAction* actFilterMedian;
     QAction* actFilterMean;
@@ -161,8 +179,7 @@ protected:
     QWidgetAction* createParametersWidget();
 
     QGradientComboBox * cb_gradient;
-    QComboBox* cb_scale_mode_x;
-    QComboBox* cb_scale_mode_y;
+
     QComboBox* cb_itemLineStyleList;
     QComboBox* cb_ScatterShapes;
     QDoubleSpinBox* sb_ScatterSize;

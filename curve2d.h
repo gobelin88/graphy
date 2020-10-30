@@ -92,7 +92,7 @@ public:
 
     //Optional scalar field
     void setScalarField(const Eigen::VectorXd& s);
-    Eigen::VectorXd getScalarField()const;
+    const Eigen::VectorXd &getScalarField()const;
     QVector<double> getQScalarField()const;
 
     //Optional scalar field
@@ -143,8 +143,20 @@ public:
 
     void operator=(const Curve2D& other);
 
+
+    QCPCurve * getCurvePtr()
+    {
+        return ptrCurve;
+    }
+
+    QCPGraph * getGraphPtr()
+    {
+        return ptrGraph;
+    }
+
+
     template<typename T>
-    void fromQCP(const T* other)
+    void fromQCP(T* other)
     {
         x.resize(other->data()->size());
         y.resize(other->data()->size());
@@ -169,6 +181,17 @@ public:
         this->style.pen=other->pen();
         this->style.brush=other->brush();
         this->style.gradientType=other->getScalarFieldGradientType();
+
+        if(this->type==Curve2D::CURVE)
+        {
+            ptrCurve=reinterpret_cast<QCPCurve*>(other);
+            ptrGraph=nullptr;
+        }
+        else
+        {
+            ptrCurve=nullptr;
+            ptrGraph=reinterpret_cast<QCPGraph*>(other);
+        }
     }
 
     //T = QCPCurve or QCPGraph
@@ -229,6 +252,29 @@ public:
 
     void clear();
 
+
+    void updateLinkedScalarfield(QCustomPlot * plot)
+    {
+        if(getCurvePtr())
+        {
+            getCurvePtr()->setScalarField(getQScalarField());
+
+            if ( !plot->plotLayout()->elements(false).contains(getCurvePtr()->getColorScale()) )
+            {
+                plot->plotLayout()->addElement(0, plot->plotLayout()->columnCount(), getCurvePtr()->getColorScale());
+            }
+        }
+        else if(getGraphPtr())
+        {
+            getGraphPtr()->setScalarField(getQScalarField());
+
+            if ( !plot->plotLayout()->elements(false).contains(getGraphPtr()->getColorScale()) )
+            {
+                plot->plotLayout()->addElement(0, plot->plotLayout()->columnCount(), getGraphPtr()->getColorScale());
+            }
+        }
+    }
+
 private:
     Eigen::VectorXd x;
     Eigen::VectorXd y;
@@ -238,7 +284,8 @@ private:
     QString legendname;
     CurveType type;
 
-
+    QCPGraph * ptrGraph;
+    QCPCurve * ptrCurve;
 
     Style style;
 };

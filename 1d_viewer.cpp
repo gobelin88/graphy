@@ -167,16 +167,6 @@ QWidgetAction* Viewer1D::createParametersWidget()
 
     QGridLayout* gbox = new QGridLayout();
 
-    cb_scale_mode_x=new QComboBox;
-    cb_scale_mode_x->addItem("Linear");
-    cb_scale_mode_x->addItem("Logarithmic");
-    cb_scale_mode_x->setCurrentIndex(0);
-
-    cb_scale_mode_y=new QComboBox;
-    cb_scale_mode_y->addItem("Linear");
-    cb_scale_mode_y->addItem("Logarithmic");
-    cb_scale_mode_y->setCurrentIndex(0);
-
     cb_itemLineStyleList = new QComboBox;
     cb_itemLineStyleList->addItem(QStringLiteral("lsNone"),        int(QCPGraph::LineStyle::lsNone));
     cb_itemLineStyleList->addItem(QStringLiteral("lsLine"),        int(QCPGraph::LineStyle::lsLine));
@@ -279,18 +269,8 @@ QWidgetAction* Viewer1D::createParametersWidget()
     g_style->addWidget(s_brush_alpha,8,1);
     g_style->addWidget(cb_gradient,9,0,1,2);
 
-    QGridLayout* g_axis = new QGridLayout();
-    QGroupBox* gb_axis=new QGroupBox("Axis");
-    gb_axis->setLayout(g_axis);
-
-    g_axis->addWidget(new QLabel("X Type"),0,0);
-    g_axis->addWidget(new QLabel("Y Type"),1,0);
-    g_axis->addWidget(cb_scale_mode_x,0,1);
-    g_axis->addWidget(cb_scale_mode_y,1,1);
-
-    gbox->addWidget(gb_axis,0,0);
+    //gbox->addWidget(gb_axis,0,0);
     gbox->addWidget(gb_style,1,0);
-
     widget->setLayout(gbox);
 
     QObject::connect(s_pen_alpha, SIGNAL(valueChanged(double)), this, SLOT(slot_setPenAlpha(double)));
@@ -304,8 +284,6 @@ QWidgetAction* Viewer1D::createParametersWidget()
     QObject::connect(cb_ScatterShapes, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setScatterShape(int)));
     QObject::connect(sb_ScatterSize, SIGNAL(valueChanged(double) ), this, SLOT(slot_setScatterSize(double)));
     QObject::connect(cb_itemLineStyleList, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setStyle(int)));
-    QObject::connect(cb_scale_mode_x, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setAxisXType(int)));
-    QObject::connect(cb_scale_mode_y, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setAxisYType(int)));
 
     QObject::connect(cb_gradient, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setScalarFieldGradientType(int)));
 
@@ -323,6 +301,8 @@ void Viewer1D::createPopup()
     menuParameters=new QMenu("Parameters",this);
     menuAnalyse=new QMenu("Analyse",this);
     menuFilters=new QMenu("Filter",this);
+    menuMisc=new QMenu("Miscellaneous",this);
+    menuAutoColor=new QMenu("Auto color",this);
 
     actCopy   = new QAction("Copy",  this);
     actPaste   = new QAction("Paste",  this);
@@ -348,7 +328,14 @@ void Viewer1D::createPopup()
     actFitPolynomial2V= new QAction("Polynomial in two variables",  this);
     actDistance= new QAction("K-nearest neighbors distances",  this);
 
-    actAutoColor= new QAction("Auto color",  this);
+
+    actAutoColor1= new QAction("Theme 1",  this);
+    actAutoColor2= new QAction("Theme 2",  this);
+    actAutoColor3= new QAction("Theme 3",  this);
+    actAutoColor4= new QAction("Theme 4",  this);
+    actAutoColor5= new QAction("Theme 5",  this);
+    actAutoColorClear= new QAction("Clear",  this);
+
     actFilterMedian=new QAction("Median",this);
     actFilterMean=new QAction("Mean",this);
 
@@ -365,9 +352,20 @@ void Viewer1D::createPopup()
     this->addAction(actLegendTopBottom);
     this->addAction(actLegendLeftRight);
     this->addAction(actStatistiques);
-    this->addAction(actAutoColor);
+    this->addAction(actAutoColor1);
+    this->addAction(actAutoColor2);
+    this->addAction(actAutoColor3);
+    this->addAction(actAutoColor4);
+    this->addAction(actAutoColor5);
+    this->addAction(actAutoColorClear);
 
-    actAutoColor->setShortcutVisibleInContextMenu(true);
+    actAutoColor1->setShortcutVisibleInContextMenu(true);
+    actAutoColor2->setShortcutVisibleInContextMenu(true);
+    actAutoColor3->setShortcutVisibleInContextMenu(true);
+    actAutoColor4->setShortcutVisibleInContextMenu(true);
+    actAutoColor5->setShortcutVisibleInContextMenu(true);
+    actAutoColorClear->setShortcutVisibleInContextMenu(true);
+
     actCopy->setShortcutVisibleInContextMenu(true);
     actPaste->setShortcutVisibleInContextMenu(true);
     actSave->setShortcutVisibleInContextMenu(true);
@@ -425,16 +423,24 @@ void Viewer1D::createPopup()
     menuScalarField->addAction(actDistance);
     menuScalarFieldFit->addAction(actFitPolynomial2V);
 
-    menuParameters->addAction(actAutoColor);
+    menuParameters->addMenu(menuAutoColor);
+    menuAutoColor->addAction(actAutoColor1);
+    menuAutoColor->addAction(actAutoColor2);
+    menuAutoColor->addAction(actAutoColor3);
+    menuAutoColor->addAction(actAutoColor4);
+    menuAutoColor->addAction(actAutoColor5);
+    menuAutoColor->addAction(actAutoColorClear);
+
     menuParameters->addMenu(menuLegend);
     menuParameters->addAction(createParametersWidget());
 
-    menuAnalyse->addMenu(menuFilters);
     menuAnalyse->addMenu(menuFit);
     menuAnalyse->addMenu(menuScalarField);
-    menuAnalyse->addAction(actStatistiques);
-    menuAnalyse->addAction(actSvd);
-    menuAnalyse->addAction(actCovariance);
+    menuAnalyse->addMenu(menuFilters);
+    menuAnalyse->addMenu(menuMisc);
+    menuMisc->addAction(actStatistiques);
+    menuMisc->addAction(actSvd);
+    menuMisc->addAction(actCovariance);
 
 
 
@@ -464,7 +470,12 @@ void Viewer1D::createPopup()
     connect(actLegendShowHide,SIGNAL(toggled(bool)),this,SLOT(slot_show_legend(bool)));
     connect(actLegendTopBottom,SIGNAL(toggled(bool)),this,SLOT(slot_top_legend(bool)));
     connect(actLegendLeftRight,SIGNAL(toggled(bool)),this,SLOT(slot_left_legend(bool)));
-    connect(actAutoColor,SIGNAL(triggered()),this,SLOT(slot_auto_color()));
+    connect(actAutoColor1,SIGNAL(triggered()),this,SLOT(slot_auto_color1()));
+    connect(actAutoColor2,SIGNAL(triggered()),this,SLOT(slot_auto_color2()));
+    connect(actAutoColor3,SIGNAL(triggered()),this,SLOT(slot_auto_color3()));
+    connect(actAutoColor4,SIGNAL(triggered()),this,SLOT(slot_auto_color4()));
+    connect(actAutoColor5,SIGNAL(triggered()),this,SLOT(slot_auto_color5()));
+    connect(actAutoColorClear,SIGNAL(triggered()),this,SLOT(slot_auto_clear()));
 
     connect(actFilterMean,SIGNAL(triggered()),this,SLOT(slot_meanFilter()));
     connect(actFilterMedian,SIGNAL(triggered()),this,SLOT(slot_medianFilter()));
@@ -472,7 +483,7 @@ void Viewer1D::createPopup()
 
 }
 
-void Viewer1D::slot_auto_color()
+void Viewer1D::slot_auto_color1()
 {
     QVector<QColor> color;
     color<<QColor(160,0,0);
@@ -491,14 +502,211 @@ void Viewer1D::slot_auto_color()
     for (int i=0; i<plottables.size(); i++)
     {
         int index=i%color.size();
+
+        //Pen
         QPen pen=plottables[i]->pen();
-        color[index].setAlphaF(pen.color().alphaF());
+        pen.setStyle(Qt::SolidLine);
+        color[index].setAlphaF(1.0);
         pen.setColor(color[index]);
+
+        //Brush
+        QBrush brush;
+        brush.setStyle(Qt::NoBrush);
+
         plottables[i]->setPen(pen);
+        plottables[i]->setBrush(brush);
     }
 
     replot();
 }
+
+void Viewer1D::slot_auto_color2()
+{
+    QVector<QColor> color;
+    color<<QColor(160,0,0);
+    color<<QColor(0,160,0);
+    color<<QColor(0,0,160);
+    color<<QColor(255,160,0);
+    color<<QColor(255,0,255);
+    color<<QColor(0,160,128);
+    color<<QColor(128,255,0);
+    color<<QColor(128,0,255);
+    color<<QColor(0,128,255);
+    color<<QColor(0,0,0);
+
+    QList<QCPAbstractPlottable*> plottables=this->plottables();
+
+    for (int i=0; i<plottables.size(); i++)
+    {
+        int index=i%color.size();
+
+        //Pen
+        QPen pen=plottables[i]->pen();
+        pen.setStyle(Qt::SolidLine);
+        pen.setColor(Qt::black);
+
+        //Brush
+        QBrush brush=plottables[i]->brush();
+        brush.setStyle(Qt::SolidPattern);
+        color[index].setAlphaF(0.5);
+        brush.setColor(color[index]);
+
+        plottables[i]->setPen(pen);
+        plottables[i]->setBrush(brush);
+    }
+
+    replot();
+}
+
+void Viewer1D::slot_auto_color3()
+{
+    QVector<QColor> color;
+    color<<QColor(160,0,0);
+    color<<QColor(0,160,0);
+    color<<QColor(0,0,160);
+    color<<QColor(255,160,0);
+    color<<QColor(255,0,255);
+    color<<QColor(0,160,128);
+    color<<QColor(128,255,0);
+    color<<QColor(128,0,255);
+    color<<QColor(0,128,255);
+    color<<QColor(0,0,0);
+
+    QList<QCPAbstractPlottable*> plottables=this->plottables();
+
+    for (int i=0; i<plottables.size(); i++)
+    {
+        int index=(i/2)%color.size();
+
+        //Pen
+        QPen pen=plottables[i]->pen();
+        color[index].setAlphaF(1.0);
+        pen.setColor(color[index]);
+        if(i%2==1){pen.setStyle(Qt::DotLine);}else{pen.setStyle(Qt::SolidLine);}
+
+        //Brush
+        QBrush brush;
+        brush.setStyle(Qt::NoBrush);
+
+        plottables[i]->setPen(pen);
+        plottables[i]->setBrush(brush);
+    }
+
+    replot();
+}
+
+void Viewer1D::slot_auto_color4()
+{
+    QVector<QColor> color;
+    color<<QColor(160,0,0);
+    color<<QColor(0,160,0);
+    color<<QColor(0,0,160);
+    color<<QColor(255,160,0);
+    color<<QColor(255,0,255);
+    color<<QColor(0,160,128);
+    color<<QColor(128,255,0);
+    color<<QColor(128,0,255);
+    color<<QColor(0,128,255);
+    color<<QColor(0,0,0);
+
+    QList<QCPAbstractPlottable*> plottables=this->plottables();
+
+    for (int i=0; i<plottables.size(); i++)
+    {
+        int index=i%color.size();
+
+        //Pen
+        QPen pen=plottables[i]->pen();
+        pen.setStyle(Qt::SolidLine);
+        pen.setColor(color[index]);
+
+        //Brush
+        QBrush brush=plottables[i]->brush();
+        brush.setStyle(Qt::BDiagPattern);
+        color[index].setAlphaF(0.5);
+        brush.setColor(color[index]);
+
+        plottables[i]->setPen(pen);
+        plottables[i]->setBrush(brush);
+    }
+
+    replot();
+}
+
+void Viewer1D::slot_auto_color5()
+{
+    QVector<QColor> color;
+    color<<QColor(160,0,0);
+    color<<QColor(0,160,0);
+    color<<QColor(0,0,160);
+    color<<QColor(255,160,0);
+    color<<QColor(255,0,255);
+    color<<QColor(0,160,128);
+    color<<QColor(128,255,0);
+    color<<QColor(128,0,255);
+    color<<QColor(0,128,255);
+    color<<QColor(0,0,0);
+
+    QList<QCPAbstractPlottable*> plottables=this->plottables();
+
+    for (int i=0; i<plottables.size(); i++)
+    {
+        int index=i%color.size();
+
+        //Pen
+        QPen pen=plottables[i]->pen();
+        pen.setStyle(Qt::DashLine);
+        pen.setColor(color[index]);
+
+        //Brush
+        QBrush brush=plottables[i]->brush();
+        brush.setStyle(Qt::NoBrush);
+        brush.setColor(color[index]);
+
+        plottables[i]->setPen(pen);
+        plottables[i]->setBrush(brush);
+    }
+
+    replot();
+}
+
+void Viewer1D::slot_auto_clear()
+{
+    QVector<QColor> color;
+    color<<QColor(160,0,0);
+    color<<QColor(0,160,0);
+    color<<QColor(0,0,160);
+    color<<QColor(255,160,0);
+    color<<QColor(255,0,255);
+    color<<QColor(0,160,128);
+    color<<QColor(128,255,0);
+    color<<QColor(128,0,255);
+    color<<QColor(0,128,255);
+    color<<QColor(0,0,0);
+
+    QList<QCPAbstractPlottable*> plottables=this->plottables();
+
+    for (int i=0; i<plottables.size(); i++)
+    {
+        int index=i%color.size();
+
+        //Pen
+        QPen pen=plottables[i]->pen();
+        pen.setStyle(Qt::SolidLine);
+        pen.setColor(Qt::black);
+
+        //Brush
+        QBrush brush=plottables[i]->brush();
+        brush.setStyle(Qt::NoBrush);
+        brush.setColor(Qt::black);
+
+        plottables[i]->setPen(pen);
+        plottables[i]->setBrush(brush);
+    }
+
+    replot();
+}
+
 
 void Viewer1D::slot_setStyle(int style)
 {
@@ -774,11 +982,69 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
     // Set an axis label by double clicking on it
     if (part == QCPAxis::spAxisLabel || part == QCPAxis::spAxis || part == QCPAxis::spTickLabels) // only react when the actual axis label is clicked, not tick label or axis backbone
     {
-        bool ok;
-        QString newLabel = QInputDialog::getText(this, "Set legend", "New axis label:", QLineEdit::Normal, axis->label(), &ok);
-        if (ok)
+
+        QDialog* dialog=new QDialog;
+
+        QCPAxis::ScaleType currentScaleType=axis->scaleType();
+        QCPRange currentRange=axis->range();
+
+        QComboBox* cb_scale_mode=new QComboBox(dialog);
+        cb_scale_mode->addItem("Linear");
+        cb_scale_mode->addItem("Logarithmic");
+        cb_scale_mode->setCurrentIndex(currentScaleType==QCPAxis::ScaleType::stLogarithmic);
+        QDoubleSpinBox * sb_axis_min=new   QDoubleSpinBox(dialog);
+        sb_axis_min->setPrefix("min=");
+        sb_axis_min->setRange(-1e100,1e100);
+        sb_axis_min->setValue(currentRange.lower);
+        QDoubleSpinBox * sb_axis_max=new   QDoubleSpinBox(dialog);
+        sb_axis_max->setPrefix("max=");
+        sb_axis_max->setRange(-1e100,1e100);
+        sb_axis_max->setValue(currentRange.upper);
+
+        QObject::connect(sb_axis_min,  SIGNAL(valueChanged(double)), axis, SLOT(setRangeLower(double)));
+        QObject::connect(sb_axis_max,  SIGNAL(valueChanged(double)), axis, SLOT(setRangeUpper(double)));
+        QObject::connect(cb_scale_mode,SIGNAL(currentIndexChanged(int)), axis, SLOT(setScaleType(int)));
+
+        QObject::connect(sb_axis_min,  SIGNAL(valueChanged(double)), this, SLOT(replot()));
+        QObject::connect(sb_axis_max,  SIGNAL(valueChanged(double)), this, SLOT(replot()));
+        QObject::connect(cb_scale_mode,SIGNAL(currentIndexChanged(int)), this, SLOT(replot()));
+
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("Axis");
+        QGridLayout* gbox = new QGridLayout();
+
+        QLineEdit * le_legend=new QLineEdit(axis->label(),dialog);
+
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                           | QDialogButtonBox::Cancel);
+
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+        gbox->addWidget(new QLabel("Label :"),0,0);
+        gbox->addWidget(le_legend,0,1,1,2);
+
+        gbox->addWidget(new QLabel("Range :"),1,0);
+        gbox->addWidget(sb_axis_min,1,1);
+        gbox->addWidget(sb_axis_max,1,2);
+
+        gbox->addWidget(new QLabel("Scale type :"),2,0);
+        gbox->addWidget(cb_scale_mode,2,1,1,2);
+
+        gbox->addWidget(buttonBox,3,0,1,3);
+
+        dialog->setLayout(gbox);
+
+        int result=dialog->exec();
+        if (result == QDialog::Accepted)
         {
-            axis->setLabel(newLabel);
+            axis->setLabel(le_legend->text());
+            replot();
+        }
+        else
+        {
+            axis->setScaleType(currentScaleType);
+            axis->setRange(currentRange);
             replot();
         }
     }
@@ -1285,7 +1551,7 @@ void Viewer1D::slot_histogram(Eigen::VectorXd data,QString name,int nbbins)
     }
 
     Curve2D hist_curve(labels,hist,name,Curve2D::GRAPH);
-    hist_curve.getStyle().mLineStyle=QCPGraph::lsImpulse;
+    hist_curve.getStyle().mLineStyle=QCPGraph::lsStepCenter;
     slot_add_data(hist_curve);
 }
 
@@ -1360,8 +1626,6 @@ QList<Curve2D> Viewer1D::getSelectedCurves()
 
     for (int i=0,id=0; i<plottableslist.size(); i++)
     {
-        QVector<double> xv,yv;
-
         QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(plottableslist[i]);
         if (currentcurve)
         {
@@ -1612,7 +1876,12 @@ void Viewer1D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     shortcuts_links.insert(QString("Graph-Legend-Show/Hide"),actLegendShowHide);
     shortcuts_links.insert(QString("Graph-Legend-Top/Bottom"),actLegendTopBottom);
     shortcuts_links.insert(QString("Graph-Legend-Left/Right"),actLegendLeftRight);
-    shortcuts_links.insert(QString("Graph-AutoColor"),actAutoColor);
+    shortcuts_links.insert(QString("Graph-AutoColor1"),actAutoColor1);
+    shortcuts_links.insert(QString("Graph-AutoColor2"),actAutoColor2);
+    shortcuts_links.insert(QString("Graph-AutoColor3"),actAutoColor3);
+    shortcuts_links.insert(QString("Graph-AutoColor4"),actAutoColor4);
+    shortcuts_links.insert(QString("Graph-AutoColor5"),actAutoColor5);
+    shortcuts_links.insert(QString("Graph-AutoColorClear"),actAutoColorClear);
 
     QMapIterator<QString, QKeySequence> i(shortcuts_map);
     while (i.hasNext())
@@ -1656,7 +1925,27 @@ void Viewer1D::slot_setAxisYType(int mode)
     {
         this->yAxis->setScaleType(QCPAxis::stLinear);
     }
-    rescaleAxes();
+    replot();
+}
+
+void Viewer1D::slot_setAxisYMin(double value)
+{
+    this->yAxis->setRangeLower(value);
+    replot();
+}
+void Viewer1D::slot_setAxisYMax(double value)
+{
+    this->yAxis->setRangeUpper(value);
+    replot();
+}
+void Viewer1D::slot_setAxisXMin(double value)
+{
+    this->xAxis->setRangeLower(value);
+    replot();
+}
+void Viewer1D::slot_setAxisXMax(double value)
+{
+    this->xAxis->setRangeUpper(value);
     replot();
 }
 
@@ -1737,7 +2026,6 @@ void Viewer1D::slot_meanFilter()
 void Viewer1D::slot_Distance()
 {
     QList<Curve2D> curves=getSelectedCurves();
-    QList<QCPCurve*> qcp_curves=getSelectedQCPCurves();
     if (curves.size()>0)
     {
         bool ok;
@@ -1746,7 +2034,9 @@ void Viewer1D::slot_Distance()
         if(ok)
         {
             curves[0].knnMeanDistance(knn);
-            qcp_curves[0]->setScalarField(curves[0].getQScalarField());
+
+            curves[0].updateLinkedScalarfield(this);
+
             replot();
 
             emit sig_newColumn(QString("Distances"),curves[0].getScalarField());

@@ -155,6 +155,7 @@ void MainWindow::slot_open()
 void MainWindow::direct_open(QString filename)
 {
     table->model()->open(filename);
+    table->resizeColumnsToContents();
     setCurrentFilename(filename);
     isModified=false;
 }

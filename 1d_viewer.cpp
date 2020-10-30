@@ -343,12 +343,14 @@ void Viewer1D::createPopup()
     actFitGaussian= new QAction("Gaussian",  this);
     actFitSigmoid= new QAction("Sigmoid",  this);
     actFitSinusoide= new QAction("Sinusoide",  this);
+    actFitCircle= new QAction("Circle",  this);
+    actFitEllipse= new QAction("Ellipse",  this);
     actFitPolynomial2V= new QAction("Polynomial in two variables",  this);
-    actDistance= new QAction("Distances",  this);
+    actDistance= new QAction("K-nearest neighbors distances",  this);
 
     actAutoColor= new QAction("Auto color",  this);
-    actFilterMedian=new QAction("Median Filter",this);
-    actFilterMean=new QAction("Mean Filter",this);
+    actFilterMedian=new QAction("Median",this);
+    actFilterMean=new QAction("Mean",this);
 
     this->addAction(actCopy);
     this->addAction(actPaste);
@@ -412,6 +414,8 @@ void Viewer1D::createPopup()
     menuFit->addAction(actFitGaussian);
     menuFit->addAction(actFitSigmoid);
     menuFit->addAction(actFitSinusoide);
+    menuFit->addAction(actFitCircle);
+    menuFit->addAction(actFitEllipse);
 
     menuLegend->addAction(actLegendShowHide);
     menuLegend->addAction(actLegendTopBottom);
@@ -451,6 +455,9 @@ void Viewer1D::createPopup()
     connect(actFitGaussian,SIGNAL(triggered()),this,SLOT(slot_fit_gaussian()));
     connect(actFitSinusoide,SIGNAL(triggered()),this,SLOT(slot_fit_sinusoide()));
     connect(actFitSigmoid,SIGNAL(triggered()),this,SLOT(slot_fit_sigmoid()));
+    connect(actFitCircle,SIGNAL(triggered()),this,SLOT(slot_fit_circle()));
+    connect(actFitEllipse,SIGNAL(triggered()),this,SLOT(slot_fit_ellipse()));
+
     connect(actCopy,SIGNAL(triggered()),this,SLOT(slot_copy()));
     connect(actPaste,SIGNAL(triggered()),this,SLOT(slot_paste()));
     connect(actDelete,SIGNAL(triggered()),this,SLOT(slot_delete()));
@@ -822,6 +829,80 @@ void Viewer1D::slot_fit_sinusoide()
 
             emit sig_displayResults(QString("Fit Sinusoid :\n%1\nF(X)=%2\nRms=%3").arg(result_str).arg(expression).arg(sinusoide.getRMS()));
             emit sig_newColumn(QString("Err_Sinusoid"),sinusoide.getErrNorm());
+        }
+    }
+}
+
+void Viewer1D::slot_fit_circle()
+{
+    QList<Curve2D> curves=getSelectedCurves();
+
+    for (int i=0; i<curves.size(); i++)
+    {
+        QDoubleSpinBox* A,*B,*R;
+        QDialog* dialog=Circle2D::createDialog(R,A,B);
+
+        Eigen::Vector2d center=curves[i].getBarycenter();
+        A->setValue(center[0]);
+        B->setValue(center[1]);
+        R->setValue(1.0 );
+
+        int result=dialog->exec();
+
+        if (result == QDialog::Accepted)
+        {
+            Circle2D circle(Eigen::Vector2d(A->value(),B->value()),R->value());
+
+            curves[i].fit(&circle);
+
+            Eigen::VectorXd X,Y;
+            circle.create(X,Y,200);
+
+            QString result_str=QString("A=%1 B=%2 R=%3").arg(circle.getCenter()[0]).arg(circle.getCenter()[1]).arg(circle.getRadius());
+            Curve2D fit_curve(X,Y,QString("Fit Circle : %1").arg(result_str),Curve2D::CURVE);
+
+            slot_add_data(fit_curve);
+
+            emit sig_displayResults(QString("Fit Circle :\n%1\nRms=%3").arg(result_str).arg(circle.getRMS()));
+            emit sig_newColumn(QString("Err_Circle"),circle.getErrNorm());
+        }
+    }
+}
+
+void Viewer1D::slot_fit_ellipse()
+{
+    QList<Curve2D> curves=getSelectedCurves();
+
+    for (int i=0; i<curves.size(); i++)
+    {
+        QDoubleSpinBox* A,*B,*Ra,*Rb,*Theta;
+        QDialog* dialog=Ellipse2D::createDialog(Ra,Rb,A,B,Theta);
+
+        Eigen::Vector2d center=curves[i].getBarycenter();
+        A->setValue(center[0]);
+        B->setValue(center[1]);
+        Ra->setValue(1.0 );
+        Rb->setValue(1.0 );
+        Theta->setValue(0.0 );
+
+        int result=dialog->exec();
+
+        if (result == QDialog::Accepted)
+        {
+            Ellipse2D ellipse(Eigen::Vector2d(A->value(),B->value()),Ra->value(),Rb->value(),Theta->value()/180*M_PI);
+
+            curves[i].fit(&ellipse);
+
+            Eigen::VectorXd X,Y;
+            ellipse.create(X,Y,200);
+
+            QString result_str=QString("A=%1 B=%2 Ra=%3 Rb=%4 Theta=%5").arg(ellipse.getCenter()[0]).arg(ellipse.getCenter()[1]).arg(ellipse.getRa()).arg(ellipse.getRb()).arg(ellipse.getTheta()*180/M_PI);
+            Curve2D fit_curve(X,Y,QString("Fit Ellipse : %1").arg(result_str),Curve2D::CURVE);
+
+            slot_add_data(fit_curve);
+
+            emit sig_displayResults(QString("Fit Ellipse :\n%1\nRms=%3").arg(result_str).arg(ellipse.getRMS()));
+            emit sig_newColumn(QString("Err_Ellipse"),ellipse.getErrNorm());
         }
     }
 }
@@ -1660,10 +1741,11 @@ void Viewer1D::slot_Distance()
     if (curves.size()>0)
     {
         bool ok;
-        double knn=QInputDialog::getInt(this,"Distances","Evaluate the mean distance of K nearest neighbors.\n\n K=",20,0,1e100,1,&ok);
+        double knn=QInputDialog::getInt(this,"K-nearest neighbors distances",
+                                        "Evaluate the mean distance of K-nearest neighbors .\n\n K=",20,0,2147483647,1,&ok);
         if(ok)
         {
-            curves[0].distance(knn);
+            curves[0].knnMeanDistance(knn);
             qcp_curves[0]->setScalarField(curves[0].getQScalarField());
             replot();
 

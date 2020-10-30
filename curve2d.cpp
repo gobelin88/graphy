@@ -265,7 +265,7 @@ QString Curve2D::getPolynome2VString(const Eigen::VectorXd& C,unsigned int order
     return name;
 }
 
-void Curve2D::distance(int knn)
+void Curve2D::knnMeanDistance(int knn)
 {
     s.resize(x.rows());
 
@@ -531,10 +531,14 @@ void Curve2D::fromByteArray(QByteArray data)
     buffer.open(QIODevice::ReadOnly);
     QDataStream ds(&buffer);
 
+    int typei;
     ds>>x>>y>>s>>a;
     ds>>l;
     ds>>legendname;
+    ds>>typei;
     style.read(ds);
+
+    type=static_cast<CurveType>(typei);
 
     buffer.close();
 
@@ -551,6 +555,7 @@ QByteArray Curve2D::toByteArray()
     ds<<x<<y<<s<<a;
     ds<<l;
     ds<<legendname;
+    ds<<static_cast<int>(type);
     style.write(ds);
 
 

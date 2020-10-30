@@ -37,6 +37,8 @@ public slots:
     void slot_fit_gaussian();
     void slot_fit_sinusoide();
     void slot_fit_sigmoid();
+    void slot_fit_circle();
+    void slot_fit_ellipse();
 
     void slot_fit_2var_polynomial();
 
@@ -52,6 +54,7 @@ public slots:
     void slot_statistiques();
     void slot_svd();
     void slot_covariance();
+
 
     void addLabel(double cx,double cy);
     void addTextLabel(double cx,double cy,QString markstr);
@@ -143,6 +146,10 @@ protected:
     QAction* actFitGaussian;
     QAction* actFitSigmoid;
     QAction* actFitSinusoide;
+    QAction* actFitCircle;
+    QAction* actFitEllipse;
+
+
     QAction* actStatistiques;
     QAction* actSvd;
     QAction* actCovariance;

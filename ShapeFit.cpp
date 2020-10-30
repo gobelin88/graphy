@@ -153,6 +153,41 @@ const Eigen::VectorXd& Circle3D::getParams()
 {
     return p;
 }
+/////////////////////////////////////////////////////////////////////////////////////
+Circle2D::Circle2D()
+{
+    p.resize(3);
+    p[0]=0;
+    p[1]=0;
+    p[2]=1;
+}
+
+Circle2D::Circle2D(Eigen::Vector2d center,double radius)
+{
+    p.resize(3);
+    p[0]=center[0];
+    p[1]=center[1];
+    p[2]=radius;
+}
+
+Eigen::Vector2d Circle2D::delta(const Eigen::Vector2d& P) const
+{
+    Eigen::Vector2d CP=P-getCenter();
+    return  CP*(1-getRadius()/CP.norm());
+}
+
+int Circle2D::nb_params()
+{
+    return 3;
+}
+void Circle2D::setParams(const Eigen::VectorXd& p)
+{
+    this->p=p;
+}
+const Eigen::VectorXd& Circle2D::getParams()
+{
+    return p;
+}
 
 double Ru()
 {

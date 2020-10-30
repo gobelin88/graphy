@@ -23,6 +23,8 @@
         <file>icons/colourise.png</file>
     </qresource>
     <qresource prefix="/eqn">
+        <file>eqn/ellipse.gif</file>
+        <file>eqn/circle.gif</file>
         <file>eqn/sin.gif</file>
         <file>eqn/gaussian.gif</file>
         <file>eqn/linear.gif</file>

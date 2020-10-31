@@ -12,6 +12,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = Graphy
 TEMPLATE = app
 
+RC_ICONS = icons/graphy.ico
+
 QMAKE_CXXFLAGS += -bigobj
 
 # The following define makes your compiler emit warnings if you use

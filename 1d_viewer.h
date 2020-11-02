@@ -97,10 +97,8 @@ public slots:
 
     void slot_Distance();
 
-    void slot_setAxisYMin(double value);
-    void slot_setAxisYMax(double value);
-    void slot_setAxisXMin(double value);
-    void slot_setAxisXMax(double value);
+    void slot_SetSbAxisMax_Min(double min);
+    void slot_SetSbAxisMin_Max(double max);
 
 signals:
     void pick(double p0);
@@ -192,6 +190,9 @@ protected:
     QDoubleSpinBox* s_brush_alpha;
 
     QVector<QMenu*> sub_menus;
+
+    QDoubleSpinBox * sb_axis_min;
+    QDoubleSpinBox * sb_axis_max;
 };
 
 #endif // VIEWER1D_H

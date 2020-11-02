@@ -976,6 +976,15 @@ void Viewer1D::mousePressEvent(QMouseEvent* event)
     }
 }
 
+void Viewer1D::slot_SetSbAxisMax_Min(double min)
+{
+    sb_axis_max->setMinimum(min);
+}
+
+void Viewer1D::slot_SetSbAxisMin_Max(double max)
+{
+    sb_axis_min->setMaximum(max);
+}
 
 void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart part)
 {
@@ -992,17 +1001,20 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
         cb_scale_mode->addItem("Linear");
         cb_scale_mode->addItem("Logarithmic");
         cb_scale_mode->setCurrentIndex(currentScaleType==QCPAxis::ScaleType::stLogarithmic);
-        QDoubleSpinBox * sb_axis_min=new   QDoubleSpinBox(dialog);
+        sb_axis_min=new   QDoubleSpinBox(dialog);
         sb_axis_min->setPrefix("min=");
-        sb_axis_min->setRange(-1e100,1e100);
+        sb_axis_min->setRange(-1e100,currentRange.upper);
         sb_axis_min->setValue(currentRange.lower);
-        QDoubleSpinBox * sb_axis_max=new   QDoubleSpinBox(dialog);
+        sb_axis_max=new   QDoubleSpinBox(dialog);
         sb_axis_max->setPrefix("max=");
-        sb_axis_max->setRange(-1e100,1e100);
+        sb_axis_max->setRange(currentRange.lower,1e100);
         sb_axis_max->setValue(currentRange.upper);
 
         QObject::connect(sb_axis_min,  SIGNAL(valueChanged(double)), axis, SLOT(setRangeLower(double)));
         QObject::connect(sb_axis_max,  SIGNAL(valueChanged(double)), axis, SLOT(setRangeUpper(double)));
+        QObject::connect(sb_axis_min,  SIGNAL(valueChanged(double)), this, SLOT(slot_SetSbAxisMax_Min(double)));
+        QObject::connect(sb_axis_max,  SIGNAL(valueChanged(double)), this, SLOT(slot_SetSbAxisMin_Max(double)));
+
         QObject::connect(cb_scale_mode,SIGNAL(currentIndexChanged(int)), axis, SLOT(setScaleType(int)));
 
         QObject::connect(sb_axis_min,  SIGNAL(valueChanged(double)), this, SLOT(replot()));
@@ -1925,27 +1937,6 @@ void Viewer1D::slot_setAxisYType(int mode)
     {
         this->yAxis->setScaleType(QCPAxis::stLinear);
     }
-    replot();
-}
-
-void Viewer1D::slot_setAxisYMin(double value)
-{
-    this->yAxis->setRangeLower(value);
-    replot();
-}
-void Viewer1D::slot_setAxisYMax(double value)
-{
-    this->yAxis->setRangeUpper(value);
-    replot();
-}
-void Viewer1D::slot_setAxisXMin(double value)
-{
-    this->xAxis->setRangeLower(value);
-    replot();
-}
-void Viewer1D::slot_setAxisXMax(double value)
-{
-    this->xAxis->setRangeUpper(value);
     replot();
 }
 

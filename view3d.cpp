@@ -494,9 +494,9 @@ void View3D::slot_fitCustomMesh()
     emit sig_displayResults( QString("Fit Mesh :\nScale=%1\nPosition=(%2,%3,%4)\nQ=(%5,%6,%7,%8)\nRms=%9\ndt=%10 ms")
                              .arg(obj.getScale())
                              .arg(posatt.P[0]).arg(posatt.P[1]).arg(posatt.P[2])
-                             .arg(posatt.Q.w()).arg(posatt.Q.x()).arg(posatt.Q.y()).arg(posatt.Q.w())
-                             .arg(obj.getRMS())
-                             .arg(timer.nsecsElapsed()*1e-6));
+            .arg(posatt.Q.w()).arg(posatt.Q.x()).arg(posatt.Q.y()).arg(posatt.Q.w())
+            .arg(obj.getRMS())
+            .arg(timer.nsecsElapsed()*1e-6));
 
     emit sig_newColumn("Err_Mesh",obj.getErrNorm());
 }
@@ -851,23 +851,42 @@ void View3D::slot_export()
 
 void View3D::slot_addMesh()
 {
-    QString filename=QFileDialog::getOpenFileName(nullptr,"3D Mesh","./obj","Object (*.obj)");
-    std::cout<<filename.toLocal8Bit().data()<<std::endl;
-    if(filename.isEmpty())return;
+    QStringList filenames=QFileDialog::getOpenFileNames(nullptr,"3D Mesh","./obj","Object (*.obj)");
 
-    Object obj(filename,QPosAtt());
-    BoundingBox bb=obj.getBox();
-    customContainer->getXAxis()->setRange(QCPRange(bb.Pmin[0],bb.Pmax[0]));
-    customContainer->getYAxis()->setRange(QCPRange(bb.Pmin[1],bb.Pmax[1]));
-    customContainer->getZAxis()->setRange(QCPRange(bb.Pmin[2],bb.Pmax[2]));
+    if(filenames.size()==0)return;
 
-    customContainer->adjustSize();
-    customContainer->replot();
+    for(int i=0;i<filenames.size();i++)
+    {
+        Object obj(filenames[i],QPosAtt());
+        BoundingBox bb=obj.getBox();
 
-    auto* m_obj = new Qt3DRender::QMesh();
-    m_obj->setSource(QUrl(QString("file:///")+filename));
+        QCPRange rangex=customContainer->getXAxis()->range();
+        QCPRange rangey=customContainer->getYAxis()->range();
+        QCPRange rangez=customContainer->getZAxis()->range();
 
-    addObj(m_obj,QPosAtt(),1.0,QColor(64,64,64));
+        if(i!=0)
+        {
+            customContainer->getXAxis()->setRange(QCPRange(std::min(rangex.lower,bb.Pmin[0]),std::max(rangex.upper,bb.Pmax[0])));
+            customContainer->getYAxis()->setRange(QCPRange(std::min(rangey.lower,bb.Pmin[1]),std::max(rangey.upper,bb.Pmax[1])));
+            customContainer->getZAxis()->setRange(QCPRange(std::min(rangez.lower,bb.Pmin[2]),std::max(rangez.upper,bb.Pmax[2])));
+        }
+        else
+        {
+            customContainer->getXAxis()->setRange(QCPRange(bb.Pmin[0],bb.Pmax[0]));
+            customContainer->getYAxis()->setRange(QCPRange(bb.Pmin[1],bb.Pmax[1]));
+            customContainer->getZAxis()->setRange(QCPRange(bb.Pmin[2],bb.Pmax[2]));
+        }
+
+
+
+        customContainer->adjustSize();
+        customContainer->replot();
+
+        auto* m_obj = new Qt3DRender::QMesh();
+        m_obj->setSource(QUrl(QString("file:///")+filenames[i]));
+        addObj(m_obj,QPosAtt(),1.0,QColor(64,64,64));
+    }
+
 }
 
 void View3D::slot_createRotegrity()
@@ -957,9 +976,9 @@ void View3D::slot_createRotegrity()
                       sb_radius_dr->value(),
                       sb_width->value(),
                       sb_encA->value(),
-                      sb_encB->value());
-
-        obj.save(filename);
+                      sb_encB->value(),
+                      filename,
+                      true);
 
         BoundingBox bb=obj.getBox();
         customContainer->getXAxis()->setRange(QCPRange(bb.Pmin[0],bb.Pmax[0]));

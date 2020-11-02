@@ -1,5 +1,8 @@
 ﻿#include "obj.h"
 
+#include <QDir>
+#include <QFileInfo>
+
 Object::Object(QString filename, QPosAtt scale_posatt)
 {
     params.resize(7);
@@ -152,162 +155,237 @@ void Object::rotegrity(double angle,
                        double radius_dr,
                        double width,
                        double delta_ext,
-                       double delta_int)
+                       double delta_int,QString filename,bool generate_parts)
 {
+    std::cout<<"----------------------------------rotegrity A"<<std::endl;
     computeEdges();
     cutEdges();
 
-    //rotate all segments
-    Vector3d center(0,0,0);
-    for(int i=0;i<edges.size();i++)
+    std::vector<Edge> edges_tmp=edges;
+    Matrix<double,3,Eigen::Dynamic> pts_tmp=pts;
+
+    std::cout<<"----------------------------------rotegrity B"<<std::endl;
+
+    int id_deg_N=(generate_parts)?int(edges_tmp.size()) : 0;
+
+    for(int id_seg=-1;id_seg<id_deg_N;id_seg++)
     {
-        Vector3d A=pts.col(edges[i][0]);
-        Vector3d B=pts.col(edges[i][1]);
-
-        Vector3d V=B-A;
-        Vector3d M=A+V*0.5;
-        Vector3d U=(M-center)/(M-center).norm();//Axe de rotation
-
-        AngleAxisd angleAxis(angle*M_PI/180.0,U);
-
-        pts.col(edges[i][0])=M+angleAxis._transformVector((A-M)*strech);
-        pts.col(edges[i][1])=M+angleAxis._transformVector((B-M)*strech);
-        edges[i].value=V.norm();
-    }
-
-    double radius_ext=radius_int+radius_dr;
-    faces.clear();
-    for(int i=0;i<edges.size();i++)
-    {
-        Vector3d A=pts.col(edges[i][0]);
-        Vector3d B=pts.col(edges[i][1]);
-        Vector3d V=B-A;
-
-        Vector3d N=V.cross(A);
-        N=N/N.norm();
-
-        groups.push_back(faces.size());
-
-        Vector3d Ap =A /A .norm()*(radius_ext+radius_int)*0.5;
-        Vector3d Bp =B /B .norm()*(radius_ext+radius_int)*0.5;
-
-        double delta_ext_size=width/(Bp-Ap).norm()*sqrt(2)*1.24;
-        double delta_int_size=width/(Bp-Ap).norm()*sqrt(2);
-
-        std::cout<<delta_ext_size<<" "<<delta_ext_size<<std::endl;
-
-        for(int j=0;j<nbsub;j++)
+        int N=(id_seg==-1)?1:2;
+        for(int id_enc=0;id_enc<N;id_enc++)
         {
-            double alpha=double(j+0.5)/nbsub;
-            Vector3d P =V/nbsub*(j)  +A;
-            Vector3d Pp=V/nbsub*(j+1)+A;
-
-            double dr_ext=0.0;
-            if( (alpha>delta_ext && alpha<(delta_ext+delta_ext_size)) ||
-                (alpha<(1-delta_ext) && alpha>(1-(delta_ext+delta_ext_size))))
+            if(id_seg>=0)
             {
-                dr_ext=-radius_dr/2;
+                edges.clear();
+                edges.push_back(Edge(0,1));
+
+                pts.resize(3,2);
+                pts.col(0)=pts_tmp.col(edges_tmp[id_seg][0]);
+                pts.col(1)=pts_tmp.col(edges_tmp[id_seg][1]);
+            }
+            std::cout<<"----------------------------------"<<id_seg<<std::endl;
+
+            //rotate all segments
+            Vector3d center(0,0,0);
+            for(int i=0;i<edges.size();i++)
+            {
+                Vector3d A=pts.col(edges[i][0]);
+                Vector3d B=pts.col(edges[i][1]);
+
+                Vector3d V=B-A;
+                Vector3d M=A+V*0.5;
+                Vector3d U=(M-center)/(M-center).norm();//Axe de rotation
+
+                AngleAxisd angleAxis(angle*M_PI/180.0,U);
+
+                pts.col(edges[i][0])=M+angleAxis._transformVector((A-M)*strech);
+                pts.col(edges[i][1])=M+angleAxis._transformVector((B-M)*strech);
+                edges[i].value=V.norm();
             }
 
-            double dr_int=0.0;
-            if( (alpha>delta_int && alpha<(delta_int+delta_int_size)) ||
-                (alpha<(1-delta_int) && alpha>(1-(delta_int+delta_int_size))))
+            double radius_ext=radius_int+radius_dr;
+            faces.clear();
+            for(int i=0;i<edges.size();i++)
             {
-                dr_int=radius_dr/2;
+                Vector3d A=pts.col(edges[i][0]);
+                Vector3d B=pts.col(edges[i][1]);
+                Vector3d V=B-A;
+
+                Vector3d N=V.cross(A);
+                N=N/N.norm();
+
+                Vector3d Ap =A /A .norm()*(radius_ext+radius_int)*0.5;
+                Vector3d Bp =B /B .norm()*(radius_ext+radius_int)*0.5;
+
+                double delta_ext_size=width/(Bp-Ap).norm()*sqrt(2)*1.24;
+                double delta_int_size=width/(Bp-Ap).norm()*sqrt(2);
+
+                double dr_ext=0,dr_int=0;
+                double dr_ext_prev=0,dr_int_prev=0;
+                for(int j=0;j<nbsub;j++)
+                {
+                    double alpha=double(j+0.5)/nbsub;
+                    Vector3d P =V/nbsub*(j)  +A;
+                    Vector3d Pp=V/nbsub*(j+1)+A;
+
+                    dr_ext_prev=dr_ext;
+                    dr_ext=0.0;
+                    if( (alpha>delta_ext && alpha<(delta_ext+delta_ext_size)) ||
+                        (alpha<(1-delta_ext) && alpha>(1-(delta_ext+delta_ext_size))))
+                    {
+
+                        dr_ext=-radius_dr/2*(1-id_enc);
+                    }
+
+                    dr_int_prev=dr_int;
+                    dr_int=0.0;
+                    if( (alpha>delta_int && alpha<(delta_int+delta_int_size)) ||
+                        (alpha<(1-delta_int) && alpha>(1-(delta_int+delta_int_size))))
+                    {
+                        dr_int=radius_dr/2*(1-id_enc);
+                    }
+
+
+                    Vector3d Pa1 =P /P .norm()*(radius_ext+dr_ext) +N*width*0.5;//A-->B
+                    Vector3d Pb1 =P /P .norm()*(radius_int+dr_int) +N*width*0.5;//B-->A
+                    Vector3d Pap1=Pp/Pp.norm()*(radius_ext+dr_ext) +N*width*0.5;//A-->B
+                    Vector3d Pbp1=Pp/Pp.norm()*(radius_int+dr_int) +N*width*0.5;//B-->A
+
+                    Vector3d Pa2 =P /P .norm()*(radius_ext+dr_ext) -N*width*0.5;//A-->B
+                    Vector3d Pb2 =P /P .norm()*(radius_int+dr_int) -N*width*0.5;//B-->A
+                    Vector3d Pap2=Pp/Pp.norm()*(radius_ext+dr_ext) -N*width*0.5;//A-->B
+                    Vector3d Pbp2=Pp/Pp.norm()*(radius_int+dr_int) -N*width*0.5;//B-->A
+
+
+                    Face new_face1;
+                    Face new_face2;
+                    Face new_face3;
+                    Face new_face4;
+
+                    int id1[4],id2[4];
+
+                    //id2[0]----id2[2]
+                    // \          \
+                    //  \          \
+                    //  id1[0]----id1[2]
+
+                    //id2[1]----id2[3]
+                    // \          \
+                    //  \          \
+                    //  id1[1]----id1[3]
+
+
+                    dataAddColumn(pts,Pa1) ;id1[0]=pts.cols()-1;
+                    dataAddColumn(pts,Pb1) ;id1[1]=pts.cols()-1;
+                    dataAddColumn(pts,Pbp1);id1[2]=pts.cols()-1;
+                    dataAddColumn(pts,Pap1);id1[3]=pts.cols()-1;
+
+                    dataAddColumn(pts,Pa2) ;id2[0]=pts.cols()-1;
+                    dataAddColumn(pts,Pb2) ;id2[1]=pts.cols()-1;
+                    dataAddColumn(pts,Pbp2);id2[2]=pts.cols()-1;
+                    dataAddColumn(pts,Pap2);id2[3]=pts.cols()-1;
+
+                    if(dr_ext!=dr_ext_prev && dr_ext_prev!=-1)
+                    {
+                        Face new_face_ext;
+
+                        new_face_ext.push_back(id1[0]);
+                        new_face_ext.push_back(id2[0]);
+                        new_face_ext.push_back(id2[2]-7);
+                        new_face_ext.push_back(id1[2]-7);
+
+                        faces.push_back(new_face_ext);
+                    }
+
+                    if(dr_int!=dr_int_prev && dr_int_prev!=-1)
+                    {
+                        Face new_face_int;
+
+                        new_face_int.push_back(id1[1]);
+                        new_face_int.push_back(id2[1]);
+                        new_face_int.push_back(id2[3]-9);//5 non 6 meme-id1[1] 7 non 8 non 9
+                        new_face_int.push_back(id1[3]-9);
+
+                        faces.push_back(new_face_int);
+                    }
+
+                    //gauche
+                    new_face1.push_back(id1[0]);
+                    new_face1.push_back(id1[1]);
+                    new_face1.push_back(id1[2]);
+                    new_face1.push_back(id1[3]);
+
+                    //droite
+                    new_face2.push_back(id2[3]);
+                    new_face2.push_back(id2[2]);
+                    new_face2.push_back(id2[1]);
+                    new_face2.push_back(id2[0]);
+
+                    //dessus
+                    new_face3.push_back(id1[0]);
+                    new_face3.push_back(id1[3]);
+                    new_face3.push_back(id2[3]);
+                    new_face3.push_back(id2[0]);
+
+                    //dessous
+                    new_face4.push_back(id2[1]);
+                    new_face4.push_back(id2[2]);
+                    new_face4.push_back(id1[2]);
+                    new_face4.push_back(id1[1]);
+
+                    faces.push_back(new_face1);
+                    faces.push_back(new_face2);
+                    faces.push_back(new_face3);
+                    faces.push_back(new_face4);
+
+                    if(j==0)
+                    {
+                        Face new_face5;
+                        new_face5.push_back(id2[0]);
+                        new_face5.push_back(id2[1]);
+                        new_face5.push_back(id1[1]);
+                        new_face5.push_back(id1[0]);
+                        faces.push_back(new_face5);
+                    }
+
+                    if(j==nbsub-1)
+                    {
+                        Face new_face5;
+                        new_face5.push_back(id2[2]);
+                        new_face5.push_back(id2[3]);
+                        new_face5.push_back(id1[3]);
+                        new_face5.push_back(id1[2]);
+                        faces.push_back(new_face5);
+                    }
+
+                }
+
             }
+            computeNormals();
 
-
-            Vector3d Pa1 =P /P .norm()*(radius_ext+dr_ext) +N*width*0.5;//A-->B
-            Vector3d Pb1 =P /P .norm()*(radius_int+dr_int)+N*width*0.5;//B-->A
-            Vector3d Pap1=Pp/Pp.norm()*(radius_ext+dr_ext) +N*width*0.5;//A-->B
-            Vector3d Pbp1=Pp/Pp.norm()*(radius_int+dr_int)+N*width*0.5;//B-->A
-
-            Vector3d Pa2 =P /P .norm()*(radius_ext+dr_ext) -N*width*0.5;//A-->B
-            Vector3d Pb2 =P /P .norm()*(radius_int+dr_int)-N*width*0.5;//B-->A
-            Vector3d Pap2=Pp/Pp.norm()*(radius_ext+dr_ext) -N*width*0.5;//A-->B
-            Vector3d Pbp2=Pp/Pp.norm()*(radius_int+dr_int)-N*width*0.5;//B-->A
-
-            Face new_face1;
-            Face new_face2;
-            Face new_face3;
-            Face new_face4;
-
-            int id1[4],id2[4];
-
-            dataAddColumn(pts,Pa1) ;id1[0]=pts.cols()-1;
-            dataAddColumn(pts,Pb1) ;id1[1]=pts.cols()-1;
-            dataAddColumn(pts,Pbp1);id1[2]=pts.cols()-1;
-            dataAddColumn(pts,Pap1);id1[3]=pts.cols()-1;
-
-            dataAddColumn(pts,Pa2) ;id2[0]=pts.cols()-1;
-            dataAddColumn(pts,Pb2) ;id2[1]=pts.cols()-1;
-            dataAddColumn(pts,Pbp2);id2[2]=pts.cols()-1;
-            dataAddColumn(pts,Pap2);id2[3]=pts.cols()-1;
-
-            new_face1.push_back(id1[0]);
-            new_face1.push_back(id1[1]);
-            new_face1.push_back(id1[2]);
-            new_face1.push_back(id1[3]);
-
-            new_face2.push_back(id2[0]);
-            new_face2.push_back(id2[1]);
-            new_face2.push_back(id2[2]);
-            new_face2.push_back(id2[3]);
-
-            new_face3.push_back(id1[0]);
-            new_face3.push_back(id1[3]);
-            new_face3.push_back(id2[3]);
-            new_face3.push_back(id2[0]);
-
-            new_face4.push_back(id1[1]);
-            new_face4.push_back(id1[2]);
-            new_face4.push_back(id2[2]);
-            new_face4.push_back(id2[1]);
-
-            faces.push_back(new_face1);
-            faces.push_back(new_face2);
-            faces.push_back(new_face3);
-            faces.push_back(new_face4);
-
-            if(j==0)
+            if(id_seg>=0)
             {
-                Face new_face5;
-                new_face5.push_back(id1[0]);
-                new_face5.push_back(id1[1]);
-                new_face5.push_back(id2[1]);
-                new_face5.push_back(id2[0]);
-                faces.push_back(new_face5);
-            }
+                QFileInfo info(filename);
+                QString basename=info.baseName();
+                QString path=info.path();
+                QDir dir(path);
 
-            if(j==nbsub-1)
+                QString filename=path+QString("/")+basename+QString("/part_%2_%1.obj").arg(id_seg+1).arg(id_enc);
+                std::cout<<filename.toLocal8Bit().data()<<std::endl;
+
+                if(!dir.exists())
+                {
+                    dir.mkdir(basename);
+                }
+                save(filename);
+            }
+            else
             {
-                Face new_face5;
-                new_face5.push_back(id1[2]);
-                new_face5.push_back(id1[3]);
-                new_face5.push_back(id2[3]);
-                new_face5.push_back(id2[2]);
-                faces.push_back(new_face5);
+                save(filename);
             }
-
         }
-
-    }
-    computeNormals();
-}
-
-bool Object::isNewGroup(int i)
-{
-    std::vector<int>::iterator it=std::find(groups.begin(),groups.end(),i);
-
-    if (it != groups.end())
-    {
-        return true;
-    }
-    else
-    {
-        return false;
     }
 }
+
 
 void Object::save(QString filename)
 {
@@ -331,10 +409,6 @@ void Object::save(QString filename)
         {
             for(int i=0;i<faces.size();i++)
             {
-                if(isNewGroup(i))
-                {
-                    ts<<"g "<<i<<"\n";
-                }
                 ts<<"f";
                 for(int j=0;j<faces[i].size();j++)
                 {
@@ -347,10 +421,6 @@ void Object::save(QString filename)
         {
             for(int i=0;i<faces.size();i++)
             {
-                if(isNewGroup(i))
-                {
-                    ts<<"g "<<i<<"\n";
-                }
                 ts<<"f";
                 for(int j=0;j<faces[i].size();j++)
                 {

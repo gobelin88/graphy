@@ -518,21 +518,32 @@ void MainWindow::slot_plot_cloud_3D()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-    if (id_list.size()==3 || id_list.size()==4)
+    if (id_list.size()==0 || id_list.size()==3 || id_list.size()==4)
     {
         View3D* view3d=new View3D;
 
         QObject::connect(view3d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),table,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
         QObject::connect(view3d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
 
-        Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[0].column());
-        Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[1].column());
-        Eigen::VectorXd data_z=table->getLogicalColDataDouble(id_list[2].column());
+
 
         Cloud* cloud=nullptr;
 
-        if (id_list.size()==3)
+        if (id_list.size()==0)
         {
+            Eigen::VectorXd data_x(1);
+            Eigen::VectorXd data_y(1);
+            Eigen::VectorXd data_z(1);
+
+            cloud=new Cloud(data_x,data_y,data_z,"X","Y","Z");
+
+        }
+        else if (id_list.size()==3)
+        {
+            Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[0].column());
+            Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[1].column());
+            Eigen::VectorXd data_z=table->getLogicalColDataDouble(id_list[2].column());
+
             cloud=new Cloud(data_x,data_y,data_z,
                             table->getLogicalColName(id_list[0].column()),
                     table->getLogicalColName(id_list[1].column()),
@@ -541,6 +552,9 @@ void MainWindow::slot_plot_cloud_3D()
         }
         else if (id_list.size()==4)
         {
+            Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[0].column());
+            Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[1].column());
+            Eigen::VectorXd data_z=table->getLogicalColDataDouble(id_list[2].column());
             Eigen::VectorXd data_s=table->getLogicalColDataDouble(id_list[3].column());
             cloud=new Cloud(data_x,data_y,data_z,data_s,
                             table->getLogicalColName(id_list[0].column()),
@@ -552,14 +566,10 @@ void MainWindow::slot_plot_cloud_3D()
         if (cloud)
         {
             view3d->setCloudScalar(cloud,View3D::PrimitiveMode::MODE_POINTS);
-            //view3d->setCloudScalar(*cloud);
         }
 
         mdiArea->addSubWindow(view3d->getContainer(),Qt::WindowStaysOnTopHint);
         view3d->getContainer()->show();
-
-        //        view3d->show();
-
     }
     else
     {

@@ -112,7 +112,7 @@ public:
                    double strech,
                    double radius_int,
                    double radius_dr,
-                   double width, double delta_ext, double delta_int);
+                   double width, double delta_ext, double delta_int, QString filename, bool generate_parts);
 
     void exportEdges(QString filename);
 
@@ -155,8 +155,6 @@ private:
     std::vector<Vector3d> wire;
     std::vector<Edge> edges;
 
-    bool isNewGroup(int i);
-    std::vector<int> groups;
 
     Matrix3d Rx(double ang);
     Matrix3d Ry(double ang);

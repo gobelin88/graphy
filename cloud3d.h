@@ -6,8 +6,9 @@
 #include "Base3D.h"
 #include "Cloud.h"
 
-struct Cloud3D:public Base3D
+class Cloud3D:public Base3D
 {
+public:
     Cloud3D(Cloud * cloud,Qt3DCore::QEntity* rootEntity);
 
     Qt3DExtras::QPerVertexColorMaterial* cloudMaterial;

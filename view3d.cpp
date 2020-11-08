@@ -2,7 +2,7 @@
 
 View3D::View3D()
 {
-    clouds3D.clear();
+    objects3D.clear();
     xy_reversed=false;
     yz_reversed=false;
     xz_reversed=false;
@@ -275,11 +275,11 @@ void View3D::slot_saveRevolution()
 
 void View3D::slot_fitSphere()
 {
-    std::vector<int> indexes=getSelectedCloudIndexes();
+    std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<indexes.size();i++)
+    for(int i=0;i<selectedClouds.size();i++)
     {
-        Cloud * currentCloud=clouds3D[indexes[i]]->cloud;
+        Cloud * currentCloud=selectedClouds[i]->cloud;
 
         Sphere sphere(currentCloud->getBarycenter(),currentCloud->getBoundingRadius()/2.0);
         currentCloud->fit(&sphere);
@@ -298,10 +298,11 @@ void View3D::slot_fitSphere()
 
 void View3D::slot_fitPlan()
 {
-    std::vector<int> indexes=getSelectedCloudIndexes();
-    for(int i=0;i<indexes.size();i++)
+    std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
+
+    for(int i=0;i<selectedClouds.size();i++)
     {
-        Cloud * currentCloud=clouds3D[indexes[i]]->cloud;
+        Cloud * currentCloud=selectedClouds[i]->cloud;
 
         Eigen::Vector3d barycenter=currentCloud->getBarycenter();
 
@@ -338,10 +339,11 @@ void View3D::slot_fitPlan()
 
 void View3D::slot_projectPlan()
 {
-    std::vector<int> indexes=getSelectedCloudIndexes();
-    for(int i=0;i<indexes.size();i++)
+    std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
+
+    for(int i=0;i<selectedClouds.size();i++)
     {
-        Cloud3D * currentCloud3D=clouds3D[indexes[i]];
+        Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
 
         QDialog* dialog=new QDialog;
@@ -408,10 +410,11 @@ void View3D::slot_projectPlan()
 
 void View3D::slot_projectSphere()
 {
-    std::vector<int> indexes=getSelectedCloudIndexes();
-    for(int i=0;i<indexes.size();i++)
+    std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
+
+    for(int i=0;i<selectedClouds.size();i++)
     {
-        Cloud3D * currentCloud3D=clouds3D[indexes[i]];
+        Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
 
         QDialog* dialog=new QDialog;
@@ -468,10 +471,11 @@ void View3D::slot_projectSphere()
 
 void View3D::slot_projectCustomMesh()
 {
-    std::vector<int> indexes=getSelectedCloudIndexes();
-    for(int i=0;i<indexes.size();i++)
+    std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
+
+    for(int i=0;i<selectedClouds.size();i++)
     {
-        Cloud3D * currentCloud3D=clouds3D[indexes[i]];
+        Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
 
         QString filename=QFileDialog::getOpenFileName(nullptr,"Project on 3D Mesh","./obj","Object (*.obj)");
@@ -488,10 +492,11 @@ void View3D::slot_projectCustomMesh()
 
 void View3D::slot_randomSubSamples()
 {
-    std::vector<int> indexes=getSelectedCloudIndexes();
-    for(int i=0;i<indexes.size();i++)
+    std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
+
+    for(int i=0;i<selectedClouds.size();i++)
     {
-        Cloud3D * currentCloud3D=clouds3D[indexes[i]];
+        Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
 
         QDialog* dialog=new QDialog;
@@ -542,10 +547,11 @@ void View3D::slot_randomSubSamples()
 
 void View3D::slot_fitCustomMesh()
 {
-    std::vector<int> indexes=getSelectedCloudIndexes();
-    for(int i=0;i<indexes.size();i++)
+    std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
+
+    for(int i=0;i<selectedClouds.size();i++)
     {
-        Cloud * currentCloud=clouds3D[indexes[i]]->cloud;
+        Cloud * currentCloud=selectedClouds[i]->cloud;
 
         QString filename=QFileDialog::getOpenFileName(nullptr,"3D Mesh","./obj","Object (*.obj)");
         std::cout<<filename.toLocal8Bit().data()<<std::endl;
@@ -590,9 +596,11 @@ void View3D::slot_fitCustomMesh()
 
 void View3D::slot_ColorScaleChanged(const QCPRange& range)
 {
-    for(int i=0;i<clouds3D.size();i++)
+    std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
+
+    for(int i=0;i<selectedClouds.size();i++)
     {
-        Cloud3D * currentCloud3D=clouds3D[i];
+        Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
 
         if (currentCloud && currentCloud3D->buffer)
@@ -631,9 +639,11 @@ void View3D::slot_ScaleChanged()
     T.setTranslation(-customContainer->getTranslation());
     S.setScale3D(customContainer->getScaleInv());
 
-    for(int i=0;i<clouds3D.size();i++)
+
+    std::vector<Cloud3D*> cloudsList=getClouds();
+    for(int i=0;i<cloudsList.size();i++)
     {
-        clouds3D[i]->cloudTransform->setMatrix( S.matrix()*T.matrix() );//->setMatrix(t.matrix().inverted());
+        cloudsList[i]->cloudTransform->setMatrix( S.matrix()*T.matrix() );//->setMatrix(t.matrix().inverted());
     }
 
     //dispMat(T.matrix()*S.matrix());
@@ -652,10 +662,11 @@ void View3D::slot_ScaleChanged()
 
 void View3D::slot_setGradient(int preset)
 {
-    std::vector<int> indexes=getSelectedCloudIndexes();
-    for(int i=0;i<indexes.size();i++)
+    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+
+    for(int i=0;i<selectedClouds.size();i++)
     {
-        Cloud3D * currentCloud3D=clouds3D[indexes[i]];
+        Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
 
         if (currentCloud && currentCloud3D->buffer)
@@ -671,10 +682,11 @@ void View3D::slot_setGradient(int preset)
 
 void View3D::slot_useCustomColor(int value)
 {
-    std::vector<int> indexes=getSelectedCloudIndexes();
-    for(int i=0;i<indexes.size();i++)
+    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+
+    for(int i=0;i<selectedClouds.size();i++)
     {
-        Cloud3D * currentCloud3D=clouds3D[indexes[i]];
+        Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
 
         if (currentCloud && currentCloud3D->buffer)
@@ -687,10 +699,11 @@ void View3D::slot_useCustomColor(int value)
 
 void View3D::slot_setCustomColor(QColor color)
 {
-    std::vector<int> indexes=getSelectedCloudIndexes();
-    for(int i=0;i<indexes.size();i++)
+    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+
+    for(int i=0;i<selectedClouds.size();i++)
     {
-        Cloud3D * currentCloud3D=clouds3D[indexes[i]];
+        Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
 
         if (currentCloud && currentCloud3D->buffer)
@@ -704,9 +717,9 @@ void View3D::slot_setCustomColor(QColor color)
 void View3D::addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode)
 {
     Cloud3D * currentCloud3D=new Cloud3D(cloudData,rootEntity);
-    this->clouds3D.push_back(currentCloud3D);
+    this->objects3D.push_back(currentCloud3D);
 
-    QListWidgetItem * item=new QListWidgetItem(QString("Cloud: %1").arg(this->clouds3D.size()));
+    QListWidgetItem * item=new QListWidgetItem(QString("Cloud: %1").arg(getClouds().size()));
     item->setIcon(QIcon(QPixmap::fromImage(QImage(":/img/icons/points_cloud.png"))));
     customContainer->getSelectionView()->addItem(item);
 
@@ -731,59 +744,78 @@ void View3D::addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::Pri
     customContainer->replot();
 }
 
-
-std::vector<int> View3D::getSelectedCloudIndexes()
+std::vector<Cloud3D*> View3D::getClouds()
 {
-    std::vector<int> indexes;
+    std::vector<Cloud3D*> cloudsList;
+
+    for(int i=0;i<objects3D.size();i++)
+    {
+        Cloud3D* ptrCloud=dynamic_cast<Cloud3D*>(objects3D[i]);
+        if(ptrCloud)
+        {
+                cloudsList.push_back(ptrCloud);
+        }
+    }
+    return cloudsList;
+}
+
+std::vector<Base3D*> View3D::getMeshs()
+{
+    std::vector<Base3D*> meshList;
+
+    for(int i=0;i<objects3D.size();i++)
+    {
+        Base3D * ptrPlan3D=dynamic_cast<Plan3D*>(objects3D[i]);
+        Base3D * ptrSphere3D=dynamic_cast<Sphere3D*>(objects3D[i]);
+        Base3D * ptrObject3D=dynamic_cast<Object3D*>(objects3D[i]);
+
+        if(ptrPlan3D){meshList.push_back(ptrPlan3D);}
+        if(ptrSphere3D){meshList.push_back(ptrSphere3D);}
+        if(ptrObject3D){meshList.push_back(ptrObject3D);}
+    }
+
+    return meshList;
+}
+
+std::vector<Cloud3D*> View3D::getSelectedClouds()
+{
+    std::vector<Cloud3D*> selectedClouds;
 
     int itemsCount=customContainer->getSelectionView()->count();
 
-    int idClouds=0;
+    if(objects3D.size()!=itemsCount)
+    {
+        std::cout<<"Error"<<std::endl;
+        return selectedClouds;
+    }
+
     for(int i=0;i<itemsCount;i++)
     {
         QListWidgetItem * currentItem= customContainer->getSelectionView()->item(i);
 
-        if(currentItem->text().contains("Cloud"))
+        Cloud3D* ptrCloud=dynamic_cast<Cloud3D*>(objects3D[i]);
+        if(ptrCloud)
         {
             if(currentItem->isSelected())
             {
-                indexes.push_back(idClouds);
+                selectedClouds.push_back(ptrCloud);
             }
-            idClouds++;
         }
     }
-    return indexes;
+    return selectedClouds;
 }
 
-std::vector<int> View3D::getSelectedMeshIndexes()
+std::vector<Base3D*> View3D::getSelectedObjects()
 {
-    std::vector<int> indexes;
+    std::vector<Base3D*> selectedObjects;
 
     int itemsCount=customContainer->getSelectionView()->count();
 
-    int idMesh=0;
-    for(int i=0;i<itemsCount;i++)
+    if(objects3D.size()!=itemsCount)
     {
-        QListWidgetItem * currentItem= customContainer->getSelectionView()->item(i);
-
-        if(currentItem->text().contains("Mesh"))
-        {
-            if(currentItem->isSelected())
-            {
-                indexes.push_back(idMesh);
-            }
-            idMesh++;
-        }
+        std::cout<<"Error"<<std::endl;
+        return selectedObjects;
     }
-    return indexes;
-}
-
-
-std::vector<int> View3D::getSelectedEntitiesIndexes()
-{
-    std::vector<int> indexes;
-
-    int itemsCount=customContainer->getSelectionView()->count();
 
     for(int i=0;i<itemsCount;i++)
     {
@@ -791,24 +823,43 @@ std::vector<int> View3D::getSelectedEntitiesIndexes()
 
         if(currentItem->isSelected())
         {
-            indexes.push_back(i);
+            selectedObjects.push_back(objects3D[i]);
         }
+
     }
-    return indexes;
+    return selectedObjects;
 }
 
 void View3D::slot_removeSelected()
 {
     std::cout<<"Remove Selected"<<std::endl;
+
+    std::vector<Base3D*> selectedObjects=getSelectedObjects();
+
+    for(int i=0;i<selectedObjects.size();i++)
+    {
+
+        for(int k=0;k<objects3D.size();k++)
+        {
+            if(objects3D[k]==selectedObjects[i])
+            {
+                objects3D.erase(objects3D.begin()+k);
+            }
+        }
+
+        delete customContainer->getSelectionView()->takeItem(i);
+        delete selectedObjects[i];
+    }
+
 }
 
 void View3D::slot_setPointSize(double value)
 {
-    std::vector<int> indexes=getSelectedCloudIndexes();
+    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<indexes.size();i++)
+    for(int i=0;i<selectedClouds.size();i++)
     {
-        Cloud3D * currentCloud3D=clouds3D[indexes[i]];
+        Cloud3D * currentCloud3D=selectedClouds[i];
         currentCloud3D->pointSize->setValue(value);
         currentCloud3D->lineWidth->setValue(value);
 
@@ -827,18 +878,19 @@ void View3D::slot_setPointSize(double value)
 
 void View3D::slot_setPrimitiveType(int type)
 {
-    std::vector<int> indexes=getSelectedCloudIndexes();
-    for(int i=0;i<indexes.size();i++)
-    {
-        Cloud3D * currentCloud3D=clouds3D[indexes[i]];
+    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
-//        Points = 0x0000,
-//        Lines = 0x0001,
-//        LineLoop = 0x0002,
-//        LineStrip = 0x0003,
-//        Triangles = 0x0004,
-//        TriangleStrip = 0x0005,
-//        TriangleFan = 0x0006,
+    for(int i=0;i<selectedClouds.size();i++)
+    {
+        Cloud3D * currentCloud3D=selectedClouds[i];
+
+        //        Points = 0x0000,
+        //        Lines = 0x0001,
+        //        LineLoop = 0x0002,
+        //        LineStrip = 0x0003,
+        //        Triangles = 0x0004,
+        //        TriangleStrip = 0x0005,
+        //        TriangleFan = 0x0006,
         currentCloud3D->geometryRenderer->setPrimitiveType(static_cast<Qt3DRender::QGeometryRenderer::PrimitiveType>(type));
     }
 }
@@ -849,7 +901,7 @@ void View3D::addSphere(Sphere * sphere,QColor color)
     objects_list.push_back(sphere3D);
     slot_ScaleChanged();
 
-    referenceObjectEntity(sphere3D->entity,"Sphere");
+    referenceObjectEntity(sphere3D,"Sphere");
 }
 
 void View3D::addPlan(Plan* plan,float radius,QColor color)
@@ -858,13 +910,13 @@ void View3D::addPlan(Plan* plan,float radius,QColor color)
     objects_list.push_back(plan3D);
     slot_ScaleChanged();
 
-    referenceObjectEntity(plan3D->entity,"Plan");
+    referenceObjectEntity(plan3D,"Plan");
 }
 
-void View3D::referenceObjectEntity(Qt3DCore::QEntity* entity,QString str_type)
+void View3D::referenceObjectEntity(Base3D * base3D,QString str_type)
 {
-    objects3D.push_back(entity);
-    QListWidgetItem * item=new QListWidgetItem(QString("%2: %1 ").arg(this->objects3D.size()).arg(str_type));
+    objects3D.push_back(base3D);
+    QListWidgetItem * item=new QListWidgetItem(QString("%2: %1 ").arg(getMeshs().size()).arg(str_type));
     item->setIcon(QIcon(QPixmap::fromImage(QImage(":/img/icons/shape_icosahedron.gif"))));
     customContainer->getSelectionView()->addItem(item);
 }
@@ -873,7 +925,7 @@ void View3D::addObj(Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor 
 {
     Object3D* obj=new Object3D(rootEntity,m_obj,posatt,scale,color);
 
-    referenceObjectEntity(obj->entity,"Mesh");
+    referenceObjectEntity(obj,"Mesh");
 
     Qt3DRender::QCullFace* culling = new Qt3DRender::QCullFace();
     culling->setMode(Qt3DRender::QCullFace::NoCulling);
@@ -1008,10 +1060,11 @@ void View3D::mouseMoveEvent(QMouseEvent* event)
 
 void View3D::slot_export()
 {
-    std::vector<int> indexes=getSelectedCloudIndexes();
-    for(int i=0;i<indexes.size();i++)
+    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+
+    for(int i=0;i<selectedClouds.size();i++)
     {
-        Cloud * currentCloud=clouds3D[indexes[i]]->cloud;
+        Cloud * currentCloud=selectedClouds[i]->cloud;
 
         QString filename=QFileDialog::getSaveFileName(nullptr,"Cloud export data","Cloud.graphy","*.graphy");
 
@@ -1266,9 +1319,11 @@ void View3D::slot_resetView()
 {
     camera_params->reset();
 
-    for(int i=0;i<clouds3D.size();i++)
+    std::vector<Cloud3D*> cloudsList=getClouds();
+
+    for(int i=0;i<cloudsList.size();i++)
     {
-        Cloud * currentCloud=clouds3D[i]->cloud;
+        Cloud * currentCloud=cloudsList[i]->cloud;
         extendRanges(currentCloud->getXRange(),currentCloud->getYRange(),currentCloud->getZRange(),i);
         extendScalarRange(currentCloud->getScalarFieldRange(),i);
     }
@@ -1286,11 +1341,11 @@ void View3D::slot_resetViewOnSelected()
 {
     camera_params->reset();
 
-    std::vector<int> indexes=getSelectedCloudIndexes();
+    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<indexes.size();i++)
+    for(int i=0;i<selectedClouds.size();i++)
     {
-        Cloud * currentCloud=clouds3D[indexes[i]]->cloud;
+        Cloud * currentCloud=selectedClouds[i]->cloud;
         extendRanges(currentCloud->getXRange(),currentCloud->getYRange(),currentCloud->getZRange(),i);
         extendScalarRange(currentCloud->getScalarFieldRange(),i);
     }
@@ -1315,11 +1370,11 @@ void View3D::configurePopup()
     cb_mode->blockSignals(true);
     c_gradient->blockSignals(true);
 
-    std::vector<int> indexes=getSelectedCloudIndexes();
+    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
-    if(indexes.size()>0)
+    if(selectedClouds.size()>0)
     {
-        Cloud3D * currentCloud3D=clouds3D[indexes[0]];
+        Cloud3D * currentCloud3D=selectedClouds[0];
         Cloud * currentCloud=currentCloud3D->cloud;
 
         sb_size->setValue(static_cast<double>(currentCloud3D->pointSize->value()));

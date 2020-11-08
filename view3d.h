@@ -141,14 +141,16 @@ protected:
     void wheelEvent(QWheelEvent* event);
 
 private:
-    std::vector<int> getSelectedCloudIndexes();
-    std::vector<int> getSelectedMeshIndexes();
-    std::vector<int> getSelectedEntitiesIndexes();
+    std::vector<Cloud3D*> getClouds();
+    std::vector<Cloud3D*> getSelectedClouds();
+
+    std::vector<Base3D*> getMeshs();
+    std::vector<Base3D*> getSelectedObjects();
 
     void extendScalarRange(QCPRange itemRangeS,int i);
     void extendRanges(QCPRange itemRangeX,QCPRange itemRangeY,QCPRange itemRangeZ,int i);
     void updateLabels();
-    void referenceObjectEntity(Qt3DCore::QEntity* entity,QString str_type);
+    void referenceObjectEntity(Base3D *base3D, QString str_type);
 
     CameraParams* camera_params;
     CustomViewContainer* customContainer;
@@ -171,11 +173,8 @@ private:
     //Grid
     Grid3D* grid3D;
 
-    //Data Clouds
-    std::vector<Cloud3D*> clouds3D;
-
-    //Data Meshs
-    std::vector<Qt3DCore::QEntity* >objects3D;
+    //3D data stuff Cloud/Mesh/obj etc...
+    std::vector<Base3D*> objects3D;
 
     //Labels Tiks and Arrows
     Label3D* labelx;

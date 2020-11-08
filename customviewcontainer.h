@@ -22,6 +22,8 @@ public:
     QVector3D getScale();
     QVector3D getScaleInv();
 
+    QListWidget * getSelectionView();
+
     void replot();
 
 
@@ -48,6 +50,8 @@ private:
     QCustomPlot* axisZ_plot;
     QCPAxisRect* axisZ_rect;
     QCPAxis* axisZ;
+
+    QListWidget * selectionView;
 
     int axisSize;
 };

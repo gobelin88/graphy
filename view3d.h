@@ -25,6 +25,7 @@
 #include "grid3d.h"
 #include "light3d.h"
 #include "cloud3d.h"
+#include "color_wheel.hpp"
 
 #include "customviewcontainer.h"
 #include "cameraparams.h"
@@ -85,9 +86,6 @@ public:
     void setObjPosAtt(unsigned int id, const QPosAtt& T);
     void setObjColor(unsigned int id, QColor color);
 
-    void addSphere(QPosAtt posatt,float scale,QColor color,double radius);
-    void addPlan(QPosAtt posatt,float scale,QColor color,double width,double height);
-
     void addSphere(Sphere * sphere,QColor color);
     void addPlan(Plan* plan, float radius, QColor color);
 
@@ -101,9 +99,13 @@ public slots:
     void slot_fitSphere();
     void slot_fitPlan();
     void slot_fitCustomMesh();
-    void slot_ColorScaleChanged(const QCPRange& range);
+
     void slot_ScaleChanged();
     void slot_setGradient(int preset);
+    void slot_ColorScaleChanged(const QCPRange& range);
+    void slot_setCustomColor(QColor color);
+    void slot_useCustomColor(int value);
+
     void updateGridAndLabels();
 
     void slot_projectCustomMesh();
@@ -124,7 +126,9 @@ public slots:
     void slot_showHideAxis(int value);
     void slot_showHideLabels(int value);
 
-    std::vector<int> getSelectedCloudIndexes();
+
+
+    void slot_removeSelected();
 
 signals:
     void sig_newColumn(QString varName,Eigen::VectorXd data);
@@ -137,9 +141,14 @@ protected:
     void wheelEvent(QWheelEvent* event);
 
 private:
+    std::vector<int> getSelectedCloudIndexes();
+    std::vector<int> getSelectedMeshIndexes();
+    std::vector<int> getSelectedEntitiesIndexes();
+
     void extendScalarRange(QCPRange itemRangeS,int i);
     void extendRanges(QCPRange itemRangeX,QCPRange itemRangeY,QCPRange itemRangeZ,int i);
     void updateLabels();
+    void referenceObjectEntity(Qt3DCore::QEntity* entity,QString str_type);
 
     CameraParams* camera_params;
     CustomViewContainer* customContainer;
@@ -162,8 +171,11 @@ private:
     //Grid
     Grid3D* grid3D;
 
-    //Data
+    //Data Clouds
     std::vector<Cloud3D*> clouds3D;
+
+    //Data Meshs
+    std::vector<Qt3DCore::QEntity* >objects3D;
 
     //Labels Tiks and Arrows
     Label3D* labelx;
@@ -195,6 +207,8 @@ private:
 
     QMenu * menuView;
     QAction * actRescale;
+    QAction * actRescaleSelected;
+    QAction * actRemoveSelected;
 
     QMenu * menuData;
     QAction * actExport;
@@ -209,6 +223,9 @@ private:
     QCheckBox * cb_show_hide_grid;
     QCheckBox * cb_show_hide_axis;
     QCheckBox * cb_show_hide_labels;
+
+    QCheckBox * cb_use_custom_color;
+    Color_Wheel * cw_custom_color;
 
     //
     bool xy_reversed;

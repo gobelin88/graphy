@@ -39,6 +39,13 @@ public:
     QCPRange getZRange();
     QCPRange getScalarFieldRange();
     std::vector<QRgb>& getColors();
+
+    QRgb getCustomColor(){return customColor;}
+    void setCustomColor(QRgb customColor){this->customColor=customColor;}
+    bool isCustomColorUsed(){return useCustomColor;}
+    void setUseCustomColor(bool value){useCustomColor=value;}
+
+
     void setGradientPreset(QCPColorGradient::GradientPreset preset);
 
     const QCPColorGradient& getGradient();
@@ -82,6 +89,11 @@ private:
     Eigen::Vector3d Barycenter;
     double boundingRadius;
     QCPColorGradient::GradientPreset gradientPreset;
+
+    QRgb customColor;
+    bool useCustomColor;
+
+    void init();
 };
 
 #endif

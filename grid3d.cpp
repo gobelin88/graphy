@@ -172,7 +172,7 @@ Plan3D::Plan3D(Qt3DCore::QEntity* rootEntity,Plan* plan,float radius,QColor colo
     geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Triangles);
     material = new Qt3DExtras::QPhongAlphaMaterial(rootEntity);
     material->setAmbient(color);
-    material->setAlpha(0.5);
+    material->setAlpha(0.8);
 
     Qt3DRender::QCullFace* culling = new Qt3DRender::QCullFace();
     culling->setMode(Qt3DRender::QCullFace::NoCulling);
@@ -270,7 +270,7 @@ Sphere3D::Sphere3D(Qt3DCore::QEntity* rootEntity,Sphere * sphere,QColor color)
     geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Triangles);
     material = new Qt3DExtras::QPhongAlphaMaterial(rootEntity);
     material->setAmbient(color);
-    material->setAlpha(0.5);
+    material->setAlpha(0.8);
 
     Qt3DRender::QCullFace* culling = new Qt3DRender::QCullFace();
     culling->setMode(Qt3DRender::QCullFace::NoCulling);

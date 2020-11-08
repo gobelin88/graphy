@@ -21,6 +21,8 @@
         <file>icons/filter.png</file>
         <file>icons/selection.png</file>
         <file>icons/colourise.png</file>
+        <file>icons/points_cloud.png</file>
+        <file>icons/shape_icosahedron.gif</file>
     </qresource>
     <qresource prefix="/eqn">
         <file>eqn/ellipse.gif</file>

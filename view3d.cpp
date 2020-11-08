@@ -91,6 +91,8 @@ void View3D::createPopup()
 
     menuView= new QMenu("View");
     actRescale= new QAction("Rescale",  this);
+    actRescaleSelected= new QAction("Rescale selected",  this);
+    actRemoveSelected= new QAction("Remove selected",  this);
 
     menuMesh= new QMenu("Mesh");
     actMeshLoad= new QAction("Load",  this);
@@ -112,9 +114,12 @@ void View3D::createPopup()
     cb_show_hide_labels=new QCheckBox("Show labels");
     cb_show_hide_labels->setChecked(true);
 
+    cb_use_custom_color=new QCheckBox("Use custom color");
+    cw_custom_color=new Color_Wheel();
+
     sb_size=new QDoubleSpinBox;
     sb_size->setRange(0.1,100);
-    sb_size->setSingleStep(1.0);
+    sb_size->setSingleStep(0.1);
 
     cb_mode=new QComboBox;
     cb_mode->addItem("POINTS");
@@ -133,6 +138,10 @@ void View3D::createPopup()
     gbox->addWidget(cb_show_hide_axis,3,0,1,2);
     gbox->addWidget(cb_show_hide_labels,4,0,1,2);
 
+    gbox->addWidget(cb_use_custom_color,5,0);
+    gbox->addWidget(cw_custom_color,5,1);
+
+
     widget->setLayout(gbox);
 
     ///////////////////////////////////////////////
@@ -146,6 +155,8 @@ void View3D::createPopup()
     popup_menu->addAction(actSaveRevolution);
 
     menuView->addAction(actRescale);
+    menuView->addAction(actRescaleSelected);
+    menuView->addAction(actRemoveSelected);
     menuParameters->addAction(actWidget);
     menuData->addMenu(menuFit);
     menuData->addMenu(menuProject);
@@ -169,11 +180,14 @@ void View3D::createPopup()
     QObject::connect(cb_show_hide_grid,SIGNAL(stateChanged(int)),this,SLOT(slot_showHideGrid(int)));
     QObject::connect(cb_show_hide_axis,SIGNAL(stateChanged(int)),this,SLOT(slot_showHideAxis(int)));
 
+
     QObject::connect(actMeshLoad,SIGNAL(triggered()),this,SLOT(slot_addMesh()));
     QObject::connect(actMeshCreateRotegrity,SIGNAL(triggered()),this,SLOT(slot_createRotegrity()));
 
     QObject::connect(actExport,SIGNAL(triggered()),this,SLOT(slot_export()));
     QObject::connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_resetView()));
+    QObject::connect(actRescaleSelected,SIGNAL(triggered()),this,SLOT(slot_resetViewOnSelected()));
+    QObject::connect(actRemoveSelected,SIGNAL(triggered()),this,SLOT(slot_removeSelected()));
 
     QObject::connect(actRandomSubSample,SIGNAL(triggered()),this,SLOT(slot_randomSubSamples()));
     QObject::connect(actSave,SIGNAL(triggered()),this,SLOT(slot_saveImage()));
@@ -190,6 +204,11 @@ void View3D::createPopup()
     QObject::connect(actFitMesh, SIGNAL(triggered() ), this, SLOT(slot_fitCustomMesh()));
 
     QObject::connect(c_gradient, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setGradient(int)));
+
+    QObject::connect(cb_use_custom_color, SIGNAL(stateChanged(int)), this, SLOT(slot_useCustomColor(int)));
+    QObject::connect(cw_custom_color, SIGNAL(colorChanged(QColor)), this, SLOT(slot_setCustomColor(QColor)));
+
+
 }
 
 void View3D::slot_saveImage()
@@ -650,10 +669,47 @@ void View3D::slot_setGradient(int preset)
     }
 }
 
+void View3D::slot_useCustomColor(int value)
+{
+    std::vector<int> indexes=getSelectedCloudIndexes();
+    for(int i=0;i<indexes.size();i++)
+    {
+        Cloud3D * currentCloud3D=clouds3D[indexes[i]];
+        Cloud * currentCloud=currentCloud3D->cloud;
+
+        if (currentCloud && currentCloud3D->buffer)
+        {
+            currentCloud->setUseCustomColor(value);
+            currentCloud3D->buffer->setData(currentCloud->getBuffer(customContainer->getColorScale()->dataRange()));
+        }
+    }
+}
+
+void View3D::slot_setCustomColor(QColor color)
+{
+    std::vector<int> indexes=getSelectedCloudIndexes();
+    for(int i=0;i<indexes.size();i++)
+    {
+        Cloud3D * currentCloud3D=clouds3D[indexes[i]];
+        Cloud * currentCloud=currentCloud3D->cloud;
+
+        if (currentCloud && currentCloud3D->buffer)
+        {
+            currentCloud->setCustomColor(color.rgb());
+            currentCloud3D->buffer->setData(currentCloud->getBuffer(customContainer->getColorScale()->dataRange()));
+        }
+    }
+}
+
 void View3D::addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode)
 {
     Cloud3D * currentCloud3D=new Cloud3D(cloudData,rootEntity);
     this->clouds3D.push_back(currentCloud3D);
+
+    QListWidgetItem * item=new QListWidgetItem(QString("Cloud: %1").arg(this->clouds3D.size()));
+    item->setIcon(QIcon(QPixmap::fromImage(QImage(":/img/icons/points_cloud.png"))));
+    customContainer->getSelectionView()->addItem(item);
+
 
     currentCloud3D->geometryRenderer->setPrimitiveType(primitiveMode);
 
@@ -680,13 +736,71 @@ std::vector<int> View3D::getSelectedCloudIndexes()
 {
     std::vector<int> indexes;
 
-    if(this->clouds3D.size()>0)
+    int itemsCount=customContainer->getSelectionView()->count();
+
+    int idClouds=0;
+    for(int i=0;i<itemsCount;i++)
     {
-        indexes.push_back(this->clouds3D.size()-1);
+        QListWidgetItem * currentItem= customContainer->getSelectionView()->item(i);
+
+        if(currentItem->text().contains("Cloud"))
+        {
+            if(currentItem->isSelected())
+            {
+                indexes.push_back(idClouds);
+            }
+            idClouds++;
+        }
     }
     return indexes;
 }
 
+std::vector<int> View3D::getSelectedMeshIndexes()
+{
+    std::vector<int> indexes;
+
+    int itemsCount=customContainer->getSelectionView()->count();
+
+    int idMesh=0;
+    for(int i=0;i<itemsCount;i++)
+    {
+        QListWidgetItem * currentItem= customContainer->getSelectionView()->item(i);
+
+        if(currentItem->text().contains("Mesh"))
+        {
+            if(currentItem->isSelected())
+            {
+                indexes.push_back(idMesh);
+            }
+            idMesh++;
+        }
+    }
+    return indexes;
+}
+
+
+std::vector<int> View3D::getSelectedEntitiesIndexes()
+{
+    std::vector<int> indexes;
+
+    int itemsCount=customContainer->getSelectionView()->count();
+
+    for(int i=0;i<itemsCount;i++)
+    {
+        QListWidgetItem * currentItem= customContainer->getSelectionView()->item(i);
+
+        if(currentItem->isSelected())
+        {
+            indexes.push_back(i);
+        }
+    }
+    return indexes;
+}
+
+void View3D::slot_removeSelected()
+{
+    std::cout<<"Remove Selected"<<std::endl;
+}
 
 void View3D::slot_setPointSize(double value)
 {
@@ -729,28 +843,13 @@ void View3D::slot_setPrimitiveType(int type)
     }
 }
 
-void View3D::addSphere(QPosAtt posatt,float scale,QColor color,double radius)
-{
-    auto* m_obj = new Qt3DExtras::QSphereMesh();
-    m_obj->setRadius(radius);
-
-    addObj(reinterpret_cast<Qt3DRender::QMesh*>(m_obj),posatt,scale,color);
-}
-
 void View3D::addSphere(Sphere * sphere,QColor color)
 {
     Sphere3D* sphere3D=new Sphere3D(rootEntity,sphere,color);
     objects_list.push_back(sphere3D);
     slot_ScaleChanged();
-}
 
-void View3D::addPlan(QPosAtt posatt,float scale,QColor color,double width,double height)
-{
-    auto* m_obj = new Qt3DExtras::QPlaneMesh();
-    m_obj->setWidth(width);
-    m_obj->setHeight(height);
-
-    addObj(reinterpret_cast<Qt3DRender::QMesh*>(m_obj),posatt,scale,color);
+    referenceObjectEntity(sphere3D->entity,"Sphere");
 }
 
 void View3D::addPlan(Plan* plan,float radius,QColor color)
@@ -758,11 +857,23 @@ void View3D::addPlan(Plan* plan,float radius,QColor color)
     Plan3D* plan3D=new Plan3D(rootEntity,plan,radius,color);
     objects_list.push_back(plan3D);
     slot_ScaleChanged();
+
+    referenceObjectEntity(plan3D->entity,"Plan");
+}
+
+void View3D::referenceObjectEntity(Qt3DCore::QEntity* entity,QString str_type)
+{
+    objects3D.push_back(entity);
+    QListWidgetItem * item=new QListWidgetItem(QString("%2: %1 ").arg(this->objects3D.size()).arg(str_type));
+    item->setIcon(QIcon(QPixmap::fromImage(QImage(":/img/icons/shape_icosahedron.gif"))));
+    customContainer->getSelectionView()->addItem(item);
 }
 
 void View3D::addObj(Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor color)
 {
     Object3D* obj=new Object3D(rootEntity,m_obj,posatt,scale,color);
+
+    referenceObjectEntity(obj->entity,"Mesh");
 
     Qt3DRender::QCullFace* culling = new Qt3DRender::QCullFace();
     culling->setMode(Qt3DRender::QCullFace::NoCulling);
@@ -1217,11 +1328,18 @@ void View3D::configurePopup()
 
         sb_size->setEnabled(true);
         cb_mode->setEnabled(true);
+        cb_use_custom_color->setEnabled(true);
+        cw_custom_color->setEnabled(currentCloud3D->cloud->isCustomColorUsed());
+
+        cb_use_custom_color->setChecked(currentCloud3D->cloud->isCustomColorUsed());
+        cw_custom_color->setColor(currentCloud3D->cloud->getCustomColor());
     }
     else
     {
         sb_size->setEnabled(false);
         cb_mode->setEnabled(false);
+        cb_use_custom_color->setEnabled(false);
+        cw_custom_color->setEnabled(false);
     }
 
     sb_size->blockSignals(false);

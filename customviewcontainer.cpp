@@ -10,11 +10,17 @@ CustomViewContainer::CustomViewContainer(QWidget* container)
     createYAxisPlot();
     createZAxisPlot();
 
+    selectionView=new QListWidget(this);
+    //selectionView->setSelectionMode(QListWidget::MultiSelection);
+    selectionView->setMaximumWidth(100);
+
     glayout->addWidget(axisX_plot,2,1);
     glayout->addWidget(axisY_plot,1,0);
     glayout->addWidget(axisZ_plot,0,1);
-    glayout->addWidget(color_plot,1,2);
     glayout->addWidget(container,1,1);
+    glayout->addWidget(color_plot,1,2);
+    glayout->addWidget(selectionView,0,3,3,1);
+
 
     //white
     QPalette pal = palette();
@@ -154,6 +160,11 @@ QVector3D CustomViewContainer::getScaleInv()
     return QVector3D(1.0f/float(0.5*(axisX->range().upper-axisX->range().lower)),
                      1.0f/float(0.5*(axisY->range().upper-axisY->range().lower)),
                      1.0f/float(0.5*(axisZ->range().upper-axisZ->range().lower)));
+}
+
+QListWidget *CustomViewContainer::getSelectionView()
+{
+    return selectionView;
 }
 
 void CustomViewContainer::replot()

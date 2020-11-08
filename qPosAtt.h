@@ -20,7 +20,7 @@ class QPosAtt
 {
 public:
     QPosAtt();
-    QPosAtt(Eigen::Vector3d p,Eigen::Quaterniond q);
+    QPosAtt(Eigen::Vector3d p,Eigen::Quaterniond q=Eigen::Quaterniond(1,0,0,0));
 
     Eigen::Vector3d P;
     Eigen::Quaterniond Q;

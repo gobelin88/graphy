@@ -1,5 +1,13 @@
 #include "Cloud.h"
 
+void Cloud::init()
+{
+    useCustomColor=false;
+    customColor=qRgb(0,0,0);
+    setGradientPreset(QCPColorGradient::gpPolar);
+    calcBarycenterAndBoundingRadius();
+}
+
 Cloud::Cloud(const Eigen::VectorXd& x,
              const Eigen::VectorXd& y,
              const Eigen::VectorXd& z,
@@ -17,14 +25,13 @@ Cloud::Cloud(const Eigen::VectorXd& x,
     rangeZ=getRange(z);
     rangeS=QCPRange(-1,1);
 
-    setGradientPreset(QCPColorGradient::gpPolar);
 
     this->labelX =labelX;
     this->labelY =labelY;
     this->labelZ =labelZ;
     this->labelS .clear();
 
-    calcBarycenterAndBoundingRadius();
+    init();
 }
 
 Cloud::Cloud(const Eigen::VectorXd& x,
@@ -46,14 +53,12 @@ Cloud::Cloud(const Eigen::VectorXd& x,
     rangeZ=getRange(z);
     rangeS=getRange(s);
 
-    setGradientPreset(QCPColorGradient::gpPolar);
-
     this->labelX =labelX;
     this->labelY =labelY;
     this->labelZ =labelZ;
     this->labelS =labelS;
 
-    calcBarycenterAndBoundingRadius();
+    init();
 }
 
 void Cloud::setGradientPreset(QCPColorGradient::GradientPreset preset)
@@ -222,9 +227,12 @@ void Cloud::subSample(unsigned int nbPoints)
 
 QByteArray Cloud::getBuffer(QCPRange range)
 {
-    const double * colordata=(const double *)pts.data()+3;
-    colors.resize(pts.size());
-    gradient.colorize(colordata,range,colors.data(),pts.size(),4,false);
+    if(!useCustomColor)
+    {
+        const double * colordata=(const double *)pts.data()+3;
+        colors.resize(pts.size());
+        gradient.colorize(colordata,range,colors.data(),pts.size(),4,false);
+    }
 
     QByteArray bufferBytes;
     bufferBytes.resize(2 * 3 * ( static_cast<int>(pts.size()) ) * sizeof(float));
@@ -236,9 +244,18 @@ QByteArray Cloud::getBuffer(QCPRange range)
         *vertices++ = pts[i][1];
         *vertices++ = pts[i][2];
 
-        *vertices++ = qRed  (colors[i])/255.0;
-        *vertices++ = qGreen(colors[i])/255.0;
-        *vertices++ = qBlue (colors[i])/255.0;
+        if(useCustomColor)
+        {
+            *vertices++ = qRed  (customColor)/255.0;
+            *vertices++ = qGreen(customColor)/255.0;
+            *vertices++ = qBlue (customColor)/255.0;
+        }
+        else
+        {
+            *vertices++ = qRed  (colors[i])/255.0;
+            *vertices++ = qGreen(colors[i])/255.0;
+            *vertices++ = qBlue (colors[i])/255.0;
+        }
     }
 
     return bufferBytes;

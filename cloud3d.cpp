@@ -1,7 +1,8 @@
 #include "cloud3d.h"
 
-Cloud3D::Cloud3D(Qt3DCore::QEntity* rootEntity)
+Cloud3D::Cloud3D(Cloud *cloud, Qt3DCore::QEntity* rootEntity)
 {
+    this->cloud=cloud;
     cloudTransform = new Qt3DCore::QTransform();
     cloudTransform->setScale(1.0);
     cloudTransform->setRotation(QQuaternion(1,0,0,0));
@@ -37,4 +38,9 @@ Cloud3D::Cloud3D(Qt3DCore::QEntity* rootEntity)
     pointSize->setValue(4.0f);
     lineWidth = new Qt3DRender::QLineWidth();
     lineWidth->setValue(4.0f);
+
+    positionAttribute->setCount(static_cast<unsigned int>(cloud->size()));
+    cloudColorsAttribute->setCount(static_cast<unsigned int>(cloud->size()));
+
+    buffer->setData(cloud->getBuffer(cloud->getScalarFieldRange()));
 }

@@ -2,7 +2,7 @@
 
 View3D::View3D()
 {
-    cloud=nullptr;
+    clouds3D.clear();
     xy_reversed=false;
     yz_reversed=false;
     xz_reversed=false;
@@ -22,6 +22,8 @@ View3D::View3D()
     camera_params=new CameraParams(camera(),0,0,0);
     camera_params->entity()->lens()->setPerspectiveProjection(45.0f, 16.0f/9.0f, 0.0001f, 100000.0f);
     camera_params->reset();
+    camera_params->setBarycenter( QVector3D(0,0,0) );
+    camera_params->setBoundingRadius( 1.20f );
 
     //Racine
     rootEntity = new Qt3DCore::QEntity();
@@ -46,10 +48,6 @@ View3D::View3D()
 
 void View3D::init3D()
 {
-    mode=MODE_POINTS;
-
-    cloud3D=new Cloud3D(rootEntity);
-
     grid3D=new Grid3D(rootEntity,10,QColor(255,255,255));
 
     auto* meshArrow = new Qt3DRender::QMesh();
@@ -59,10 +57,11 @@ void View3D::init3D()
     objArrowY=new Object3D(rootEntity,meshArrow,QPosAtt(Eigen::Vector3d(-1,-0.0,1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),Eigen::Vector3d(0,1,0))),0.1f,QColor(0,255,0));
     objArrowZ=new Object3D(rootEntity,meshArrow,QPosAtt(Eigen::Vector3d(1,-1,-0.0),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,0,1),Eigen::Vector3d(0,-1,0))),0.1f,QColor(0,0,255));
 
-    labelx=new Label3D(rootEntity,"XXXXXX",QVector3D(0,1,-1),0.1f,0,0,0);
-    labely=new Label3D(rootEntity,"YYYYYY",QVector3D(-1,0,1),0.1f,0,90,90);
-    labelz=new Label3D(rootEntity,"ZZZZZZ",QVector3D(1,-1,0),0.1f,-90,-90,0);
+    labelx=new Label3D(rootEntity,"X",QVector3D(0,1,-1),0.1f,0,0,0);
+    labely=new Label3D(rootEntity,"Y",QVector3D(-1,0,1),0.1f,0,90,90);
+    labelz=new Label3D(rootEntity,"Z",QVector3D(1,-1,0),0.1f,-90,-90,0);
     updateLabels();
+    slot_resetView();
 }
 
 void View3D::createPopup()
@@ -104,6 +103,15 @@ void View3D::createPopup()
 
     QGridLayout* gbox = new QGridLayout();
 
+    cb_show_hide_grid=new QCheckBox("Show grid");
+    cb_show_hide_grid->setChecked(grid3D->entity->isEnabled());
+
+    cb_show_hide_axis=new QCheckBox("Show axis");
+    cb_show_hide_axis->setChecked(true);
+
+    cb_show_hide_labels=new QCheckBox("Show labels");
+    cb_show_hide_labels->setChecked(true);
+
     sb_size=new QDoubleSpinBox;
     sb_size->setRange(0.1,100);
     sb_size->setSingleStep(1.0);
@@ -111,6 +119,7 @@ void View3D::createPopup()
     cb_mode=new QComboBox;
     cb_mode->addItem("POINTS");
     cb_mode->addItem("LINES");
+    cb_mode->addItem("LINES_LOOP");
     cb_mode->addItem("LINE_STRIP");
     cb_mode->addItem("TRIANGLES");
     cb_mode->addItem("TRIANGLE_STRIP");
@@ -119,7 +128,10 @@ void View3D::createPopup()
 
     gbox->addWidget(cb_mode,0,0);
     gbox->addWidget(sb_size,0,1);
-    gbox->addWidget(c_gradient,1,0);
+    gbox->addWidget(c_gradient,1,0,1,2);
+    gbox->addWidget(cb_show_hide_grid,2,0,1,2);
+    gbox->addWidget(cb_show_hide_axis,3,0,1,2);
+    gbox->addWidget(cb_show_hide_labels,4,0,1,2);
 
     widget->setLayout(gbox);
 
@@ -152,6 +164,10 @@ void View3D::createPopup()
     menuMesh->addAction(actMeshCreateRotegrity);
 
     menuSubSample->addAction(actRandomSubSample);
+
+    QObject::connect(cb_show_hide_labels,SIGNAL(stateChanged(int)),this,SLOT(slot_showHideLabels(int)));
+    QObject::connect(cb_show_hide_grid,SIGNAL(stateChanged(int)),this,SLOT(slot_showHideGrid(int)));
+    QObject::connect(cb_show_hide_axis,SIGNAL(stateChanged(int)),this,SLOT(slot_showHideAxis(int)));
 
     QObject::connect(actMeshLoad,SIGNAL(triggered()),this,SLOT(slot_addMesh()));
     QObject::connect(actMeshCreateRotegrity,SIGNAL(triggered()),this,SLOT(slot_createRotegrity()));
@@ -240,265 +256,312 @@ void View3D::slot_saveRevolution()
 
 void View3D::slot_fitSphere()
 {
-    Sphere sphere(cloud->getBarycenter(),cloud->getBoundingRadius()/2.0);
-    cloud->fit(&sphere);
+    std::vector<int> indexes=getSelectedCloudIndexes();
 
-    Eigen::Vector3d C=sphere.getCenter();
+    for(int i=0;i<indexes.size();i++)
+    {
+        Cloud * currentCloud=clouds3D[indexes[i]]->cloud;
 
-    addSphere(&sphere,QColor(64,64,64));
+        Sphere sphere(currentCloud->getBarycenter(),currentCloud->getBoundingRadius()/2.0);
+        currentCloud->fit(&sphere);
+
+        Eigen::Vector3d C=sphere.getCenter();
+
+        addSphere(&sphere,QColor(64,64,64));
 
 
-    //addSphere(QPosAtt(C,Eigen::Quaterniond(1,0,0,0)),1.0,QColor(64,64,64),sphere.getRadius());
+        //addSphere(QPosAtt(C,Eigen::Quaterniond(1,0,0,0)),1.0,QColor(64,64,64),sphere.getRadius());
 
-    emit sig_displayResults( QString("Fit Sphere:\nCenter=(%1 , %2 , %3) Radius=%4\nRms=%5\n").arg(C[0]).arg(C[1]).arg(C[2]).arg(sphere.getRadius()).arg(sphere.getRMS()) );
-    emit sig_newColumn("Err_Sphere",sphere.getErrNorm());
+        emit sig_displayResults( QString("Fit Sphere:\nCenter=(%1 , %2 , %3) Radius=%4\nRms=%5\n").arg(C[0]).arg(C[1]).arg(C[2]).arg(sphere.getRadius()).arg(sphere.getRMS()) );
+        emit sig_newColumn("Err_Sphere",sphere.getErrNorm());
+    }
 }
 
 void View3D::slot_fitPlan()
 {
-    Eigen::Vector3d barycenter=cloud->getBarycenter();
-
-    Plan* plan;
-    Plan planA(Eigen::Vector3d(1,0,0),barycenter);
-    Plan planB(Eigen::Vector3d(0,1,0),barycenter);
-    Plan planC(Eigen::Vector3d(0,0,1),barycenter);
-    cloud->fit(&planA);
-    cloud->fit(&planB);
-    cloud->fit(&planC);
-
-    if (planA.getRMS()<planB.getRMS() && planA.getRMS()<planC.getRMS())
+    std::vector<int> indexes=getSelectedCloudIndexes();
+    for(int i=0;i<indexes.size();i++)
     {
-        plan=&planA;
-    }
-    else if (planB.getRMS()<planA.getRMS() && planB.getRMS()<planC.getRMS())
-    {
-        plan=&planB;
-    }
-    else
-    {
-        plan=&planC;
-    }
+        Cloud * currentCloud=clouds3D[indexes[i]]->cloud;
 
-    Eigen::Vector3d N=plan->getNormal();
+        Eigen::Vector3d barycenter=currentCloud->getBarycenter();
 
-    addPlan(plan,cloud->getBoundingRadius()*2,QColor(128,128,128));
+        Plan* plan;
+        Plan planA(Eigen::Vector3d(1,0,0),barycenter);
+        Plan planB(Eigen::Vector3d(0,1,0),barycenter);
+        Plan planC(Eigen::Vector3d(0,0,1),barycenter);
+        currentCloud->fit(&planA);
+        currentCloud->fit(&planB);
+        currentCloud->fit(&planC);
 
-    emit sig_displayResults( QString("Fit Plan:\nNormal=+-(%1 , %2 , %3)\nRms=%4\n").arg(N[0]).arg(N[1]).arg(N[2]).arg(plan->getRMS()));
-    emit sig_newColumn("Err_Plan",plan->getErrNorm());
+        if (planA.getRMS()<planB.getRMS() && planA.getRMS()<planC.getRMS())
+        {
+            plan=&planA;
+        }
+        else if (planB.getRMS()<planA.getRMS() && planB.getRMS()<planC.getRMS())
+        {
+            plan=&planB;
+        }
+        else
+        {
+            plan=&planC;
+        }
+
+        Eigen::Vector3d N=plan->getNormal();
+
+        addPlan(plan,currentCloud->getBoundingRadius()*2,QColor(128,128,128));
+
+        emit sig_displayResults( QString("Fit Plan:\nNormal=+-(%1 , %2 , %3)\nRms=%4\n").arg(N[0]).arg(N[1]).arg(N[2]).arg(plan->getRMS()));
+        emit sig_newColumn("Err_Plan",plan->getErrNorm());
+    }
 }
 
 
 void View3D::slot_projectPlan()
 {
-    QDialog* dialog=new QDialog;
-    dialog->setLocale(QLocale("C"));
-    dialog->setWindowTitle("project on a plan");
-    dialog->setMinimumWidth(400);
-    QGridLayout* gbox = new QGridLayout();
-    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
-    QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
-
-    QDoubleSpinBox* sb_nx=new QDoubleSpinBox(dialog);
-    sb_nx->setValue(1);
-    sb_nx->setPrefix("nx=");
-    sb_nx->setRange(-1,1);
-    QDoubleSpinBox* sb_ny=new QDoubleSpinBox(dialog);
-    sb_ny->setValue(0);
-    sb_ny->setPrefix("ny=");
-    sb_ny->setRange(-1,1);
-    QDoubleSpinBox* sb_nz=new QDoubleSpinBox(dialog);
-    sb_nz->setValue(0);
-    sb_nz->setPrefix("nz=");
-    sb_nz->setRange(-1,1);
-
-    Eigen::Vector3d barycenter=cloud->getBarycenter();
-    QDoubleSpinBox* sb_bx=new QDoubleSpinBox(dialog);
-    sb_bx->setValue(barycenter.x());
-    sb_bx->setPrefix("bx=");
-    sb_bx->setRange(-1e12,1e12);
-    QDoubleSpinBox* sb_by=new QDoubleSpinBox(dialog);
-    sb_by->setValue(barycenter.y());
-    sb_by->setPrefix("by=");
-    sb_by->setRange(-1e12,1e12);
-    QDoubleSpinBox* sb_bz=new QDoubleSpinBox(dialog);
-    sb_bz->setValue(barycenter.z());
-    sb_bz->setPrefix("bz=");
-    sb_bz->setRange(-1e12,1e12);
-
-    gbox->addWidget(new QLabel("Normal"),0,0);
-    gbox->addWidget(sb_nx,0,1);
-    gbox->addWidget(sb_ny,0,2);
-    gbox->addWidget(sb_nz,0,3);
-
-    gbox->addWidget(new QLabel("Barycenter"),1,0);
-    gbox->addWidget(sb_bx,1,1);
-    gbox->addWidget(sb_by,1,2);
-    gbox->addWidget(sb_bz,1,3);
-
-    gbox->addWidget(buttonBox,2,0,1,2);
-
-    dialog->setLayout(gbox);
-    int result=dialog->exec();
-
-    if (result == QDialog::Accepted)
+    std::vector<int> indexes=getSelectedCloudIndexes();
+    for(int i=0;i<indexes.size();i++)
     {
-        Plan plan(Eigen::Vector3d(sb_nx->value(),sb_ny->value(),sb_nz->value()),
-                  Eigen::Vector3d(sb_bx->value(),sb_by->value(),sb_bz->value()));
+        Cloud3D * currentCloud3D=clouds3D[indexes[i]];
+        Cloud * currentCloud=currentCloud3D->cloud;
 
-        cloud->project(&plan);
-        cloud3D->buffer->setData(cloud->getBuffer(customContainer->getColorScale()->dataRange()) );
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("project on a plan");
+        dialog->setMinimumWidth(400);
+        QGridLayout* gbox = new QGridLayout();
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+        QDoubleSpinBox* sb_nx=new QDoubleSpinBox(dialog);
+        sb_nx->setValue(1);
+        sb_nx->setPrefix("nx=");
+        sb_nx->setRange(-1,1);
+        QDoubleSpinBox* sb_ny=new QDoubleSpinBox(dialog);
+        sb_ny->setValue(0);
+        sb_ny->setPrefix("ny=");
+        sb_ny->setRange(-1,1);
+        QDoubleSpinBox* sb_nz=new QDoubleSpinBox(dialog);
+        sb_nz->setValue(0);
+        sb_nz->setPrefix("nz=");
+        sb_nz->setRange(-1,1);
+
+        Eigen::Vector3d barycenter=currentCloud->getBarycenter();
+        QDoubleSpinBox* sb_bx=new QDoubleSpinBox(dialog);
+        sb_bx->setValue(barycenter.x());
+        sb_bx->setPrefix("bx=");
+        sb_bx->setRange(-1e12,1e12);
+        QDoubleSpinBox* sb_by=new QDoubleSpinBox(dialog);
+        sb_by->setValue(barycenter.y());
+        sb_by->setPrefix("by=");
+        sb_by->setRange(-1e12,1e12);
+        QDoubleSpinBox* sb_bz=new QDoubleSpinBox(dialog);
+        sb_bz->setValue(barycenter.z());
+        sb_bz->setPrefix("bz=");
+        sb_bz->setRange(-1e12,1e12);
+
+        gbox->addWidget(new QLabel("Normal"),0,0);
+        gbox->addWidget(sb_nx,0,1);
+        gbox->addWidget(sb_ny,0,2);
+        gbox->addWidget(sb_nz,0,3);
+
+        gbox->addWidget(new QLabel("Barycenter"),1,0);
+        gbox->addWidget(sb_bx,1,1);
+        gbox->addWidget(sb_by,1,2);
+        gbox->addWidget(sb_bz,1,3);
+
+        gbox->addWidget(buttonBox,2,0,1,2);
+
+        dialog->setLayout(gbox);
+        int result=dialog->exec();
+
+        if (result == QDialog::Accepted)
+        {
+            Plan plan(Eigen::Vector3d(sb_nx->value(),sb_ny->value(),sb_nz->value()),
+                      Eigen::Vector3d(sb_bx->value(),sb_by->value(),sb_bz->value()));
+
+            currentCloud->project(&plan);
+            currentCloud3D->buffer->setData(currentCloud->getBuffer(customContainer->getColorScale()->dataRange()) );
+        }
     }
 }
 
 void View3D::slot_projectSphere()
-{//todo dialog
-    QDialog* dialog=new QDialog;
-    dialog->setLocale(QLocale("C"));
-    dialog->setWindowTitle("project on a Sphere");
-    dialog->setMinimumWidth(400);
-    QGridLayout* gbox = new QGridLayout();
-    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
-    QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
-
-    QDoubleSpinBox* sb_radius=new QDoubleSpinBox(dialog);
-    sb_radius->setValue(cloud->getBoundingRadius());
-    sb_radius->setPrefix("radius=");
-    sb_radius->setRange(-10000000,10000000);
-
-    Eigen::Vector3d barycenter=cloud->getBarycenter();
-    QDoubleSpinBox* sb_bx=new QDoubleSpinBox(dialog);
-    sb_bx->setValue(barycenter.x());
-    sb_bx->setPrefix("bx=");
-    sb_bx->setRange(-1e12,1e12);
-    QDoubleSpinBox* sb_by=new QDoubleSpinBox(dialog);
-    sb_by->setValue(barycenter.y());
-    sb_by->setPrefix("by=");
-    sb_by->setRange(-1e12,1e12);
-    QDoubleSpinBox* sb_bz=new QDoubleSpinBox(dialog);
-    sb_bz->setValue(barycenter.z());
-    sb_bz->setPrefix("bz=");
-    sb_bz->setRange(-1e12,1e12);
-
-    gbox->addWidget(new QLabel("Radius"),0,0);
-    gbox->addWidget(sb_radius,0,1);
-
-    gbox->addWidget(new QLabel("Barycenter"),1,0);
-    gbox->addWidget(sb_bx,1,1);
-    gbox->addWidget(sb_by,1,2);
-    gbox->addWidget(sb_bz,1,3);
-
-    gbox->addWidget(buttonBox,2,0,1,2);
-
-    dialog->setLayout(gbox);
-    int result=dialog->exec();
-
-    if (result == QDialog::Accepted)
+{
+    std::vector<int> indexes=getSelectedCloudIndexes();
+    for(int i=0;i<indexes.size();i++)
     {
-        Sphere sphere(Eigen::Vector3d(sb_bx->value(),sb_by->value(),sb_bz->value()),
-                      sb_radius->value());
+        Cloud3D * currentCloud3D=clouds3D[indexes[i]];
+        Cloud * currentCloud=currentCloud3D->cloud;
 
-        cloud->project(&sphere);
-        cloud3D->buffer->setData(cloud->getBuffer(customContainer->getColorScale()->dataRange()) );
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("project on a Sphere");
+        dialog->setMinimumWidth(400);
+        QGridLayout* gbox = new QGridLayout();
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+        QDoubleSpinBox* sb_radius=new QDoubleSpinBox(dialog);
+        sb_radius->setValue(currentCloud->getBoundingRadius());
+        sb_radius->setPrefix("radius=");
+        sb_radius->setRange(-10000000,10000000);
+
+        Eigen::Vector3d barycenter=currentCloud->getBarycenter();
+        QDoubleSpinBox* sb_bx=new QDoubleSpinBox(dialog);
+        sb_bx->setValue(barycenter.x());
+        sb_bx->setPrefix("bx=");
+        sb_bx->setRange(-1e12,1e12);
+        QDoubleSpinBox* sb_by=new QDoubleSpinBox(dialog);
+        sb_by->setValue(barycenter.y());
+        sb_by->setPrefix("by=");
+        sb_by->setRange(-1e12,1e12);
+        QDoubleSpinBox* sb_bz=new QDoubleSpinBox(dialog);
+        sb_bz->setValue(barycenter.z());
+        sb_bz->setPrefix("bz=");
+        sb_bz->setRange(-1e12,1e12);
+
+        gbox->addWidget(new QLabel("Radius"),0,0);
+        gbox->addWidget(sb_radius,0,1);
+
+        gbox->addWidget(new QLabel("Barycenter"),1,0);
+        gbox->addWidget(sb_bx,1,1);
+        gbox->addWidget(sb_by,1,2);
+        gbox->addWidget(sb_bz,1,3);
+
+        gbox->addWidget(buttonBox,2,0,1,2);
+
+        dialog->setLayout(gbox);
+        int result=dialog->exec();
+
+        if (result == QDialog::Accepted)
+        {
+            Sphere sphere(Eigen::Vector3d(sb_bx->value(),sb_by->value(),sb_bz->value()),
+                          sb_radius->value());
+
+            currentCloud->project(&sphere);
+            currentCloud3D->buffer->setData(currentCloud->getBuffer(customContainer->getColorScale()->dataRange()) );
+        }
     }
 }
 
 void View3D::slot_projectCustomMesh()
 {
-    QString filename=QFileDialog::getOpenFileName(nullptr,"Project on 3D Mesh","./obj","Object (*.obj)");
-    std::cout<<filename.toLocal8Bit().data()<<std::endl;
-    if(filename.isEmpty())return;
+    std::vector<int> indexes=getSelectedCloudIndexes();
+    for(int i=0;i<indexes.size();i++)
+    {
+        Cloud3D * currentCloud3D=clouds3D[indexes[i]];
+        Cloud * currentCloud=currentCloud3D->cloud;
 
-    Object obj(filename,QPosAtt());
-    cloud->project(&obj);
+        QString filename=QFileDialog::getOpenFileName(nullptr,"Project on 3D Mesh","./obj","Object (*.obj)");
+        std::cout<<filename.toLocal8Bit().data()<<std::endl;
+        if(filename.isEmpty())return;
 
-    cloud3D->buffer->setData(cloud->getBuffer(customContainer->getColorScale()->dataRange()) );
-    //setCloudScalar(cloud,PrimitiveMode::MODE_POINTS);
+        Object obj(filename,QPosAtt());
+        currentCloud->project(&obj);
+
+        currentCloud3D->buffer->setData(currentCloud->getBuffer(customContainer->getColorScale()->dataRange()) );
+        //setCloudScalar(cloud,PrimitiveMode::MODE_POINTS);
+    }
 }
 
 void View3D::slot_randomSubSamples()
 {
-    QDialog* dialog=new QDialog;
-    dialog->setLocale(QLocale("C"));
-    dialog->setWindowTitle("Random Sub Samples");
-    dialog->setMinimumWidth(400);
-    QGridLayout* gbox = new QGridLayout();
-    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
-    QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
-
-    QSpinBox* sb_subSamples=new QSpinBox(dialog);
-    sb_subSamples->setValue(cloud->getBoundingRadius());
-    sb_subSamples->setPrefix("Samples=");
-    sb_subSamples->setRange(0,cloud->size());
-
-    QSlider* sb_slideSubSamples=new QSlider(Qt::Horizontal,dialog);
-    sb_slideSubSamples->setValue(cloud->getBoundingRadius());
-    sb_slideSubSamples->setRange(0,cloud->size());
-
-    QObject::connect(sb_slideSubSamples, SIGNAL(valueChanged(int)), sb_subSamples, SLOT(setValue(int)));
-    QObject::connect(sb_subSamples, SIGNAL(valueChanged(int)), sb_slideSubSamples, SLOT(setValue(int)));
-    sb_subSamples->setValue(cloud->size());
-
-    gbox->addWidget(sb_subSamples,0,0);
-    gbox->addWidget(sb_slideSubSamples,0,1,1,2);
-    gbox->addWidget(buttonBox,1,0,1,3);
-
-    dialog->setLayout(gbox);
-    int result=dialog->exec();
-
-    if (result == QDialog::Accepted)
+    std::vector<int> indexes=getSelectedCloudIndexes();
+    for(int i=0;i<indexes.size();i++)
     {
-        int nbPoints=sb_subSamples->value();
-        cloud3D->positionAttribute   ->setCount(static_cast<unsigned int>(nbPoints));
-        cloud3D->cloudColorsAttribute->setCount(static_cast<unsigned int>(nbPoints));
-        cloud->subSample(nbPoints);
+        Cloud3D * currentCloud3D=clouds3D[indexes[i]];
+        Cloud * currentCloud=currentCloud3D->cloud;
 
-        if(nbPoints!=cloud->size())
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("Random Sub Samples");
+        dialog->setMinimumWidth(400);
+        QGridLayout* gbox = new QGridLayout();
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+        QSpinBox* sb_subSamples=new QSpinBox(dialog);
+        sb_subSamples->setValue(currentCloud->getBoundingRadius());
+        sb_subSamples->setPrefix("Samples=");
+        sb_subSamples->setRange(0,currentCloud->size());
+
+        QSlider* sb_slideSubSamples=new QSlider(Qt::Horizontal,dialog);
+        sb_slideSubSamples->setValue(currentCloud->getBoundingRadius());
+        sb_slideSubSamples->setRange(0,currentCloud->size());
+
+        QObject::connect(sb_slideSubSamples, SIGNAL(valueChanged(int)), sb_subSamples, SLOT(setValue(int)));
+        QObject::connect(sb_subSamples, SIGNAL(valueChanged(int)), sb_slideSubSamples, SLOT(setValue(int)));
+        sb_subSamples->setValue(currentCloud->size());
+
+        gbox->addWidget(sb_subSamples,0,0);
+        gbox->addWidget(sb_slideSubSamples,0,1,1,2);
+        gbox->addWidget(buttonBox,1,0,1,3);
+
+        dialog->setLayout(gbox);
+        int result=dialog->exec();
+
+        if (result == QDialog::Accepted)
         {
-            std::cout<<"error : "<<nbPoints<<" "<<cloud->size()<<std::endl;
-        }
+            int nbPoints=sb_subSamples->value();
+            currentCloud3D->positionAttribute   ->setCount(static_cast<unsigned int>(nbPoints));
+            currentCloud3D->cloudColorsAttribute->setCount(static_cast<unsigned int>(nbPoints));
+            currentCloud->subSample(nbPoints);
 
-        cloud3D->buffer->setData(cloud->getBuffer(customContainer->getColorScale()->dataRange()) );
+            if(nbPoints!=currentCloud->size())
+            {
+                std::cout<<"error : "<<nbPoints<<" "<<currentCloud->size()<<std::endl;
+            }
+
+            currentCloud3D->buffer->setData(currentCloud->getBuffer(customContainer->getColorScale()->dataRange()) );
+        }
     }
 }
 
 void View3D::slot_fitCustomMesh()
 {
-    QString filename=QFileDialog::getOpenFileName(nullptr,"3D Mesh","./obj","Object (*.obj)");
-    std::cout<<filename.toLocal8Bit().data()<<std::endl;
-    if(filename.isEmpty())return;
+    std::vector<int> indexes=getSelectedCloudIndexes();
+    for(int i=0;i<indexes.size();i++)
+    {
+        Cloud * currentCloud=clouds3D[indexes[i]]->cloud;
 
-    QElapsedTimer timer;
-    timer.start();
+        QString filename=QFileDialog::getOpenFileName(nullptr,"3D Mesh","./obj","Object (*.obj)");
+        std::cout<<filename.toLocal8Bit().data()<<std::endl;
+        if(filename.isEmpty())return;
 
-    Object obj(filename,QPosAtt());
+        QElapsedTimer timer;
+        timer.start();
+
+        Object obj(filename,QPosAtt());
 
 
-    Vector3d obj_center=obj.getBox().middle();
-    obj.setScalePosAtt(QPosAtt(cloud->getBarycenter()-obj_center,Eigen::Quaterniond(cloud->getBoundingRadius()/obj.getRadius(obj_center),0,0,0)));
+        Vector3d obj_center=obj.getBox().middle();
+        obj.setScalePosAtt(QPosAtt(currentCloud->getBarycenter()-obj_center,Eigen::Quaterniond(currentCloud->getBoundingRadius()/obj.getRadius(obj_center),0,0,0)));
 
-    cloud->fit(&obj,100);
+        currentCloud->fit(&obj,100);
 
-    QFileInfo info(filename);
+        QFileInfo info(filename);
 
-    obj.save(info.path()+"/tmp.obj");
+        obj.save(info.path()+"/tmp.obj");
 
-    auto* m_obj = new Qt3DRender::QMesh();
-    m_obj->setSource(QUrl(QString("file:///")+info.path()+"/tmp.obj"));
+        auto* m_obj = new Qt3DRender::QMesh();
+        m_obj->setSource(QUrl(QString("file:///")+info.path()+"/tmp.obj"));
 
-    addObj(m_obj,QPosAtt(),1.0,QColor(64,64,64));
+        addObj(m_obj,QPosAtt(),1.0,QColor(64,64,64));
 
-    QPosAtt posatt=obj.getPosAtt();
-    emit sig_displayResults( QString("Fit Mesh :\nScale=%1\nPosition=(%2,%3,%4)\nQ=(%5,%6,%7,%8)\nRms=%9\ndt=%10 ms")
-                             .arg(obj.getScale())
-                             .arg(posatt.P[0]).arg(posatt.P[1]).arg(posatt.P[2])
-            .arg(posatt.Q.w()).arg(posatt.Q.x()).arg(posatt.Q.y()).arg(posatt.Q.w())
-            .arg(obj.getRMS())
-            .arg(timer.nsecsElapsed()*1e-6));
+        QPosAtt posatt=obj.getPosAtt();
+        emit sig_displayResults( QString("Fit Mesh :\nScale=%1\nPosition=(%2,%3,%4)\nQ=(%5,%6,%7,%8)\nRms=%9\ndt=%10 ms")
+                                 .arg(obj.getScale())
+                                 .arg(posatt.P[0]).arg(posatt.P[1]).arg(posatt.P[2])
+                .arg(posatt.Q.w()).arg(posatt.Q.x()).arg(posatt.Q.y()).arg(posatt.Q.w())
+                .arg(obj.getRMS())
+                .arg(timer.nsecsElapsed()*1e-6));
 
-    emit sig_newColumn("Err_Mesh",obj.getErrNorm());
+        emit sig_newColumn("Err_Mesh",obj.getErrNorm());
+    }
 }
 
 //----------------------------
@@ -508,9 +571,15 @@ void View3D::slot_fitCustomMesh()
 
 void View3D::slot_ColorScaleChanged(const QCPRange& range)
 {
-    if (cloud && cloud3D->buffer)
+    for(int i=0;i<clouds3D.size();i++)
     {
-        cloud3D->buffer->setData(cloud->getBuffer(range));
+        Cloud3D * currentCloud3D=clouds3D[i];
+        Cloud * currentCloud=currentCloud3D->cloud;
+
+        if (currentCloud && currentCloud3D->buffer)
+        {
+            currentCloud3D->buffer->setData(currentCloud->getBuffer(range));
+        }
     }
 }
 
@@ -542,7 +611,11 @@ void View3D::slot_ScaleChanged()
     Qt3DCore::QTransform T,S;
     T.setTranslation(-customContainer->getTranslation());
     S.setScale3D(customContainer->getScaleInv());
-    cloud3D->cloudTransform->setMatrix( S.matrix()*T.matrix() );//->setMatrix(t.matrix().inverted());
+
+    for(int i=0;i<clouds3D.size();i++)
+    {
+        clouds3D[i]->cloudTransform->setMatrix( S.matrix()*T.matrix() );//->setMatrix(t.matrix().inverted());
+    }
 
     //dispMat(T.matrix()*S.matrix());
     //dispMat(S.matrix()*T.matrix());
@@ -560,101 +633,99 @@ void View3D::slot_ScaleChanged()
 
 void View3D::slot_setGradient(int preset)
 {
-    if (cloud && cloud3D->buffer)
+    std::vector<int> indexes=getSelectedCloudIndexes();
+    for(int i=0;i<indexes.size();i++)
     {
-        cloud->setGradientPreset(static_cast<QCPColorGradient::GradientPreset>(preset));
-        customContainer->getColorScale()->setGradient(cloud->getGradient());
-        cloud3D->buffer->setData(cloud->getBuffer(customContainer->getColorScale()->dataRange()));
-        customContainer->getColorScalePlot()->rescaleAxes();
-        customContainer->getColorScalePlot()->replot();
+        Cloud3D * currentCloud3D=clouds3D[indexes[i]];
+        Cloud * currentCloud=currentCloud3D->cloud;
+
+        if (currentCloud && currentCloud3D->buffer)
+        {
+            currentCloud->setGradientPreset(static_cast<QCPColorGradient::GradientPreset>(preset));
+            customContainer->getColorScale()->setGradient(currentCloud->getGradient());
+            currentCloud3D->buffer->setData(currentCloud->getBuffer(customContainer->getColorScale()->dataRange()));
+            customContainer->getColorScalePlot()->rescaleAxes();
+            customContainer->getColorScalePlot()->replot();
+        }
     }
 }
 
-void View3D::setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode)
+void View3D::addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode)
 {
-    this->cloud=cloud;
+    Cloud3D * currentCloud3D=new Cloud3D(cloudData,rootEntity);
+    this->clouds3D.push_back(currentCloud3D);
 
-    camera_params->setBarycenter( QVector3D(0,0,0) );
-    camera_params->setBoundingRadius( 1.20f );
+    currentCloud3D->geometryRenderer->setPrimitiveType(primitiveMode);
 
-    //Set Data Buffers
-    cloud3D->positionAttribute->setCount(static_cast<unsigned int>(cloud->size()));
-    cloud3D->cloudColorsAttribute->setCount(static_cast<unsigned int>(cloud->size()));
+    customContainer->getColorScale()->axis()->setLabel(currentCloud3D->cloud->getLabelS());
+    customContainer->getColorScale()->setGradient(currentCloud3D->cloud->getGradient());
 
-    // mesh
-    slot_setPrimitiveType(primitiveMode);
+    customContainer->getXAxis()->setLabel(currentCloud3D->cloud->getLabelX());
+    customContainer->getYAxis()->setLabel(currentCloud3D->cloud->getLabelY());
+    customContainer->getZAxis()->setLabel(currentCloud3D->cloud->getLabelZ());
 
-    //points size
-    slot_setPointSize(cloud3D->pointSize->value());
+    labelx->setText(currentCloud3D->cloud->getLabelX());
+    labely->setText(currentCloud3D->cloud->getLabelY());
+    labelz->setText(currentCloud3D->cloud->getLabelZ());
 
-    // entity
-    mode=primitiveMode;
-    camera_params->reset();
-
-    customContainer->getColorScale()->axis()->setLabel(cloud->getLabelS());
-    customContainer->getColorScale()->setGradient(cloud->getGradient());
-    customContainer->getColorScale()->setDataRange(cloud->getScalarFieldRange());
-    customContainer->getColorScalePlot()->rescaleAxes();
-    customContainer->getColorScalePlot()->replot();
-
-    customContainer->getXAxis()->setRange(cloud->getXRange());
-    customContainer->getYAxis()->setRange(cloud->getYRange());
-    customContainer->getZAxis()->setRange(cloud->getZRange());
-
-    customContainer->getXAxis()->setLabel(cloud->getLabelX());
-    customContainer->getYAxis()->setLabel(cloud->getLabelY());
-    customContainer->getZAxis()->setLabel(cloud->getLabelZ());
-
-    labelx->setText(cloud->getLabelX());
-    labely->setText(cloud->getLabelY());
-    labelz->setText(cloud->getLabelZ());
+    slot_setPointSize(currentCloud3D->pointSize->value());
+    slot_resetView();
 
     customContainer->adjustSize();
     customContainer->replot();
 }
 
+
+std::vector<int> View3D::getSelectedCloudIndexes()
+{
+    std::vector<int> indexes;
+
+    if(this->clouds3D.size()>0)
+    {
+        indexes.push_back(this->clouds3D.size()-1);
+    }
+    return indexes;
+}
+
+
 void View3D::slot_setPointSize(double value)
 {
-    cloud3D->pointSize->setValue(value);
-    cloud3D->lineWidth->setValue(value);
+    std::vector<int> indexes=getSelectedCloudIndexes();
 
-    auto effect = cloud3D->cloudMaterial->effect();
-    for (auto t : effect->techniques())
+    for(int i=0;i<indexes.size();i++)
     {
-        for (auto rp : t->renderPasses())
+        Cloud3D * currentCloud3D=clouds3D[indexes[i]];
+        currentCloud3D->pointSize->setValue(value);
+        currentCloud3D->lineWidth->setValue(value);
+
+        auto effect = currentCloud3D->cloudMaterial->effect();
+        for (auto t : effect->techniques())
         {
-            rp->addRenderState(cloud3D->pointSize);
-            rp->addRenderState(cloud3D->lineWidth);
+            for (auto rp : t->renderPasses())
+            {
+                rp->addRenderState(currentCloud3D->pointSize);
+                rp->addRenderState(currentCloud3D->lineWidth);
+            }
         }
+
     }
 }
 
 void View3D::slot_setPrimitiveType(int type)
 {
-    if (type==0)
+    std::vector<int> indexes=getSelectedCloudIndexes();
+    for(int i=0;i<indexes.size();i++)
     {
-        mode=MODE_POINTS;
-        cloud3D->geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Points);
-    }
-    else if (type==1)
-    {
-        mode=MODE_LINES;
-        cloud3D->geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Lines);
-    }
-    else if (type==2)
-    {
-        mode=MODE_LINE_STRIP;
-        cloud3D->geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::LineStrip);
-    }
-    else if (type==3)
-    {
-        mode=MODE_TRIANGLE;
-        cloud3D->geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Triangles);
-    }
-    else if (type==3)
-    {
-        mode=MODE_TRIANGLE_STRIP;
-        cloud3D->geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::TriangleStrip);
+        Cloud3D * currentCloud3D=clouds3D[indexes[i]];
+
+//        Points = 0x0000,
+//        Lines = 0x0001,
+//        LineLoop = 0x0002,
+//        LineStrip = 0x0003,
+//        Triangles = 0x0004,
+//        TriangleStrip = 0x0005,
+//        TriangleFan = 0x0006,
+        currentCloud3D->geometryRenderer->setPrimitiveType(static_cast<Qt3DRender::QGeometryRenderer::PrimitiveType>(type));
     }
 }
 
@@ -826,26 +897,76 @@ void View3D::mouseMoveEvent(QMouseEvent* event)
 
 void View3D::slot_export()
 {
-    QString filename=QFileDialog::getSaveFileName(nullptr,"Cloud export data","Cloud.graphy","*.graphy");
-
-    if(!filename.isEmpty())
+    std::vector<int> indexes=getSelectedCloudIndexes();
+    for(int i=0;i<indexes.size();i++)
     {
-        QFile file(filename);
+        Cloud * currentCloud=clouds3D[indexes[i]]->cloud;
 
-        if(file.open(QIODevice::WriteOnly | QIODevice::Text ))
+        QString filename=QFileDialog::getSaveFileName(nullptr,"Cloud export data","Cloud.graphy","*.graphy");
+
+        if(!filename.isEmpty())
         {
-            QTextStream ts(&file);
+            QFile file(filename);
 
-            const std::vector<Eigen::Vector4d> & data=cloud->data();
-            ts<<"<header>\n";
-            ts<<"X;Y;Z;S;\n";
-            ts<<"</header>\n";
-            for(int i=0;i<cloud->size();i++)
+            if(file.open(QIODevice::WriteOnly | QIODevice::Text ))
             {
-                ts<<data[i][0]<<";"<<data[i][1]<<";"<<data[i][2]<<";"<<data[i][3]<<";\n";
+                QTextStream ts(&file);
+
+                const std::vector<Eigen::Vector4d> & data=currentCloud->data();
+                ts<<"<header>\n";
+                ts<<"X;Y;Z;S;\n";
+                ts<<"</header>\n";
+                for(int i=0;i<currentCloud->size();i++)
+                {
+                    ts<<data[i][0]<<";"<<data[i][1]<<";"<<data[i][2]<<";"<<data[i][3]<<";\n";
+                }
+                file.close();
             }
-            file.close();
         }
+    }
+}
+
+void View3D::slot_showHideGrid(int value)
+{
+    if(value>0)
+    {
+        grid3D->entity->setEnabled(true);
+    }
+    else
+    {
+        grid3D->entity->setEnabled(false);
+    }
+}
+
+void View3D::slot_showHideAxis(int value)
+{
+    if(value>0)
+    {
+        objArrowX->entity->setEnabled(true);
+        objArrowY->entity->setEnabled(true);
+        objArrowZ->entity->setEnabled(true);
+    }
+    else
+    {
+        objArrowX->entity->setEnabled(false);
+        objArrowY->entity->setEnabled(false);
+        objArrowZ->entity->setEnabled(false);
+    }
+}
+
+void View3D::slot_showHideLabels(int value)
+{
+    if(value>0)
+    {
+        labelx->entity->setEnabled(true);
+        labely->entity->setEnabled(true);
+        labelz->entity->setEnabled(true);
+    }
+    else
+    {
+        labelx->entity->setEnabled(false);
+        labely->entity->setEnabled(false);
+        labelz->entity->setEnabled(false);
     }
 }
 
@@ -995,17 +1116,76 @@ void View3D::slot_createRotegrity()
     }
 }
 
+
+void View3D::extendRanges(QCPRange itemRangeX,QCPRange itemRangeY,QCPRange itemRangeZ,int i)
+{
+    QCPRange rangex=customContainer->getXAxis()->range();
+    QCPRange rangey=customContainer->getYAxis()->range();
+    QCPRange rangez=customContainer->getZAxis()->range();
+
+    if(i!=0)
+    {
+        customContainer->getXAxis()->setRange(QCPRange(std::min(itemRangeX.lower,rangex.lower),std::max(itemRangeX.upper,rangex.upper)));
+        customContainer->getYAxis()->setRange(QCPRange(std::min(itemRangeY.lower,rangey.lower),std::max(itemRangeY.upper,rangey.upper)));
+        customContainer->getZAxis()->setRange(QCPRange(std::min(itemRangeZ.lower,rangez.lower),std::max(itemRangeZ.upper,rangez.upper)));
+    }
+    else
+    {
+        customContainer->getXAxis()->setRange(itemRangeX);
+        customContainer->getYAxis()->setRange(itemRangeY);
+        customContainer->getZAxis()->setRange(itemRangeZ);
+    }
+}
+
+void View3D::extendScalarRange(QCPRange itemRangeS,int i)
+{
+    QCPRange ranges=customContainer->getColorScale()->dataRange();
+
+    if(i!=0)
+    {
+        customContainer->getColorScale()->setDataRange(QCPRange(std::min(itemRangeS.lower,ranges.lower),std::max(itemRangeS.upper,ranges.upper)));
+    }
+    else
+    {
+        customContainer->getColorScale()->setDataRange(itemRangeS);
+    }
+}
+
 void View3D::slot_resetView()
 {
     camera_params->reset();
 
-    customContainer->getXAxis()->setRange(cloud->getXRange());
-    customContainer->getYAxis()->setRange(cloud->getYRange());
-    customContainer->getZAxis()->setRange(cloud->getZRange());
-    customContainer->getColorScale()->setDataRange(cloud->getScalarFieldRange());
+    for(int i=0;i<clouds3D.size();i++)
+    {
+        Cloud * currentCloud=clouds3D[i]->cloud;
+        extendRanges(currentCloud->getXRange(),currentCloud->getYRange(),currentCloud->getZRange(),i);
+        extendScalarRange(currentCloud->getScalarFieldRange(),i);
+    }
+
     customContainer->getColorScalePlot()->rescaleAxes();
+    customContainer->getColorScalePlot()->replot();
     customContainer->replot();
 
+    updateGridAndLabels();
+}
+
+
+
+void View3D::slot_resetViewOnSelected()
+{
+    camera_params->reset();
+
+    std::vector<int> indexes=getSelectedCloudIndexes();
+
+    for(int i=0;i<indexes.size();i++)
+    {
+        Cloud * currentCloud=clouds3D[indexes[i]]->cloud;
+        extendRanges(currentCloud->getXRange(),currentCloud->getYRange(),currentCloud->getZRange(),i);
+        extendScalarRange(currentCloud->getScalarFieldRange(),i);
+    }
+
+    customContainer->getColorScalePlot()->rescaleAxes();
+    customContainer->replot();
 
     updateGridAndLabels();
 }
@@ -1024,16 +1204,29 @@ void View3D::configurePopup()
     cb_mode->blockSignals(true);
     c_gradient->blockSignals(true);
 
+    std::vector<int> indexes=getSelectedCloudIndexes();
 
-    sb_size->setValue(static_cast<double>(cloud3D->pointSize->value()));
-    cb_mode->setCurrentIndex(static_cast<int>(mode));
-    c_gradient->setCurrentIndex(static_cast<int>(cloud->getGradientPreset()));
+    if(indexes.size()>0)
+    {
+        Cloud3D * currentCloud3D=clouds3D[indexes[0]];
+        Cloud * currentCloud=currentCloud3D->cloud;
+
+        sb_size->setValue(static_cast<double>(currentCloud3D->pointSize->value()));
+        cb_mode->setCurrentIndex(static_cast<int>(currentCloud3D->geometryRenderer->primitiveType()));
+        c_gradient->setCurrentIndex(static_cast<int>(currentCloud->getGradientPreset()));
+
+        sb_size->setEnabled(true);
+        cb_mode->setEnabled(true);
+    }
+    else
+    {
+        sb_size->setEnabled(false);
+        cb_mode->setEnabled(false);
+    }
 
     sb_size->blockSignals(false);
     cb_mode->blockSignals(false);
     c_gradient->blockSignals(false);
-
-
 }
 
 void View3D::mousePressEvent(QMouseEvent* event)

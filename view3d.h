@@ -77,18 +77,9 @@ class View3D:public Qt3DExtras::Qt3DWindow
 {
     Q_OBJECT
 public:
-    enum PrimitiveMode
-    {
-        MODE_POINTS,
-        MODE_LINES,
-        MODE_LINE_STRIP,
-        MODE_TRIANGLE,
-        MODE_TRIANGLE_STRIP,
-    };
-
     View3D();
 
-    void setCloudScalar(Cloud* cloud, PrimitiveMode primitiveMode);
+    void addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode);
 
     void addObj(Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor color);
     void setObjPosAtt(unsigned int id, const QPosAtt& T);
@@ -122,10 +113,18 @@ public slots:
     void slot_randomSubSamples();
 
     void slot_resetView();
+    void slot_resetViewOnSelected();
+
     void slot_export();
 
     void slot_addMesh();
     void slot_createRotegrity();
+
+    void slot_showHideGrid(int value);
+    void slot_showHideAxis(int value);
+    void slot_showHideLabels(int value);
+
+    std::vector<int> getSelectedCloudIndexes();
 
 signals:
     void sig_newColumn(QString varName,Eigen::VectorXd data);
@@ -138,6 +137,8 @@ protected:
     void wheelEvent(QWheelEvent* event);
 
 private:
+    void extendScalarRange(QCPRange itemRangeS,int i);
+    void extendRanges(QCPRange itemRangeX,QCPRange itemRangeY,QCPRange itemRangeZ,int i);
     void updateLabels();
 
     CameraParams* camera_params;
@@ -149,7 +150,7 @@ private:
 
     //3D
     void init3D();
-    PrimitiveMode mode;
+
     Qt3DCore::QEntity* rootEntity;
     std::vector<Qt3DCore::QTransform*> transforms;
     std::vector<QMatrix4x4> baseR;
@@ -158,14 +159,11 @@ private:
 
     std::vector<Base3D*> objects_list;
 
-    //Cloud3D
-    Cloud3D* cloud3D;
-
     //Grid
     Grid3D* grid3D;
 
     //Data
-    Cloud* cloud;
+    std::vector<Cloud3D*> clouds3D;
 
     //Labels Tiks and Arrows
     Label3D* labelx;
@@ -208,7 +206,9 @@ private:
     QComboBox* c_gradient;
     QDoubleSpinBox* sb_size;
     QComboBox* cb_mode;
-
+    QCheckBox * cb_show_hide_grid;
+    QCheckBox * cb_show_hide_axis;
+    QCheckBox * cb_show_hide_labels;
 
     //
     bool xy_reversed;

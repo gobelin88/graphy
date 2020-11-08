@@ -4,16 +4,18 @@
 #include <Qt3DExtras>
 #include <Qt3DRender>
 #include "Base3D.h"
+#include "Cloud.h"
 
 struct Cloud3D:public Base3D
 {
-    Cloud3D(Qt3DCore::QEntity* rootEntity);
+    Cloud3D(Cloud * cloud,Qt3DCore::QEntity* rootEntity);
 
     Qt3DExtras::QPerVertexColorMaterial* cloudMaterial;
     Qt3DRender::QPointSize* pointSize;
     Qt3DRender::QLineWidth* lineWidth;
     Qt3DCore::QTransform* cloudTransform;
     Qt3DRender::QAttribute* cloudColorsAttribute;
+    Cloud * cloud;
 };
 
 #endif // CLOUD3D_H

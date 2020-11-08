@@ -518,54 +518,58 @@ void MainWindow::slot_plot_cloud_3D()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-    if (id_list.size()==0 || id_list.size()==3 || id_list.size()==4)
+    if (id_list.size()==0 || id_list.size()%3==0 || id_list.size()%4==0)
     {
         View3D* view3d=new View3D;
 
         QObject::connect(view3d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),table,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
         QObject::connect(view3d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
 
-
-
         Cloud* cloud=nullptr;
 
         if (id_list.size()==0)
         {
-            Eigen::VectorXd data_x(1);
-            Eigen::VectorXd data_y(1);
-            Eigen::VectorXd data_z(1);
+//            Eigen::VectorXd data_x(1);
+//            Eigen::VectorXd data_y(1);
+//            Eigen::VectorXd data_z(1);
 
-            cloud=new Cloud(data_x,data_y,data_z,"X","Y","Z");
+//            cloud=new Cloud(data_x,data_y,data_z,"X","Y","Z");
+//            view3d->addCloudScalar(cloud,Qt3DRender::QGeometryRenderer::Points);
 
         }
-        else if (id_list.size()==3)
+        else if (id_list.size()%3==0)
         {
-            Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[0].column());
-            Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[1].column());
-            Eigen::VectorXd data_z=table->getLogicalColDataDouble(id_list[2].column());
+            for(int i=0;i<id_list.size();i+=3)
+            {
+                Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[i].column());
+                Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[i+1].column());
+                Eigen::VectorXd data_z=table->getLogicalColDataDouble(id_list[i+2].column());
 
-            cloud=new Cloud(data_x,data_y,data_z,
-                            table->getLogicalColName(id_list[0].column()),
-                    table->getLogicalColName(id_list[1].column()),
-                    table->getLogicalColName(id_list[2].column()));
+                cloud=new Cloud(data_x,data_y,data_z,
+                                table->getLogicalColName(id_list[i].column()),
+                        table->getLogicalColName(id_list[i+1].column()),
+                        table->getLogicalColName(id_list[i+2].column()));
+
+                view3d->addCloudScalar(cloud,Qt3DRender::QGeometryRenderer::Points);
+            }
 
         }
         else if (id_list.size()==4)
         {
-            Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[0].column());
-            Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[1].column());
-            Eigen::VectorXd data_z=table->getLogicalColDataDouble(id_list[2].column());
-            Eigen::VectorXd data_s=table->getLogicalColDataDouble(id_list[3].column());
-            cloud=new Cloud(data_x,data_y,data_z,data_s,
-                            table->getLogicalColName(id_list[0].column()),
-                    table->getLogicalColName(id_list[1].column()),
-                    table->getLogicalColName(id_list[2].column()),
-                    table->getLogicalColName(id_list[3].column()));
-        }
+            for(int i=0;i<id_list.size();i+=4)
+            {
+                Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[i].column());
+                Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[i+1].column());
+                Eigen::VectorXd data_z=table->getLogicalColDataDouble(id_list[i+2].column());
+                Eigen::VectorXd data_s=table->getLogicalColDataDouble(id_list[i+3].column());
+                cloud=new Cloud(data_x,data_y,data_z,data_s,
+                                table->getLogicalColName(id_list[i].column()),
+                        table->getLogicalColName(id_list[i+1].column()),
+                        table->getLogicalColName(id_list[i+2].column()),
+                        table->getLogicalColName(id_list[i+3].column()));
 
-        if (cloud)
-        {
-            view3d->setCloudScalar(cloud,View3D::PrimitiveMode::MODE_POINTS);
+                view3d->addCloudScalar(cloud,Qt3DRender::QGeometryRenderer::Points);
+            }
         }
 
         mdiArea->addSubWindow(view3d->getContainer(),Qt::WindowStaysOnTopHint);

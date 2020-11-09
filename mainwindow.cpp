@@ -520,7 +520,7 @@ void MainWindow::slot_plot_cloud_3D()
 
     if (id_list.size()==0 || id_list.size()%3==0 || id_list.size()%4==0)
     {
-        View3D* view3d=new View3D;
+        View3D* view3d=new View3D(shortcuts);
 
         QObject::connect(view3d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),table,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
         QObject::connect(view3d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));

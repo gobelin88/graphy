@@ -78,7 +78,7 @@ class View3D:public Qt3DExtras::Qt3DWindow
 {
     Q_OBJECT
 public:
-    View3D();
+    View3D(const QMap<QString, QKeySequence>& shortcuts_map);
 
     void addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode);
 
@@ -87,6 +87,8 @@ public:
     void addPlan(Plan* plan, float radius, QColor color);
 
     CustomViewContainer* getContainer();
+
+    void applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
 
 public slots:
     void slot_saveImage();

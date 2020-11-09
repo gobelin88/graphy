@@ -1,6 +1,6 @@
 #include "view3d.h"
 
-View3D::View3D()
+View3D::View3D(const QMap<QString, QKeySequence>& shortcuts_map)
 {
     objects3D.clear();
     xy_reversed=false;
@@ -44,6 +44,8 @@ View3D::View3D()
     //addSphere(QPosAtt(Eigen::Vector3d(0.05,0.05,0.05),Eigen::Quaterniond(1,0,0,0)),1.0,QColor(128,128,128),0.01);
 
     createPopup();
+
+    applyShortcuts(shortcuts_map);
 }
 
 void View3D::init3D()
@@ -143,6 +145,15 @@ void View3D::createPopup()
 
 
     widget->setLayout(gbox);
+
+    ///////////////////////////////////////////////Action context
+    actRescale->setShortcutVisibleInContextMenu(true);
+    actRescaleSelected->setShortcutVisibleInContextMenu(true);
+    actRemoveSelected->setShortcutVisibleInContextMenu(true);
+
+    customContainer->addAction(actRescale);
+    customContainer->addAction(actRescaleSelected);
+    customContainer->addAction(actRemoveSelected);
 
     ///////////////////////////////////////////////
     popup_menu->addMenu(menuParameters);
@@ -930,6 +941,24 @@ void View3D::addObj(Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor 
 CustomViewContainer* View3D::getContainer()
 {
     return customContainer;
+}
+
+void View3D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
+{
+    QMap<QString,QAction*> shortcuts_links;
+    shortcuts_links.insert(QString("Graph-Delete"),actRemoveSelected);
+    shortcuts_links.insert(QString("Graph-Rescale"),actRescale);
+
+    QMapIterator<QString, QKeySequence> i(shortcuts_map);
+    while (i.hasNext())
+    {
+        i.next();
+
+        if (shortcuts_links.contains(i.key()))
+        {
+            shortcuts_links[i.key()]->setShortcut(i.value());
+        }
+    }
 }
 
 void View3D::updateLabels()

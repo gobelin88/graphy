@@ -31,27 +31,27 @@ Grid3D::Grid3D(Qt3DCore::QEntity* rootEntity,unsigned int N,QColor color)
         *indices++ = 3+4*i;
     }
 
-    gridIndexBuffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::BufferType::IndexBuffer,geometry);
-    gridIndexBuffer->setData(indexBytes);
+    indexBuffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::BufferType::IndexBuffer,geometry);
+    indexBuffer->setData(indexBytes);
 
-    gridIndexAttribute = new Qt3DRender::QAttribute(geometry);
-    gridIndexAttribute->setVertexBaseType(Qt3DRender::QAttribute::UnsignedInt);
-    gridIndexAttribute->setAttributeType(Qt3DRender::QAttribute::IndexAttribute);
-    gridIndexAttribute->setBuffer(gridIndexBuffer);
-    gridIndexAttribute->setCount(4*n);
-    geometry->addAttribute(gridIndexAttribute); // We add the indices linking the points in the geometry
+    indexAttribute = new Qt3DRender::QAttribute(geometry);
+    indexAttribute->setVertexBaseType(Qt3DRender::QAttribute::UnsignedInt);
+    indexAttribute->setAttributeType(Qt3DRender::QAttribute::IndexAttribute);
+    indexAttribute->setBuffer(indexBuffer);
+    indexAttribute->setCount(4*n);
+    geometry->addAttribute(indexAttribute); // We add the indices linking the points in the geometry
 
     // mesh
     geometryRenderer = new Qt3DRender::QGeometryRenderer(rootEntity);
     geometryRenderer->setGeometry(geometry);
     geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Lines);
-    gridMaterial = new Qt3DExtras::QPhongMaterial(rootEntity);
-    gridMaterial->setAmbient(color);
+    material = new Qt3DExtras::QPhongMaterial(rootEntity);
+    static_cast<Qt3DExtras::QPhongMaterial*>(material)->setAmbient(color);
 
     // entity
     entity = new Qt3DCore::QEntity(rootEntity);
     entity->addComponent(geometryRenderer);
-    entity->addComponent(gridMaterial);
+    entity->addComponent(material);
 }
 
 QByteArray Grid3D::getGridBuffer(bool xy_swap,bool xz_swap,bool yz_swap,unsigned int N)
@@ -127,7 +127,7 @@ QByteArray Grid3D::getGridBuffer(bool xy_swap,bool xz_swap,bool yz_swap,unsigned
 ////////////////////////////
 Plan3D::Plan3D(Qt3DCore::QEntity* rootEntity,Plan* plan,float radius,QColor color)
 {
-    transform = new Qt3DCore::QTransform();
+    this->plan=plan;
 
     geometry = new Qt3DRender::QGeometry(rootEntity);
 
@@ -170,9 +170,9 @@ Plan3D::Plan3D(Qt3DCore::QEntity* rootEntity,Plan* plan,float radius,QColor colo
     geometryRenderer = new Qt3DRender::QGeometryRenderer(rootEntity);
     geometryRenderer->setGeometry(geometry);
     geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Triangles);
-    material = new Qt3DExtras::QPhongAlphaMaterial(rootEntity);
-    material->setAmbient(color);
-    material->setAlpha(0.8);
+    material = new Qt3DExtras::QPhongMaterial(rootEntity);
+    static_cast<Qt3DExtras::QPhongMaterial*>(material)->setAmbient(color);
+    //static_cast<Qt3DExtras::QPhongAlphaMaterial*>(material)->setAlpha(0.8);
 
     Qt3DRender::QCullFace* culling = new Qt3DRender::QCullFace();
     culling->setMode(Qt3DRender::QCullFace::NoCulling);
@@ -189,7 +189,7 @@ Plan3D::Plan3D(Qt3DCore::QEntity* rootEntity,Plan* plan,float radius,QColor colo
     entity = new Qt3DCore::QEntity(rootEntity);
     entity->addComponent(geometryRenderer);
     entity->addComponent(material);
-    entity->addComponent(transform);
+    entity->addComponent(transformInit(entity));
 }
 
 QByteArray Plan3D::getBuffer(Plan* plan,float radius)
@@ -216,7 +216,7 @@ QByteArray Plan3D::getBuffer(Plan* plan,float radius)
 ////////////////////////////
 Sphere3D::Sphere3D(Qt3DCore::QEntity* rootEntity,Sphere * sphere,QColor color)
 {
-    transform = new Qt3DCore::QTransform();
+    this->sphere=sphere;
 
     geometry = new Qt3DRender::QGeometry(rootEntity);
 
@@ -268,9 +268,9 @@ Sphere3D::Sphere3D(Qt3DCore::QEntity* rootEntity,Sphere * sphere,QColor color)
     geometryRenderer = new Qt3DRender::QGeometryRenderer(rootEntity);
     geometryRenderer->setGeometry(geometry);
     geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Triangles);
-    material = new Qt3DExtras::QPhongAlphaMaterial(rootEntity);
-    material->setAmbient(color);
-    material->setAlpha(0.8);
+    material = new Qt3DExtras::QPhongMaterial(rootEntity);
+    static_cast<Qt3DExtras::QPhongMaterial*>(material)->setAmbient(color);
+    //static_cast<Qt3DExtras::QPhongAlphaMaterial*>(material)->setAlpha(0.8);
 
     Qt3DRender::QCullFace* culling = new Qt3DRender::QCullFace();
     culling->setMode(Qt3DRender::QCullFace::NoCulling);
@@ -287,7 +287,7 @@ Sphere3D::Sphere3D(Qt3DCore::QEntity* rootEntity,Sphere * sphere,QColor color)
     entity = new Qt3DCore::QEntity(rootEntity);
     entity->addComponent(geometryRenderer);
     entity->addComponent(material);
-    entity->addComponent(transform);
+    entity->addComponent(transformInit(entity));
 }
 
 QByteArray Sphere3D::getBuffer(Sphere* sphere)

@@ -83,9 +83,6 @@ public:
     void addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode);
 
     void addObj(Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor color);
-    void setObjPosAtt(unsigned int id, const QPosAtt& T);
-    void setObjColor(unsigned int id, QColor color);
-
     void addSphere(Sphere * sphere,QColor color);
     void addPlan(Plan* plan, float radius, QColor color);
 
@@ -99,35 +96,24 @@ public slots:
     void slot_fitSphere();
     void slot_fitPlan();
     void slot_fitCustomMesh();
-
     void slot_ScaleChanged();
     void slot_setGradient(int preset);
     void slot_ColorScaleChanged(const QCPRange& range);
     void slot_setCustomColor(QColor color);
     void slot_useCustomColor(int value);
-
     void updateGridAndLabels();
-
     void slot_projectCustomMesh();
     void slot_projectPlan();
     void slot_projectSphere();
-
     void slot_randomSubSamples();
-
     void slot_resetView();
     void slot_resetViewOnSelected();
-
     void slot_export();
-
     void slot_addMesh();
     void slot_createRotegrity();
-
     void slot_showHideGrid(int value);
     void slot_showHideAxis(int value);
     void slot_showHideLabels(int value);
-
-
-
     void slot_removeSelected();
 
 signals:
@@ -143,7 +129,6 @@ protected:
 private:
     std::vector<Cloud3D*> getClouds();
     std::vector<Cloud3D*> getSelectedClouds();
-
     std::vector<Base3D*> getMeshs();
     std::vector<Base3D*> getSelectedObjects();
 
@@ -163,12 +148,10 @@ private:
     void init3D();
 
     Qt3DCore::QEntity* rootEntity;
-    std::vector<Qt3DCore::QTransform*> transforms;
-    std::vector<QMatrix4x4> baseR;
-    std::vector<QMatrix4x4> baseT;
-    std::vector<Qt3DExtras::QPhongMaterial*> materials;
 
-    std::vector<Base3D*> objects_list;
+    //std::vector<QMatrix4x4> baseR;
+    //std::vector<QMatrix4x4> baseT;
+
 
     //Grid
     Grid3D* grid3D;

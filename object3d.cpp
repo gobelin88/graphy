@@ -2,11 +2,6 @@
 
 Object3D::Object3D(Qt3DCore::QEntity* rootEntity,Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor color)
 {
-    transform = new Qt3DCore::QTransform();
-    transform->setScale(scale);
-
-    setPosAtt(posatt);
-
     material = new Qt3DExtras::QPhongMaterial();
     material->setDiffuse(color);
 
@@ -15,7 +10,10 @@ Object3D::Object3D(Qt3DCore::QEntity* rootEntity,Qt3DRender::QMesh* m_obj, QPosA
     entity = new Qt3DCore::QEntity(rootEntity);
     entity->addComponent(m_obj);
     entity->addComponent(material);
-    entity->addComponent(transform);
+    entity->addComponent(transformInit(entity));
+
+    setPosAtt(posatt);
+    transform->setScale(scale);
 }
 
 void Object3D::setPosAtt(QPosAtt posatt)

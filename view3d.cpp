@@ -532,7 +532,7 @@ void View3D::slot_randomSubSamples()
         {
             int nbPoints=sb_subSamples->value();
             currentCloud3D->positionAttribute   ->setCount(static_cast<unsigned int>(nbPoints));
-            currentCloud3D->cloudColorsAttribute->setCount(static_cast<unsigned int>(nbPoints));
+            currentCloud3D->indexAttribute->setCount(static_cast<unsigned int>(nbPoints));
             currentCloud->subSample(nbPoints);
 
             if(nbPoints!=currentCloud->size())
@@ -633,30 +633,13 @@ void dispMat(QMatrix4x4 m)
 
 void View3D::slot_ScaleChanged()
 {
-    customContainer->getScale();
-
     Qt3DCore::QTransform T,S;
     T.setTranslation(-customContainer->getTranslation());
     S.setScale3D(customContainer->getScaleInv());
 
-
-    std::vector<Cloud3D*> cloudsList=getClouds();
-    for(int i=0;i<cloudsList.size();i++)
+    for(int i=0;i<objects3D.size();i++)
     {
-        cloudsList[i]->cloudTransform->setMatrix( S.matrix()*T.matrix() );//->setMatrix(t.matrix().inverted());
-    }
-
-    //dispMat(T.matrix()*S.matrix());
-    //dispMat(S.matrix()*T.matrix());
-
-    for (int i=0; i<transforms.size(); i++)
-    {
-        transforms[i]->setMatrix( S.matrix()*T.matrix()*baseT[i]*baseR[i] );
-    }
-
-    for (int i=0; i<objects_list.size(); i++)
-    {
-        objects_list[i]->transform->setMatrix( S.matrix()*T.matrix() );
+        objects3D[i]->transform->setMatrix( S.matrix()*T.matrix()*objects3D[i]->tT*objects3D[i]->tR );//->setMatrix(t.matrix().inverted());
     }
 }
 
@@ -838,16 +821,15 @@ void View3D::slot_removeSelected()
 
     for(int i=0;i<selectedObjects.size();i++)
     {
-
         for(int k=0;k<objects3D.size();k++)
         {
             if(objects3D[k]==selectedObjects[i])
             {
                 objects3D.erase(objects3D.begin()+k);
+                delete customContainer->getSelectionView()->takeItem(k);
             }
         }
 
-        delete customContainer->getSelectionView()->takeItem(i);
         delete selectedObjects[i];
     }
 
@@ -863,7 +845,7 @@ void View3D::slot_setPointSize(double value)
         currentCloud3D->pointSize->setValue(value);
         currentCloud3D->lineWidth->setValue(value);
 
-        auto effect = currentCloud3D->cloudMaterial->effect();
+        auto effect = currentCloud3D->material->effect();
         for (auto t : effect->techniques())
         {
             for (auto rp : t->renderPasses())
@@ -898,19 +880,15 @@ void View3D::slot_setPrimitiveType(int type)
 void View3D::addSphere(Sphere * sphere,QColor color)
 {
     Sphere3D* sphere3D=new Sphere3D(rootEntity,sphere,color);
-    objects_list.push_back(sphere3D);
-    slot_ScaleChanged();
-
     referenceObjectEntity(sphere3D,"Sphere");
+    slot_ScaleChanged();
 }
 
 void View3D::addPlan(Plan* plan,float radius,QColor color)
 {
     Plan3D* plan3D=new Plan3D(rootEntity,plan,radius,color);
-    objects_list.push_back(plan3D);
-    slot_ScaleChanged();
-
     referenceObjectEntity(plan3D,"Plan");
+    slot_ScaleChanged();
 }
 
 void View3D::referenceObjectEntity(Base3D * base3D,QString str_type)
@@ -940,33 +918,13 @@ void View3D::addObj(Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor 
 
     Qt3DCore::QTransform tR;
     tR.setRotation(toQQuaternion(posatt.Q));
+    obj->tR=tR.matrix();
 
     Qt3DCore::QTransform tT;
     tT.setTranslation(toQVector3D(posatt.P));
-
-    baseT.push_back(tT.matrix());
-    baseR.push_back(tR.matrix());
-    transforms.push_back(obj->transform);
-    materials.push_back(obj->material);
+    obj->tT=tT.matrix();
 
     slot_ScaleChanged();
-}
-
-void View3D::setObjColor(unsigned int id,QColor color)
-{
-    if (id<materials.size())
-    {
-        materials[id]->setDiffuse(color);
-    }
-}
-
-void View3D::setObjPosAtt(unsigned int id,const QPosAtt& T)
-{
-    if (id<transforms.size())
-    {
-        transforms[id]->setTranslation(toQVector3D(T.P)*1e-3f);
-        transforms[id]->setRotation(toQQuaternion(T.Q));
-    }
 }
 
 CustomViewContainer* View3D::getContainer()

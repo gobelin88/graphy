@@ -11,11 +11,9 @@ class Cloud3D:public Base3D
 public:
     Cloud3D(Cloud * cloud,Qt3DCore::QEntity* rootEntity);
 
-    Qt3DExtras::QPerVertexColorMaterial* cloudMaterial;
     Qt3DRender::QPointSize* pointSize;
     Qt3DRender::QLineWidth* lineWidth;
-    Qt3DCore::QTransform* cloudTransform;
-    Qt3DRender::QAttribute* cloudColorsAttribute;
+
     Cloud * cloud;
 };
 

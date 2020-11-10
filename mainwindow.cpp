@@ -88,7 +88,7 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(ui->actionPlot_Cloud_2D,&QAction::triggered,this,&MainWindow::slot_plot_cloud_2D);
     connect(ui->actionPlot_Cloud_3D, &QAction::triggered,this,&MainWindow::slot_plot_cloud_3D);
     connect(ui->actionFFT, &QAction::triggered,this,&MainWindow::slot_plot_fft);
-    connect(ui->actionPlot_Gain_Phase, &QAction::triggered,this,&MainWindow::slot_plot_gain_phase);
+    connect(ui->actionPlot_Gain_Phase, &QAction::triggered,this,&MainWindow::slot_plot_bode);
 
     connect(table->model(),&MyModel::sig_dataChanged,this,&MainWindow::fileModified);
 
@@ -231,7 +231,7 @@ void MainWindow::fileModified()
 
 Viewer1D* MainWindow::createViewerId()
 {
-    Viewer1D* viewer1d=new Viewer1D(&shared,shortcuts,this);
+    Viewer1D* viewer1d=new Viewer1D(shortcuts,this);
     QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),table,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
     QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
     viewer1d->setMinimumSize(600,400);
@@ -261,7 +261,7 @@ void MainWindow::slot_plot_y()
                                                 table->getLogicalColName(id_list[k  ].column()),
                                                 Curve2D::GRAPH));
             }
-        }        
+        }
     }
     else
     {
@@ -449,7 +449,7 @@ void MainWindow::slot_plot_fft()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-    if (id_list.size()>0)
+    if (id_list.size()==1 || id_list.size()==2)//1 real signal ---- 2 complex signal (module,phase)
     {
         QDialog* dialog=new QDialog;
         dialog->setLocale(QLocale("C"));
@@ -472,6 +472,14 @@ void MainWindow::slot_plot_fft()
         cb_normalize->setToolTip("Parseval theorem don't apply if normalized");
         cb_normalize->setChecked(true);
 
+        QCheckBox* cb_halfspectrum=new QCheckBox("Half Spectrum");
+        cb_halfspectrum->setToolTip("In case of reals entries spectrum is symetrical");
+        cb_halfspectrum->setChecked(true);
+
+        QCheckBox* cb_inverse=new QCheckBox("Inverse");
+        cb_inverse->setToolTip("Compute inverse FFT");
+        cb_inverse->setChecked(true);
+
         QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
                                                            | QDialogButtonBox::Cancel);
 
@@ -483,34 +491,61 @@ void MainWindow::slot_plot_fft()
         gbox->addWidget(cb_mode,0,1);
         gbox->addWidget(new QLabel("Sample frequency : "),1,0);
         gbox->addWidget(sb_fe,1,1);
-        gbox->addWidget(cb_normalize,2,0,1,2);
-        gbox->addWidget(buttonBox,3,0,1,2);
+        gbox->addWidget(cb_normalize,2,0);
+        gbox->addWidget(cb_halfspectrum,2,1);
+        gbox->addWidget(cb_inverse,3,0);
+        gbox->addWidget(buttonBox,4,0,1,2);
 
         dialog->setLayout(gbox);
 
         int result=dialog->exec();
         if (result == QDialog::Accepted)
         {
-            Viewer1D* viewer1d=createViewerId();
+            ViewerBode* viewerBode=new ViewerBode(shortcuts,this);
 
-            for (int k=0; k<id_list.size(); k++)
+            QString nameModule=table->getLogicalColName(id_list[0  ].column());
+            QString namePhase =(id_list.size()==2)?table->getLogicalColName(id_list[1  ].column()):QString("");
+            QString name=nameModule+QString("_")+namePhase;
+
+            Eigen::VectorXd dataIn_module=table->getLogicalColDataDouble(id_list[0  ].column());
+            Eigen::VectorXd dataIn_phase =(id_list.size()==2)?table->getLogicalColDataDouble(id_list[1  ].column()):Eigen::VectorXd::Zero(dataIn_module.size());
+
+            Eigen::VectorXcd dataIn(dataIn_module.size());
+            for(int i=0;i<dataIn_module.size();i++)
             {
-                Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[k  ].column());
-                Curve2D curve(data_y,QString("%1").arg(table->getLogicalColName(id_list[k  ].column())),Curve2D::GRAPH);
-
-                if (data_y.size()>0)
-                {
-                    Curve2D fft=curve.getFFT((Curve2D::FFTMode)cb_mode->currentIndex(),sb_fe->value(),cb_normalize->isChecked());
-                    viewer1d->slot_add_data(fft);
-                    //slot_newColumn(QString("FFT_%1").arg(getColName(id_list[k  ].column())),fft.getY());
-                }
+                dataIn[i]=std::polar(dataIn_module[i],dataIn_phase[i]*M_PI/180.0);
             }
+
+            Eigen::VectorXcd dataOut=Curve2D::getFFT(dataIn,
+                                                     (Curve2D::FFTWindowsType)cb_mode->currentIndex(),
+                                                     cb_normalize->isChecked(),
+                                                     cb_halfspectrum->isChecked(),
+                                                     cb_inverse->isChecked());
+
+            Eigen::VectorXd dataOut_module(dataOut.size());
+            Eigen::VectorXd dataOut_phase (dataOut.size());
+            for(int i=0;i<dataOut.size();i++)
+            {
+                dataOut_module[i]=std::abs(dataOut[i]);
+                dataOut_phase[i] =std::arg(dataOut[i])*180/M_PI;
+            }
+
+            table->slot_newColumn(QString("Modules_%1").arg(name),dataOut_module);
+            table->slot_newColumn(QString("Phases_%1").arg(name),dataOut_phase);
+
+            Curve2D curve_module(dataOut_module,QString("Modules_%1").arg(name),Curve2D::GRAPH);
+            Curve2D curve_phase (dataOut_phase ,QString("Phases_%1").arg(name),Curve2D::GRAPH);
+            Curve2DModulePhase curveModulePhase(curve_module,curve_phase);
+
+            viewerBode->slot_add_data(curveModulePhase);
+            mdiArea->addSubWindow(viewerBode,Qt::WindowStaysOnTopHint);
+            viewerBode->show();
         }
 
     }
     else
     {
-        QMessageBox::information(this,"Information","Please select 1 columns");
+        QMessageBox::information(this,"Information","Please select 1 or 2 columns");
     }
 }
 
@@ -529,12 +564,12 @@ void MainWindow::slot_plot_cloud_3D()
 
         if (id_list.size()==0)
         {
-//            Eigen::VectorXd data_x(1);
-//            Eigen::VectorXd data_y(1);
-//            Eigen::VectorXd data_z(1);
+            //            Eigen::VectorXd data_x(1);
+            //            Eigen::VectorXd data_y(1);
+            //            Eigen::VectorXd data_z(1);
 
-//            cloud=new Cloud(data_x,data_y,data_z,"X","Y","Z");
-//            view3d->addCloudScalar(cloud,Qt3DRender::QGeometryRenderer::Points);
+            //            cloud=new Cloud(data_x,data_y,data_z,"X","Y","Z");
+            //            view3d->addCloudScalar(cloud,Qt3DRender::QGeometryRenderer::Points);
 
         }
         else if (id_list.size()%3==0)
@@ -547,14 +582,14 @@ void MainWindow::slot_plot_cloud_3D()
 
                 cloud=new Cloud(data_x,data_y,data_z,
                                 table->getLogicalColName(id_list[i].column()),
-                        table->getLogicalColName(id_list[i+1].column()),
+                                table->getLogicalColName(id_list[i+1].column()),
                         table->getLogicalColName(id_list[i+2].column()));
 
                 view3d->addCloudScalar(cloud,Qt3DRender::QGeometryRenderer::Points);
             }
 
         }
-        else if (id_list.size()==4)
+        else if (id_list.size()%4==0)
         {
             for(int i=0;i<id_list.size();i+=4)
             {
@@ -564,7 +599,7 @@ void MainWindow::slot_plot_cloud_3D()
                 Eigen::VectorXd data_s=table->getLogicalColDataDouble(id_list[i+3].column());
                 cloud=new Cloud(data_x,data_y,data_z,data_s,
                                 table->getLogicalColName(id_list[i].column()),
-                        table->getLogicalColName(id_list[i+1].column()),
+                                table->getLogicalColName(id_list[i+1].column()),
                         table->getLogicalColName(id_list[i+2].column()),
                         table->getLogicalColName(id_list[i+3].column()));
 
@@ -581,14 +616,14 @@ void MainWindow::slot_plot_cloud_3D()
     }
 }
 
-void MainWindow::slot_plot_gain_phase()
+void MainWindow::slot_plot_bode()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
     if (id_list.size()%3==0 && id_list.size()>0)
     {
-        ViewerBode * viewer_bode=new ViewerBode(&shared,shortcuts,this);
-        viewer_bode->setMinimumSize(600,400);
+        ViewerBode * viewer_bode=new ViewerBode(shortcuts,this);
+
 
         for (int k=0; k<id_list.size(); k+=3)
         {
@@ -941,14 +976,14 @@ void MainWindow::closeEvent (QCloseEvent *event)
     if(isModified)
     {
         QMessageBox::StandardButton resBtn =
-        QMessageBox::question( this, "File is not saved" ,tr("Are you sure?\n"),
-        QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
-        QMessageBox::Yes);
+                QMessageBox::question( this, "File is not saved" ,tr("Are you sure?\n"),
+                                       QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
+                                       QMessageBox::Yes);
         if (resBtn != QMessageBox::Yes)
         {
             event->ignore();
         }
-       else
+        else
         {
             event->accept();
         }

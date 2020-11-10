@@ -26,6 +26,8 @@ public:
 
     void replot();
 
+public slots:
+    void slot_fullscreen(bool checked);
 
 private:
     //----------------------------
@@ -54,6 +56,7 @@ private:
     QListWidget * selectionView;
 
     int axisSize;
+    QGridLayout* glayout;
 };
 
 #endif // CUSTOMVIEWCONTAINER_H

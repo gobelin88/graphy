@@ -1,14 +1,13 @@
 #include "bode_viewer.h"
 
-ViewerBode::ViewerBode(Curve2D* sharedBuf,
-                       const QMap<QString,QKeySequence>& shortcuts_map,
+ViewerBode::ViewerBode(const QMap<QString,QKeySequence>& shortcuts_map,
                        QWidget* parent):QWidget(parent)
 {
     QGridLayout * layout=new QGridLayout(this);
 
     tab=new QTabWidget();
-    modules_viewer=new Viewer1D(sharedBuf,shortcuts_map,parent);
-    phases_viewer=new Viewer1D(sharedBuf,shortcuts_map,parent);
+    modules_viewer=new Viewer1D(shortcuts_map,parent);
+    phases_viewer=new Viewer1D(shortcuts_map,parent);
 
     tab->addTab(modules_viewer,"Modules");
     tab->addTab(phases_viewer,"Phases");
@@ -20,6 +19,8 @@ ViewerBode::ViewerBode(Curve2D* sharedBuf,
     //connect(modules_viewer,SIGNAL())
     createFitImpedanceMenu();
     modules_viewer->addSubMenu(menuFitImpedance);
+
+    setMinimumSize(600,400);
 }
 
 void ViewerBode::createFitImpedanceMenu()

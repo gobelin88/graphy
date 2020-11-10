@@ -7,12 +7,13 @@
 #include <Qt3DRender>
 #include <iostream>
 
-class Base3D
+class Base3D:public QObject
 {
+Q_OBJECT
 public:
-    Base3D()
+    Base3D(Qt3DCore::QEntity* rootEntity)
     {
-        entity=nullptr;
+        entity= new Qt3DCore::QEntity(rootEntity);
         buffer=nullptr;
         positionAttribute=nullptr;
         geometry=nullptr;
@@ -25,6 +26,12 @@ public:
 
         tR.setToIdentity();
         tT.setToIdentity();
+
+        picker=new Qt3DRender::QObjectPicker(entity);
+        picker->setHoverEnabled(false);
+        picker->setEnabled(true);
+        connect(picker, &Qt3DRender::QObjectPicker::clicked,this,&Base3D::slot_pick);
+        entity->addComponent(picker);
     }
 
     Qt3DCore::QTransform * transformInit(Qt3DCore::QEntity* entity)
@@ -71,6 +78,13 @@ public:
 //        if(transform)delete transform;
     }
 
+public slots:
+    void slot_pick(Qt3DRender::QPickEvent* event)
+    {
+        std::cout<<"picked :("<<entity<<")"<<event->distance()<<std::endl;
+    }
+
+public:
     Qt3DCore::QEntity* entity;
     Qt3DRender::QBuffer* buffer;
     Qt3DRender::QAttribute* positionAttribute;
@@ -83,6 +97,8 @@ public:
 
     Qt3DCore::QTransform * transform;
     QMatrix4x4 tR,tT;
+
+    Qt3DRender::QObjectPicker * picker;
 };
 
 #endif // BASE3D_H

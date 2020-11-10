@@ -10,7 +10,7 @@ class ViewerBode:public QWidget
 {
     Q_OBJECT
 public:
-    ViewerBode(Curve2D* sharedBuf, const QMap<QString, QKeySequence>& shortcuts_map, QWidget* parent);
+    ViewerBode(const QMap<QString, QKeySequence>& shortcuts_map, QWidget* parent);
 
 public slots:
     void slot_add_data(const Curve2DModulePhase& curve);

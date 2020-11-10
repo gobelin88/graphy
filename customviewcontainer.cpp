@@ -2,7 +2,7 @@
 
 CustomViewContainer::CustomViewContainer(QWidget* container)
 {
-    QGridLayout* glayout=new QGridLayout(this);
+    glayout=new QGridLayout(this);
 
     axisSize=100;
     createColorAxisPlot();
@@ -11,8 +11,9 @@ CustomViewContainer::CustomViewContainer(QWidget* container)
     createZAxisPlot();
 
     selectionView=new QListWidget(this);
-    //selectionView->setSelectionMode(QListWidget::MultiSelection);
+    selectionView->setSelectionMode(QListWidget::ExtendedSelection);
     selectionView->setMaximumWidth(100);
+    selectionView->setStyleSheet("QListWidget { border: none; }");
 
     glayout->addWidget(axisX_plot,2,1);
     glayout->addWidget(axisY_plot,1,0);
@@ -173,4 +174,19 @@ void CustomViewContainer::replot()
     axisY_plot->replot();
     axisZ_plot->replot();
     color_plot->replot();
+}
+
+void CustomViewContainer::slot_fullscreen(bool checked)
+{
+    std::cout<<"slot_fullscreen :"<<checked<<std::endl;
+    if(checked)
+    {
+        container->setParent(nullptr);
+        container->showFullScreen();
+    }
+    else
+    {
+        glayout->addWidget(container,1,1);
+        container->showNormal();
+    }
 }

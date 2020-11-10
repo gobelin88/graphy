@@ -1076,7 +1076,11 @@ void MyModel::setRowOffset(int rowOffset)
 
 void MyModel::slot_newColumn(QString varName,Eigen::VectorXd dataCol)
 {
-    if(dataCol.rows()!=m_data.rows())return;
+    if(dataCol.rows()!=m_data.rows())
+    {
+        std::cout<<"dataCol.rows()="<<dataCol.rows()<<" m_data.rows()="<<m_data.rows()<<std::endl;
+        return;
+    }
 
     if(!reg.existVariable(varName))
     {

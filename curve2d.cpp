@@ -379,8 +379,9 @@ double Curve2D::getRms()
 
 double Curve2D::guessMainFrequency()
 {
-    Curve2D fft=getFFT(Curve2D::BLACKMAN,1.0,true);
-    return fft.getX()[fft.getMaxIndex()];
+    //Curve2D fft=getFFT(Curve2D::BLACKMAN,1.0,true,true,false);
+    //return fft.getX()[fft.getMaxIndex()];
+    return 1.0;//Todo
 }
 
 Eigen::Vector2d Curve2D::getBarycenter()
@@ -401,65 +402,63 @@ uint Curve2D::getMaxIndex()
     return index;
 }
 
-Curve2D Curve2D::getFFT(FFTMode fft_mode, double fe,bool normalize_flag)
+Eigen::VectorXcd Curve2D::getFFT(Eigen::VectorXcd s_in,
+                                 FFTWindowsType fft_mode,
+                                 bool normalize_flag,
+                                 bool halfspectrum,
+                                 bool inverse)
 {
-    std::vector<double> data_y=toStdVector(y);
-    double N=static_cast<double>(data_y.size());
-    double sqrtN=sqrt(N);
-    std::vector< double > time=std::vector< double >(data_y.size()/2, 0);
-    for (unsigned int i=0; i<time.size(); i++)
-    {
-        time[i]=i*fe/N;
-    }
+    uint N=s_in.size();                //Number of inputs samples
+    uint outN=(halfspectrum)?N/2:N; //Number of outputs samples depending on mode
+    double sqrtN=sqrt(static_cast<double>(N));
 
     FIR win;
     if (fft_mode==HANN)
     {
-        win.getHannCoef(uint(data_y.size()));
+        win.getHannCoef(N);
     }
     else if (fft_mode==BLACKMAN)
     {
-        win.getBlackmanCoef(uint(data_y.size()));
+        win.getBlackmanCoef(N);
     }
     else if (fft_mode==FLAT_TOP)
     {
-        win.getFlatTopCoef(uint(data_y.size()));
+        win.getFlatTopCoef(N);
     }
     else if (fft_mode==RECTANGLE)
     {
-        win.getRectCoef(uint(data_y.size()));
+        win.getRectCoef(N);
     }
+
     if (normalize_flag==false)
     {
         win.mul(sqrtN);
     }
 
     //apply windows
-    for (unsigned int i=0; i<uint(data_y.size()); i++)
+    for (unsigned int i=0; i<N; i++)
     {
-        data_y[i]*=win.at(i);
+        s_in[i]=s_in[i]*win.at(i);
     }
 
     Eigen::FFT<double> fft;
-    fft.SetFlag(Eigen::FFT<double>::HalfSpectrum);
-    //fft.ClearFlag(Eigen::FFT<double>::Unscaled);//nothing
-
-    std::vector< std::complex<double> > fft_data_cplx;
-    fft.fwd(fft_data_cplx,data_y);
-    fft_data_cplx.pop_back();
-
-    std::vector< double > fft_data_module(fft_data_cplx.size());
-    for (unsigned int k=0; k<fft_data_cplx.size(); k++)
+    if(halfspectrum)
     {
-        fft_data_module[k]=std::abs(fft_data_cplx[k]);
+        fft.SetFlag(Eigen::FFT<double>::HalfSpectrum);
     }
 
-    QStringList fft_mode_str;
-    fft_mode_str<<"RECTANGLE"<<"BLACKMAN"<<"HANN"<<"FLAT_TOP";
+    Eigen::VectorXcd s_out(outN);
 
-    return Curve2D(fromStdVector(time),
-                   fromStdVector(fft_data_module),
-                   QString("FFT %1 %2").arg(getLegend()).arg(fft_mode_str[fft_mode]),Curve2D::GRAPH);
+    if(inverse)
+    {
+        fft.inv(s_out,s_in);
+    }
+    else
+    {
+        fft.fwd(s_out,s_in);
+    }
+
+    return s_out;
 }
 
 double Curve2D::at(const Eigen::VectorXd& A, double valuex)

@@ -1,6 +1,7 @@
 #include "cloud3d.h"
 
 Cloud3D::Cloud3D(Cloud *cloud, Qt3DCore::QEntity* rootEntity)
+    :Base3D(rootEntity)
 {
     this->cloud=cloud;
 
@@ -26,7 +27,7 @@ Cloud3D::Cloud3D(Cloud *cloud, Qt3DCore::QEntity* rootEntity)
     material = new Qt3DExtras::QPerVertexColorMaterial(rootEntity);
     geometryRenderer = new Qt3DRender::QGeometryRenderer(rootEntity);
     geometryRenderer->setGeometry(geometry);
-    entity = new Qt3DCore::QEntity(rootEntity);
+
     entity->addComponent(geometryRenderer);
     entity->addComponent(material);
     entity->addComponent(transformInit(entity));

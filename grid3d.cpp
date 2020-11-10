@@ -1,6 +1,7 @@
 #include "grid3d.h"
 
 Grid3D::Grid3D(Qt3DCore::QEntity* rootEntity,unsigned int N,QColor color)
+:Base3D(rootEntity)
 {
     geometry = new Qt3DRender::QGeometry(rootEntity);
 
@@ -49,7 +50,6 @@ Grid3D::Grid3D(Qt3DCore::QEntity* rootEntity,unsigned int N,QColor color)
     static_cast<Qt3DExtras::QPhongMaterial*>(material)->setAmbient(color);
 
     // entity
-    entity = new Qt3DCore::QEntity(rootEntity);
     entity->addComponent(geometryRenderer);
     entity->addComponent(material);
 }
@@ -126,6 +126,7 @@ QByteArray Grid3D::getGridBuffer(bool xy_swap,bool xz_swap,bool yz_swap,unsigned
 
 ////////////////////////////
 Plan3D::Plan3D(Qt3DCore::QEntity* rootEntity,Plan* plan,float radius,QColor color)
+:Base3D(rootEntity)
 {
     this->plan=plan;
 
@@ -186,7 +187,6 @@ Plan3D::Plan3D(Qt3DCore::QEntity* rootEntity,Plan* plan,float radius,QColor colo
     }
 
     // entity
-    entity = new Qt3DCore::QEntity(rootEntity);
     entity->addComponent(geometryRenderer);
     entity->addComponent(material);
     entity->addComponent(transformInit(entity));
@@ -215,6 +215,7 @@ QByteArray Plan3D::getBuffer(Plan* plan,float radius)
 
 ////////////////////////////
 Sphere3D::Sphere3D(Qt3DCore::QEntity* rootEntity,Sphere * sphere,QColor color)
+:Base3D(rootEntity)
 {
     this->sphere=sphere;
 
@@ -284,7 +285,6 @@ Sphere3D::Sphere3D(Qt3DCore::QEntity* rootEntity,Sphere * sphere,QColor color)
     }
 
     // entity
-    entity = new Qt3DCore::QEntity(rootEntity);
     entity->addComponent(geometryRenderer);
     entity->addComponent(material);
     entity->addComponent(transformInit(entity));

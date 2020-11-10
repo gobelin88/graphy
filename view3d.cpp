@@ -19,11 +19,11 @@ View3D::View3D(const QMap<QString, QKeySequence>& shortcuts_map)
     //registerAspect(new Qt3DInput::QInputAspect);
 
     //Camera
-    camera_params=new CameraParams(camera(),0,0,0);
-    camera_params->entity()->lens()->setPerspectiveProjection(45.0f, 16.0f/9.0f, 0.0001f, 100000.0f);
-    camera_params->reset();
-    camera_params->setBarycenter( QVector3D(0,0,0) );
-    camera_params->setBoundingRadius( 1.20f );
+    cameraParams=new CameraParams(camera(),0,0,0);
+    cameraParams->entity()->lens()->setPerspectiveProjection(45.0f, 16.0f/9.0f, 0.0001f, 100000.0f);
+    cameraParams->reset();
+    cameraParams->setBarycenter( QVector3D(0,0,0) );
+    cameraParams->setBoundingRadius( 1.20f );
 
     //Racine
     rootEntity = new Qt3DCore::QEntity();
@@ -55,53 +55,52 @@ void View3D::init3D()
     auto* meshArrow = new Qt3DRender::QMesh();
     meshArrow->setSource(QUrl( QUrl::fromLocalFile(":/obj/obj/axis.obj") ) );
 
-    objArrowX=new Object3D(rootEntity,meshArrow,QPosAtt(Eigen::Vector3d(-0.0,1,-1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(1,0,0),Eigen::Vector3d(0,-1,0))),0.1f,QColor(255,0,0));
-    objArrowY=new Object3D(rootEntity,meshArrow,QPosAtt(Eigen::Vector3d(-1,-0.0,1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),Eigen::Vector3d(0,1,0))),0.1f,QColor(0,255,0));
-    objArrowZ=new Object3D(rootEntity,meshArrow,QPosAtt(Eigen::Vector3d(1,-1,-0.0),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,0,1),Eigen::Vector3d(0,-1,0))),0.1f,QColor(0,0,255));
+    objArrowX=new Object3D(rootEntity,meshArrow,nullptr,QPosAtt(Eigen::Vector3d(-0.0,1,-1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(1,0,0),Eigen::Vector3d(0,-1,0))),0.1f,QColor(255,0,0));
+    objArrowY=new Object3D(rootEntity,meshArrow,nullptr,QPosAtt(Eigen::Vector3d(-1,-0.0,1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),Eigen::Vector3d(0,1,0))),0.1f,QColor(0,255,0));
+    objArrowZ=new Object3D(rootEntity,meshArrow,nullptr,QPosAtt(Eigen::Vector3d(1,-1,-0.0),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,0,1),Eigen::Vector3d(0,-1,0))),0.1f,QColor(0,0,255));
 
     labelx=new Label3D(rootEntity,"X",QVector3D(0,1,-1),0.1f,0,0,0);
     labely=new Label3D(rootEntity,"Y",QVector3D(-1,0,1),0.1f,0,90,90);
     labelz=new Label3D(rootEntity,"Z",QVector3D(1,-1,0),0.1f,-90,-90,0);
-    updateLabels();
+    slot_updateLabels();
     slot_resetView();
+
 }
+
+
 
 void View3D::createPopup()
 {
-    popup_menu=new QMenu();
+    popupMenu=new QMenu();
 
     menuParameters= new QMenu("Parameters");
+    menuData= new QMenu("Point cloud");
+    menuFit= new QMenu("Fit");
+    menuProject= new QMenu("Project");
+    menuSubSample= new QMenu("Subsample");
+    menuView= new QMenu("View");
+    menuMesh= new QMenu("Mesh");
 
     actSave   = new QAction("Save",  this);
     actSaveRevolution   = new QAction("Save a revolution",  this);
-
-    menuData= new QMenu("Point cloud");
     actExport= new QAction("Export",  this);
-
-    menuFit= new QMenu("Fit");
     actFitSphere= new QAction("Sphere",  this);
     actFitPlan= new QAction("Plan",  this);
     actFitMesh= new QAction("Custom mesh",  this);
-
-    menuProject= new QMenu("Project");
     actProjectSphere= new QAction("Sphere",  this);
     actProjectPlan= new QAction("Plan",  this);
     actProjectMesh= new QAction("Custom mesh",  this);
-
-    menuSubSample= new QMenu("Subsample");
     actRandomSubSample= new QAction("Random",  this);
-
-    menuView= new QMenu("View");
     actRescale= new QAction("Rescale",  this);
     actRescaleSelected= new QAction("Rescale selected",  this);
     actRemoveSelected= new QAction("Remove selected",  this);
-
-    menuMesh= new QMenu("Mesh");
     actMeshLoad= new QAction("Load",  this);
-    actMeshCreateRotegrity= new QAction("Rotegrity",  this);;
+    actMeshCreateRotegrity= new QAction("Rotegrity",  this);
+    actFullscreen= new QAction("Fullscreen",  this);
+    actFullscreen->setCheckable(true);
 
     ///////////////////////////////////////////////
-    QWidgetAction* actWidget=new QWidgetAction(popup_menu);
+    QWidgetAction* actWidget=new QWidgetAction(popupMenu);
     QWidget* widget=new QWidget;
     actWidget->setDefaultWidget(widget);
 
@@ -139,7 +138,6 @@ void View3D::createPopup()
     gbox->addWidget(cb_show_hide_grid,2,0,1,2);
     gbox->addWidget(cb_show_hide_axis,3,0,1,2);
     gbox->addWidget(cb_show_hide_labels,4,0,1,2);
-
     gbox->addWidget(cb_use_custom_color,5,0);
     gbox->addWidget(cw_custom_color,5,1);
 
@@ -147,78 +145,69 @@ void View3D::createPopup()
     widget->setLayout(gbox);
 
     ///////////////////////////////////////////////Action context
-    actRescale->setShortcutVisibleInContextMenu(true);
-    actRescaleSelected->setShortcutVisibleInContextMenu(true);
-    actRemoveSelected->setShortcutVisibleInContextMenu(true);
-
     customContainer->addAction(actRescale);
     customContainer->addAction(actRescaleSelected);
     customContainer->addAction(actRemoveSelected);
+    customContainer->addAction(actFullscreen);
+
+    auto customContainerActions=customContainer->actions();
+    for(auto act:customContainerActions)
+    {
+        act->setShortcutVisibleInContextMenu(true);
+    }
 
     ///////////////////////////////////////////////
-    popup_menu->addMenu(menuParameters);
-    popup_menu->addMenu(menuView);
-    popup_menu->addSeparator();
-    popup_menu->addMenu(menuData);
-    popup_menu->addMenu(menuMesh);
-    popup_menu->addSeparator();
-    popup_menu->addAction(actSave);
-    popup_menu->addAction(actSaveRevolution);
-
+    popupMenu->addMenu(menuParameters);
+    popupMenu->addMenu(menuView);
+    popupMenu->addSeparator();
+    popupMenu->addMenu(menuData);
+    popupMenu->addMenu(menuMesh);
+    popupMenu->addSeparator();
+    popupMenu->addAction(actSave);
+    popupMenu->addAction(actSaveRevolution);
     menuView->addAction(actRescale);
     menuView->addAction(actRescaleSelected);
     menuView->addAction(actRemoveSelected);
+    menuView->addAction(actFullscreen);
     menuParameters->addAction(actWidget);
     menuData->addMenu(menuFit);
     menuData->addMenu(menuProject);
     menuData->addMenu(menuSubSample);
     menuData->addAction(actExport);
-
     menuFit->addAction(actFitSphere);
     menuFit->addAction(actFitPlan);
     menuFit->addAction(actFitMesh);
-
     menuProject->addAction(actProjectSphere);
     menuProject->addAction(actProjectPlan);
     menuProject->addAction(actProjectMesh);
-
     menuMesh->addAction(actMeshLoad);
     menuMesh->addAction(actMeshCreateRotegrity);
-
     menuSubSample->addAction(actRandomSubSample);
 
     QObject::connect(cb_show_hide_labels,SIGNAL(stateChanged(int)),this,SLOT(slot_showHideLabels(int)));
     QObject::connect(cb_show_hide_grid,SIGNAL(stateChanged(int)),this,SLOT(slot_showHideGrid(int)));
     QObject::connect(cb_show_hide_axis,SIGNAL(stateChanged(int)),this,SLOT(slot_showHideAxis(int)));
-
-
     QObject::connect(actMeshLoad,SIGNAL(triggered()),this,SLOT(slot_addMesh()));
     QObject::connect(actMeshCreateRotegrity,SIGNAL(triggered()),this,SLOT(slot_createRotegrity()));
-
     QObject::connect(actExport,SIGNAL(triggered()),this,SLOT(slot_export()));
     QObject::connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_resetView()));
     QObject::connect(actRescaleSelected,SIGNAL(triggered()),this,SLOT(slot_resetViewOnSelected()));
     QObject::connect(actRemoveSelected,SIGNAL(triggered()),this,SLOT(slot_removeSelected()));
-
     QObject::connect(actRandomSubSample,SIGNAL(triggered()),this,SLOT(slot_randomSubSamples()));
     QObject::connect(actSave,SIGNAL(triggered()),this,SLOT(slot_saveImage()));
     QObject::connect(actSaveRevolution,SIGNAL(triggered()),this,SLOT(slot_saveRevolution()));
     QObject::connect(sb_size, SIGNAL(valueChanged(double)), this, SLOT(slot_setPointSize(double)));
     QObject::connect(cb_mode, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setPrimitiveType(int)));
-
     QObject::connect(actProjectMesh, SIGNAL(triggered() ), this, SLOT(slot_projectCustomMesh()));
     QObject::connect(actProjectPlan, SIGNAL(triggered() ), this, SLOT(slot_projectPlan()));
     QObject::connect(actProjectSphere, SIGNAL(triggered() ), this, SLOT(slot_projectSphere()));
-
     QObject::connect(actFitSphere, SIGNAL(triggered() ), this, SLOT(slot_fitSphere()));
     QObject::connect(actFitPlan, SIGNAL(triggered() ), this, SLOT(slot_fitPlan()));
     QObject::connect(actFitMesh, SIGNAL(triggered() ), this, SLOT(slot_fitCustomMesh()));
-
     QObject::connect(c_gradient, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setGradient(int)));
-
     QObject::connect(cb_use_custom_color, SIGNAL(stateChanged(int)), this, SLOT(slot_useCustomColor(int)));
     QObject::connect(cw_custom_color, SIGNAL(colorChanged(QColor)), this, SLOT(slot_setCustomColor(QColor)));
-
+    QObject::connect(actFullscreen, SIGNAL(triggered(bool)), customContainer, SLOT(slot_fullscreen(bool)));
 
 }
 
@@ -263,15 +252,15 @@ void View3D::slot_saveRevolution()
         this->setActiveFrameGraph(capture);
 
         MyCapture myCap(capture);
-        float a0=camera_params->getAlpha();
+        float a0=cameraParams->getAlpha();
         QScreen* screen=QGuiApplication::primaryScreen();
 
         for (int k=0; k<N; k++)
         {
             QString image_filename=info.dir().path()+QString("/%1_").arg(k)+info.baseName()+QString(".png");
             std::cout<<image_filename.toLocal8Bit().data()<<std::endl;
-            camera_params->moveTo(a0+float(2.0*M_PI/N*k),camera_params->getBeta(),camera_params->getRadius());
-            updateGridAndLabels();
+            cameraParams->moveTo(a0+float(2.0*M_PI/N*k),cameraParams->getBeta(),cameraParams->getRadius());
+            slot_updateGridAndLabels();
             //this->customContainer->update();
             //QApplication::processEvents();
 
@@ -586,7 +575,7 @@ void View3D::slot_fitCustomMesh()
         auto* m_obj = new Qt3DRender::QMesh();
         m_obj->setSource(QUrl(QString("file:///")+info.path()+"/tmp.obj"));
 
-        addObj(m_obj,QPosAtt(),1.0,QColor(64,64,64));
+        addObject(m_obj,nullptr,QPosAtt(),1.0,QColor(64,64,64));
 
         QPosAtt posatt=obj.getPosAtt();
         emit sig_displayResults( QString("Fit Mesh :\nScale=%1\nPosition=(%2,%3,%4)\nQ=(%5,%6,%7,%8)\nRms=%9\ndt=%10 ms")
@@ -711,11 +700,8 @@ void View3D::slot_setCustomColor(QColor color)
 void View3D::addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode)
 {
     Cloud3D * currentCloud3D=new Cloud3D(cloudData,rootEntity);
-    this->objects3D.push_back(currentCloud3D);
 
-    QListWidgetItem * item=new QListWidgetItem(QString("Cloud: %1").arg(getClouds().size()));
-    item->setIcon(QIcon(QPixmap::fromImage(QImage(":/img/icons/points_cloud.png"))));
-    customContainer->getSelectionView()->addItem(item);
+    referenceObjectEntity(currentCloud3D,"Cloud");
 
 
     currentCloud3D->geometryRenderer->setPrimitiveType(primitiveMode);
@@ -850,11 +836,14 @@ void View3D::slot_setPointSize(double value)
 {
     std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
+
+
     for(int i=0;i<selectedClouds.size();i++)
     {
         Cloud3D * currentCloud3D=selectedClouds[i];
         currentCloud3D->pointSize->setValue(value);
         currentCloud3D->lineWidth->setValue(value);
+        currentCloud3D->lineWidth->setSmooth(true);
 
         auto effect = currentCloud3D->material->effect();
         for (auto t : effect->techniques())
@@ -902,23 +891,33 @@ void View3D::addPlan(Plan* plan,float radius,QColor color)
     slot_ScaleChanged();
 }
 
-void View3D::referenceObjectEntity(Base3D * base3D,QString str_type)
+void View3D::referenceObjectEntity(Base3D * base3D,QString name)
 {
     objects3D.push_back(base3D);
-    QListWidgetItem * item=new QListWidgetItem(QString("%2: %1 ").arg(getMeshs().size()).arg(str_type));
-    item->setIcon(QIcon(QPixmap::fromImage(QImage(":/img/icons/shape_icosahedron.gif"))));
+
+    QListWidgetItem * item=new QListWidgetItem(name);
+
+    if(dynamic_cast<Cloud3D*>(base3D)!=nullptr)
+    {
+        item->setIcon(QIcon(QPixmap::fromImage(QImage(":/img/icons/points_cloud.png"))));
+    }
+    else //Todo differents icon here
+    {
+        item->setIcon(QIcon(QPixmap::fromImage(QImage(":/img/icons/shape_icosahedron.gif"))));
+    }
+
     customContainer->getSelectionView()->addItem(item);
 }
 
-void View3D::addObj(Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor color)
+void View3D::addObject(Qt3DRender::QMesh* mesh_object,Object * object, QPosAtt posatt,float scale,QColor color)
 {
-    Object3D* obj=new Object3D(rootEntity,m_obj,posatt,scale,color);
+    Object3D* object3D=new Object3D(rootEntity,mesh_object,object,posatt,scale,color);
 
-    referenceObjectEntity(obj,"Mesh");
+    referenceObjectEntity(object3D,"Mesh");
 
     Qt3DRender::QCullFace* culling = new Qt3DRender::QCullFace();
     culling->setMode(Qt3DRender::QCullFace::NoCulling);
-    auto effect = obj->material->effect();
+    auto effect = object3D->material->effect();
     for (auto t : effect->techniques())
     {
         for (auto rp : t->renderPasses())
@@ -929,11 +928,11 @@ void View3D::addObj(Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor 
 
     Qt3DCore::QTransform tR;
     tR.setRotation(toQQuaternion(posatt.Q));
-    obj->tR=tR.matrix();
+    object3D->tR=tR.matrix();
 
     Qt3DCore::QTransform tT;
     tT.setTranslation(toQVector3D(posatt.P));
-    obj->tT=tT.matrix();
+    object3D->tT=tT.matrix();
 
     slot_ScaleChanged();
 }
@@ -948,6 +947,8 @@ void View3D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     QMap<QString,QAction*> shortcuts_links;
     shortcuts_links.insert(QString("Graph-Delete"),actRemoveSelected);
     shortcuts_links.insert(QString("Graph-Rescale"),actRescale);
+    shortcuts_links.insert(QString("Graph-RescaleSelected"),actRescaleSelected);
+    shortcuts_links.insert(QString("Graph-Fullscreen"),actFullscreen);
 
     QMapIterator<QString, QKeySequence> i(shortcuts_map);
     while (i.hasNext())
@@ -961,7 +962,7 @@ void View3D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     }
 }
 
-void View3D::updateLabels()
+void View3D::slot_updateLabels()
 {
     double s=1.1;
 
@@ -987,45 +988,45 @@ void View3D::updateLabels()
     objArrowZ->setPosAtt(QPosAtt(Pz,Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,0,1),Eigen::Vector3d(0,-1,0))));
 }
 
-void View3D::updateGridAndLabels()
+void View3D::slot_updateGridAndLabels()
 {
-    if (camera_params->getBeta()>0 && xy_reversed==false)
+    if (cameraParams->getBeta()>0 && xy_reversed==false)
     {
         xy_reversed=true;
         grid3D->buffer->setData(grid3D->getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
-        updateLabels();
+        slot_updateLabels();
     }
-    else if (camera_params->getBeta()<0 && xy_reversed==true)
+    else if (cameraParams->getBeta()<0 && xy_reversed==true)
     {
         xy_reversed=false;
         grid3D->buffer->setData(grid3D->getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
-        updateLabels();
+        slot_updateLabels();
     }
 
-    if ( cos(camera_params->getAlpha())>0 && yz_reversed==false)
+    if ( cos(cameraParams->getAlpha())>0 && yz_reversed==false)
     {
         yz_reversed=true;
         grid3D->buffer->setData(grid3D->getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
-        updateLabels();
+        slot_updateLabels();
     }
-    else if ( cos(camera_params->getAlpha())<0 && yz_reversed==true)
+    else if ( cos(cameraParams->getAlpha())<0 && yz_reversed==true)
     {
         yz_reversed=false;
         grid3D->buffer->setData(grid3D->getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
-        updateLabels();
+        slot_updateLabels();
     }
 
-    if ( sin(camera_params->getAlpha())>0 && xz_reversed==false)
+    if ( sin(cameraParams->getAlpha())>0 && xz_reversed==false)
     {
         xz_reversed=true;
         grid3D->buffer->setData(grid3D->getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
-        updateLabels();
+        slot_updateLabels();
     }
-    else if ( sin(camera_params->getAlpha())<0 && xz_reversed==true)
+    else if ( sin(cameraParams->getAlpha())<0 && xz_reversed==true)
     {
         xz_reversed=false;
         grid3D->buffer->setData(grid3D->getGridBuffer(xz_reversed,xy_reversed,yz_reversed,10));
-        updateLabels();
+        slot_updateLabels();
     }
 }
 
@@ -1036,12 +1037,28 @@ void View3D::mouseMoveEvent(QMouseEvent* event)
         float dx=xp-event->x();
         float dy=yp-event->y();
 
-        camera_params->move(dx,dy);
+        cameraParams->move(dx,dy);
 
-        updateGridAndLabels();
+        slot_updateGridAndLabels();
 
         xp=event->x();
         yp=event->y();
+    }
+}
+
+bool isEquiv(const QKeyEvent* event, const QKeySequence& seq)
+{
+    if (seq.count() != 1)
+        return false;
+    return seq[0] == (event->key() | event->modifiers());
+}
+
+void View3D::keyPressEvent(QKeyEvent * event)
+{
+    QList<QAction*> actions=customContainer->actions();
+    for(auto act:actions)
+    {
+        if (isEquiv(event,act->shortcut())) {act->trigger();}
     }
 }
 
@@ -1129,8 +1146,8 @@ void View3D::slot_addMesh()
 
     for(int i=0;i<filenames.size();i++)
     {
-        Object obj(filenames[i],QPosAtt());
-        BoundingBox bb=obj.getBox();
+        Object * obj=new Object(filenames[i],QPosAtt());
+        BoundingBox bb=obj->getBox();
 
         QCPRange rangex=customContainer->getXAxis()->range();
         QCPRange rangey=customContainer->getYAxis()->range();
@@ -1156,7 +1173,7 @@ void View3D::slot_addMesh()
 
         auto* m_obj = new Qt3DRender::QMesh();
         m_obj->setSource(QUrl(QString("file:///")+filenames[i]));
-        addObj(m_obj,QPosAtt(),1.0,QColor(64,64,64));
+        addObject(m_obj,obj,QPosAtt(),1.0,QColor(64,64,64));
     }
 
 }
@@ -1238,10 +1255,10 @@ void View3D::slot_createRotegrity()
     {
 
         QFileInfo info(filename);
-        Object obj(filename,QPosAtt());
+        Object * objet=new Object(filename,QPosAtt());
         QString filename=info.path()+"/"+info.baseName()+"_rotegrity.obj";
 
-        obj.rotegrity(sb_angle->value(),
+        objet->rotegrity(sb_angle->value(),
                       sb_subdivisions->value(),
                       sb_strech->value(),
                       sb_radius_int->value(),
@@ -1252,15 +1269,15 @@ void View3D::slot_createRotegrity()
                       filename,
                       true);
 
-        BoundingBox bb=obj.getBox();
+        BoundingBox bb=objet->getBox();
         customContainer->getXAxis()->setRange(QCPRange(bb.Pmin[0],bb.Pmax[0]));
         customContainer->getYAxis()->setRange(QCPRange(bb.Pmin[1],bb.Pmax[1]));
         customContainer->getZAxis()->setRange(QCPRange(bb.Pmin[2],bb.Pmax[2]));
 
-        auto* m_obj = new Qt3DRender::QMesh();
-        m_obj->setSource(QUrl(QString("file:///")+filename));
+        auto* mesh_object = new Qt3DRender::QMesh();
+        mesh_object->setSource(QUrl(QString("file:///")+filename));
 
-        addObj(m_obj,QPosAtt(),1.0,QColor(64,64,64));
+        addObject(mesh_object,objet,QPosAtt(),1.0,QColor(64,64,64));
 
         customContainer->adjustSize();
         customContainer->replot();
@@ -1304,7 +1321,7 @@ void View3D::extendScalarRange(QCPRange itemRangeS,int i)
 
 void View3D::slot_resetView()
 {
-    camera_params->reset();
+    cameraParams->reset();
 
     std::vector<Cloud3D*> cloudsList=getClouds();
 
@@ -1319,14 +1336,14 @@ void View3D::slot_resetView()
     customContainer->getColorScalePlot()->replot();
     customContainer->replot();
 
-    updateGridAndLabels();
+    slot_updateGridAndLabels();
 }
 
 
 
 void View3D::slot_resetViewOnSelected()
 {
-    camera_params->reset();
+    cameraParams->reset();
 
     std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
@@ -1340,14 +1357,14 @@ void View3D::slot_resetViewOnSelected()
     customContainer->getColorScalePlot()->rescaleAxes();
     customContainer->replot();
 
-    updateGridAndLabels();
+    slot_updateGridAndLabels();
 }
 
 void View3D::mouseDoubleClickEvent(QMouseEvent* event)
 {
     if (event->buttons()==Qt::LeftButton)
     {
-        slot_resetView();
+
     }
 }
 
@@ -1400,7 +1417,7 @@ void View3D::mousePressEvent(QMouseEvent* event)
     if (event->button() == Qt::RightButton)
     {
         configurePopup();
-        popup_menu->exec(mapToGlobal(event->pos()));
+        popupMenu->exec(mapToGlobal(event->pos()));
     }
 }
 void View3D::wheelEvent(QWheelEvent* event)
@@ -1408,16 +1425,16 @@ void View3D::wheelEvent(QWheelEvent* event)
     float dw=event->delta();
     if (dw>0)
     {
-        if (camera_params->getRadius()<10*camera_params->getBoundingRadius())
+        if (cameraParams->getRadius()<10*cameraParams->getBoundingRadius())
         {
-            camera_params->setRadius(camera_params->getRadius()*dw*0.01f);
+            cameraParams->setRadius(cameraParams->getRadius()*dw*0.01f);
         }
     }
     else
     {
-        if (camera_params->getRadius()>camera_params->getBoundingRadius())
+        if (cameraParams->getRadius()>cameraParams->getBoundingRadius())
         {
-            camera_params->setRadius(camera_params->getRadius()/(std::abs(dw)*0.01f));
+            cameraParams->setRadius(cameraParams->getRadius()/(std::abs(dw)*0.01f));
         }
     }
 }

@@ -1,9 +1,7 @@
 #include "1d_viewer.h"
 
-Viewer1D::Viewer1D(Curve2D* sharedBuf,const QMap<QString,QKeySequence>& shortcuts_map,QWidget* parent):QCustomPlot(parent)
+Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* parent):QCustomPlot(parent)
 {
-    this->sharedBuf=sharedBuf;
-
     colors.append(QColor(255,0,0));
     colors.append(QColor(0,128,0));
     colors.append(QColor(0,0,255));
@@ -359,25 +357,11 @@ void Viewer1D::createPopup()
     this->addAction(actAutoColor5);
     this->addAction(actAutoColorClear);
 
-    actAutoColor1->setShortcutVisibleInContextMenu(true);
-    actAutoColor2->setShortcutVisibleInContextMenu(true);
-    actAutoColor3->setShortcutVisibleInContextMenu(true);
-    actAutoColor4->setShortcutVisibleInContextMenu(true);
-    actAutoColor5->setShortcutVisibleInContextMenu(true);
-    actAutoColorClear->setShortcutVisibleInContextMenu(true);
-
-    actCopy->setShortcutVisibleInContextMenu(true);
-    actPaste->setShortcutVisibleInContextMenu(true);
-    actSave->setShortcutVisibleInContextMenu(true);
-    actRescale->setShortcutVisibleInContextMenu(true);
-    actDelete->setShortcutVisibleInContextMenu(true);
-    actClearGadgets->setShortcutVisibleInContextMenu(true);
-    actGadgetArrow->setShortcutVisibleInContextMenu(true);
-    actGadgetText->setShortcutVisibleInContextMenu(true);
-    actGadgetMark->setShortcutVisibleInContextMenu(true);
-    actLegendShowHide->setShortcutVisibleInContextMenu(true);
-    actLegendTopBottom->setShortcutVisibleInContextMenu(true);
-    actLegendLeftRight->setShortcutVisibleInContextMenu(true);
+    auto customContainerActions=this->actions();
+    for(auto act:customContainerActions)
+    {
+        act->setShortcutVisibleInContextMenu(true);
+    }
 
     actLegendShowHide->setCheckable(true);
     actLegendShowHide->setChecked(true);
@@ -1724,20 +1708,13 @@ void Viewer1D::slot_copy()
 {
     QList<Curve2D> list=getSelectedCurves();
 
-    if (list.size()>0 && sharedBuf!=nullptr)
+    if (list.size()>0)
     {
-        //*sharedBuf=list[0];
-        //sharedBuf
-
-
         QMimeData * mimeData=new QMimeData();
         QByteArray rawData=list[0].toByteArray();
         mimeData->setData("Curve",rawData);
         QApplication::clipboard()->setMimeData(mimeData);
-
     }
-
-
 }
 
 void Viewer1D::slot_paste()

@@ -60,7 +60,7 @@ public:
         CURVE=1
     };
 
-    enum FFTMode
+    enum FFTWindowsType
     {
         RECTANGLE,
         BLACKMAN,
@@ -128,7 +128,7 @@ public:
 
     //misc
     void knnMeanDistance(int knn);
-    Curve2D getFFT(FFTMode mode, double fe, bool normalize_flag);
+    static Eigen::VectorXcd getFFT(Eigen::VectorXcd s_in, FFTWindowsType mode, bool normalize_flag, bool halfspectrum, bool inverse);
     double getRms();
     double guessMainFrequency();
     uint getMaxIndex();

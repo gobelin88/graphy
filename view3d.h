@@ -9,6 +9,7 @@
 #include <iostream>
 #include <QScreen>
 #include <Qt3DRender/QRenderCaptureReply>
+#include <QPickEvent>
 #include <obj.h>
 
 #include <QMenu>
@@ -81,8 +82,7 @@ public:
     View3D(const QMap<QString, QKeySequence>& shortcuts_map);
 
     void addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode);
-
-    void addObj(Qt3DRender::QMesh* m_obj, QPosAtt posatt,float scale,QColor color);
+    void addObject(Qt3DRender::QMesh* mesh_object, Object *object, QPosAtt posatt, float scale, QColor color);
     void addSphere(Sphere * sphere,QColor color);
     void addPlan(Plan* plan, float radius, QColor color);
 
@@ -103,7 +103,7 @@ public slots:
     void slot_ColorScaleChanged(const QCPRange& range);
     void slot_setCustomColor(QColor color);
     void slot_useCustomColor(int value);
-    void updateGridAndLabels();
+    void slot_updateGridAndLabels();
     void slot_projectCustomMesh();
     void slot_projectPlan();
     void slot_projectSphere();
@@ -117,6 +117,7 @@ public slots:
     void slot_showHideAxis(int value);
     void slot_showHideLabels(int value);
     void slot_removeSelected();
+    void slot_updateLabels();
 
 signals:
     void sig_newColumn(QString varName,Eigen::VectorXd data);
@@ -127,39 +128,30 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent* event);
     void mousePressEvent(QMouseEvent* event);
     void wheelEvent(QWheelEvent* event);
+    void keyPressEvent(QKeyEvent * event);
 
 private:
+    //Ranges
+    void extendScalarRange(QCPRange itemRangeS,int i);
+    void extendRanges(QCPRange itemRangeX,QCPRange itemRangeY,QCPRange itemRangeZ,int i);
+
+    //3D
+    CameraParams* cameraParams;
+    CustomViewContainer* customContainer;
+    void init3D();
+
+    //Root
+    Qt3DCore::QEntity* rootEntity;
+
+    //3D data stuff Cloud/Mesh/obj
+    std::vector<Base3D*> objects3D;
+    Grid3D* grid3D;
+    void referenceObjectEntity(Base3D *base3D, QString name);
     std::vector<Cloud3D*> getClouds();
     std::vector<Cloud3D*> getSelectedClouds();
     std::vector<Base3D*> getMeshs();
     std::vector<Base3D*> getSelectedObjects();
 
-    void extendScalarRange(QCPRange itemRangeS,int i);
-    void extendRanges(QCPRange itemRangeX,QCPRange itemRangeY,QCPRange itemRangeZ,int i);
-    void updateLabels();
-    void referenceObjectEntity(Base3D *base3D, QString str_type);
-
-    CameraParams* camera_params;
-    CustomViewContainer* customContainer;
-
-    //Misc
-    QString current_filename;
-    float xp,yp;
-
-    //3D
-    void init3D();
-
-    Qt3DCore::QEntity* rootEntity;
-
-    //std::vector<QMatrix4x4> baseR;
-    //std::vector<QMatrix4x4> baseT;
-
-
-    //Grid
-    Grid3D* grid3D;
-
-    //3D data stuff Cloud/Mesh/obj etc...
-    std::vector<Base3D*> objects3D;
 
     //Labels Tiks and Arrows
     Label3D* labelx;
@@ -172,34 +164,31 @@ private:
     //Menu
     void configurePopup();
     void createPopup();
-    QMenu* popup_menu;
-    QAction* actSave;
-    QAction* actSaveRevolution;
+    QMenu* popupMenu;
     QMenu* menuParameters;
     QMenu* menuFit;
+    QMenu * menuProject;
+    QMenu * menuSubSample;
+    QMenu * menuView;
+    QMenu * menuData;
+    QMenu * menuMesh;
+
+    QAction* actSave;
+    QAction* actSaveRevolution;
     QAction* actFitSphere;
     QAction* actFitPlan;
     QAction* actFitMesh;
-
-    QMenu * menuProject;
     QAction * actProjectSphere;
     QAction * actProjectPlan;
     QAction * actProjectMesh;
-
-    QMenu * menuSubSample;
     QAction * actRandomSubSample;
-
-    QMenu * menuView;
     QAction * actRescale;
     QAction * actRescaleSelected;
     QAction * actRemoveSelected;
-
-    QMenu * menuData;
     QAction * actExport;
-
-    QMenu * menuMesh;
     QAction * actMeshLoad;
     QAction * actMeshCreateRotegrity;
+    QAction * actFullscreen;
 
     QComboBox* c_gradient;
     QDoubleSpinBox* sb_size;
@@ -207,13 +196,15 @@ private:
     QCheckBox * cb_show_hide_grid;
     QCheckBox * cb_show_hide_axis;
     QCheckBox * cb_show_hide_labels;
-
     QCheckBox * cb_use_custom_color;
     Color_Wheel * cw_custom_color;
 
-    //
+    //Misc
+    QString current_filename;
+    float xp,yp;
     bool xy_reversed;
     bool yz_reversed;
     bool xz_reversed;
+
 };
 #endif // VIEW3D_H

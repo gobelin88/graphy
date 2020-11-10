@@ -16,7 +16,7 @@ class Viewer1D:public QCustomPlot
 {
     Q_OBJECT
 public:
-    Viewer1D(Curve2D* sharedBuf, const QMap<QString, QKeySequence>& shortcuts_map, QWidget* parent);
+    Viewer1D(const QMap<QString, QKeySequence>& shortcuts_map, QWidget* parent);
     ~Viewer1D();
 
 
@@ -114,7 +114,6 @@ protected:
 
     QString current_filename;
     unsigned int getId();
-    Curve2D* sharedBuf;
 
     //status
     Qt::AlignmentFlag left_right;

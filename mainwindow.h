@@ -47,7 +47,7 @@ public slots:
     void slot_plot_field_2D();
     void slot_plot_map_2D();
     void slot_plot_cloud_3D();
-    void slot_plot_gain_phase();
+    void slot_plot_bode();
 
     //data
     void slot_select();
@@ -83,9 +83,6 @@ private:
     bool isModified;
     QString current_filename;
     void setCurrentFilename(QString filename);
-
-    //Plots
-    Curve2D shared;
 
     //Shortcuts
     QMap<QString,QKeySequence> shortcuts;

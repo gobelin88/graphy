@@ -1,5 +1,5 @@
-#ifndef IMAGE_VIEWER_H
-#define IMAGE_VIEWER_H
+#ifndef VIEWER2D_H
+#define VIEWER2D_H
 
 #include <QWidget>
 #include <QPainter>

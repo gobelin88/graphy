@@ -45,21 +45,22 @@ void ViewerBode::createFitImpedanceMenu()
     connect(actFitRLCapCb,SIGNAL(triggered()),this,SLOT(slot_fit_rlcapcb()));
 }
 
-void ViewerBode::slot_add_data(const Curve2DModulePhase& curve)
+void ViewerBode::slot_add_data(const Curve2DComplex& curve)
 {
-    modules_viewer->slot_add_data(curve.getModules());
-    phases_viewer->slot_add_data(curve.getPhases());
+    std::cout<<"slot_add_data"<<std::endl;
+    modules_viewer->slot_add_data(curve.getModulesCurve());
+    phases_viewer->slot_add_data(curve.getArgumentsCurve());
     curves.push_back(curve);
 }
 
-QVector<Curve2DModulePhase> ViewerBode::getCurves()
+QVector<Curve2DComplex> ViewerBode::getCurves()
 {
     return curves;
 }
 
 void ViewerBode::slot_fit_rl()
 {
-    QVector<Curve2DModulePhase> curves=getCurves();
+    QVector<Curve2DComplex> curves=getCurves();
     QDoubleSpinBox* R,*L;
     QCheckBox* fixedR,*fixedL;
 
@@ -75,22 +76,22 @@ void ViewerBode::slot_fit_rl()
 
         for (int i=0; i<curves.size(); i++)
         {
-            curves[i].fit(&rl_cplx);
-            Eigen::VectorXd F=curves[i].getModules().getLinX(1000);
+            curves[i].fit(&rl_cplx,Curve2DComplex::POLAR);
+            Eigen::VectorXd F=curves[i].getModulesCurve().getLinX(1000);
             Eigen::VectorXd G,P;
             rl_cplx.at(F,G,P);
 
             QString legend=QString("Fit R=%1Ohm L=%2mH").arg(rl_cplx.getR()).arg(rl_cplx.getL());
 
-            slot_add_data(Curve2DModulePhase(Curve2D(F,G,legend,Curve2D::GRAPH),
-                                             Curve2D(F,P,legend,Curve2D::GRAPH)));
+
+            slot_add_data(Curve2DComplex(F,G,P,Curve2DComplex::POLAR,legend));
         }
     }
 }
 
 void ViewerBode::slot_fit_rlc()
 {
-    QVector<Curve2DModulePhase> curves=getCurves();
+    QVector<Curve2DComplex> curves=getCurves();
     QDoubleSpinBox* R,*L,*C;
     QCheckBox* fixedR,*fixedL,*fixedC;
 
@@ -106,22 +107,21 @@ void ViewerBode::slot_fit_rlc()
 
         for (int i=0; i<curves.size(); i++)
         {
-            curves[i].fit(&rlc_cplx);
-            Eigen::VectorXd F=curves[i].getModules().getLinX(1000);
+            curves[i].fit(&rlc_cplx,Curve2DComplex::POLAR);
+            Eigen::VectorXd F=curves[i].getModulesCurve().getLinX(1000);
             Eigen::VectorXd G,P;
             rlc_cplx.at(F,G,P);
 
             QString legend=QString("Fit R=%1Ohm L=%2mH C=%3nF Fc=%4Hz").arg(rlc_cplx.getR()).arg(rlc_cplx.getL()).arg(rlc_cplx.getC()).arg(rlc_cplx.getFc());
 
-            slot_add_data(Curve2DModulePhase(Curve2D(F,G,legend,Curve2D::GRAPH),
-                                             Curve2D(F,P,legend,Curve2D::GRAPH)));
+            slot_add_data(Curve2DComplex(F,G,P,Curve2DComplex::POLAR,legend));
         }
     }
 }
 
 void ViewerBode::slot_fit_rlpc()
 {
-    QVector<Curve2DModulePhase> curves=getCurves();
+    QVector<Curve2DComplex> curves=getCurves();
     QDoubleSpinBox* R,*L,*C;
     QCheckBox* fixedR,*fixedL,*fixedC;
     QDialog* dialog=RLpC_cplx::createDialog(R,L,C,fixedR,fixedL,fixedC);
@@ -137,23 +137,21 @@ void ViewerBode::slot_fit_rlpc()
 
         for (int i=0; i<curves.size(); i++)
         {
-            curves[i].fit(&rlpc_cplx);
-            Eigen::VectorXd F=curves[i].getModules().getLinX(1000);
+            curves[i].fit(&rlpc_cplx,Curve2DComplex::POLAR);
+            Eigen::VectorXd F=curves[i].getModulesCurve().getLinX(1000);
             Eigen::VectorXd G,P;
             rlpc_cplx.at(F,G,P);
 
             QString legend=QString("Fit R=%1Ohm L=%2mH C=%3nF Fc=%4Hz").arg(rlpc_cplx.getR()).arg(rlpc_cplx.getL()).arg(rlpc_cplx.getC()).arg(rlpc_cplx.getFc());
 
-            slot_add_data(Curve2DModulePhase(Curve2D(F,G,legend,Curve2D::GRAPH),
-                                             Curve2D(F,P,legend,Curve2D::GRAPH)));
-
+            slot_add_data(Curve2DComplex(F,G,P,Curve2DComplex::POLAR,legend));
         }
     }
 }
 
 void ViewerBode::slot_fit_ralpcprb()
 {
-    QVector<Curve2DModulePhase> curves=getCurves();
+    QVector<Curve2DComplex> curves=getCurves();
     QDoubleSpinBox* Ra,*L,*C,*Rb;
     QCheckBox* fixedRa,*fixedL,*fixedC,*fixedRb;
     QDialog* dialog=RaLpCpRb_cplx::createDialog(Ra,L,C,Rb,fixedRa,fixedL,fixedC,fixedRb);
@@ -170,22 +168,21 @@ void ViewerBode::slot_fit_ralpcprb()
 
         for (int i=0; i<curves.size(); i++)
         {
-            curves[i].fit(&rlpc_cplx);
+            curves[i].fit(&rlpc_cplx,Curve2DComplex::POLAR);
 
-            Eigen::VectorXd F=curves[i].getModules().getLinX(1000),G,P;
+            Eigen::VectorXd F=curves[i].getModulesCurve().getLinX(1000),G,P;
             rlpc_cplx.at(F,G,P);
 
             QString legend=QString("Fit R=%1Ohm L=%2mH C=%3nF Rb=%4kOhm").arg(rlpc_cplx.getRa()).arg(rlpc_cplx.getL()).arg(rlpc_cplx.getC()).arg(rlpc_cplx.getRb());
 
-            slot_add_data(Curve2DModulePhase(Curve2D(F,G,legend,Curve2D::GRAPH),
-                                             Curve2D(F,P,legend,Curve2D::GRAPH)));
+            slot_add_data(Curve2DComplex(F,G,P,Curve2DComplex::POLAR,legend));
         }
     }
 }
 
 void ViewerBode::slot_fit_rlcapcb()
 {
-    QVector<Curve2DModulePhase> curves=getCurves();
+    QVector<Curve2DComplex> curves=getCurves();
     QDoubleSpinBox* R,*L,*Ca,*Cb;
     QCheckBox* fixedR,*fixedL,*fixedCa,*fixedCb;
     QDialog* dialog=RLpCaCb_cplx::createDialog(R,L,Ca,Cb,fixedR,fixedL,fixedCa,fixedCb);
@@ -202,16 +199,15 @@ void ViewerBode::slot_fit_rlcapcb()
 
         for (int i=0; i<curves.size(); i++)
         {
-            curves[i].fit(&rlpcacb_cplx);
+            curves[i].fit(&rlpcacb_cplx,Curve2DComplex::POLAR);
 
             Eigen::VectorXd G,P;
-            Eigen::VectorXd F=curves[i].getModules().getLinX(1000);
+            Eigen::VectorXd F=curves[i].getModulesCurve().getLinX(1000);
             rlpcacb_cplx.at(F,G,P);
 
             QString legend=QString("Fit R=%1Ohm L=%2mH Ca=%3nF Cb=%4nF").arg(rlpcacb_cplx.getR()).arg(rlpcacb_cplx.getL()).arg(rlpcacb_cplx.getCa()).arg(rlpcacb_cplx.getCb());
 
-            slot_add_data(Curve2DModulePhase(Curve2D(F,G,legend,Curve2D::GRAPH),
-                                             Curve2D(F,P,legend,Curve2D::GRAPH)));
+            slot_add_data(Curve2DComplex(F,G,P,Curve2DComplex::POLAR,legend));
         }
     }
 }

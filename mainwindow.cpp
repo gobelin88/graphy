@@ -503,17 +503,17 @@ void MainWindow::slot_plot_fft()
         {
             ViewerBode* viewerBode=new ViewerBode(shortcuts,this);
 
-            QString nameModule=table->getLogicalColName(id_list[0  ].column());
-            QString namePhase =(id_list.size()==2)?table->getLogicalColName(id_list[1  ].column()):QString("");
-            QString name=nameModule+QString("_")+namePhase;
+            QString nameReal=table->getLogicalColName(id_list[0  ].column());
+            QString nameImag =(id_list.size()==2)?table->getLogicalColName(id_list[1  ].column()):QString("");
+            QString name=nameReal+QString("_")+nameImag;
 
-            Eigen::VectorXd dataIn_module=table->getLogicalColDataDouble(id_list[0  ].column());
-            Eigen::VectorXd dataIn_phase =(id_list.size()==2)?table->getLogicalColDataDouble(id_list[1  ].column()):Eigen::VectorXd::Zero(dataIn_module.size());
+            Eigen::VectorXd dataIn_Real=table->getLogicalColDataDouble(id_list[0  ].column());
+            Eigen::VectorXd dataIn_Imag =(id_list.size()==2)?table->getLogicalColDataDouble(id_list[1  ].column()):Eigen::VectorXd::Zero(dataIn_Real.size());
 
-            Eigen::VectorXcd dataIn(dataIn_module.size());
-            for(int i=0;i<dataIn_module.size();i++)
+            Eigen::VectorXcd dataIn(dataIn_Real.size());
+            for(int i=0;i<dataIn_Real.size();i++)
             {
-                dataIn[i]=std::polar(dataIn_module[i],dataIn_phase[i]*M_PI/180.0);
+                dataIn[i]=std::complex<double>(dataIn_Real[i],dataIn_Imag[i]);
             }
 
             Eigen::VectorXcd dataOut=Curve2D::getFFT(dataIn,
@@ -522,22 +522,9 @@ void MainWindow::slot_plot_fft()
                                                      cb_halfspectrum->isChecked(),
                                                      cb_inverse->isChecked());
 
-            Eigen::VectorXd dataOut_module(dataOut.size());
-            Eigen::VectorXd dataOut_phase (dataOut.size());
-            for(int i=0;i<dataOut.size();i++)
-            {
-                dataOut_module[i]=std::abs(dataOut[i]);
-                dataOut_phase[i] =std::arg(dataOut[i])*180/M_PI;
-            }
+            Curve2DComplex curveCplx(dataOut,QString("FFT %1").arg(name));
 
-            table->slot_newColumn(QString("Modules_%1").arg(name),dataOut_module);
-            table->slot_newColumn(QString("Phases_%1").arg(name),dataOut_phase);
-
-            Curve2D curve_module(dataOut_module,QString("Modules_%1").arg(name),Curve2D::GRAPH);
-            Curve2D curve_phase (dataOut_phase ,QString("Phases_%1").arg(name),Curve2D::GRAPH);
-            Curve2DModulePhase curveModulePhase(curve_module,curve_phase);
-
-            viewerBode->slot_add_data(curveModulePhase);
+            viewerBode->slot_add_data(curveCplx);
             mdiArea->addSubWindow(viewerBode,Qt::WindowStaysOnTopHint);
             viewerBode->show();
         }
@@ -633,10 +620,9 @@ void MainWindow::slot_plot_bode()
 
             if (data_f.size()>0 && data_module.size()>0 && data_phase.size()>0)
             {
-                Curve2D curve_module(data_f,data_module,QString("%2=f(%1)").arg(table->getLogicalColName(id_list[k  ].column())).arg(table->getLogicalColName(id_list[k+1].column())),Curve2D::GRAPH);
-                Curve2D curve_phase (data_f,data_phase,QString("%2=f(%1)").arg(table->getLogicalColName(id_list[k  ].column())).arg(table->getLogicalColName(id_list[k+2].column())),Curve2D::GRAPH);
+                QString name=QString("%2=f(%1)").arg(table->getLogicalColName(id_list[k  ].column())).arg(table->getLogicalColName(id_list[k+1].column()));
 
-                viewer_bode->slot_add_data(Curve2DModulePhase(curve_module,curve_phase));
+                viewer_bode->slot_add_data(Curve2DComplex(data_f,data_module,data_phase,Curve2DComplex::POLAR,name));
             }
         }
 

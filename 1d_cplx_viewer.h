@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "box.h"
-#include "curve2d_gainphase.h"
+#include "curve2dComplex.h"
 
 #ifndef VIEWER1DCPLX_H
 #define VIEWER1DCPLX_H

@@ -8,8 +8,8 @@
 
 #include "1d_viewer.h"
 #include "2d_viewer.h"
+#include "3d_viewer.h"
 #include "bode_viewer.h"
-#include "view3d.h"
 #include "qgradientcombobox.h"
 #include "mytablemodel.h"
 #include "mytableview.h"

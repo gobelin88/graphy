@@ -31,7 +31,6 @@ CONFIG += c++11
 
 SOURCES += \
         1d_viewer.cpp \
-        1d_cplx_viewer.cpp \
         2d_viewer.cpp \
         3d_viewer.cpp \
         Cloud.cpp \
@@ -44,7 +43,7 @@ SOURCES += \
         cloud3d.cpp \
         color_wheel.cpp \
         curve2d.cpp \
-        curve2d_gainphase.cpp \
+        curve2dComplex.cpp \
         customviewcontainer.cpp \
         grid3d.cpp \
         label3d.cpp \
@@ -61,12 +60,10 @@ SOURCES += \
         register.cpp \
         tabledata.cpp \
         value.cpp \
-        view3d.cpp \
         qPosAtt.cpp
 
 HEADERS += \
         1d_viewer.h \
-        1d_cplx_viewer.h \
         2d_viewer.h \
         3d_viewer.h \
         Base3D.h \
@@ -83,7 +80,7 @@ HEADERS += \
         cloud3d.h \
         color_wheel.hpp \
         curve2d.h \
-        curve2d_gainphase.h \
+        curve2dComplex.h \
         customviewcontainer.h \
         grid3d.h \
         label3d.h \
@@ -99,7 +96,6 @@ HEADERS += \
         register.h \
         tabledata.h \
         value.h \
-        view3d.h \
         exprtk\exprtk.hpp \
         qPosAtt.h
 

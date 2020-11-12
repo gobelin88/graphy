@@ -1533,7 +1533,7 @@ void Viewer1D::slot_histogram(Eigen::VectorXd data,QString name,int nbbins)
 
     for (int k=0; k<data.size(); k++)
     {
-        int index=static_cast<int>(std::round((data[k]-min)/delta));
+        int index=static_cast<int>(std::floor((data[k]-min)/delta));
 
         if (index>=0 && index<data.size())
         {

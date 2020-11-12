@@ -170,7 +170,6 @@ void FIR::getLeastSquareCoef(double fp_fe,double fs_fe,unsigned int N,double K)
     }
 
     hist.resize(coefs.size(),0.0);
-    normalizeCoefs();
     reset();
 }
 ///////////////////:
@@ -183,7 +182,6 @@ void FIR::getBlackmanNuttallCoef(unsigned int N)
         coefs[i]=0.3635819-0.4891775*cos( (2.0*M_PI*i)/N)+0.1365995*cos((4.0*M_PI*i)/N)-0.0106411*cos((6.0*M_PI*i)/N);
     }
 
-    normalizeCoefs();
     reset();
 }
 
@@ -196,7 +194,6 @@ void FIR::getBlackmanCoef(unsigned int N)
         coefs[i]=(0.42-0.5*cos( (2.0*M_PI*i)/N)+0.08*cos((4.0*M_PI*i)/N));
     }
 
-    normalizeCoefs();
     reset();
 }
 
@@ -209,7 +206,6 @@ void FIR::getFlatTopCoef(unsigned int N)
         coefs[i]=0.21557895-0.41663158*cos( (2.0*M_PI*i)/N)+0.277263158*cos((4.0*M_PI*i)/N)-0.083578947*cos((6.0*M_PI*i)/N)+0.006947368*cos((8.0*M_PI*i)/N);
     }
 
-    normalizeCoefs();
     reset();
 }
 
@@ -222,7 +218,6 @@ void FIR::getHannCoef(unsigned int N)
         coefs[i]=0.5*(1.0-cos((2.0*M_PI*i)/N));
     }
 
-    normalizeCoefs();
     reset();
 }
 
@@ -230,7 +225,6 @@ void FIR::getRectCoef(unsigned int N)
 {
     coefs.resize(N,1.0);
 
-    normalizeCoefs();
     reset();
 }
 

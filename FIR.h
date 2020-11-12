@@ -148,13 +148,16 @@ public:
      */
     void mul(double gain);
 
+    /**
+     * @brief normalizeCoefs
+     */
+    void normalizeCoefs();
 protected:
     std::vector<double> coefs;
     std::deque<double> hist;
     double fact(double n);
     double bessel_i(int N,int n,double y);
     double sinc(double x);
-    void normalizeCoefs();
 };
 
 #endif // FIR_H

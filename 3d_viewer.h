@@ -75,11 +75,11 @@ private:
 @class View3D
 @brief Classe pour gestion d'affichage avec Qt3D
 */
-class View3D:public Qt3DExtras::Qt3DWindow
+class Viewer3D:public Qt3DExtras::Qt3DWindow
 {
     Q_OBJECT
 public:
-    View3D(const QMap<QString, QKeySequence>& shortcuts_map);
+    Viewer3D(const QMap<QString, QKeySequence>& shortcuts_map);
 
     void addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode);
     void addObject(Qt3DRender::QMesh* mesh_object, Object *object, QPosAtt posatt, float scale, QColor color);

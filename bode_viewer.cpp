@@ -8,9 +8,22 @@ ViewerBode::ViewerBode(const QMap<QString,QKeySequence>& shortcuts_map,
     tab=new QTabWidget();
     modules_viewer=new Viewer1D(shortcuts_map,parent);
     phases_viewer=new Viewer1D(shortcuts_map,parent);
+    real_viewer=new Viewer1D(shortcuts_map,parent);
+    imag_viewer=new Viewer1D(shortcuts_map,parent);
 
-    tab->addTab(modules_viewer,"Modules");
-    tab->addTab(phases_viewer,"Phases");
+    connect(modules_viewer,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)));
+    connect(modules_viewer,SIGNAL(sig_displayResults(QString)),this,SIGNAL(sig_displayResults(QString)));
+    connect(phases_viewer,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)));
+    connect(phases_viewer,SIGNAL(sig_displayResults(QString)),this,SIGNAL(sig_displayResults(QString)));
+    connect(real_viewer,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)));
+    connect(real_viewer,SIGNAL(sig_displayResults(QString)),this,SIGNAL(sig_displayResults(QString)));
+    connect(imag_viewer,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),this,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)));
+    connect(imag_viewer,SIGNAL(sig_displayResults(QString)),this,SIGNAL(sig_displayResults(QString)));
+
+    tab->addTab(modules_viewer,"Module");
+    tab->addTab(phases_viewer,"Phase");
+    tab->addTab(real_viewer,"Real");
+    tab->addTab(imag_viewer,"Imaginary");
 
     layout->addWidget(tab,0,0);
 
@@ -47,9 +60,10 @@ void ViewerBode::createFitImpedanceMenu()
 
 void ViewerBode::slot_add_data(const Curve2DComplex& curve)
 {
-    std::cout<<"slot_add_data"<<std::endl;
     modules_viewer->slot_add_data(curve.getModulesCurve());
     phases_viewer->slot_add_data(curve.getArgumentsCurve());
+    real_viewer->slot_add_data(curve.getRealCurve());
+    imag_viewer->slot_add_data(curve.getImagCurve());
     curves.push_back(curve);
 }
 

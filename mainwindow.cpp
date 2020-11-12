@@ -7,8 +7,6 @@
 #include <QTextStream>
 #include <QMessageBox>
 
-#include "FIR.h"
-
 MainWindow::MainWindow(QWidget* parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -229,7 +227,7 @@ void MainWindow::fileModified()
     isModified=true;
 }
 
-Viewer1D* MainWindow::createViewerId()
+Viewer1D* MainWindow::createViewer1D()
 {
     Viewer1D* viewer1d=new Viewer1D(shortcuts,this);
     QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),table,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
@@ -243,13 +241,28 @@ Viewer1D* MainWindow::createViewerId()
     return viewer1d;
 }
 
+ViewerBode* MainWindow::createViewerBode()
+{
+    ViewerBode* viewerBode=new ViewerBode(shortcuts,this);
+    QObject::connect(viewerBode,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),table,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
+    QObject::connect(viewerBode,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
+
+    viewerBode->setMinimumSize(600,400);
+    viewerBode->setAttribute(Qt::WA_DeleteOnClose);
+
+    mdiArea->addSubWindow(viewerBode,Qt::WindowStaysOnTopHint);
+    viewerBode->show();
+
+    return viewerBode;
+}
+
 void MainWindow::slot_plot_y()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
     if (id_list.size()>0)
     {
-        Viewer1D* viewer1d=createViewerId();
+        Viewer1D* viewer1d=createViewer1D();
 
         for (int k=0; k<id_list.size(); k++)
         {
@@ -277,7 +290,7 @@ void MainWindow::slot_plot_graph_xy()
 
     if (id_list.size()>=2)
     {
-        Viewer1D* viewer1d=createViewerId();
+        Viewer1D* viewer1d=createViewer1D();
 
         Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[0  ].column());
         for (int k=1; k<id_list.size(); k+=1)
@@ -312,7 +325,7 @@ void MainWindow::slot_plot_curve_xy()
 
     if (id_list.size()>=2)
     {
-        Viewer1D* viewer1d=createViewerId();
+        Viewer1D* viewer1d=createViewer1D();
 
         Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[0  ].column());
         for (int k=1; k<id_list.size(); k+=2)
@@ -340,7 +353,7 @@ void MainWindow::slot_plot_cloud_2D()
 
     if (id_list.size()==3 || id_list.size()==2)
     {
-        Viewer1D* viewer1d=createViewerId();
+        Viewer1D* viewer1d=createViewer1D();
 
         Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[0].column());
         Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[1].column());
@@ -376,7 +389,7 @@ void MainWindow::slot_plot_field_2D()
 
     if (id_list.size()%4==0 && id_list.size()>0)
     {
-        Viewer1D* viewer1d=createViewerId();
+        Viewer1D* viewer1d=createViewer1D();
 
         for (int k=0; k<id_list.size(); k+=4)
         {
@@ -451,61 +464,16 @@ void MainWindow::slot_plot_fft()
 
     if (id_list.size()==1 || id_list.size()==2)//1 real signal ---- 2 complex signal (module,phase)
     {
-        QDialog* dialog=new QDialog;
-        dialog->setLocale(QLocale("C"));
-        dialog->setWindowTitle("FFT : Fast Fourier Transform parameters");
-        QGridLayout* gbox = new QGridLayout();
-
-        QComboBox* cb_mode=new QComboBox(dialog);
-        cb_mode->addItem("RECTANGLE");
-        cb_mode->addItem("BLACKMAN");
-        cb_mode->addItem("HANN");
-        cb_mode->addItem("FLAT_TOP");
-
-        QDoubleSpinBox* sb_fe=new QDoubleSpinBox(dialog);
-        sb_fe->setPrefix("Fe=");
-        sb_fe->setValue(1.0);
-        sb_fe->setRange(0.0,1e100);
-        sb_fe->setSuffix(" [Hz]");
-
-        QCheckBox* cb_normalize=new QCheckBox("Normalized");
-        cb_normalize->setToolTip("Parseval theorem don't apply if normalized");
-        cb_normalize->setChecked(true);
-
-        QCheckBox* cb_halfspectrum=new QCheckBox("Half Spectrum");
-        cb_halfspectrum->setToolTip("In case of reals entries spectrum is symetrical");
-        cb_halfspectrum->setChecked(true);
-
-        QCheckBox* cb_inverse=new QCheckBox("Inverse");
-        cb_inverse->setToolTip("Compute inverse FFT");
-        cb_inverse->setChecked(true);
-
-        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                           | QDialogButtonBox::Cancel);
-
-        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
-        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
-
-
-        gbox->addWidget(new QLabel("Windows type : "),0,0);
-        gbox->addWidget(cb_mode,0,1);
-        gbox->addWidget(new QLabel("Sample frequency : "),1,0);
-        gbox->addWidget(sb_fe,1,1);
-        gbox->addWidget(cb_normalize,2,0);
-        gbox->addWidget(cb_halfspectrum,2,1);
-        gbox->addWidget(cb_inverse,3,0);
-        gbox->addWidget(buttonBox,4,0,1,2);
-
-        dialog->setLayout(gbox);
+        FFTDialog* dialog=new FFTDialog;
 
         int result=dialog->exec();
         if (result == QDialog::Accepted)
         {
-            ViewerBode* viewerBode=new ViewerBode(shortcuts,this);
+            ViewerBode* viewerBode=createViewerBode();
 
             QString nameReal=table->getLogicalColName(id_list[0  ].column());
-            QString nameImag =(id_list.size()==2)?table->getLogicalColName(id_list[1  ].column()):QString("");
-            QString name=nameReal+QString("_")+nameImag;
+            //QString nameImag =(id_list.size()==2)?table->getLogicalColName(id_list[1  ].column()):QString("");
+            //QString name=nameReal+QString("_")+nameImag;
 
             Eigen::VectorXd dataIn_Real=table->getLogicalColDataDouble(id_list[0  ].column());
             Eigen::VectorXd dataIn_Imag =(id_list.size()==2)?table->getLogicalColDataDouble(id_list[1  ].column()):Eigen::VectorXd::Zero(dataIn_Real.size());
@@ -516,17 +484,31 @@ void MainWindow::slot_plot_fft()
                 dataIn[i]=std::complex<double>(dataIn_Real[i],dataIn_Imag[i]);
             }
 
-            Eigen::VectorXcd dataOut=Curve2D::getFFT(dataIn,
-                                                     (Curve2D::FFTWindowsType)cb_mode->currentIndex(),
-                                                     cb_normalize->isChecked(),
-                                                     cb_halfspectrum->isChecked(),
-                                                     cb_inverse->isChecked());
+            std::cout<<"compute fft"<<std::endl;
+            Eigen::VectorXcd dataOut=MyFFT::getFFT(dataIn,
+                                                     dialog->getWindowsType(),
+                                                     dialog->isNormalized(),
+                                                     //cb_halfspectrum->isChecked(),
+                                                     false,
+                                                     dialog->isInverse());
+            std::cout<<"compute fft end"<<std::endl;
 
-            Curve2DComplex curveCplx(dataOut,QString("FFT %1").arg(name));
+            Eigen::VectorXd data_x=Eigen::VectorXd::LinSpaced(dataOut.rows(),0,dialog->getFe());
+
+            Curve2DComplex curveCplx(data_x,dataOut,QString("FFT-%1").arg(nameReal));
+
+            if(dialog->isInverse())
+            {
+                table->slot_newColumn(QString("invFFT_Real"),curveCplx.getReal());
+                table->slot_newColumn(QString("invFFT_Imag"),curveCplx.getImag());
+            }
+            else
+            {
+                table->slot_newColumn(QString("FFT_Real"),curveCplx.getReal());
+                table->slot_newColumn(QString("FFT_Imag"),curveCplx.getImag());
+            }
 
             viewerBode->slot_add_data(curveCplx);
-            mdiArea->addSubWindow(viewerBode,Qt::WindowStaysOnTopHint);
-            viewerBode->show();
         }
 
     }
@@ -542,7 +524,7 @@ void MainWindow::slot_plot_cloud_3D()
 
     if (id_list.size()==0 || id_list.size()%3==0 || id_list.size()%4==0)
     {
-        View3D* view3d=new View3D(shortcuts);
+        Viewer3D* view3d=new Viewer3D(shortcuts);
 
         QObject::connect(view3d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),table,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
         QObject::connect(view3d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
@@ -609,7 +591,7 @@ void MainWindow::slot_plot_bode()
 
     if (id_list.size()%3==0 && id_list.size()>0)
     {
-        ViewerBode * viewer_bode=new ViewerBode(shortcuts,this);
+        ViewerBode * viewer_bode=createViewerBode();
 
 
         for (int k=0; k<id_list.size(); k+=3)
@@ -625,9 +607,6 @@ void MainWindow::slot_plot_bode()
                 viewer_bode->slot_add_data(Curve2DComplex(data_f,data_module,data_phase,Curve2DComplex::POLAR,name));
             }
         }
-
-        mdiArea->addSubWindow(viewer_bode,Qt::WindowStaysOnTopHint);
-        viewer_bode->show();
     }
     else
     {
@@ -641,7 +620,7 @@ void MainWindow::slot_plot_histogram()
 
     if (id_list.size()>0)
     {
-        Viewer1D* viewer1d=createViewerId();
+        Viewer1D* viewer1d=createViewer1D();
 
         for (int k=0; k<id_list.size(); k++)
         {

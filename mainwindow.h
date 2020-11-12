@@ -13,7 +13,7 @@
 #include "qgradientcombobox.h"
 #include "mytablemodel.h"
 #include "mytableview.h"
-
+#include "fftDialog.h"
 
 namespace Ui {
 class MainWindow;
@@ -68,7 +68,8 @@ private:
     QTabWidget* te_widget;
     Ui::MainWindow* ui;
     MyTableView * table;
-    Viewer1D* createViewerId();
+    Viewer1D* createViewer1D();
+    ViewerBode* createViewerBode();
     QAction* a_newColumn;
     QAction* a_newRow;
     QAction* a_newRows;

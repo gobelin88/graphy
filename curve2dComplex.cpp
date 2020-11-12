@@ -49,6 +49,16 @@ Curve2D Curve2DComplex::getArgumentsCurve()const
     return Curve2D(x,getArguments(),QString("Phases : %1").arg(legend),Curve2D::GRAPH);
 }
 
+Curve2D Curve2DComplex::getRealCurve()const
+{
+    return Curve2D(x,getReal(),QString("Real : %1").arg(legend),Curve2D::GRAPH);
+}
+
+Curve2D Curve2DComplex::getImagCurve()const
+{
+    return Curve2D(x,getImag(),QString("Imag : %1").arg(legend),Curve2D::GRAPH);
+}
+
 void Curve2DComplex::fromModuleArgument(Eigen::VectorXd modules,Eigen::VectorXd arguments)
 {
     y.resize(modules.rows());
@@ -158,6 +168,26 @@ Eigen::VectorXd Curve2DComplex::getArguments()const
         arguments[i]=getArgument(i);
     }
     return arguments;
+}
+
+Eigen::VectorXd Curve2DComplex::getReal()const
+{
+    Eigen::VectorXd reals(y.rows());
+    for(int i=0;i<y.rows();i++)
+    {
+        reals[i]=y[i].real();
+    }
+    return reals;
+}
+
+Eigen::VectorXd Curve2DComplex::getImag()const
+{
+    Eigen::VectorXd imags(y.rows());
+    for(int i=0;i<y.rows();i++)
+    {
+        imags[i]=y[i].imag();
+    }
+    return imags;
 }
 
 QString Curve2DComplex::getLegend()

@@ -33,6 +33,14 @@
         <file>eqn/polynome.gif</file>
         <file>eqn/sigmoid.gif</file>
         <file>eqn/polynome_2var.gif</file>
+        <file>eqn/fft.gif</file>
+        <file>eqn/invfft.gif</file>
+        <file>eqn/window_blackman.gif</file>
+        <file>eqn/window_flattop.gif</file>
+        <file>eqn/window_rectangle.gif</file>
+        <file>eqn/window_hann.gif</file>
+        <file>eqn/window_normalize.gif</file>
+        <file>eqn/window_not_normalize.gif</file>
     </qresource>
     <qresource prefix="/imp">
         <file>imp/(R+L)-C.png</file>

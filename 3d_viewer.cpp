@@ -1,6 +1,6 @@
 #include "3d_viewer.h"
 
-View3D::View3D(const QMap<QString, QKeySequence>& shortcuts_map)
+Viewer3D::Viewer3D(const QMap<QString, QKeySequence>& shortcuts_map)
 {
     objects3D.clear();
     xy_reversed=false;
@@ -48,7 +48,7 @@ View3D::View3D(const QMap<QString, QKeySequence>& shortcuts_map)
     applyShortcuts(shortcuts_map);
 }
 
-void View3D::init3D()
+void Viewer3D::init3D()
 {
     grid3D=new Grid3D(rootEntity,10,QColor(255,255,255));
 
@@ -69,7 +69,7 @@ void View3D::init3D()
 
 
 
-void View3D::createPopup()
+void Viewer3D::createPopup()
 {
     popupMenu=new QMenu();
 
@@ -211,7 +211,7 @@ void View3D::createPopup()
 
 }
 
-void View3D::slot_saveImage()
+void Viewer3D::slot_saveImage()
 {
     Qt3DRender::QRenderCapture renderCapture(rootEntity);
 
@@ -230,7 +230,7 @@ void View3D::slot_saveImage()
 
 }
 
-void View3D::slot_saveRevolution()
+void Viewer3D::slot_saveRevolution()
 {
     Qt3DRender::QRenderCapture renderCapture(rootEntity);
 
@@ -273,7 +273,7 @@ void View3D::slot_saveRevolution()
 }
 
 
-void View3D::slot_fitSphere()
+void Viewer3D::slot_fitSphere()
 {
     std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
 
@@ -296,7 +296,7 @@ void View3D::slot_fitSphere()
     }
 }
 
-void View3D::slot_fitPlan()
+void Viewer3D::slot_fitPlan()
 {
     std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
 
@@ -337,7 +337,7 @@ void View3D::slot_fitPlan()
 }
 
 
-void View3D::slot_projectPlan()
+void Viewer3D::slot_projectPlan()
 {
     std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
 
@@ -408,7 +408,7 @@ void View3D::slot_projectPlan()
     }
 }
 
-void View3D::slot_projectSphere()
+void Viewer3D::slot_projectSphere()
 {
     std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
 
@@ -469,7 +469,7 @@ void View3D::slot_projectSphere()
     }
 }
 
-void View3D::slot_projectCustomMesh()
+void Viewer3D::slot_projectCustomMesh()
 {
     std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
 
@@ -490,7 +490,7 @@ void View3D::slot_projectCustomMesh()
     }
 }
 
-void View3D::slot_randomSubSamples()
+void Viewer3D::slot_randomSubSamples()
 {
     std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
 
@@ -545,7 +545,7 @@ void View3D::slot_randomSubSamples()
     }
 }
 
-void View3D::slot_fitCustomMesh()
+void Viewer3D::slot_fitCustomMesh()
 {
     std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
 
@@ -594,7 +594,7 @@ void View3D::slot_fitCustomMesh()
 
 
 
-void View3D::slot_ColorScaleChanged(const QCPRange& range)
+void Viewer3D::slot_ColorScaleChanged(const QCPRange& range)
 {
     std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
 
@@ -631,7 +631,7 @@ void dispMat(QMatrix4x4 m)
     std::cout<<M4<<" "<<M.determinant()<<std::endl;
 }
 
-void View3D::slot_ScaleChanged()
+void Viewer3D::slot_ScaleChanged()
 {
     Qt3DCore::QTransform T,S;
     T.setTranslation(-customContainer->getTranslation());
@@ -643,7 +643,7 @@ void View3D::slot_ScaleChanged()
     }
 }
 
-void View3D::slot_setGradient(int preset)
+void Viewer3D::slot_setGradient(int preset)
 {
     std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
@@ -663,7 +663,7 @@ void View3D::slot_setGradient(int preset)
     }
 }
 
-void View3D::slot_useCustomColor(int value)
+void Viewer3D::slot_useCustomColor(int value)
 {
     std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
@@ -680,7 +680,7 @@ void View3D::slot_useCustomColor(int value)
     }
 }
 
-void View3D::slot_setCustomColor(QColor color)
+void Viewer3D::slot_setCustomColor(QColor color)
 {
     std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
@@ -697,7 +697,7 @@ void View3D::slot_setCustomColor(QColor color)
     }
 }
 
-void View3D::addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode)
+void Viewer3D::addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode)
 {
     Cloud3D * currentCloud3D=new Cloud3D(cloudData,rootEntity);
 
@@ -724,7 +724,7 @@ void View3D::addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::Pri
     customContainer->replot();
 }
 
-std::vector<Cloud3D*> View3D::getClouds()
+std::vector<Cloud3D*> Viewer3D::getClouds()
 {
     std::vector<Cloud3D*> cloudsList;
 
@@ -739,7 +739,7 @@ std::vector<Cloud3D*> View3D::getClouds()
     return cloudsList;
 }
 
-std::vector<Base3D*> View3D::getMeshs()
+std::vector<Base3D*> Viewer3D::getMeshs()
 {
     std::vector<Base3D*> meshList;
 
@@ -757,7 +757,7 @@ std::vector<Base3D*> View3D::getMeshs()
     return meshList;
 }
 
-std::vector<Cloud3D*> View3D::getSelectedClouds()
+std::vector<Cloud3D*> Viewer3D::getSelectedClouds()
 {
     std::vector<Cloud3D*> selectedClouds;
 
@@ -785,7 +785,7 @@ std::vector<Cloud3D*> View3D::getSelectedClouds()
     return selectedClouds;
 }
 
-std::vector<Base3D*> View3D::getSelectedObjects()
+std::vector<Base3D*> Viewer3D::getSelectedObjects()
 {
     std::vector<Base3D*> selectedObjects;
 
@@ -810,7 +810,7 @@ std::vector<Base3D*> View3D::getSelectedObjects()
     return selectedObjects;
 }
 
-void View3D::slot_removeSelected()
+void Viewer3D::slot_removeSelected()
 {
     std::cout<<"Remove Selected"<<std::endl;
 
@@ -832,7 +832,7 @@ void View3D::slot_removeSelected()
 
 }
 
-void View3D::slot_setPointSize(double value)
+void Viewer3D::slot_setPointSize(double value)
 {
     std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
@@ -858,7 +858,7 @@ void View3D::slot_setPointSize(double value)
     }
 }
 
-void View3D::slot_setPrimitiveType(int type)
+void Viewer3D::slot_setPrimitiveType(int type)
 {
     std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
@@ -877,21 +877,21 @@ void View3D::slot_setPrimitiveType(int type)
     }
 }
 
-void View3D::addSphere(Sphere * sphere,QColor color)
+void Viewer3D::addSphere(Sphere * sphere,QColor color)
 {
     Sphere3D* sphere3D=new Sphere3D(rootEntity,sphere,color);
     referenceObjectEntity(sphere3D,"Sphere");
     slot_ScaleChanged();
 }
 
-void View3D::addPlan(Plan* plan,float radius,QColor color)
+void Viewer3D::addPlan(Plan* plan,float radius,QColor color)
 {
     Plan3D* plan3D=new Plan3D(rootEntity,plan,radius,color);
     referenceObjectEntity(plan3D,"Plan");
     slot_ScaleChanged();
 }
 
-void View3D::referenceObjectEntity(Base3D * base3D,QString name)
+void Viewer3D::referenceObjectEntity(Base3D * base3D,QString name)
 {
     objects3D.push_back(base3D);
 
@@ -909,7 +909,7 @@ void View3D::referenceObjectEntity(Base3D * base3D,QString name)
     customContainer->getSelectionView()->addItem(item);
 }
 
-void View3D::addObject(Qt3DRender::QMesh* mesh_object,Object * object, QPosAtt posatt,float scale,QColor color)
+void Viewer3D::addObject(Qt3DRender::QMesh* mesh_object,Object * object, QPosAtt posatt,float scale,QColor color)
 {
     Object3D* object3D=new Object3D(rootEntity,mesh_object,object,posatt,scale,color);
 
@@ -937,12 +937,12 @@ void View3D::addObject(Qt3DRender::QMesh* mesh_object,Object * object, QPosAtt p
     slot_ScaleChanged();
 }
 
-CustomViewContainer* View3D::getContainer()
+CustomViewContainer* Viewer3D::getContainer()
 {
     return customContainer;
 }
 
-void View3D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
+void Viewer3D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
 {
     QMap<QString,QAction*> shortcuts_links;
     shortcuts_links.insert(QString("Graph-Delete"),actRemoveSelected);
@@ -962,7 +962,7 @@ void View3D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     }
 }
 
-void View3D::slot_updateLabels()
+void Viewer3D::slot_updateLabels()
 {
     double s=1.1;
 
@@ -988,7 +988,7 @@ void View3D::slot_updateLabels()
     objArrowZ->setPosAtt(QPosAtt(Pz,Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,0,1),Eigen::Vector3d(0,-1,0))));
 }
 
-void View3D::slot_updateGridAndLabels()
+void Viewer3D::slot_updateGridAndLabels()
 {
     if (cameraParams->getBeta()>0 && xy_reversed==false)
     {
@@ -1030,7 +1030,7 @@ void View3D::slot_updateGridAndLabels()
     }
 }
 
-void View3D::mouseMoveEvent(QMouseEvent* event)
+void Viewer3D::mouseMoveEvent(QMouseEvent* event)
 {
     if (event->buttons()==Qt::LeftButton)
     {
@@ -1053,7 +1053,7 @@ bool isEquiv(const QKeyEvent* event, const QKeySequence& seq)
     return seq[0] == (event->key() | event->modifiers());
 }
 
-void View3D::keyPressEvent(QKeyEvent * event)
+void Viewer3D::keyPressEvent(QKeyEvent * event)
 {
     QList<QAction*> actions=customContainer->actions();
     for(auto act:actions)
@@ -1062,7 +1062,7 @@ void View3D::keyPressEvent(QKeyEvent * event)
     }
 }
 
-void View3D::slot_export()
+void Viewer3D::slot_export()
 {
     std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
@@ -1094,7 +1094,7 @@ void View3D::slot_export()
     }
 }
 
-void View3D::slot_showHideGrid(int value)
+void Viewer3D::slot_showHideGrid(int value)
 {
     if(value>0)
     {
@@ -1106,7 +1106,7 @@ void View3D::slot_showHideGrid(int value)
     }
 }
 
-void View3D::slot_showHideAxis(int value)
+void Viewer3D::slot_showHideAxis(int value)
 {
     if(value>0)
     {
@@ -1122,7 +1122,7 @@ void View3D::slot_showHideAxis(int value)
     }
 }
 
-void View3D::slot_showHideLabels(int value)
+void Viewer3D::slot_showHideLabels(int value)
 {
     if(value>0)
     {
@@ -1138,7 +1138,7 @@ void View3D::slot_showHideLabels(int value)
     }
 }
 
-void View3D::slot_addMesh()
+void Viewer3D::slot_addMesh()
 {
     QStringList filenames=QFileDialog::getOpenFileNames(nullptr,"3D Mesh","./obj","Object (*.obj)");
 
@@ -1178,7 +1178,7 @@ void View3D::slot_addMesh()
 
 }
 
-void View3D::slot_createRotegrity()
+void Viewer3D::slot_createRotegrity()
 {
     QString filename=QFileDialog::getOpenFileName(nullptr,"3D Mesh","./obj","Object (*.obj)");
     std::cout<<filename.toLocal8Bit().data()<<std::endl;
@@ -1285,7 +1285,7 @@ void View3D::slot_createRotegrity()
 }
 
 
-void View3D::extendRanges(QCPRange itemRangeX,QCPRange itemRangeY,QCPRange itemRangeZ,int i)
+void Viewer3D::extendRanges(QCPRange itemRangeX,QCPRange itemRangeY,QCPRange itemRangeZ,int i)
 {
     QCPRange rangex=customContainer->getXAxis()->range();
     QCPRange rangey=customContainer->getYAxis()->range();
@@ -1305,7 +1305,7 @@ void View3D::extendRanges(QCPRange itemRangeX,QCPRange itemRangeY,QCPRange itemR
     }
 }
 
-void View3D::extendScalarRange(QCPRange itemRangeS,int i)
+void Viewer3D::extendScalarRange(QCPRange itemRangeS,int i)
 {
     QCPRange ranges=customContainer->getColorScale()->dataRange();
 
@@ -1319,7 +1319,7 @@ void View3D::extendScalarRange(QCPRange itemRangeS,int i)
     }
 }
 
-void View3D::slot_resetView()
+void Viewer3D::slot_resetView()
 {
     cameraParams->reset();
 
@@ -1341,7 +1341,7 @@ void View3D::slot_resetView()
 
 
 
-void View3D::slot_resetViewOnSelected()
+void Viewer3D::slot_resetViewOnSelected()
 {
     cameraParams->reset();
 
@@ -1360,7 +1360,7 @@ void View3D::slot_resetViewOnSelected()
     slot_updateGridAndLabels();
 }
 
-void View3D::mouseDoubleClickEvent(QMouseEvent* event)
+void Viewer3D::mouseDoubleClickEvent(QMouseEvent* event)
 {
     if (event->buttons()==Qt::LeftButton)
     {
@@ -1368,7 +1368,7 @@ void View3D::mouseDoubleClickEvent(QMouseEvent* event)
     }
 }
 
-void View3D::configurePopup()
+void Viewer3D::configurePopup()
 {
     sb_size->blockSignals(true);
     cb_mode->blockSignals(true);
@@ -1406,7 +1406,7 @@ void View3D::configurePopup()
     c_gradient->blockSignals(false);
 }
 
-void View3D::mousePressEvent(QMouseEvent* event)
+void Viewer3D::mousePressEvent(QMouseEvent* event)
 {
     if (event->buttons()==Qt::LeftButton)
     {
@@ -1420,7 +1420,7 @@ void View3D::mousePressEvent(QMouseEvent* event)
         popupMenu->exec(mapToGlobal(event->pos()));
     }
 }
-void View3D::wheelEvent(QWheelEvent* event)
+void Viewer3D::wheelEvent(QWheelEvent* event)
 {
     float dw=event->delta();
     if (dw>0)

@@ -20,12 +20,18 @@ public slots:
     void slot_fit_ralpcprb();
     void slot_fit_rlcapcb();
 
+signals:
+    void sig_newColumn(QString,Eigen::VectorXd);
+    void sig_displayResults(QString);
+
 protected:
     QVector<Curve2DComplex> getCurves();
 
     QTabWidget * tab;
     Viewer1D * modules_viewer;
     Viewer1D * phases_viewer;
+    Viewer1D * real_viewer;
+    Viewer1D * imag_viewer;
     QVector<Curve2DComplex> curves;
 
     //Menu

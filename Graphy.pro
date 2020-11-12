@@ -45,6 +45,7 @@ SOURCES += \
         curve2d.cpp \
         curve2dComplex.cpp \
         customviewcontainer.cpp \
+        fftDialog.cpp \
         grid3d.cpp \
         label3d.cpp \
         light3d.cpp \
@@ -82,6 +83,7 @@ HEADERS += \
         curve2d.h \
         curve2dComplex.h \
         customviewcontainer.h \
+        fftDialog.h \
         grid3d.h \
         label3d.h \
         light3d.h \

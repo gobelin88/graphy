@@ -2,7 +2,7 @@
 #define CURVE2D_H
 
 #include <Eigen/Dense>
-#include <unsupported/Eigen/FFT>
+
 #include <QVector>
 #include "ShapeFit.h"
 #include "qcustomplot.h"
@@ -60,13 +60,7 @@ public:
         CURVE=1
     };
 
-    enum FFTWindowsType
-    {
-        RECTANGLE,
-        BLACKMAN,
-        HANN,
-        FLAT_TOP,
-    };
+
 
     Curve2D();
 
@@ -128,7 +122,6 @@ public:
 
     //misc
     void knnMeanDistance(int knn);
-    static Eigen::VectorXcd getFFT(Eigen::VectorXcd s_in, FFTWindowsType mode, bool normalize_flag, bool halfspectrum, bool inverse);
     double getRms();
     double guessMainFrequency();
     uint getMaxIndex();

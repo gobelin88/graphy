@@ -10,9 +10,9 @@
 #include <QFileInfo>
 #include <QFileDialog>
 
-#include "qcustomplot.h"
+#include "MyCustomPlot.h"
 #include "tabledata.h"
-#include "qgradientcombobox.h"
+#include "MyGradientComboBox.h"
 
 class Viewer2D:public QCustomPlot
 {

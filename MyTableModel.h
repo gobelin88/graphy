@@ -5,8 +5,8 @@
 #include <QScrollBar>
 #include <iostream>
 
-#include "register.h"
-#include "value.h"
+#include "Register.h"
+#include "MyValueContainer.h"
 
 #ifndef MYTABLEMODEL_H
 #define MYTABLEMODEL_H
@@ -99,7 +99,7 @@ signals:
 private:
     void contentResized();
     void create(int nbRows, int nbCols, int rowSpan);
-    ValueContainer & at(QModelIndex indexLogical);
+    MyValueContainer & at(QModelIndex indexLogical);
 
     int m_rowOffset;
     int m_rowSpan;

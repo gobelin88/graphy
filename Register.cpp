@@ -1,4 +1,4 @@
-#include "register.h"
+#include "Register.h"
 
 #include <QMessageBox>
 #include <QLineEdit>
@@ -465,7 +465,7 @@ bool Register::customExpressionParse(unsigned int id,QString& result,std::functi
     return false;
 }
 
-bool Register::customExpressionParse2(const MatrixXv & m_data,unsigned int id, ValueContainer & result, int currentRow)
+bool Register::customExpressionParse2(const MatrixXv & m_data,unsigned int id, MyValueContainer & result, int currentRow)
 {
     QString expression=variables_expressions[id];
         expression.remove('$');

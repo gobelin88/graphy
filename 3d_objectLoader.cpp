@@ -1,9 +1,9 @@
-﻿#include "obj.h"
+﻿#include "3d_objectLoader.h"
 
 #include <QDir>
 #include <QFileInfo>
 
-Object::Object(QString filename, QPosAtt scale_posatt)
+Object::Object(QString filename, PosAtt scale_posatt)
 {
     params.resize(7);
 
@@ -116,8 +116,8 @@ void Object::exportEdges(QString filename)
 
 void Object::subdiviseEdges()
 {
-    int size=edges.size();
-    for(int i=0;i<size;i++)
+    size_t size=edges.size();
+    for(size_t i=0;i<size;i++)
     {
         int ida=edges[i][0];
         int idb=edges[i][1];
@@ -502,7 +502,7 @@ void Object::nearestPolygon(int face_id, const Vector3d& p, double *r) const
     double dmin=DBL_MAX;
     bool positif=false,inside=true;
     Vector3d pproj_poly;
-    unsigned int faces_size=face.size();
+    unsigned int faces_size=static_cast<unsigned int>(face.size());
 
     for (unsigned int j=0; j<faces_size; j++)
     {
@@ -785,15 +785,15 @@ void Object::setParams(const Eigen::VectorXd& p)
     normals.noalias()=R_transform*normals_base;
 }
 
-void Object::setScalePosAtt(const QPosAtt& scalePosatt)
+void Object::setScalePosAtt(const PosAtt& scalePosatt)
 {
     params<<scalePosatt.P,scalePosatt.Q.coeffs();
     setParams(params);
 }
 
-QPosAtt Object::getPosAtt()
+PosAtt Object::getPosAtt()
 {
-    return QPosAtt(P_transform,Q_transform);
+    return PosAtt(P_transform,Q_transform);
 }
 
 double Object::getScale()

@@ -21,7 +21,7 @@
 
 */
 
-#include "color_wheel.hpp"
+#include "ColorWheel.hpp"
 
 #include <QMouseEvent>
 #include <QPainter>

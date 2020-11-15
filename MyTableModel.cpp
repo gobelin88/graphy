@@ -7,7 +7,7 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 
-#include "mytablemodel.h"
+#include "MyTableModel.h"
 
 //-----------------------------------------------------------------
 MyModel::MyModel(int nbRows, int nbCols, int rowSpan, QObject *parent): QAbstractTableModel(parent)
@@ -336,7 +336,7 @@ void MyModel::paste(int x0,int y0,QString buffer)
     emit sig_dataChanged();
 }
 
-ValueContainer & MyModel::at(QModelIndex indexLogical)
+MyValueContainer & MyModel::at(QModelIndex indexLogical)
 {
     QModelIndex indexVisual= toVisualIndex(indexLogical);
     return m_data(indexVisual.row()+m_rowOffset,indexVisual.column());
@@ -574,7 +574,7 @@ void MyModel::clearLogicalIndexes(const QModelIndexList & selectedIndexes)
 {
     for (int i = 0; i < selectedIndexes.count(); ++i)
     {
-        at(selectedIndexes[i])=ValueContainer();
+        at(selectedIndexes[i])=MyValueContainer();
     }
     emit layoutChanged();
     emit sig_dataChanged();
@@ -597,7 +597,7 @@ void MyModel::clearLogicalIndexesCols(const QModelIndexList & selectedIndexesCol
     {
         for (int i = 0; i < m_data.rows(); ++i)
         {
-            m_data(i,visualIndexsCols[j])=ValueContainer();
+            m_data(i,visualIndexsCols[j])=MyValueContainer();
         }
     }
 

@@ -10,10 +10,10 @@
 #include "2d_viewer.h"
 #include "3d_viewer.h"
 #include "bode_viewer.h"
-#include "qgradientcombobox.h"
+#include "MyGradientComboBox.h"
 #include "mytablemodel.h"
-#include "mytableview.h"
-#include "fftDialog.h"
+#include "MyTableView.h"
+#include "FFT.h"
 
 namespace Ui {
 class MainWindow;

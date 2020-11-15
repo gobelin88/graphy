@@ -1,7 +1,7 @@
 #include <QTableView>
-#include "mytablemodel.h"
-#include "myitemdelegate.h"
-#include "qcustomplot.h"
+#include "MyTableModel.h"
+#include "MyItemDelegate.h"
+#include "MyCustomPlot.h"
 
 #ifndef MYTABLEVIEW_H
 #define MYTABLEVIEW_H

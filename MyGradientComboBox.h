@@ -2,7 +2,7 @@
 #define QGRADIENTCOMBOBOX_H
 
 #include <QComboBox>
-#include "qcustomplot.h"
+#include "MyCustomPlot.h"
 #include <Eigen/Dense>
 
 class QGradientComboBox : public QComboBox

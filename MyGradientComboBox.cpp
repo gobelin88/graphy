@@ -1,4 +1,4 @@
-#include "qgradientcombobox.h"
+#include "MyGradientComboBox.h"
 
 QGradientComboBox::QGradientComboBox(QWidget * parent):QComboBox(parent)
 {

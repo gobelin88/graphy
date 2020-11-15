@@ -1,5 +1,5 @@
 #include <QWheelEvent>
-#include "mytableview.h"
+#include "MyTableView.h"
 
 MyTableView::MyTableView(int nbRow,
                          int nbCols,

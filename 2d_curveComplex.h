@@ -3,7 +3,7 @@
 
 #include <Eigen/Dense>
 #include "ShapeFit.h"
-#include "curve2d.h"
+#include "2d_curve.h"
 
 class Curve2DComplex
 {

@@ -1,4 +1,4 @@
-#include "customviewcontainer.h"
+#include "3d_customViewContainer.h"
 
 CustomViewContainer::CustomViewContainer(QWidget* container)
 {

@@ -1,6 +1,6 @@
-#include "value.h"
+#include "MyValueContainer.h"
 
-ValueContainer::ValueContainer()
+MyValueContainer::MyValueContainer()
 {
     num=0.0;
     str.clear();
@@ -8,7 +8,7 @@ ValueContainer::ValueContainer()
     background=qRgb(255,255,255);
 }
 
-void ValueContainer::operator=(const ValueContainer & other)
+void MyValueContainer::operator=(const MyValueContainer & other)
 {
     isDouble=other.isDouble;
 
@@ -22,7 +22,7 @@ void ValueContainer::operator=(const ValueContainer & other)
     }
 }
 
-void ValueContainer::operator=(const QVariant & other)
+void MyValueContainer::operator=(const QVariant & other)
 {
     num=other.toDouble(&isDouble);
 
@@ -32,7 +32,7 @@ void ValueContainer::operator=(const QVariant & other)
     }
 }
 
-void ValueContainer::operator=(const QString & other)
+void MyValueContainer::operator=(const QString & other)
 {
     num=other.toDouble(&isDouble);
 
@@ -42,7 +42,7 @@ void ValueContainer::operator=(const QString & other)
     }
 }
 
-std::ostream& operator<< (std::ostream &out,const ValueContainer & value)
+std::ostream& operator<< (std::ostream &out,const MyValueContainer & value)
 {
     if(value.isDouble)
     {
@@ -55,7 +55,7 @@ std::ostream& operator<< (std::ostream &out,const ValueContainer & value)
     return out;
 }
 
-QString ValueContainer::toString()const
+QString MyValueContainer::toString()const
 {
     if(isDouble)
     {
@@ -67,7 +67,7 @@ QString ValueContainer::toString()const
     }
 }
 
-double log10(const ValueContainer &value)
+double log10(const MyValueContainer &value)
 {
     return log10(value.num);
 }

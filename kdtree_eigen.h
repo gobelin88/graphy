@@ -837,7 +837,7 @@ namespace kdt
 
             findDataMinMax(startIdx, length, mins, maxes);
 
-            Index root = buildR(startIdx, length, mins, maxes);
+            buildR(startIdx, length, mins, maxes);
         }
 
         /** Queries the tree for the nearest neighbours of the given query

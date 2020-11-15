@@ -1,4 +1,4 @@
-#include "curve2d.h"
+#include "2d_curve.h"
 #include "kdtree_eigen.h"
 //#include "kdtree_flann.h"
 

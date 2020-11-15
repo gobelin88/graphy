@@ -1,4 +1,4 @@
-#include "qPosAtt.h"
+#include "PosAtt.h"
 
 QQuaternion toQQuaternion(Eigen::Quaterniond q)
 {
@@ -31,7 +31,7 @@ bool loadPosAttList(QString filename,QPosAttList& list)
                 Eigen::Quaterniond q(line[3].toDouble(),line[4].toDouble(),line[5].toDouble(),line[6].toDouble());
                 q.normalize();
 
-                QPosAtt new_pos_att(Eigen::Vector3d(line[0].toDouble(),line[1].toDouble(),line[2].toDouble()),q);
+                PosAtt new_pos_att(Eigen::Vector3d(line[0].toDouble(),line[1].toDouble(),line[2].toDouble()),q);
 
                 list.push_back(new_pos_att);
             }
@@ -112,43 +112,43 @@ QPosList extractPos(QPosAttList& list)
 }
 
 //-----------------------
-QPosAtt::QPosAtt()
+PosAtt::PosAtt()
 {
     this->P=Eigen::Vector3d(0,0,0);
     this->Q=Eigen::Quaterniond(1,0,0,0);
 }
 
-QPosAtt::QPosAtt(Eigen::Vector3d p,Eigen::Quaterniond q)
+PosAtt::PosAtt(Eigen::Vector3d p,Eigen::Quaterniond q)
 {
     this->P=p;
     this->Q=q;
 }
 
-void QPosAtt::operator=(const QPosAtt& other)
+void PosAtt::operator=(const PosAtt& other)
 {
     this->P=other.P;
     this->Q=other.Q;
 }
 
-QPosAtt QPosAtt::compose(const QPosAtt& other) const
+PosAtt PosAtt::compose(const PosAtt& other) const
 {
-    return QPosAtt(other.Q._transformVector(P)+other.P,other.Q*Q);
+    return PosAtt(other.Q._transformVector(P)+other.P,other.Q*Q);
 }
 
-Eigen::Vector3d QPosAtt::apply(const Eigen::Vector3d& v) const
+Eigen::Vector3d PosAtt::apply(const Eigen::Vector3d& v) const
 {
     return Q._transformVector(v)+P;
 }
 
-QPosAtt QPosAtt::inverse()
+PosAtt PosAtt::inverse()
 {
-    QPosAtt pos_att_inverse;
+    PosAtt pos_att_inverse;
     pos_att_inverse.Q=Q.conjugate();
     pos_att_inverse.P =pos_att_inverse.Q._transformVector(-P);
     return pos_att_inverse;
 }
 
-Eigen::Matrix4d QPosAtt::toMatrice(double scale)
+Eigen::Matrix4d PosAtt::toMatrice(double scale)
 {
     Eigen::Matrix4d M;
     Eigen::Matrix3d R=scale*Q.toRotationMatrix();
@@ -173,12 +173,12 @@ Eigen::Matrix4d QPosAtt::toMatrice(double scale)
     return M;
 }
 
-void QPosAtt::disp()
+void PosAtt::disp()
 {
     std::cout<<" p="<<P[0]<<" "<<P[1]<<" "<<P[2]<<" q="<<Q.w()<<" "<<Q.x()<<" "<<Q.y()<<" "<<Q.z()<<std::endl;
 }
 
-QString QPosAtt::toStr()
+QString PosAtt::toStr()
 {
     Eigen::Vector3d ea=Q.toRotationMatrix().eulerAngles(0,1,2)*57.2957795131;
     return QString("p=(%1,%2,%3)\nq=(%4,%5,%6,%7)\nr=(%8,%9,%10)\n").arg(P[0]).arg(P[1]).arg(P[2]).arg(Q.w()).arg(Q.x()).arg(Q.y()).arg(Q.z()).arg(ea[0]).arg(ea[1]).arg(ea[2]);

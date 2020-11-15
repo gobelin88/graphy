@@ -1,9 +1,9 @@
-#include "object3d.h"
+#include "3d_object.h"
 
 Object3D::Object3D(Qt3DCore::QEntity* rootEntity,
                    Qt3DRender::QMesh* m_obj,
                    Object * objet,
-                   QPosAtt posatt,
+                   PosAtt posatt,
                    float scale,
                    QColor color)
     :Base3D(rootEntity)
@@ -24,7 +24,7 @@ Object3D::Object3D(Qt3DCore::QEntity* rootEntity,
 
 }
 
-void Object3D::setPosAtt(QPosAtt posatt)
+void Object3D::setPosAtt(PosAtt posatt)
 {
     transform->setTranslation(toQVector3D(posatt.P));
     transform->setRotation(toQQuaternion(posatt.Q));

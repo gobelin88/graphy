@@ -3,7 +3,7 @@
 #include <QQuaternion>
 #include <Eigen/Dense>
 
-#include "qcustomplot.h"
+#include "MyCustomPlot.h"
 #include "ShapeFit.h"
 
 #ifndef CLOUD_H

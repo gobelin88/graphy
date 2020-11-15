@@ -1,6 +1,6 @@
 #include "1d_viewer.h"
 
-#include "curve2dComplex.h"
+#include "2d_curveComplex.h"
 
 #ifndef BODE_VIEWER_H
 #define BODE_VIEWER_H

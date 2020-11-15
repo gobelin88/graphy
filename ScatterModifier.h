@@ -5,7 +5,7 @@
 #include <QtDataVisualization/qabstract3dseries.h>
 #include <QtGui/QFont>
 #include "Cloud.h"
-#include "qcustomplot.h"
+#include "MyCustomPlot.h"
 
 using namespace QtDataVisualization;
 

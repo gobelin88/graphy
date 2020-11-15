@@ -1,7 +1,7 @@
 #include <QVector>
 #include <iostream>
 #include <Eigen/Dense>
-#include "qcustomplot.h"
+#include "MyCustomPlot.h"
 
 #ifndef TABLEDATA_H
 #define TABLEDATA_H

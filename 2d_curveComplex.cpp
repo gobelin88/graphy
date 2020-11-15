@@ -1,4 +1,4 @@
-#include "curve2dComplex.h"
+#include "2d_curveComplex.h"
 
 Curve2DComplex::Curve2DComplex()
 {

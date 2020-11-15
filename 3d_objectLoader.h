@@ -5,7 +5,7 @@
 #include <QFile>
 
 #include "ShapeFit.h"
-#include "qPosAtt.h"
+#include "PosAtt.h"
 
 #include <omp.h>
 
@@ -73,7 +73,7 @@ public:
 class Object:public Shape<Eigen::Vector3d>
 {
 public:
-    Object(QString filename, QPosAtt scale_posatt);
+    Object(QString filename, PosAtt scale_posatt);
 
     void disp();
 
@@ -98,9 +98,9 @@ public:
     void setParams(const Eigen::VectorXd& params);
     const Eigen::VectorXd& getParams();
 
-    void setScalePosAtt(const QPosAtt& scalePosatt);
+    void setScalePosAtt(const PosAtt& scalePosatt);
 
-    QPosAtt getPosAtt();
+    PosAtt getPosAtt();
     double getScale();
 
     //I/O

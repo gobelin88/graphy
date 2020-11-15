@@ -55,9 +55,9 @@ void Viewer3D::init3D()
     auto* meshArrow = new Qt3DRender::QMesh();
     meshArrow->setSource(QUrl( QUrl::fromLocalFile(":/obj/obj/axis.obj") ) );
 
-    objArrowX=new Object3D(rootEntity,meshArrow,nullptr,QPosAtt(Eigen::Vector3d(-0.0,1,-1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(1,0,0),Eigen::Vector3d(0,-1,0))),0.1f,QColor(255,0,0));
-    objArrowY=new Object3D(rootEntity,meshArrow,nullptr,QPosAtt(Eigen::Vector3d(-1,-0.0,1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),Eigen::Vector3d(0,1,0))),0.1f,QColor(0,255,0));
-    objArrowZ=new Object3D(rootEntity,meshArrow,nullptr,QPosAtt(Eigen::Vector3d(1,-1,-0.0),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,0,1),Eigen::Vector3d(0,-1,0))),0.1f,QColor(0,0,255));
+    objArrowX=new Object3D(rootEntity,meshArrow,nullptr,PosAtt(Eigen::Vector3d(-0.0,1,-1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(1,0,0),Eigen::Vector3d(0,-1,0))),0.1f,QColor(255,0,0));
+    objArrowY=new Object3D(rootEntity,meshArrow,nullptr,PosAtt(Eigen::Vector3d(-1,-0.0,1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),Eigen::Vector3d(0,1,0))),0.1f,QColor(0,255,0));
+    objArrowZ=new Object3D(rootEntity,meshArrow,nullptr,PosAtt(Eigen::Vector3d(1,-1,-0.0),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,0,1),Eigen::Vector3d(0,-1,0))),0.1f,QColor(0,0,255));
 
     labelx=new Label3D(rootEntity,"X",QVector3D(0,1,-1),0.1f,0,0,0);
     labely=new Label3D(rootEntity,"Y",QVector3D(-1,0,1),0.1f,0,90,90);
@@ -482,7 +482,7 @@ void Viewer3D::slot_projectCustomMesh()
         std::cout<<filename.toLocal8Bit().data()<<std::endl;
         if(filename.isEmpty())return;
 
-        Object obj(filename,QPosAtt());
+        Object obj(filename,PosAtt());
         currentCloud->project(&obj);
 
         currentCloud3D->buffer->setData(currentCloud->getBuffer(customContainer->getColorScale()->dataRange()) );
@@ -560,11 +560,11 @@ void Viewer3D::slot_fitCustomMesh()
         QElapsedTimer timer;
         timer.start();
 
-        Object obj(filename,QPosAtt());
+        Object obj(filename,PosAtt());
 
 
         Vector3d obj_center=obj.getBox().middle();
-        obj.setScalePosAtt(QPosAtt(currentCloud->getBarycenter()-obj_center,Eigen::Quaterniond(currentCloud->getBoundingRadius()/obj.getRadius(obj_center),0,0,0)));
+        obj.setScalePosAtt(PosAtt(currentCloud->getBarycenter()-obj_center,Eigen::Quaterniond(currentCloud->getBoundingRadius()/obj.getRadius(obj_center),0,0,0)));
 
         currentCloud->fit(&obj,100);
 
@@ -575,9 +575,9 @@ void Viewer3D::slot_fitCustomMesh()
         auto* m_obj = new Qt3DRender::QMesh();
         m_obj->setSource(QUrl(QString("file:///")+info.path()+"/tmp.obj"));
 
-        addObject(m_obj,nullptr,QPosAtt(),1.0,QColor(64,64,64));
+        addObject(m_obj,nullptr,PosAtt(),1.0,QColor(64,64,64));
 
-        QPosAtt posatt=obj.getPosAtt();
+        PosAtt posatt=obj.getPosAtt();
         emit sig_displayResults( QString("Fit Mesh :\nScale=%1\nPosition=(%2,%3,%4)\nQ=(%5,%6,%7,%8)\nRms=%9\ndt=%10 ms")
                                  .arg(obj.getScale())
                                  .arg(posatt.P[0]).arg(posatt.P[1]).arg(posatt.P[2])
@@ -909,7 +909,7 @@ void Viewer3D::referenceObjectEntity(Base3D * base3D,QString name)
     customContainer->getSelectionView()->addItem(item);
 }
 
-void Viewer3D::addObject(Qt3DRender::QMesh* mesh_object,Object * object, QPosAtt posatt,float scale,QColor color)
+void Viewer3D::addObject(Qt3DRender::QMesh* mesh_object,Object * object, PosAtt posatt,float scale,QColor color)
 {
     Object3D* object3D=new Object3D(rootEntity,mesh_object,object,posatt,scale,color);
 
@@ -983,9 +983,9 @@ void Viewer3D::slot_updateLabels()
                       (yz_reversed?-270:-90),
                       (xy_reversed?180:0));
 
-    objArrowX->setPosAtt(QPosAtt(Px,Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(1,0,0),Eigen::Vector3d(0,-1,0))));
-    objArrowY->setPosAtt(QPosAtt(Py,Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),Eigen::Vector3d(0, 1,0))));
-    objArrowZ->setPosAtt(QPosAtt(Pz,Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,0,1),Eigen::Vector3d(0,-1,0))));
+    objArrowX->setPosAtt(PosAtt(Px,Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(1,0,0),Eigen::Vector3d(0,-1,0))));
+    objArrowY->setPosAtt(PosAtt(Py,Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),Eigen::Vector3d(0, 1,0))));
+    objArrowZ->setPosAtt(PosAtt(Pz,Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,0,1),Eigen::Vector3d(0,-1,0))));
 }
 
 void Viewer3D::slot_updateGridAndLabels()
@@ -1146,7 +1146,7 @@ void Viewer3D::slot_addMesh()
 
     for(int i=0;i<filenames.size();i++)
     {
-        Object * obj=new Object(filenames[i],QPosAtt());
+        Object * obj=new Object(filenames[i],PosAtt());
         BoundingBox bb=obj->getBox();
 
         QCPRange rangex=customContainer->getXAxis()->range();
@@ -1173,7 +1173,7 @@ void Viewer3D::slot_addMesh()
 
         auto* m_obj = new Qt3DRender::QMesh();
         m_obj->setSource(QUrl(QString("file:///")+filenames[i]));
-        addObject(m_obj,obj,QPosAtt(),1.0,QColor(64,64,64));
+        addObject(m_obj,obj,PosAtt(),1.0,QColor(64,64,64));
     }
 
 }
@@ -1255,7 +1255,7 @@ void Viewer3D::slot_createRotegrity()
     {
 
         QFileInfo info(filename);
-        Object * objet=new Object(filename,QPosAtt());
+        Object * objet=new Object(filename,PosAtt());
         QString filename=info.path()+"/"+info.baseName()+"_rotegrity.obj";
 
         objet->rotegrity(sb_angle->value(),
@@ -1277,7 +1277,7 @@ void Viewer3D::slot_createRotegrity()
         auto* mesh_object = new Qt3DRender::QMesh();
         mesh_object->setSource(QUrl(QString("file:///")+filename));
 
-        addObject(mesh_object,objet,QPosAtt(),1.0,QColor(64,64,64));
+        addObject(mesh_object,objet,PosAtt(),1.0,QColor(64,64,64));
 
         customContainer->adjustSize();
         customContainer->replot();

@@ -1,4 +1,4 @@
-#include "myitemdelegate.h"
+#include "MyItemDelegate.h"
 
 MyItemDelegate::MyItemDelegate(QObject *parent): QItemDelegate(parent)
 {

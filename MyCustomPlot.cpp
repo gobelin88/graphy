@@ -25,7 +25,7 @@
 
 #include <iostream>
 
-#include "qcustomplot.h"
+#include "MyCustomPlot.h"
 
 
 /* including file 'src/vector2d.cpp', size 7340                              */

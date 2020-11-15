@@ -31,73 +31,69 @@ CONFIG += c++11
 
 SOURCES += \
         1d_viewer.cpp \
+        2d_curve.cpp \
+        2d_curveComplex.cpp \
         2d_viewer.cpp \
         3d_cameraParams.cpp \
         3d_cloud.cpp \
+        3d_customViewContainer.cpp \
         3d_label.cpp \
         3d_light.cpp \
+        3d_object.cpp \
+        3d_objectLoader.cpp \
         3d_shapes.cpp \
         3d_viewer.cpp \
         Cloud.cpp \
+        FFT.cpp \
         FIR.cpp \
-        ScatterModifier.cpp \
-        SurfaceModifier.cpp \
+        MainWindow.cpp \
+        MyCustomPlot.cpp \
+        MyGradientComboBox.cpp \
+        MyItemDelegate.cpp \
+        MyTableModel.cpp \
+        MyTableView.cpp \
+        MyValueContainer.cpp \
+        PosAtt.cpp \
+        Register.cpp \
         ShapeFit.cpp \
         bode_viewer.cpp \
-        color_wheel.cpp \
-        curve2d.cpp \
-        curve2dComplex.cpp \
-        customviewcontainer.cpp \
-        fftDialog.cpp \
+        colorWheel.cpp \
         main.cpp \
-        mainwindow.cpp \
-        myitemdelegate.cpp \
-        mytablemodel.cpp \
-        mytableview.cpp \
-        obj.cpp \
-        object3d.cpp \
-        qcustomplot.cpp \
-        qgradientcombobox.cpp \
-        register.cpp \
-        tabledata.cpp \
-        value.cpp \
-        qPosAtt.cpp
+        tabledata.cpp
 
 HEADERS += \
         1d_viewer.h \
+        2d_curve.h \
+        2d_curveComplex.h \
         2d_viewer.h \
         3d_base.h \
         3d_cameraParams.h \
         3d_cloud.h \
+        3d_customViewContainer.h \
         3d_label.h \
         3d_light.h \
+        3d_object.h \
+        3d_objectLoader.h \
         3d_shapes.h \
         3d_viewer.h \
         Cloud.h \
+        ColorWheel.hpp \
+        FFT.h \
         FIR.h \
         Functor.h \
-        ScatterModifier.h \
-        SurfaceModifier.h \
+        MainWindow.h \
+        MyCustomPlot.h \
+        MyGradientComboBox.h \
+        MyItemDelegate.h \
+        MyTableModel.h \
+        MyTableView.h \
+        MyValueContainer.h \
+        PosAtt.h \
+        Register.h \
         ShapeFit.h \
         bode_viewer.h \
-        color_wheel.hpp \
-        curve2d.h \
-        curve2dComplex.h \
-        customviewcontainer.h \
-        fftDialog.h \
-        mainwindow.h \
-        myitemdelegate.h \
-        mytablemodel.h \
-        mytableview.h \
-        obj.h \
-        object3d.h \
-        qcustomplot.h \
-        qgradientcombobox.h \
-        register.h \
         tabledata.h \
-        value.h \
-        exprtk\exprtk.hpp \
-        qPosAtt.h
+        exprtk\exprtk.hpp
 
 FORMS += \
         mainwindow.ui

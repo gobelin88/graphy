@@ -5,7 +5,7 @@
 
 #include <QVector>
 #include "ShapeFit.h"
-#include "qcustomplot.h"
+#include "MyCustomPlot.h"
 #include "FIR.h"
 #include "tabledata.h"
 

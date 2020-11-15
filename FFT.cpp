@@ -1,4 +1,4 @@
-#include "fftDialog.h"
+#include "FFT.h"
 #include <unsupported/Eigen/FFT>
 #include <QGridLayout>
 #include <QDialogButtonBox>

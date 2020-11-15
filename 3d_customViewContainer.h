@@ -2,7 +2,7 @@
 #define CUSTOMVIEWCONTAINER_H
 
 #include <QWidget>
-#include <qcustomplot.h>
+#include <MyCustomPlot.h>
 
 class CustomViewContainer: public QWidget
 {

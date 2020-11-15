@@ -1,11 +1,11 @@
-#include <qcustomplot.h>
+#include <MyCustomPlot.h>
 #include <QVector>
 #include <iostream>
 
-#include "curve2d.h"
+#include "2d_curve.h"
 #include "tabledata.h"
-#include "color_wheel.hpp"
-#include "qgradientcombobox.h"
+#include "ColorWheel.hpp"
+#include "MyGradientComboBox.h"
 
 #ifndef VIEWER1D_H
 #define VIEWER1D_H

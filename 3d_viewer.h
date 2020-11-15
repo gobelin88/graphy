@@ -10,27 +10,27 @@
 #include <QScreen>
 #include <Qt3DRender/QRenderCaptureReply>
 #include <QPickEvent>
-#include <obj.h>
+#include <3d_objectLoader.h>
 
 #include <QMenu>
 #include <QAction>
 #include <QMouseEvent>
 
-#include "qPosAtt.h"
+#include "PosAtt.h"
 #include "Cloud.h"
-#include "qcustomplot.h"
-#include "obj.h"
+#include "MyCustomPlot.h"
+#include "3d_objectLoader.h"
 
 #include "3d_label.h"
-#include "object3d.h"
+#include "3d_object.h"
 #include "3d_shapes.h"
 #include "3d_light.h"
 #include "3d_cloud.h"
-#include "color_wheel.hpp"
+#include "ColorWheel.hpp"
 
-#include "customviewcontainer.h"
+#include "3d_customViewContainer.h"
 #include "3d_cameraParams.h"
-#include "qgradientcombobox.h"
+#include "MyGradientComboBox.h"
 
 class MyCapture : public QObject
 {
@@ -82,7 +82,7 @@ public:
     Viewer3D(const QMap<QString, QKeySequence>& shortcuts_map);
 
     void addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode);
-    void addObject(Qt3DRender::QMesh* mesh_object, Object *object, QPosAtt posatt, float scale, QColor color);
+    void addObject(Qt3DRender::QMesh* mesh_object, Object *object, PosAtt posatt, float scale, QColor color);
     void addSphere(Sphere * sphere,QColor color);
     void addPlan(Plan* plan, float radius, QColor color);
 

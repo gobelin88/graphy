@@ -54,7 +54,7 @@ SOURCES += \
         MyItemDelegate.cpp \
         MyTableModel.cpp \
         MyTableView.cpp \
-        MyValueContainer.cpp \
+        MyVariant.cpp \
         PosAtt.cpp \
         Register.cpp \
         ShapeFit.cpp \
@@ -88,7 +88,7 @@ HEADERS += \
         MyItemDelegate.h \
         MyTableModel.h \
         MyTableView.h \
-        MyValueContainer.h \
+        MyVariant.h \
         PosAtt.h \
         Register.h \
         ShapeFit.h \

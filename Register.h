@@ -5,7 +5,7 @@
 #include "exprtk/exprtk.hpp"
 #include "random"
 
-#include "MyValueContainer.h"
+#include "MyVariant.h"
 
 #ifndef REGISTER_H
 #define REGISTER_H
@@ -37,7 +37,7 @@ public:
 
     QStringList getCustomExpressionList();
     bool customExpressionParse(unsigned int id, QString& result, std::function<QString(int,int)> at, int currentRow);
-    bool customExpressionParse2(const MatrixXv & data,unsigned int id, MyValueContainer & result, int currentRow);
+    bool customExpressionParse2(const MatrixXv & data,unsigned int id, MyVariant & result, int currentRow);
 
     const QStringList & variablesNames()const;
     const QStringList & variablesExpressions()const;

@@ -110,8 +110,6 @@ bool MyModel::open(QString filename)
     QFile file(filename);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        reg.clear();
-
         QStringList content=QString(file.readAll()).split("\n",QString::SkipEmptyParts);
 
         for(int i=0;i<content.size();)
@@ -128,6 +126,7 @@ bool MyModel::open(QString filename)
 
         if(content.size()>0)
         {
+            reg.clear();
 
             //Parse Header-----------------------------------
             int headerSize=0;
@@ -154,7 +153,12 @@ bool MyModel::open(QString filename)
                     {
                         for(int i=0;i<variablesNames.size();i++)
                         {
-                            reg.newVariable(variablesNames[i],variablesExpressions[i]);
+                            reg.newVariable(variablesNames[i],"");
+                        }
+
+                        for(int i=0;i<variablesNames.size();i++)
+                        {
+                            reg.renameVariable(variablesNames[i],variablesNames[i],"",variablesExpressions[i]);
                         }
                     }
                     else
@@ -193,17 +197,7 @@ bool MyModel::open(QString filename)
                     {
                         for(int j=0;j<nbCols;j++)
                         {
-                            bool isd=false;
-                            double datad=valueList[j].toDouble(&isd);
-                            if(isd)
-                            {
-                                m_data(i-headerSize,j).num = datad;
-                            }
-                            else
-                            {
-                                m_data(i-headerSize,j).str = valueList[j];
-                            }
-                            m_data(i-headerSize,j).isDouble=isd;
+                            m_data(i-headerSize,j).loadFromString(valueList[j]);
                         }
                     }
                     else
@@ -336,7 +330,7 @@ void MyModel::paste(int x0,int y0,QString buffer)
     emit sig_dataChanged();
 }
 
-MyValueContainer & MyModel::at(QModelIndex indexLogical)
+MyVariant & MyModel::at(QModelIndex indexLogical)
 {
     QModelIndex indexVisual= toVisualIndex(indexLogical);
     return m_data(indexVisual.row()+m_rowOffset,indexVisual.column());
@@ -346,7 +340,7 @@ bool MyModel::asColumnStrings(int idCol)
 {
     for(int i=0;i<m_data.rows();i++)
     {
-        if(m_data(i,idCol).isDouble==false)
+        if(m_data(i,idCol).canConvert<QString>()==true)
         {
             return true;
         }
@@ -382,7 +376,7 @@ QVector<QString> MyModel::getColVisualDataString(int visualIndex)const
 
     for(int i=0;i<v.size();i++)
     {
-        v[i]=m_data(i,visualIndex).str;
+        v[i]=m_data(i,visualIndex).toString();
     }
 
     return v;
@@ -396,7 +390,7 @@ Eigen::VectorXd MyModel::getColVisualDataDouble(int visualIndex)const
 
     for(int i=0;i<v.rows();i++)
     {
-        v[i]=m_data(i,visualIndex).num;
+        v[i]=m_data(i,visualIndex).toDouble();
     }
 
     return v;
@@ -574,7 +568,7 @@ void MyModel::clearLogicalIndexes(const QModelIndexList & selectedIndexes)
 {
     for (int i = 0; i < selectedIndexes.count(); ++i)
     {
-        at(selectedIndexes[i])=MyValueContainer();
+        at(selectedIndexes[i])=MyVariant();
     }
     emit layoutChanged();
     emit sig_dataChanged();
@@ -597,7 +591,7 @@ void MyModel::clearLogicalIndexesCols(const QModelIndexList & selectedIndexesCol
     {
         for (int i = 0; i < m_data.rows(); ++i)
         {
-            m_data(i,visualIndexsCols[j])=MyValueContainer();
+            m_data(i,visualIndexsCols[j])=MyVariant();
         }
     }
 
@@ -624,11 +618,10 @@ VectorXv MyModel::eval(int visualIndex)
                 reg.setActiveRow(i);
                 for (int j=0; j<m_data.cols(); j++)
                 {
-                    reg.setVariable(j,m_data(i,j).num);
+                    reg.setVariable(j,m_data(i,j).toDouble());
                 }
 
-                colResults[i].num=reg.currentCompiledExpressionValue();
-                colResults[i].isDouble=true;
+                colResults[i]=reg.currentCompiledExpressionValue();
             }
         }
         else
@@ -638,7 +631,7 @@ VectorXv MyModel::eval(int visualIndex)
                 reg.setActiveRow(i);
                 for (int j=0; j<m_data.cols(); j++)
                 {
-                    reg.setVariable(j,m_data(i,j).num);
+                    reg.setVariable(j,m_data(i,j).toDouble());
                 }
 
                 // store a call to a member function and object ptr
@@ -807,14 +800,7 @@ QVariant MyModel::data(const QModelIndex &index_logical, int role) const
 
         if (checkIndex(index))
         {
-            if(m_data(index.row()+m_rowOffset,index.column()).isDouble)
-            {
-                return m_data(index.row()+m_rowOffset,index.column()).num;
-            }
-            else
-            {
-                return m_data(index.row()+m_rowOffset,index.column()).str;
-            }
+            return m_data(index.row()+m_rowOffset,index.column());
         }
     }
     if (role == Qt::BackgroundRole)
@@ -870,17 +856,8 @@ bool MyModel::setData(const QModelIndex &index_logical, const QVariant &value, i
         {
             return false;
         }
-        bool isd=false;
-        double datad=value.toDouble(&isd);
-        if(isd)
-        {
-            m_data(index.row()+m_rowOffset,index.column()).num = datad;
-        }
-        else
-        {
-            m_data(index.row()+m_rowOffset,index.column()).str = value.toString();
-        }
-        m_data(index.row()+m_rowOffset,index.column()).isDouble=isd;
+
+        m_data(index.row()+m_rowOffset,index.column()) = value;
 
 //        std::cout<<"---------------"<<std::endl;
 //        std::cout<<m_data<<std::endl;
@@ -1008,11 +985,11 @@ void MyModel::dataSortBy(MatrixXv & matrix, int colId,SortMode mode)
 
     if(mode==ASCENDING)
     {
-        std::sort(vec.begin(), vec.end(), [&colId](VectorXv const& t1, VectorXv const& t2){ return t1(colId).num < t2(colId).num; } );
+        std::sort(vec.begin(), vec.end(), [&colId](VectorXv const& t1, VectorXv const& t2){ return t1(colId).toDouble() < t2(colId).toDouble(); } );
     }
     else if(mode==DECENDING)
     {
-        std::sort(vec.begin(), vec.end(), [&colId](VectorXv const& t1, VectorXv const& t2){ return t1(colId).num > t2(colId).num; } );
+        std::sort(vec.begin(), vec.end(), [&colId](VectorXv const& t1, VectorXv const& t2){ return t1(colId).toDouble() > t2(colId).toDouble(); } );
     }
 
     for (int64_t i = 0; i < matrix.rows(); ++i)
@@ -1026,14 +1003,14 @@ void MyModel::dataThresholdBy(MatrixXv & matrix, int colId,ThresholdMode mode,do
     {
         if(mode==KEEP_GREATER)
         {
-            if(matrix(i,colId).num>thresholdValue)//KEEP_GREATER
+            if(matrix(i,colId).toDouble()>thresholdValue)//KEEP_GREATER
             {
                 vec.push_back(matrix.row(i));
             }
         }
         else
         {
-            if(matrix(i,colId).num<thresholdValue)//KEEP_LOWER
+            if(matrix(i,colId).toDouble()<thresholdValue)//KEEP_LOWER
             {
                 vec.push_back(matrix.row(i));
             }
@@ -1090,8 +1067,7 @@ void MyModel::slot_newColumn(QString varName,Eigen::VectorXd dataCol)
 
             for(int i=0;i<dataCol.rows();i++)
             {
-                dataColv[i].num=dataCol[i];
-                dataColv[i].isDouble=true;
+                dataColv[i]=dataCol[i];
             }
 
             dataAddColumn(m_data,dataColv);

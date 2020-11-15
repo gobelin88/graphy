@@ -6,7 +6,7 @@
 #include <iostream>
 
 #include "Register.h"
-#include "MyValueContainer.h"
+#include "MyVariant.h"
 
 #ifndef MYTABLEMODEL_H
 #define MYTABLEMODEL_H
@@ -99,7 +99,7 @@ signals:
 private:
     void contentResized();
     void create(int nbRows, int nbCols, int rowSpan);
-    MyValueContainer & at(QModelIndex indexLogical);
+    MyVariant & at(QModelIndex indexLogical);
 
     int m_rowOffset;
     int m_rowSpan;

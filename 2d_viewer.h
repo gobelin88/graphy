@@ -11,13 +11,19 @@
 #include <QFileDialog>
 
 #include "MyCustomPlot.h"
-#include "tabledata.h"
+#include "DataConvert.h"
 #include "MyGradientComboBox.h"
 
 class Viewer2D:public QCustomPlot
 {
     Q_OBJECT
 public:
+    enum InterpolationMode
+    {
+        MODE_NEAREST,
+        MODE_WEIGHTED
+    };
+
     Viewer2D();
     ~Viewer2D();
 
@@ -25,6 +31,9 @@ public:
 
     void setRange(QCPRange range_x, QCPRange range_y);
     void resetRange();
+
+    //Build KdTree in order to interpolate data
+    void interpolate(const Eigen::VectorXd &dataX, const Eigen::VectorXd &dataY, const Eigen::VectorXd &dataZ, const Eigen::Vector2d & box, QCPColorMap* map, size_t knn, InterpolationMode mode);
 
 public slots:
     void slot_setData(const Eigen::VectorXd &dataX, const Eigen::VectorXd &dataY, const Eigen::VectorXd &dataZ, const Eigen::Vector2d &box);

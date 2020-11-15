@@ -1,4 +1,5 @@
 #include "2d_viewer.h"
+#include "kdtree_eigen.h"
 
 Viewer2D::Viewer2D()
 {
@@ -112,7 +113,7 @@ void Viewer2D::slot_setParameters()
     sb_knn->setRange(1,10000);
     sb_knn->setValue(knn);
 
-    QGradientComboBox * c_gradient=new QGradientComboBox(dialog);
+    MyGradientComboBox * c_gradient=new MyGradientComboBox(dialog);
     c_gradient->setCurrentIndex(static_cast<int>(currentgradient));
 
     QObject::connect(sb_knn, SIGNAL(valueChanged(int)), this, SLOT(slot_setKnn(int)));
@@ -169,6 +170,67 @@ void Viewer2D::slot_setData(const Eigen::VectorXd & dataX,
     this->dataZ=dataZ;
     this->box=box;
     slot_updateData();
+}
+
+void Viewer2D::interpolate(const Eigen::VectorXd& dataX,
+                 const Eigen::VectorXd& dataY,
+                 const Eigen::VectorXd& dataZ,
+                 const Eigen::Vector2d &box,
+                 QCPColorMap* map,
+                 size_t knn,
+                 InterpolationMode mode)
+{
+    Eigen::MatrixXd datapoints(2,dataX.size());
+
+    for (int i=0; i<datapoints.cols(); i++)
+    {
+        datapoints(0,i)=dataX[i];
+        datapoints(1,i)=dataY[i];
+    }
+
+    std::cout<<"data[box.idX].size()="<<datapoints.cols()<<std::endl;
+    std::cout<<datapoints.transpose()<<std::endl;
+
+    kdt::KDTreed kdtree(datapoints);
+    kdtree.build();
+
+    kdt::KDTreed::Matrix dists; // basically Eigen::MatrixXd
+    kdt::KDTreed::MatrixI idx; // basically Eigen::Matrix<Eigen::Index>
+
+    for (uint i=0; i<box[0]; i++)
+    {
+        for (uint j=0; j<box[1]; j++)
+        {
+            kdt::KDTreed::Matrix queryPoints(2,1);
+            map->data()->cellToCoord(int(i),int(j),&queryPoints(0,0),&queryPoints(1,0));
+
+            double value=0;
+            if (mode==MODE_WEIGHTED)
+            {
+                kdtree.query(queryPoints, knn, idx, dists);
+                double weight_sum=0;
+                for (int k=0; k<knn; k++)
+                {
+                    if (idx(k,0)>=0)
+                    {
+                        value+=(1.0/dists(k,0))* dataZ[idx(k,0)];
+                        weight_sum+=(1.0/dists(k,0));
+                    }
+                }
+                value/=weight_sum;
+            }
+            else if (mode==MODE_NEAREST)
+            {
+                kdtree.query(queryPoints, 1, idx, dists);
+                if (idx(0,0)>=0)
+                {
+                    value=dataZ[idx(0,0)];
+                }
+            }
+
+            map->data()->setCell(i,j,value);
+        }
+    }
 }
 
 void Viewer2D::slot_updateData()

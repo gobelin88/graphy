@@ -116,7 +116,7 @@ void Viewer3D::createPopup()
     cb_show_hide_labels->setChecked(true);
 
     cb_use_custom_color=new QCheckBox("Use custom color");
-    cw_custom_color=new Color_Wheel();
+    cw_custom_color=new ColorWheel();
 
     sb_size=new QDoubleSpinBox;
     sb_size->setRange(0.1,100);
@@ -130,7 +130,7 @@ void Viewer3D::createPopup()
     cb_mode->addItem("TRIANGLES");
     cb_mode->addItem("TRIANGLE_STRIP");
 
-    c_gradient=new QGradientComboBox(nullptr);
+    c_gradient=new MyGradientComboBox(nullptr);
 
     gbox->addWidget(cb_mode,0,0);
     gbox->addWidget(sb_size,0,1);

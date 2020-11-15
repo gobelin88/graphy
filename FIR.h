@@ -16,7 +16,7 @@
 
 /**
  * @class FIR
- * @brief Classe d'implémentation d'un FIR
+ * @brief Classe d'implémentation d'un FIR (Finite Impulse Response)
  */
 class FIR
 {

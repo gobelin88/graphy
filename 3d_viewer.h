@@ -197,7 +197,7 @@ private:
     QCheckBox * cb_show_hide_axis;
     QCheckBox * cb_show_hide_labels;
     QCheckBox * cb_use_custom_color;
-    Color_Wheel * cw_custom_color;
+    ColorWheel * cw_custom_color;
 
     //Misc
     QString current_filename;

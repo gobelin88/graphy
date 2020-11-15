@@ -5,7 +5,7 @@
 #include "FIR.h"
 
 Eigen::VectorXcd MyFFT::getFFT(Eigen::VectorXcd s_in,
-                               FFTWindowsType fft_mode,
+                               WindowsType fft_mode,
                                bool normalize_flag,
                                bool halfspectrum,
                                bool inverse)
@@ -144,9 +144,9 @@ FFTDialog::FFTDialog()
     QObject::connect(cb_windowType, SIGNAL(currentIndexChanged(int)), this, SLOT(setWindowsFormula(int)));
 }
 
-MyFFT::FFTWindowsType FFTDialog::getWindowsType()
+MyFFT::WindowsType FFTDialog::getWindowsType()
 {
-    return static_cast<MyFFT::FFTWindowsType>(cb_windowType->currentIndex());
+    return static_cast<MyFFT::WindowsType>(cb_windowType->currentIndex());
 }
 bool FFTDialog::isNormalized()
 {
@@ -174,7 +174,7 @@ void FFTDialog::setFormula(bool inverse)
     }
 }
 
-void FFTDialog::setWindowsFormula(MyFFT::FFTWindowsType type)
+void FFTDialog::setWindowsFormula(MyFFT::WindowsType type)
 {
     if(type==MyFFT::RECTANGLE)
     {
@@ -196,7 +196,7 @@ void FFTDialog::setWindowsFormula(MyFFT::FFTWindowsType type)
 
 void FFTDialog::setWindowsFormula(int type)
 {
-    setWindowsFormula(static_cast<MyFFT::FFTWindowsType>(type));
+    setWindowsFormula(static_cast<MyFFT::WindowsType>(type));
 }
 
 void FFTDialog::setNormalizedFormula(bool normalize)

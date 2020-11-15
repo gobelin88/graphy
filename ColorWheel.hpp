@@ -31,7 +31,7 @@
  * It has an outer wheel to select the Hue and an intenal square to select
  * Saturation and Lightness.
  */
-class Color_Wheel : public QWidget
+class ColorWheel : public QWidget
 {
     Q_OBJECT
 
@@ -67,8 +67,8 @@ public:
     Q_DECLARE_FLAGS(Display_Flags, Display_Enum)
     Q_FLAGS(Display_Flags)
 
-    explicit Color_Wheel(QWidget* parent = 0);
-    ~Color_Wheel();
+    explicit ColorWheel(QWidget* parent = 0);
+    ~ColorWheel();
 
     /// Get current color
     QColor color() const;
@@ -130,7 +130,7 @@ public slots:
      * @brief Set the display flags
      * @param flags which will replace the current ones
      */
-    void setDisplayFlags(Color_Wheel::Display_Flags flags);
+    void setDisplayFlags(ColorWheel::Display_Flags flags);
 
 signals:
     /**
@@ -143,7 +143,7 @@ signals:
      */
     void colorSelected(QColor);
 
-    void displayFlagsChanged(Color_Wheel::Display_Flags flags);
+    void displayFlagsChanged(ColorWheel::Display_Flags flags);
 
 protected:
     void paintEvent(QPaintEvent*);
@@ -157,6 +157,6 @@ private:
     Private* const p;
 };
 
-Q_DECLARE_OPERATORS_FOR_FLAGS(Color_Wheel::Display_Flags)
+Q_DECLARE_OPERATORS_FOR_FLAGS(ColorWheel::Display_Flags)
 
 #endif // COLOR_WHEEL_HPP

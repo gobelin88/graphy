@@ -44,6 +44,8 @@ SOURCES += \
         3d_shapes.cpp \
         3d_viewer.cpp \
         Cloud.cpp \
+        ColorWheel.cpp \
+        DataConvert.cpp \
         FFT.cpp \
         FIR.cpp \
         MainWindow.cpp \
@@ -57,9 +59,7 @@ SOURCES += \
         Register.cpp \
         ShapeFit.cpp \
         bode_viewer.cpp \
-        colorWheel.cpp \
-        main.cpp \
-        tabledata.cpp
+        main.cpp
 
 HEADERS += \
         1d_viewer.h \
@@ -78,6 +78,7 @@ HEADERS += \
         3d_viewer.h \
         Cloud.h \
         ColorWheel.hpp \
+        DataConvert.h \
         FFT.h \
         FIR.h \
         Functor.h \
@@ -92,7 +93,6 @@ HEADERS += \
         Register.h \
         ShapeFit.h \
         bode_viewer.h \
-        tabledata.h \
         exprtk\exprtk.hpp
 
 FORMS += \

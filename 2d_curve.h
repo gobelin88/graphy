@@ -7,7 +7,7 @@
 #include "ShapeFit.h"
 #include "MyCustomPlot.h"
 #include "FIR.h"
-#include "tabledata.h"
+#include "DataConvert.h"
 
 class Curve2D
 {

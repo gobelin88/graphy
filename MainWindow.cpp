@@ -871,7 +871,7 @@ void MainWindow::slot_colourize()
         QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
         QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
-        QGradientComboBox * cb_gradients=new QGradientComboBox(this);
+        MyGradientComboBox * cb_gradients=new MyGradientComboBox(this);
 
         QCheckBox * cb_percolumns=new QCheckBox("Range per columns");
         cb_percolumns->setChecked(false);

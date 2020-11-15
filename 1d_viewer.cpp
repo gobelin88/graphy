@@ -220,11 +220,11 @@ QWidgetAction* Viewer1D::createParametersWidget()
     cb_brushstyle->addItem(QStringLiteral("DiagCrossPattern"));
 
     //QPushButton* pb_pen_color=new  QPushButton("Pen");
-    cw_pen_color = new Color_Wheel;
-    cw_brush_color = new Color_Wheel;
+    cw_pen_color = new ColorWheel;
+    cw_brush_color = new ColorWheel;
     //cd_pen_color->setOptions(QColorDialog::DontUseNativeDialog| QColorDialog::NoButtons);
 
-    cb_gradient=new QGradientComboBox(nullptr);
+    cb_gradient=new MyGradientComboBox(nullptr);
 
     sb_pen_width=new QDoubleSpinBox();
     s_pen_alpha=new QDoubleSpinBox();

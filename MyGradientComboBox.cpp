@@ -1,6 +1,6 @@
 #include "MyGradientComboBox.h"
 
-QGradientComboBox::QGradientComboBox(QWidget * parent):QComboBox(parent)
+MyGradientComboBox::MyGradientComboBox(QWidget * parent):QComboBox(parent)
 {
     addItem("Grayscale",QCPColorGradient::GradientPreset::gpGrayscale);
     addItem("GreenRed",QCPColorGradient::GradientPreset::gpGreenRed);
@@ -27,7 +27,7 @@ QGradientComboBox::QGradientComboBox(QWidget * parent):QComboBox(parent)
     }
 }
 
-QPixmap QGradientComboBox::getPixmap(QSize size,int preset_index)
+QPixmap MyGradientComboBox::getPixmap(QSize size,int preset_index)
 {
     int w=size.width();
     int h=size.height();
@@ -48,7 +48,7 @@ QPixmap QGradientComboBox::getPixmap(QSize size,int preset_index)
     return QPixmap::fromImage(image);
 }
 
-std::vector<QRgb> QGradientComboBox::colourize(const Eigen::VectorXd & v)
+std::vector<QRgb> MyGradientComboBox::colourize(const Eigen::VectorXd & v)
 {
     QCPRange range(v.minCoeff(),v.maxCoeff());
     std::vector<QRgb> colors;
@@ -60,7 +60,7 @@ std::vector<QRgb> QGradientComboBox::colourize(const Eigen::VectorXd & v)
     return colors;
 }
 
-std::vector<QRgb> QGradientComboBox::colourize(const Eigen::VectorXd & v,const QCPRange & range)
+std::vector<QRgb> MyGradientComboBox::colourize(const Eigen::VectorXd & v,const QCPRange & range)
 {
     std::vector<QRgb> colors;
     QCPColorGradient gradient(static_cast<QCPColorGradient::GradientPreset>(this->currentIndex()));
@@ -71,7 +71,7 @@ std::vector<QRgb> QGradientComboBox::colourize(const Eigen::VectorXd & v,const Q
     return colors;
 }
 
-std::vector<QRgb> QGradientComboBox::colourize(const Eigen::VectorXd & v,int preset_index)
+std::vector<QRgb> MyGradientComboBox::colourize(const Eigen::VectorXd & v,int preset_index)
 {
     QCPRange range(v.minCoeff(),v.maxCoeff());
     std::vector<QRgb> colors;

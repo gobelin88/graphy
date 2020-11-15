@@ -5,10 +5,10 @@
 #include "MyCustomPlot.h"
 #include <Eigen/Dense>
 
-class QGradientComboBox : public QComboBox
+class MyGradientComboBox : public QComboBox
 {
 public:
-    QGradientComboBox(QWidget * parent);
+    MyGradientComboBox(QWidget * parent);
     std::vector<QRgb> colourize(const Eigen::VectorXd & v);
     std::vector<QRgb> colourize(const Eigen::VectorXd & v,const QCPRange & range);
     std::vector<QRgb> colourize(const Eigen::VectorXd & v,int preset_index);

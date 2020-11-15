@@ -11,7 +11,7 @@
 class MyFFT
 {
 public:
-    enum FFTWindowsType
+    enum WindowsType
     {
         RECTANGLE,
         BLACKMAN,
@@ -20,7 +20,7 @@ public:
     };
 
     static Eigen::VectorXcd MyFFT::getFFT(Eigen::VectorXcd s_in,
-                                     FFTWindowsType fft_mode,
+                                     WindowsType fft_mode,
                                      bool normalize_flag,
                                      bool halfspectrum,
                                      bool inverse);
@@ -33,7 +33,7 @@ class FFTDialog:public QDialog
 public:
     FFTDialog();
 
-    MyFFT::FFTWindowsType getWindowsType();
+    MyFFT::WindowsType getWindowsType();
     bool isNormalized();
     bool isInverse();
     double getFe();
@@ -41,7 +41,7 @@ public:
 public slots:
     void setFormula(bool inverse);
     void setWindowsFormula(int type);
-    void setWindowsFormula(MyFFT::FFTWindowsType type);
+    void setWindowsFormula(MyFFT::WindowsType type);
     void setNormalizedFormula(bool normalize);
 
 public:

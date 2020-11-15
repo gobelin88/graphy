@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "2d_curve.h"
-#include "tabledata.h"
+#include "DataConvert.h"
 #include "ColorWheel.hpp"
 #include "MyGradientComboBox.h"
 
@@ -174,15 +174,15 @@ protected:
     QAction* actGadgetMark;
     QWidgetAction* createParametersWidget();
 
-    QGradientComboBox * cb_gradient;
+    MyGradientComboBox * cb_gradient;
 
     QComboBox* cb_itemLineStyleList;
     QComboBox* cb_ScatterShapes;
     QDoubleSpinBox* sb_ScatterSize;
     QComboBox* cb_penstyle;
     QComboBox* cb_brushstyle;
-    Color_Wheel* cw_pen_color;
-    Color_Wheel* cw_brush_color;
+    ColorWheel* cw_pen_color;
+    ColorWheel* cw_brush_color;
     QDoubleSpinBox* sb_pen_width;
     QDoubleSpinBox* s_pen_alpha;
     QDoubleSpinBox* s_brush_alpha;

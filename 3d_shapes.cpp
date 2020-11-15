@@ -1,4 +1,4 @@
-#include "grid3d.h"
+#include "3d_shapes.h"
 
 Grid3D::Grid3D(Qt3DCore::QEntity* rootEntity,unsigned int N,QColor color)
 :Base3D(rootEntity)

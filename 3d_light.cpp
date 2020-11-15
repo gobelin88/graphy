@@ -1,4 +1,4 @@
-#include "light3d.h"
+#include "3d_light.h"
 
 Light3D::Light3D(Qt3DCore::QEntity* rootEntity,QColor color,QVector3D position)
 {

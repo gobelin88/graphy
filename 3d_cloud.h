@@ -3,7 +3,7 @@
 
 #include <Qt3DExtras>
 #include <Qt3DRender>
-#include "Base3D.h"
+#include "3d_base.h"
 #include "Cloud.h"
 
 class Cloud3D:public Base3D

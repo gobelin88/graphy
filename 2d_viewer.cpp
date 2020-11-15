@@ -162,7 +162,7 @@ void Viewer2D::resetRange()
 void Viewer2D::slot_setData(const Eigen::VectorXd & dataX,
                             const Eigen::VectorXd & dataY,
                             const Eigen::VectorXd & dataZ,
-                            const Resolution& box)
+                            const Eigen::Vector2d & box)
 {
     this->dataX=dataX;
     this->dataY=dataY;
@@ -174,7 +174,7 @@ void Viewer2D::slot_setData(const Eigen::VectorXd & dataX,
 void Viewer2D::slot_updateData()
 {
     colorMap->data()->clear();
-    colorMap->data()->setSize(box.pX_res,box.pY_res);
+    colorMap->data()->setSize(box[0],box[1]);
     setRange(QCPRange(dataX.minCoeff(),dataX.maxCoeff()),QCPRange(dataY.minCoeff(),dataY.maxCoeff()));
     interpolate(dataX,dataY,dataZ,box,colorMap,knn,mode);
     resetRange();

@@ -19,6 +19,7 @@ public:
 
     double num;
     QString str;
+
     bool isDouble;
     QRgb background;
 };

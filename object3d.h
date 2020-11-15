@@ -4,7 +4,7 @@
 #include <Qt3DExtras>
 #include <Qt3DRender>
 #include "qPosAtt.h"
-#include "Base3D.h"
+#include "3d_base.h"
 #include "obj.h"
 
 class Object3D:public Base3D

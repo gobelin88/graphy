@@ -1,5 +1,4 @@
 #include <QVector>
-#include <boxplot.h>
 #include <iostream>
 #include <Eigen/Dense>
 #include "qcustomplot.h"
@@ -26,7 +25,7 @@ enum ThresholdMode
 };
 
 //Build KdTree in order to interpolate data
-void interpolate(const Eigen::VectorXd &dataX, const Eigen::VectorXd &dataY, const Eigen::VectorXd &dataZ, const Resolution& box, QCPColorMap* map, size_t knn, InterpolationMode mode);
+void interpolate(const Eigen::VectorXd &dataX, const Eigen::VectorXd &dataY, const Eigen::VectorXd &dataZ, const Eigen::Vector2d & box, QCPColorMap* map, size_t knn, InterpolationMode mode);
 
 std::vector<double> toStdVector(const Eigen::VectorXd& v);
 Eigen::VectorXd fromStdVector(const std::vector<double>& v_std);

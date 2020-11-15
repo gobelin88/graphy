@@ -14,7 +14,7 @@ void create(Eigen::MatrixXd& data, uint nbL,uint nbC)
 void interpolate(const Eigen::VectorXd& dataX,
                  const Eigen::VectorXd& dataY,
                  const Eigen::VectorXd& dataZ,
-                 const Resolution& box,
+                 const Eigen::Vector2d &box,
                  QCPColorMap* map,
                  size_t knn,
                  InterpolationMode mode)
@@ -36,9 +36,9 @@ void interpolate(const Eigen::VectorXd& dataX,
     kdt::KDTreed::Matrix dists; // basically Eigen::MatrixXd
     kdt::KDTreed::MatrixI idx; // basically Eigen::Matrix<Eigen::Index>
 
-    for (uint i=0; i<box.pX_res; i++)
+    for (uint i=0; i<box[0]; i++)
     {
-        for (uint j=0; j<box.pY_res; j++)
+        for (uint j=0; j<box[1]; j++)
         {
             kdt::KDTreed::Matrix queryPoints(2,1);
             map->data()->cellToCoord(int(i),int(j),&queryPoints(0,0),&queryPoints(1,0));

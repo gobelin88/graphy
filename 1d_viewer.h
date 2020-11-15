@@ -2,7 +2,6 @@
 #include <QVector>
 #include <iostream>
 
-#include "box.h"
 #include "curve2d.h"
 #include "tabledata.h"
 #include "color_wheel.hpp"

@@ -10,7 +10,6 @@
 #include <QFileInfo>
 #include <QFileDialog>
 
-#include "boxplot.h"
 #include "qcustomplot.h"
 #include "tabledata.h"
 #include "qgradientcombobox.h"
@@ -28,7 +27,7 @@ public:
     void resetRange();
 
 public slots:
-    void slot_setData(const Eigen::VectorXd &dataX, const Eigen::VectorXd &dataY, const Eigen::VectorXd &dataZ, const Resolution& box);
+    void slot_setData(const Eigen::VectorXd &dataX, const Eigen::VectorXd &dataY, const Eigen::VectorXd &dataZ, const Eigen::Vector2d &box);
     void slot_saveImage();
     void slot_setGradient(int preset);
     void slot_rescale();
@@ -61,7 +60,7 @@ protected:
     Eigen::VectorXd dataY;
     Eigen::VectorXd dataZ;
 
-    Resolution box;
+    Eigen::Vector2d box;
     QCPColorGradient::GradientPreset currentgradient;
 };
 

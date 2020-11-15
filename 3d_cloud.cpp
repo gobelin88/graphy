@@ -1,4 +1,4 @@
-#include "cloud3d.h"
+#include "3d_cloud.h"
 
 Cloud3D::Cloud3D(Cloud *cloud, Qt3DCore::QEntity* rootEntity)
     :Base3D(rootEntity)

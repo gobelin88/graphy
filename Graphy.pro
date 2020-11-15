@@ -32,6 +32,11 @@ CONFIG += c++11
 SOURCES += \
         1d_viewer.cpp \
         2d_viewer.cpp \
+        3d_cameraParams.cpp \
+        3d_cloud.cpp \
+        3d_label.cpp \
+        3d_light.cpp \
+        3d_shapes.cpp \
         3d_viewer.cpp \
         Cloud.cpp \
         FIR.cpp \
@@ -39,16 +44,11 @@ SOURCES += \
         SurfaceModifier.cpp \
         ShapeFit.cpp \
         bode_viewer.cpp \
-        cameraparams.cpp \
-        cloud3d.cpp \
         color_wheel.cpp \
         curve2d.cpp \
         curve2dComplex.cpp \
         customviewcontainer.cpp \
         fftDialog.cpp \
-        grid3d.cpp \
-        label3d.cpp \
-        light3d.cpp \
         main.cpp \
         mainwindow.cpp \
         myitemdelegate.cpp \
@@ -66,8 +66,13 @@ SOURCES += \
 HEADERS += \
         1d_viewer.h \
         2d_viewer.h \
+        3d_base.h \
+        3d_cameraParams.h \
+        3d_cloud.h \
+        3d_label.h \
+        3d_light.h \
+        3d_shapes.h \
         3d_viewer.h \
-        Base3D.h \
         Cloud.h \
         FIR.h \
         Functor.h \
@@ -75,18 +80,11 @@ HEADERS += \
         SurfaceModifier.h \
         ShapeFit.h \
         bode_viewer.h \
-        box.h \
-        boxplot.h \
-        cameraparams.h \
-        cloud3d.h \
         color_wheel.hpp \
         curve2d.h \
         curve2dComplex.h \
         customviewcontainer.h \
         fftDialog.h \
-        grid3d.h \
-        label3d.h \
-        light3d.h \
         mainwindow.h \
         myitemdelegate.h \
         mytablemodel.h \

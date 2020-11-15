@@ -21,15 +21,15 @@
 #include "qcustomplot.h"
 #include "obj.h"
 
-#include "label3d.h"
+#include "3d_label.h"
 #include "object3d.h"
-#include "grid3d.h"
-#include "light3d.h"
-#include "cloud3d.h"
+#include "3d_shapes.h"
+#include "3d_light.h"
+#include "3d_cloud.h"
 #include "color_wheel.hpp"
 
 #include "customviewcontainer.h"
-#include "cameraparams.h"
+#include "3d_cameraParams.h"
 #include "qgradientcombobox.h"
 
 class MyCapture : public QObject

@@ -449,7 +449,7 @@ void MainWindow::slot_plot_map_2D()
             subWindow->setAttribute(Qt::WA_DeleteOnClose);
             mdiArea->addSubWindow(subWindow,Qt::WindowStaysOnTopHint);
             viewer2d->show();
-            viewer2d->slot_setData(data_x,data_y,data_z,Resolution(512,512));
+            viewer2d->slot_setData(data_x,data_y,data_z,Eigen::Vector2d(512,512));
         }
     }
     else

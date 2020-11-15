@@ -1,7 +1,7 @@
 #ifndef GRID3D_H
 #define GRID3D_H
 
-#include "Base3D.h"
+#include "3d_base.h"
 #include "ShapeFit.h"
 
 #include <Qt3DExtras>

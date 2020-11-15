@@ -1,4 +1,4 @@
-#include "label3d.h"
+#include "3d_label.h"
 
 Label3D::Label3D(Qt3DCore::QEntity* rootEntity,
                  QString text,

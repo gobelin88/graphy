@@ -1,4 +1,4 @@
-#include "cameraparams.h"
+#include "3d_cameraParams.h"
 
 CameraParams::CameraParams(Qt3DRender::QCamera* cameraEntity,float alpha,float beta,float radius,QVector3D barycenter,float boundingRadius)
 {

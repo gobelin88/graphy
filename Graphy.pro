@@ -59,6 +59,7 @@ SOURCES += \
         Register.cpp \
         ShapeFit.cpp \
         bode_viewer.cpp \
+        complex_hack.cpp \
         main.cpp
 
 HEADERS += \
@@ -93,6 +94,7 @@ HEADERS += \
         Register.h \
         ShapeFit.h \
         bode_viewer.h \
+        complex_hack.h \
         exprtk\exprtk.hpp
 
 FORMS += \

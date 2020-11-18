@@ -4,6 +4,8 @@
 
 int main(int argc, char* argv[])
 {
+    testVariant();
+
     QApplication a(argc, argv);
 
     QStringList args=a.arguments();

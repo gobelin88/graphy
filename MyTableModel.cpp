@@ -637,7 +637,7 @@ VectorXv MyModel::eval(int visualIndex)
                 reg.setActiveRow(i);
                 for (int j=0; j<m_data.cols(); j++)
                 {
-                    reg.setVariable(j,m_data(i,j).toDouble());
+                    reg.setVariable(j,m_data(i,j).toComplex());
                 }
 
                 colResults[i]=reg.currentCompiledExpressionValue();
@@ -654,7 +654,7 @@ VectorXv MyModel::eval(int visualIndex)
                 }
 
                 // store a call to a member function and object ptr
-                if(!reg.customExpressionParse2(m_data,visualIndex,colResults[i],i))
+                if(!reg.customExpressionParse(m_data,visualIndex,colResults[i],i))
                 {
                     break;
                 }

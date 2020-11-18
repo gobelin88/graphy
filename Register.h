@@ -4,6 +4,8 @@
 #include <QVector>
 #include "exprtk/exprtk.hpp"
 #include "random"
+#include <cmath>
+#include <qmath.h>
 
 #include "MyVariant.h"
 
@@ -14,7 +16,12 @@
 class Register:public QObject
 {
     Q_OBJECT
+
 public:
+    //using VariableType=double;
+    using VariableType=std::complex<double>;
+
+
     Register();
 
     void swapVariables(int ida,int idb);
@@ -37,35 +44,35 @@ public:
 
     QStringList getCustomExpressionList();
     //bool customExpressionParse(unsigned int id, QString& result, std::function<QString(int,int)> at, int currentRow);
-    bool customExpressionParse2(const MatrixXv & data,unsigned int id, MyVariant & result, int currentRow);
+    bool customExpressionParse(const MatrixXv & data,unsigned int id, MyVariant & result, int currentRow);
 
     const QStringList & variablesNames()const;
     const QStringList & variablesExpressions()const;
 
     int size();
 
-    exprtk::symbol_table<double> & symbols();
+    exprtk::symbol_table<VariableType> & symbols();
 
-    void setVariable(int i,double value);
+    void setVariable(int i,VariableType value);
 
     bool compileExpression(int id);
-    double currentCompiledExpressionValue();
+    VariableType currentCompiledExpressionValue();
 
 signals:
     void sig_modified();
 
 private:
     //Exprtk
-    exprtk::parser<double> parser;
-    exprtk::symbol_table<double> symbolsTable;
-    exprtk::expression<double> current_compiled_expression;
-    QVector<double*> variables;
+    exprtk::parser<VariableType> parser;
+    exprtk::symbol_table<VariableType> symbolsTable;
+    exprtk::expression<VariableType> current_compiled_expression;
+    QVector<VariableType*> variables;
     QStringList variables_names;
     QStringList variables_expressions;
 
     //Misc variables
-    double activeRow;
-    double activeCol;
+    VariableType activeRow;
+    VariableType activeCol;
 
     //Error message
     void error(QString title,QString msg);

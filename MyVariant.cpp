@@ -23,7 +23,7 @@ void MyVariant::operator=(const QString & other)
     *dynamic_cast<QVariant*>(this)=other;
 }
 
-void MyVariant::operator=(const std::complex<double> other)
+void MyVariant::operator=(const std::complex<double> & other)
 {
     dynamic_cast<QVariant*>(this)->setValue(other);
 }
@@ -52,16 +52,149 @@ std::ostream& operator<< (std::ostream &out,const MyVariant & v)
     return out;
 }
 
+QString MyVariant::doubleToString(double value)const
+{
+    return QString::number(value,'g',myVariantDoubleToStringPrecision);
+}
+
+QString MyVariant::complexToString(std::complex<double> value)const
+{
+    if (value.imag()==0.0)
+    {
+        return doubleToString( value.real());
+    }
+    else if (value.real()==0.0)
+    {
+        if(value.imag()==1)
+        {
+            return QString("i");
+        }
+        else if(value.imag()==-1)
+        {
+            return QString("-i");
+        }
+        else
+        {
+            return doubleToString(value.imag())+QString("i");
+        }
+    }
+    else
+    {
+        if(value.imag()==1)
+        {
+            return doubleToString( value.real() )+QString("+i");
+        }
+        else if(value.imag()==-1)
+        {
+            return doubleToString( value.real() )+QString("-i");
+        }
+        else if(value.imag()>0)
+        {
+            return doubleToString( value.real() )+QString("+")+doubleToString(value.imag())+QString("i");
+        }
+        else
+        {
+            return doubleToString( value.real() )+doubleToString(value.imag())+QString("i");
+        }
+    }
+}
+
+bool MyVariant::complexFromString(QString string,std::complex<double> & value)const
+{
+    if(string.endsWith("i"))
+    {
+        if(string==QString("i"))//i
+        {
+            value=std::complex<double>(0,1);
+            return true;
+        }
+
+        if(string==QString("-i"))//-i
+        {
+            value=std::complex<double>(0,-1);
+            return true;
+        }
+
+        //Remove the i
+        string.chop(1);
+
+        bool isPureImaginary;
+        double imaginaryPart=string.toDouble(&isPureImaginary);
+        if(isPureImaginary)//Yi
+        {
+            value=std::complex<double>(0,imaginaryPart);
+        }
+        else//A+Yi
+        {
+            bool realneg=false,imagneg=false;
+            if(string.startsWith("-"))
+            {
+                realneg=true;
+                string.remove(0,1);
+            }
+
+            QStringList args;
+            if(string.contains("-"))
+            {
+                args=string.split("-");
+                imagneg=true;
+            }
+            else if(string.contains("+"))
+            {
+                args=string.split("+");
+                imagneg=false;
+            }
+
+            if(args.size()==2)
+            {
+                if(args[1].isEmpty())
+                {
+                    value=std::complex<double>( (realneg)?-args[0].toDouble():args[0].toDouble(),
+                                                (imagneg)?-1:1);
+                }
+                else
+                {
+                    value=std::complex<double>( (realneg)?-args[0].toDouble():args[0].toDouble(),
+                                                (imagneg)?-args[1].toDouble():args[1].toDouble());
+                }
+                return true;
+            }
+            else
+            {
+//                std::cout<<string.toStdString()<<std::endl;
+//                std::cout<<argsP.size()<<" "<<argsN.size()<<std::endl;
+//                std::cout<<argsP[0].toStdString()<<" "<<argsN[0].toStdString()<<std::endl;
+                return false;
+            }
+        }
+    }
+    else
+    {
+        bool ok;
+        double valuedouble=string.toDouble(&ok);
+
+        if(ok)
+        {
+            value=std::complex<double>(valuedouble,0);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+
+    }
+}
+
 QString MyVariant::saveToString()const
 {
     if( isDouble() )
     {
-        return QString::number(this->toDouble());
+        return doubleToString(this->toDouble());
     }
     else if( isComplex() )
     {
-        std::complex<double> value= toComplex();
-        return QString("(%1,%2)").arg( value.real() ).arg( value.imag() );
+        return complexToString(toComplex());
     }
     else
     {
@@ -79,14 +212,11 @@ void MyVariant::loadFromString(QString string)
         return ;
     }
 
-    QStringList args=string.split(",");
-    bool canComplex=string.startsWith("(") && string.endsWith(")") && args.size()==2;
-    if(canComplex)
+    std::complex<double> value_cplx;
+    if(complexFromString(string,value_cplx))
     {
-        args[0].remove(0,1);
-        args[1].chop(1);
-        *this=std::complex<double>(args[0].toDouble(),args[1].toDouble());
-        return ;
+        *this=value_cplx;
+        return;
     }
 
     *this=string;
@@ -132,6 +262,10 @@ std::complex<double> MyVariant::toComplex() const
     else if(isDouble())
     {
         return std::complex<double>(toDouble(),0.0);
+    }
+    else
+    {
+        return std::complex<double>(0.0,0.0);
     }
 }
 /////////////////////////
@@ -190,4 +324,47 @@ VectorXv fromComplex(const Eigen::VectorXcd & v)
         vo[i]=v[i];
     }
     return vo;
+}
+
+void testComplex(std::complex<double> ci)
+{
+     MyVariant v;
+    std::complex<double> co;
+
+    std::complex<double>(0,1);
+    bool ok=v.complexFromString(v.complexToString(ci),co);
+    std::cout<<ci<<" "<<co<<" "<<ok<<" ";
+
+    if(ci.real()!=co.real())
+    {
+        std::cout<<"failed"<<std::endl;
+        return;
+    }
+
+    if(ci.imag()!=co.imag())
+    {
+        std::cout<<"failed"<<std::endl;
+        return;
+    }
+
+    std::cout<<"ok"<<std::endl;
+}
+
+void testVariant()
+{
+    testComplex(std::complex<double>(0,1));
+    testComplex(std::complex<double>(0,-1));
+    testComplex(std::complex<double>(1,0));
+    testComplex(std::complex<double>(-1,0));
+    testComplex(std::complex<double>(-1,-1));
+    testComplex(std::complex<double>(-1,+1));
+    testComplex(std::complex<double>(1,-1));
+
+    testComplex(std::complex<double>(0,2));
+    testComplex(std::complex<double>(0,-2));
+    testComplex(std::complex<double>(2,0));
+    testComplex(std::complex<double>(-2,0));
+    testComplex(std::complex<double>(-2,-2));
+    testComplex(std::complex<double>(-2,+2));
+    testComplex(std::complex<double>(2,-2));
 }

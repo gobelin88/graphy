@@ -83,7 +83,7 @@ void MyModel::exportLatex(QString filename)
         {
             for (int j = 0; j < m_data.cols(); j++)
             {
-                textData += m_data(i,j).toString();
+                textData += m_data(i,j).saveToString();
 
                 if (j!=m_data.cols()-1)
                 {
@@ -255,7 +255,7 @@ bool MyModel::save(QString filename)
             for (int j = 0; j < m_data.cols(); j++)
             {
 
-                textData += m_data(i,j).toString();
+                textData += m_data(i,j).saveToString();
                 textData += ";";      // for .csv file format
             }
             textData += "\n";             // (optional: for new line segmentation)
@@ -340,7 +340,7 @@ bool MyModel::asColumnStrings(int idCol)
 {
     for(int i=0;i<m_data.rows();i++)
     {
-        if(m_data(i,idCol).canConvert<QString>()==true)
+        if(m_data(i,idCol).isString()==true)
         {
             return true;
         }
@@ -361,6 +361,11 @@ QString MyModel::getVisualColName(int visualIndex)
 Eigen::VectorXd MyModel::getColLogicalDataDouble(int logicalIndex)const
 {
     return getColVisualDataDouble(h_header->visualIndex(logicalIndex));
+}
+
+Eigen::VectorXcd MyModel::getColLogicalDataComplex(int logicalIndex)const
+{
+    return getColVisualDataComplex(h_header->visualIndex(logicalIndex));
 }
 
 QVector<QString> MyModel::getColLogicalDataString(int logicalIndex)const
@@ -391,6 +396,20 @@ Eigen::VectorXd MyModel::getColVisualDataDouble(int visualIndex)const
     for(int i=0;i<v.rows();i++)
     {
         v[i]=m_data(i,visualIndex).toDouble();
+    }
+
+    return v;
+}
+
+Eigen::VectorXcd MyModel::getColVisualDataComplex(int visualIndex)const
+{
+    //something better to be done here
+
+    Eigen::VectorXcd v(m_data.rows());
+
+    for(int i=0;i<v.rows();i++)
+    {
+        v[i]=m_data(i,visualIndex).toComplex();
     }
 
     return v;
@@ -789,19 +808,10 @@ int MyModel::columnCount(const QModelIndex & /*parent*/) const
 //-----------------------------------------------------------------
 QVariant MyModel::data(const QModelIndex &index_logical, int role) const
 {
-    if(role==Qt::EditRole)
+    if(role==Qt::EditRole || role == Qt::DisplayRole)
     {
         QModelIndex index=toVisualIndex(index_logical);
-        return m_data(index.row()+m_rowOffset,index.column()).toString();
-    }
-    else if (role == Qt::DisplayRole)
-    {
-        QModelIndex index=toVisualIndex(index_logical);
-
-        if (checkIndex(index))
-        {
-            return m_data(index.row()+m_rowOffset,index.column());
-        }
+        return m_data(index.row()+m_rowOffset,index.column()).saveToString();
     }
     if (role == Qt::BackgroundRole)
     {
@@ -857,10 +867,10 @@ bool MyModel::setData(const QModelIndex &index_logical, const QVariant &value, i
             return false;
         }
 
-        m_data(index.row()+m_rowOffset,index.column()) = value;
+        m_data(index.row()+m_rowOffset,index.column()).loadFromString(value.toString());
 
 //        std::cout<<"---------------"<<std::endl;
-//        std::cout<<m_data<<std::endl;
+        //std::cout<<m_data<<std::endl;
 
         emit sig_dataChanged();
 
@@ -1051,11 +1061,12 @@ void MyModel::setRowOffset(int rowOffset)
     emit layoutChanged();
 }
 
-void MyModel::slot_newColumn(QString varName,Eigen::VectorXd dataCol)
+
+void MyModel::slot_newColumn(QString varName,VectorXv dataColv)
 {
-    if(dataCol.rows()!=m_data.rows())
+    if(dataColv.rows()!=m_data.rows())
     {
-        std::cout<<"dataCol.rows()="<<dataCol.rows()<<" m_data.rows()="<<m_data.rows()<<std::endl;
+        std::cout<<"dataColv.rows()="<<dataColv.rows()<<" m_data.rows()="<<m_data.rows()<<std::endl;
         return;
     }
 
@@ -1063,15 +1074,7 @@ void MyModel::slot_newColumn(QString varName,Eigen::VectorXd dataCol)
     {
         if(reg.newVariable(varName,""))
         {
-            VectorXv dataColv(dataCol.rows());
-
-            for(int i=0;i<dataCol.rows();i++)
-            {
-                dataColv[i]=dataCol[i];
-            }
-
             dataAddColumn(m_data,dataColv);
-
 
             emit layoutChanged();
             emit sig_dataChanged();
@@ -1083,13 +1086,13 @@ void MyModel::slot_newColumn(QString varName,Eigen::VectorXd dataCol)
 
             if(ok)
             {
-                slot_newColumn(newVarName,dataCol);
+                slot_newColumn(newVarName,dataColv);
             }
         }
     }
     else
     {
-        slot_newColumn(varName+QString("_%1").arg(reg.countVariable(varName)),dataCol);
+        slot_newColumn(varName+QString("_%1").arg(reg.countVariable(varName)),dataColv);
     }
     std::cout<<"slot_newColumn end"<<std::endl;
 }

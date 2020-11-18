@@ -190,6 +190,15 @@ Eigen::VectorXd Curve2DComplex::getImag()const
     return imags;
 }
 
+const Eigen::VectorXd & Curve2DComplex::getX()const
+{
+    return x;
+}
+const Eigen::VectorXcd & Curve2DComplex::getY()const
+{
+    return y;
+}
+
 QString Curve2DComplex::getLegend()
 {
     return legend;

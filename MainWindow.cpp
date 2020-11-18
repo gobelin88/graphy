@@ -15,7 +15,7 @@ MainWindow::MainWindow(QWidget* parent) :
     ui->setupUi(this);
     setCurrentFilename("empty");
     mdiArea=new QMdiArea();
-    table=new MyTableView(100,4,24,mdiArea);
+    table=new MyTableView(4,4,24,mdiArea);
     //  tableview.setSelectionBehavior(tableview.SelectRows)
     //  tableview.setSelectionMode(tableview.SingleSelection)
     //  table->setDragDropMode(QTableView::InternalMove);
@@ -462,7 +462,7 @@ void MainWindow::slot_plot_fft()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-    if (id_list.size()==1 || id_list.size()==2)//1 real signal ---- 2 complex signal (module,phase)
+    if (id_list.size()==1 )//1 real or complex signal
     {
         FFTDialog* dialog=new FFTDialog;
 
@@ -475,14 +475,7 @@ void MainWindow::slot_plot_fft()
             //QString nameImag =(id_list.size()==2)?table->getLogicalColName(id_list[1  ].column()):QString("");
             //QString name=nameReal+QString("_")+nameImag;
 
-            Eigen::VectorXd dataIn_Real=table->getLogicalColDataDouble(id_list[0  ].column());
-            Eigen::VectorXd dataIn_Imag =(id_list.size()==2)?table->getLogicalColDataDouble(id_list[1  ].column()):Eigen::VectorXd::Zero(dataIn_Real.size());
-
-            Eigen::VectorXcd dataIn(dataIn_Real.size());
-            for(int i=0;i<dataIn_Real.size();i++)
-            {
-                dataIn[i]=std::complex<double>(dataIn_Real[i],dataIn_Imag[i]);
-            }
+            Eigen::VectorXcd dataIn=table->getLogicalColDataComplex(id_list[0].column());
 
             std::cout<<"compute fft"<<std::endl;
             Eigen::VectorXcd dataOut=MyFFT::getFFT(dataIn,
@@ -499,13 +492,11 @@ void MainWindow::slot_plot_fft()
 
             if(dialog->isInverse())
             {
-                table->slot_newColumn(QString("invFFT_Real"),curveCplx.getReal());
-                table->slot_newColumn(QString("invFFT_Imag"),curveCplx.getImag());
+                table->slot_newColumn(QString("invFFT"),dataOut);
             }
             else
             {
-                table->slot_newColumn(QString("FFT_Real"),curveCplx.getReal());
-                table->slot_newColumn(QString("FFT_Imag"),curveCplx.getImag());
+                table->slot_newColumn(QString("FFT"),dataOut);
             }
 
             viewerBode->slot_add_data(curveCplx);

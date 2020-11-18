@@ -34,6 +34,8 @@ public:
     Curve2D getRealCurve()const;
     Curve2D getImagCurve()const;
 
+
+
     void fromModuleArgument(Eigen::VectorXd modules,Eigen::VectorXd arguments);
     void fromRealImag(Eigen::VectorXd reals,Eigen::VectorXd imags);
     void fromModuleArgument(Eigen::VectorXd x,Eigen::VectorXd modules,Eigen::VectorXd arguments);
@@ -48,6 +50,8 @@ public:
     Eigen::VectorXd getArguments()const;
     Eigen::VectorXd getReal()const;
     Eigen::VectorXd getImag()const;
+    const Eigen::VectorXd &getX()const;
+    const Eigen::VectorXcd & getY()const;
 
     QString getLegend();
     void setLegend(QString legend);

@@ -91,9 +91,22 @@ void MyTableView::slot_paste()
     }
 }
 
-void MyTableView::slot_newColumn(QString varName,Eigen::VectorXd data)
+void MyTableView::slot_newColumn(QString varName,VectorXv data)
 {
     m_model->slot_newColumn(varName,data);
+}
+
+void MyTableView::slot_newColumn(QString varName,Eigen::VectorXd data)
+{
+    m_model->slot_newColumn(varName,fromDouble(data));
+}
+void MyTableView::slot_newColumn(QString varName,Eigen::VectorXcd data)
+{
+    m_model->slot_newColumn(varName,fromComplex(data));
+}
+void MyTableView::slot_newColumn(QString varName,QVector<QString> data)
+{
+    m_model->slot_newColumn(varName,fromString(data));
 }
 
 void MyTableView::getVisualRowColSelectedRanges(QCPRange &range_row,QCPRange &range_col)
@@ -137,12 +150,17 @@ void MyTableView::getVisualRowColSelectedRanges(QCPRange &range_row,QCPRange &ra
     }
 }
 
-Eigen::VectorXd MyTableView::getLogicalColDataDouble(int logicalColId)
+Eigen::VectorXd MyTableView::getLogicalColDataDouble(int logicalColId) const
 {
     return m_model->getColLogicalDataDouble(logicalColId);
 }
 
-QVector<QString> MyTableView::getLogicalColDataString(int logicalColId)
+Eigen::VectorXcd MyTableView::getLogicalColDataComplex(int logicalColId)const
+{
+    return m_model->getColLogicalDataComplex(logicalColId);
+}
+
+QVector<QString> MyTableView::getLogicalColDataString(int logicalColId)const
 {
     return m_model->getColLogicalDataString(logicalColId);
 }

@@ -45,13 +45,16 @@ public:
     void colourizeCol(unsigned int visualColIndex, const std::vector<QRgb> &colors);
     void colourizeCol(unsigned int visualColIndex, QRgb color);
 
-    QVector<QString> getColLogicalDataString(int logicalIndex)const;
-    QVector<QString> getColVisualDataString(int visualIndex)const;
-
     QString getLogicalColName(int logicalIndex);
     QString getVisualColName(int visualIndex);
-    Eigen::VectorXd getColLogicalDataDouble(int logicalIndex)const;
-    Eigen::VectorXd getColVisualDataDouble(int visualIndex)const;
+
+    QVector<QString> getColLogicalDataString(int logicalIndex)const;
+    QVector<QString> getColVisualDataString(int visualIndex)const;
+    Eigen::VectorXd  getColLogicalDataDouble(int logicalIndex)const;
+    Eigen::VectorXd  getColVisualDataDouble(int visualIndex)const;
+    Eigen::VectorXcd getColLogicalDataComplex(int logicalIndex)const;
+    Eigen::VectorXcd getColVisualDataComplex(int visualIndex)const;
+
     bool asColumnStrings(int idCol);
     void applyFilters(const QModelIndexList & selectedColsIndexes);
     void removeLogicalIndexesRows(const QModelIndexList & selectedIndexesRows);
@@ -83,7 +86,7 @@ public:
 public slots:
     void setRowOffset(int rowOffset);
 
-    void slot_newColumn(QString varName, Eigen::VectorXd dataCol);
+    void slot_newColumn(QString varName, VectorXv dataCol);
 
     void slot_editColumn(int logicalIndex);
     void slot_newRow();

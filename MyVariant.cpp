@@ -35,33 +35,35 @@ void MyVariant::operator=(double other)
 
 std::ostream& operator<< (std::ostream &out,const MyVariant & v)
 {
-    if( v.canConvert<double>() )
+    //std::cout<<v.toString().toLocal8Bit().data()<<" "<<v.canConvert<double>()<<std::endl;
+    if( v.isDouble() )
     {
-        out<<v.toDouble();
+        out<<v.toDouble()<<"(d)";
     }
-    else if( v.canConvert< std::complex<double> >() )
+    else if( v.isComplex() )
     {
-        out<<v.value<std::complex<double>>();
+        out<<v.toComplex()<<"(c)";
     }
-    else if( v.canConvert< QString >() )
+    else if( v.isString() )
     {
-        out<<v.toString().data();
+        QString str=v.toString();
+        out<<str.toStdString()<<"(s)";
     }
     return out;
 }
 
 QString MyVariant::saveToString()const
 {
-    if( canConvert<double>() )
+    if( isDouble() )
     {
         return QString::number(this->toDouble());
     }
-    else if( canConvert< std::complex<double> >() )
+    else if( isComplex() )
     {
-        std::complex<double> value= this->value<std::complex<double>>();
+        std::complex<double> value= toComplex();
         return QString("(%1,%2)").arg( value.real() ).arg( value.imag() );
     }
-    else if( canConvert< QString >() )
+    else
     {
         return this->toString();
     }
@@ -92,16 +94,100 @@ void MyVariant::loadFromString(QString string)
 
 double log10(const MyVariant &v)
 {
-    if( v.canConvert<double>() )
+    if( v.isDouble() )
     {
         return std::log10(v.toDouble());
     }
-    else if( v.canConvert< std::complex<double> >() )
+    else if( v.isComplex() )
     {
-        return std::log10( std::abs(v.value<std::complex<double>>()) );
+        return std::log10( std::abs(v.toComplex()) );
     }
     else
     {
-        0.0;
+        return 0.0;
     }
+}
+
+bool MyVariant::isDouble() const
+{
+    return type()==QVariant::Type::Double;
+}
+
+bool MyVariant::isString() const
+{
+    return type()==QVariant::Type::String;
+}
+
+bool MyVariant::isComplex() const
+{
+    return this->canConvert<std::complex<double>>();
+}
+
+std::complex<double> MyVariant::toComplex() const
+{
+    if(isComplex())
+    {
+        return this->value<std::complex<double> >();
+    }
+    else if(isDouble())
+    {
+        return std::complex<double>(toDouble(),0.0);
+    }
+}
+/////////////////////////
+
+Eigen::VectorXd toDouble(const VectorXv & v)
+{
+    Eigen::VectorXd vo(v.rows());
+    for(int i=0;i<v.rows();i++)
+    {
+        vo[i]=v[i].toDouble();
+    }
+    return vo;
+}
+QVector<QString> toString(const VectorXv & v)
+{
+    QVector<QString> vo(v.rows());
+    for(int i=0;i<v.rows();i++)
+    {
+        vo[i]=v[i].toString();
+    }
+    return vo;
+}
+Eigen::VectorXcd toComplex(const VectorXv & v)
+{
+    Eigen::VectorXcd vo(v.rows());
+    for(int i=0;i<v.rows();i++)
+    {
+        vo[i]=v[i].toComplex();
+    }
+    return vo;
+}
+
+VectorXv fromDouble(const Eigen::VectorXd & v)
+{
+    VectorXv vo(v.rows());
+    for(int i=0;i<v.rows();i++)
+    {
+        vo[i]=v[i];
+    }
+    return vo;
+}
+VectorXv fromString(const QVector<QString> & v)
+{
+    VectorXv vo(v.size());
+    for(int i=0;i<v.size();i++)
+    {
+        vo[i]=v[i];
+    }
+    return vo;
+}
+VectorXv fromComplex(const Eigen::VectorXcd & v)
+{
+    VectorXv vo(v.rows());
+    for(int i=0;i<v.rows();i++)
+    {
+        vo[i]=v[i];
+    }
+    return vo;
 }

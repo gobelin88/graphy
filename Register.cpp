@@ -275,8 +275,10 @@ QStringList Register::getCustomExpressionList()
     QStringList customExpList;
     customExpList<<"$uniform";
     customExpList<<"$normal";
-    customExpList<<"$search ";
-    customExpList<<"$str";
+    customExpList<<"$cplx_uniform";
+    customExpList<<"$cplx_normal";
+    customExpList<<"$search contains-varName *.txt depth where";
+    customExpList<<"$str ABCDEF%1 varName,#";
     return customExpList;
 }
 
@@ -309,161 +311,161 @@ void custom_scanDir(QDir dir,QStringList filters,QString name,QString& result,in
     }
 }
 
-bool Register::customExpressionParse(unsigned int id,QString& result,std::function<QString(int,int)> at,int currentRow)
-{
-    QString expression=variables_expressions[id];
-    expression.remove('$');
-    QStringList args=expression.split(" ");
-    if (args.size()>0)
-    {
+//bool Register::customExpressionParse(unsigned int id,QString& result,std::function<QString(int,int)> at,int currentRow)
+//{
+//    QString expression=variables_expressions[id];
+//    expression.remove('$');
+//    QStringList args=expression.split(" ");
+//    if (args.size()>0)
+//    {
 
-        if (args[0]=="uniform" && args.size()==1)
-        {
-            result=fromNumber((*noise_uniform)(generator));
-            return true;
-        }
-        else if (args[0]=="normal" && args.size()==1)
-        {
-            result=fromNumber((*noise_normal)(generator));
-            return true;
-        }
-        else if (args[0]=="search" && args.size()>=5)
-        {
-            //0      1    2      3  4     5      6      i
-            //search what filter depth where0 where1 where2 wherei...
+//        if (args[0]=="uniform" && args.size()==1)
+//        {
+//            result=fromNumber((*noise_uniform)(generator));
+//            return true;
+//        }
+//        else if (args[0]=="normal" && args.size()==1)
+//        {
+//            result=fromNumber((*noise_normal)(generator));
+//            return true;
+//        }
+//        else if (args[0]=="search" && args.size()>=5)
+//        {
+//            //0      1    2      3  4     5      6      i
+//            //search what filter depth where0 where1 where2 wherei...
 
-            QString search_for_name;
-            int index1=variables_names.indexOf(args[1]);
-            if (index1>=0)
-            {
-                search_for_name=at(currentRow,index1);
-            }
-            else
-            {
-                return false;
-            }
+//            QString search_for_name;
+//            int index1=variables_names.indexOf(args[1]);
+//            if (index1>=0)
+//            {
+//                search_for_name=at(currentRow,index1);
+//            }
+//            else
+//            {
+//                return false;
+//            }
 
-            result="none";
-            for (int i=4; i<args.size(); i++)
-            {
-                QStringList filters;
-                filters<<args[2];
-                custom_scanDir(args[i],filters,search_for_name,result,args[4].toInt());
-            }
+//            result="none";
+//            for (int i=4; i<args.size(); i++)
+//            {
+//                QStringList filters;
+//                filters<<args[2];
+//                custom_scanDir(args[i],filters,search_for_name,result,args[4].toInt());
+//            }
 
-            return true;
-        }
-        else if (args[0]=="str" && args.size()==3)
-        {
-            QStringList sub_args1=args[2].split(',');
-            int index1=variables_names.indexOf(sub_args1[0]);
+//            return true;
+//        }
+//        else if (args[0]=="str" && args.size()==3)
+//        {
+//            QStringList sub_args1=args[2].split(',');
+//            int index1=variables_names.indexOf(sub_args1[0]);
 
-            if (index1>=0)
-            {
-                result=args[1];
-                if (sub_args1.size()==2 )
-                {
-                    if (sub_args1[1]=="#" )
-                    {
-                        result=result.arg(at(currentRow,index1));
-                    }
-                    else if (sub_args1[1]=="#")
-                    {
-                        result=result.arg(at(currentRow,index1));
-                    }
-                    else
-                    {
-                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0');
-                    }
-                }
-                else if (sub_args1.size()==1)
-                {
-                    result=result.arg(*(variables[index1]));
-                }
+//            if (index1>=0)
+//            {
+//                result=args[1];
+//                if (sub_args1.size()==2 )
+//                {
+//                    if (sub_args1[1]=="#" )
+//                    {
+//                        result=result.arg(at(currentRow,index1));
+//                    }
+//                    else if (sub_args1[1]=="#")
+//                    {
+//                        result=result.arg(at(currentRow,index1));
+//                    }
+//                    else
+//                    {
+//                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0');
+//                    }
+//                }
+//                else if (sub_args1.size()==1)
+//                {
+//                    result=result.arg(*(variables[index1]));
+//                }
 
-                return true;
-            }
-        }
-        else if (args[0]=="str" && args.size()==4)
-        {
-            QStringList sub_args1=args[2].split(',');
-            QStringList sub_args2=args[3].split(',');
-            int index1=variables_names.indexOf(sub_args1[0]);
-            int index2=variables_names.indexOf(sub_args2[0]);
+//                return true;
+//            }
+//        }
+//        else if (args[0]=="str" && args.size()==4)
+//        {
+//            QStringList sub_args1=args[2].split(',');
+//            QStringList sub_args2=args[3].split(',');
+//            int index1=variables_names.indexOf(sub_args1[0]);
+//            int index2=variables_names.indexOf(sub_args2[0]);
 
 
-            if (index1>=0 && index2>=0)
-            {
-                result=args[1];
+//            if (index1>=0 && index2>=0)
+//            {
+//                result=args[1];
 
-                if (sub_args1.size()==2 && sub_args2.size()==2)
-                {
-                    if (sub_args1[1]=="#" && sub_args2[1]=="#")
-                    {
-                        result=result.arg(at(currentRow,index1)).arg(at(currentRow,index2));
-                    }
-                    else if (sub_args1[1]=="#")
-                    {
-                        result=result.arg(at(currentRow,index1)).arg(*(variables[index2]),sub_args2[1].toInt(),'g',-1,'0');
-                    }
-                    else if (sub_args2[1]=="#")
-                    {
-                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0').arg(at(currentRow,index2));
-                    }
-                    else
-                    {
-                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0').arg(*(variables[index2]),sub_args2[1].toInt(),'g',-1,'0');
-                    }
-                }
-                else if (sub_args1.size()==2 && sub_args2.size()==1)
-                {
-                    if (sub_args1[1]=="#")
-                    {
-                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0').arg(*(variables[index2]));
-                    }
-                    else
-                    {
-                        result=result.arg(at(currentRow,index1)).arg(*(variables[index2]));
-                    }
-                }
-                else if (sub_args1.size()==1 && sub_args2.size()==2)
-                {
-                    if (sub_args2[1]=="#")
-                    {
-                        result=result.arg(*(variables[index1])).arg(at(currentRow,index2));
-                    }
-                    else
-                    {
-                        result=result.arg(*(variables[index1])).arg(*(variables[index2]),sub_args2[1].toInt(),'g',-1,'0');
-                    }
-                }
-                else if (sub_args1.size()==1 && sub_args2.size()==1)
-                {
-                    result=result.arg(*(variables[index1])).arg(*(variables[index2]));
-                }
+//                if (sub_args1.size()==2 && sub_args2.size()==2)
+//                {
+//                    if (sub_args1[1]=="#" && sub_args2[1]=="#")
+//                    {
+//                        result=result.arg(at(currentRow,index1)).arg(at(currentRow,index2));
+//                    }
+//                    else if (sub_args1[1]=="#")
+//                    {
+//                        result=result.arg(at(currentRow,index1)).arg(*(variables[index2]),sub_args2[1].toInt(),'g',-1,'0');
+//                    }
+//                    else if (sub_args2[1]=="#")
+//                    {
+//                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0').arg(at(currentRow,index2));
+//                    }
+//                    else
+//                    {
+//                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0').arg(*(variables[index2]),sub_args2[1].toInt(),'g',-1,'0');
+//                    }
+//                }
+//                else if (sub_args1.size()==2 && sub_args2.size()==1)
+//                {
+//                    if (sub_args1[1]=="#")
+//                    {
+//                        result=result.arg(*(variables[index1]),sub_args1[1].toInt(),'g',-1,'0').arg(*(variables[index2]));
+//                    }
+//                    else
+//                    {
+//                        result=result.arg(at(currentRow,index1)).arg(*(variables[index2]));
+//                    }
+//                }
+//                else if (sub_args1.size()==1 && sub_args2.size()==2)
+//                {
+//                    if (sub_args2[1]=="#")
+//                    {
+//                        result=result.arg(*(variables[index1])).arg(at(currentRow,index2));
+//                    }
+//                    else
+//                    {
+//                        result=result.arg(*(variables[index1])).arg(*(variables[index2]),sub_args2[1].toInt(),'g',-1,'0');
+//                    }
+//                }
+//                else if (sub_args1.size()==1 && sub_args2.size()==1)
+//                {
+//                    result=result.arg(*(variables[index1])).arg(*(variables[index2]));
+//                }
 
-                return true;
-            }
-            else
-            {
-                error("Bad variable indexes",QString("Indexes : %1 %2").arg(index1).arg(index2));
-                return false;
-            }
-        }
-        else
-        {
-            error("Bad custom expression",QString("Expression : ")+expression);
-            return false;
-        }
-    }
-    else
-    {
-        error("Bad custom expression",QString("Expression : ")+expression);
-        return false;
-    }
+//                return true;
+//            }
+//            else
+//            {
+//                error("Bad variable indexes",QString("Indexes : %1 %2").arg(index1).arg(index2));
+//                return false;
+//            }
+//        }
+//        else
+//        {
+//            error("Bad custom expression",QString("Expression : ")+expression);
+//            return false;
+//        }
+//    }
+//    else
+//    {
+//        error("Bad custom expression",QString("Expression : ")+expression);
+//        return false;
+//    }
 
-    return false;
-}
+//    return false;
+//}
 
 bool Register::customExpressionParse2(const MatrixXv & m_data,unsigned int id, MyVariant & result, int currentRow)
 {
@@ -475,7 +477,7 @@ bool Register::customExpressionParse2(const MatrixXv & m_data,unsigned int id, M
 
             if (args[0]=="uniform" && args.size()==1)
             {
-                result=(*noise_uniform)(generator);
+                result=2.0*((*noise_uniform)(generator)-0.5);
                 return true;
             }
             else if (args[0]=="normal" && args.size()==1)
@@ -483,12 +485,22 @@ bool Register::customExpressionParse2(const MatrixXv & m_data,unsigned int id, M
                 result=(*noise_normal)(generator);
                 return true;
             }
+            else if (args[0]=="cplx_uniform" && args.size()==1)
+            {
+                result=std::complex<double>(2.0*((*noise_uniform)(generator)-0.5),2.0*((*noise_uniform)(generator)-0.5));
+                return true;
+            }
+            else if (args[0]=="cplx_normal" && args.size()==1)
+            {
+                result=std::complex<double>((*noise_normal)(generator),(*noise_normal)(generator));
+                return true;
+            }
             else if (args[0]=="search" && args.size()>=5)
             {
                 result=QString("none");
 
-                //0      1    2      3  4     5      6      i
-                //search what filter depth where0 where1 where2 wherei...
+                //0      1                  2     3     4      5      6      i
+                //search contains-variable *.txt depth where0 where1 where2 wherei...
 
                 QString search_for_name;
                 int index1=variables_names.indexOf(args[1]);
@@ -506,7 +518,7 @@ bool Register::customExpressionParse2(const MatrixXv & m_data,unsigned int id, M
                     QStringList filters;
                     filters<<args[2];
                     QString str=result.toString();
-                    custom_scanDir(args[i],filters,search_for_name,str,args[4].toInt());
+                    custom_scanDir(args[i],filters,search_for_name,str,args[3].toInt());
                     result=str;
                 }
 
@@ -514,6 +526,9 @@ bool Register::customExpressionParse2(const MatrixXv & m_data,unsigned int id, M
             }
             else if (args[0]=="str" && args.size()==3)
             {
+                //0   1      2
+                //str ABCDEF%1 VariableName,#
+
                 QStringList sub_args1=args[2].split(',');
                 int index1=variables_names.indexOf(sub_args1[0]);
 
@@ -523,10 +538,6 @@ bool Register::customExpressionParse2(const MatrixXv & m_data,unsigned int id, M
                     if (sub_args1.size()==2 )
                     {
                         if (sub_args1[1]=="#" )
-                        {
-                            result=result.toString().arg(m_data(currentRow,index1).toString());
-                        }
-                        else if (sub_args1[1]=="#")
                         {
                             result=result.toString().arg(m_data(currentRow,index1).toString());
                         }

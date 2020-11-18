@@ -36,7 +36,7 @@ public:
     void setActiveCol(int i){this->activeCol=i;}
 
     QStringList getCustomExpressionList();
-    bool customExpressionParse(unsigned int id, QString& result, std::function<QString(int,int)> at, int currentRow);
+    //bool customExpressionParse(unsigned int id, QString& result, std::function<QString(int,int)> at, int currentRow);
     bool customExpressionParse2(const MatrixXv & data,unsigned int id, MyVariant & result, int currentRow);
 
     const QStringList & variablesNames()const;

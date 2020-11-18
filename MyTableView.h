@@ -21,8 +21,9 @@ public:
     MyModel * model() {return m_model;}
     QWidget * getContainer(){return container;}
 
-    Eigen::VectorXd getLogicalColDataDouble(int logicalColId);
-    QVector<QString> getLogicalColDataString(int logicalColId);
+    Eigen::VectorXd getLogicalColDataDouble(int logicalColId)const;
+    QVector<QString> getLogicalColDataString(int logicalColId)const;
+    Eigen::VectorXcd getLogicalColDataComplex(int logicalColId) const;
     QString getLogicalColName(int logicalColId);
 
     QString getSelectionPattern();
@@ -34,7 +35,10 @@ public slots:
     void slot_filter();
     void slot_copy();
     void slot_paste();
+    void slot_newColumn(QString varName, VectorXv data);
     void slot_newColumn(QString varName,Eigen::VectorXd data);
+    void slot_newColumn(QString varName,Eigen::VectorXcd data);
+    void slot_newColumn(QString varName,QVector<QString> data);
 
 protected:
     //void wheelEvent(QWheelEvent * event);

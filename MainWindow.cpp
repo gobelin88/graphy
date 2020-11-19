@@ -461,6 +461,8 @@ void MainWindow::slot_plot_field_2D()
 
 void MainWindow::slot_plot_map_2D()
 {
+    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+
     QDialog* dialog=new QDialog;
     dialog->setLocale(QLocale("C"));
     dialog->setWindowTitle("Interpolation map");
@@ -469,6 +471,27 @@ void MainWindow::slot_plot_map_2D()
     QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
     QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+    QComboBox * cb_type=new QComboBox(dialog);
+
+    if (id_list.size()==2)
+    {
+        cb_type->addItem("Complex Phase  Scalar field",1);
+        cb_type->addItem("Complex Module Scalar field",3);
+    }
+    else if (id_list.size()==3)
+    {
+        cb_type->addItem("Standard Scalar field",2);
+    }
+
+    if(cb_type->count()==0)
+    {
+        QMessageBox::information(this,"Information",
+                                 "Please select\n"\
+                                 "-3 columns of real numbers X,Y,Z in order to plot Z=f(X,Y)\n"\
+                                 "-2 columns of complex numbers X,Y in order to plot mod(Y)=f(re(X),im(Y)) or arg(Y)=f(re(X),im(Y))\n");
+        return;
+    }
 
     QSpinBox * sb_resX=new QSpinBox(dialog);
     sb_resX->setRange(4,4096*2);
@@ -479,67 +502,68 @@ void MainWindow::slot_plot_map_2D()
     sb_resY->setValue(512);
 
     QGridLayout* gbox = new QGridLayout();
-    gbox->addWidget(sb_resX,0,0);
-    gbox->addWidget(sb_resY,0,1);
-    gbox->addWidget(buttonBox,1,0,1,2);
+    gbox->addWidget(cb_type,0,0,1,3);
+    gbox->addWidget(new QLabel("Resolution :"),1,0);
+    gbox->addWidget(sb_resX,1,1);
+    gbox->addWidget(sb_resY,1,2);
+    gbox->addWidget(buttonBox,2,0,1,3);
 
     dialog->setLayout(gbox);
 
     int result=dialog->exec();
     if(result==QDialog::Accepted)
     {
-        QModelIndexList id_list=table->selectionModel()->selectedColumns();
-
         Eigen::Vector2d resolution(sb_resX->value(),sb_resY->value());
+        Eigen::VectorXd data_x,data_y,data_z;
+        QCPColorGradient::GradientPreset gradientType;
+        bool ok=false;
 
-        if (id_list.size()==2)//Phase plot
+        if (cb_type->currentData().toInt()==1 || cb_type->currentData().toInt()==3)//Phase plot
         {
-            Eigen::VectorXd data_x=table->getLogicalColDataComplex(id_list[0].column()).real();
-            Eigen::VectorXd data_y=table->getLogicalColDataComplex(id_list[0].column()).imag();
+            data_x=table->getLogicalColDataComplex(id_list[0].column()).real();
+            data_y=table->getLogicalColDataComplex(id_list[0].column()).imag();
             Eigen::VectorXcd data_cplx_z=table->getLogicalColDataComplex(id_list[1].column());
-            Eigen::VectorXd data_z(data_cplx_z.rows());
+            data_z=Eigen::VectorXd(data_cplx_z.rows());
 
-            for(int i=0;i<data_cplx_z.rows();i++)
+            if(cb_type->currentData().toInt()==1)
             {
-                data_z[i]=std::arg(data_cplx_z[i]);
+                for(int i=0;i<data_cplx_z.rows();i++)
+                {
+                    data_z[i]=std::arg(data_cplx_z[i]);
+                }
+                gradientType= QCPColorGradient::gpHues;
+            }
+            else if(cb_type->currentData().toInt()==3)
+            {
+                for(int i=0;i<data_cplx_z.rows();i++)
+                {
+                    data_z[i]=std::abs(data_cplx_z[i]);
+                }
+                gradientType= QCPColorGradient::gpPolar;
             }
 
-            if (data_x.size()>0 && data_y.size()>0 && data_z.size()>0)
-            {
-                Viewer2D* viewer2d=new Viewer2D();
-                viewer2d->slot_setGradient(QCPColorGradient::gpHues);
-                viewer2d->setMinimumSize(600,400);
-
-                QMdiSubWindow* subWindow = new QMdiSubWindow;
-                subWindow->setWidget(viewer2d);
-                subWindow->setAttribute(Qt::WA_DeleteOnClose);
-                mdiArea->addSubWindow(subWindow,Qt::WindowStaysOnTopHint);
-                viewer2d->show();
-                viewer2d->slot_setData(data_x,data_y,data_z,resolution);
-            }
+            ok=true;
         }
-        else if (id_list.size()==3)
+        else if (cb_type->currentData().toInt()==2)
         {
-            Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[0].column());
-            Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[1].column());
-            Eigen::VectorXd data_z=table->getLogicalColDataDouble(id_list[2].column());
-
-            if (data_x.size()>0 && data_y.size()>0 && data_z.size()>0)
-            {
-                Viewer2D* viewer2d=new Viewer2D();
-                viewer2d->setMinimumSize(600,400);
-
-                QMdiSubWindow* subWindow = new QMdiSubWindow;
-                subWindow->setWidget(viewer2d);
-                subWindow->setAttribute(Qt::WA_DeleteOnClose);
-                mdiArea->addSubWindow(subWindow,Qt::WindowStaysOnTopHint);
-                viewer2d->show();
-                viewer2d->slot_setData(data_x,data_y,data_z,resolution);
-            }
+            data_x=table->getLogicalColDataDouble(id_list[0].column());
+            data_y=table->getLogicalColDataDouble(id_list[1].column());
+            data_z=table->getLogicalColDataDouble(id_list[2].column());
+            gradientType= QCPColorGradient::gpPolar;
+            ok=true;
         }
-        else
+
+        if(ok)
         {
-            QMessageBox::information(this,"Information","Please select 3 columns P(X,Y) and S in order to plot S(P)");
+            Viewer2D* viewer2d=new Viewer2D();
+            viewer2d->slot_setGradient(gradientType);
+            viewer2d->setMinimumSize(512+32,512);
+            QMdiSubWindow* subWindow = new QMdiSubWindow;
+            subWindow->setWidget(viewer2d);
+            subWindow->setAttribute(Qt::WA_DeleteOnClose);
+            mdiArea->addSubWindow(subWindow,Qt::WindowStaysOnTopHint);
+            viewer2d->show();
+            viewer2d->slot_setData(data_x,data_y,data_z,resolution);
         }
     }
 }

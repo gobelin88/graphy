@@ -239,13 +239,13 @@ bool MyModel::save(QString filename)
         for (int j = 0; j < reg.variablesNames().size(); j++)
         {
             textData+=reg.variablesNames()[j];
-            textData += ";";
+            if(j!=reg.variablesNames().size()-1){textData += ";";}
         }
         textData += "\n";
         for (int j = 0; j < reg.variablesExpressions().size(); j++)
         {
             textData+=reg.variablesExpressions()[j];
-            textData += ";";
+            if(j!=reg.variablesExpressions().size()-1){textData += ";";}
         }
         textData += "\n";
         textData += "</header>\n";
@@ -256,7 +256,7 @@ bool MyModel::save(QString filename)
             {
 
                 textData += m_data(i,j).saveToString();
-                textData += ";";      // for .csv file format
+                if(j!=m_data.cols()-1){textData += ";";}
             }
             textData += "\n";             // (optional: for new line segmentation)
         }

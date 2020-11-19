@@ -477,11 +477,13 @@ void MainWindow::slot_plot_map_2D()
     if (id_list.size()==2)
     {
         cb_type->addItem("Complex Phase  Scalar field",1);
-        cb_type->addItem("Complex Module Scalar field",3);
+        cb_type->addItem("Complex Module Scalar field",2);
+        cb_type->addItem("Complex Real   Scalar field",3);
+        cb_type->addItem("Complex Imag   Scalar field",4);
     }
     else if (id_list.size()==3)
     {
-        cb_type->addItem("Standard Scalar field",2);
+        cb_type->addItem("Standard Scalar field",0);
     }
 
     if(cb_type->count()==0)
@@ -518,7 +520,7 @@ void MainWindow::slot_plot_map_2D()
         QCPColorGradient::GradientPreset gradientType;
         bool ok=false;
 
-        if (cb_type->currentData().toInt()==1 || cb_type->currentData().toInt()==3)//Phase plot
+        if (cb_type->currentData().toInt()>=1 && cb_type->currentData().toInt()<=4)//Phase plot
         {
             data_x=table->getLogicalColDataComplex(id_list[0].column()).real();
             data_y=table->getLogicalColDataComplex(id_list[0].column()).imag();
@@ -533,18 +535,34 @@ void MainWindow::slot_plot_map_2D()
                 }
                 gradientType= QCPColorGradient::gpHues;
             }
-            else if(cb_type->currentData().toInt()==3)
+            else if(cb_type->currentData().toInt()==2)
             {
                 for(int i=0;i<data_cplx_z.rows();i++)
                 {
                     data_z[i]=std::abs(data_cplx_z[i]);
                 }
-                gradientType= QCPColorGradient::gpPolar;
+                gradientType= QCPColorGradient::gpHues;
+            }
+            else if(cb_type->currentData().toInt()==3)
+            {
+                for(int i=0;i<data_cplx_z.rows();i++)
+                {
+                    data_z[i]=std::real(data_cplx_z[i]);
+                }
+                gradientType= QCPColorGradient::gpHues;
+            }
+            else if(cb_type->currentData().toInt()==4)
+            {
+                for(int i=0;i<data_cplx_z.rows();i++)
+                {
+                    data_z[i]=std::imag(data_cplx_z[i]);
+                }
+                gradientType= QCPColorGradient::gpHues;
             }
 
             ok=true;
         }
-        else if (cb_type->currentData().toInt()==2)
+        else if (cb_type->currentData().toInt()==0)
         {
             data_x=table->getLogicalColDataDouble(id_list[0].column());
             data_y=table->getLogicalColDataDouble(id_list[1].column());

@@ -57,7 +57,7 @@ void Viewer2D::createPopup()
     popup_menu=new QMenu(this);
 
     actSave   = new QAction("Save",  this);
-    actSave->setShortcut(QKeySequence("S"));
+    actSave->setShortcut(QKeySequence("Ctrl+S"));
     actRescale= new QAction("Rescale",  this);
     actRescale->setShortcut(QKeySequence("R"));
     actParameters= new QAction("Parameters",  this);

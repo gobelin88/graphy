@@ -387,39 +387,70 @@ void MainWindow::slot_plot_field_2D()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-    if (id_list.size()%4==0 && id_list.size()>0)
+    if (id_list.size()==2 ||  (id_list.size()==4))
     {
         Viewer1D* viewer1d=createViewer1D();
 
-        for (int k=0; k<id_list.size(); k+=4)
+        Eigen::VectorXd data_x ;
+        Eigen::VectorXd data_y ;
+        Eigen::VectorXd data_vx;
+        Eigen::VectorXd data_vy;
+
+
+        QString legendString;
+
+        if (id_list.size()==2)
         {
-            Eigen::VectorXd data_x =table->getLogicalColDataDouble(id_list[k  ].column());
-            Eigen::VectorXd data_y =table->getLogicalColDataDouble(id_list[k+1].column());
-            Eigen::VectorXd data_vx=table->getLogicalColDataDouble(id_list[k+2].column());
-            Eigen::VectorXd data_vy=table->getLogicalColDataDouble(id_list[k+3].column());
+            data_x =table->getLogicalColDataComplex(id_list[0].column()).real();
+            data_y =table->getLogicalColDataComplex(id_list[0].column()).imag();
+            data_vx=table->getLogicalColDataComplex(id_list[1].column()).real();
+            data_vy=table->getLogicalColDataComplex(id_list[1].column()).imag();
 
-            Eigen::VectorXd data_a(data_vx.size());
-            Eigen::VectorXd data_s(data_vx.size());
+            std::cout<<data_x.transpose()<<std::endl;
+            std::cout<<data_y.transpose()<<std::endl;
 
-            for (int i=0; i<data_a.size(); i++)
-            {
-                data_a[i]=atan2(data_vx[i],data_vy[i])-M_PI/2;
-                data_s[i]=sqrt(data_vy[i]*data_vy[i]+data_vx[i]*data_vx[i]);
-            }
+            legendString=QString("V(re(%3),im(%4))=f(re(%1),im(%2))").
+                    arg(table->getLogicalColName(id_list[0].column())).
+                    arg(table->getLogicalColName(id_list[0].column())).
+                    arg(table->getLogicalColName(id_list[1].column())).
+                    arg(table->getLogicalColName(id_list[1].column()));
 
-            if (data_x.size()>0 && data_y.size()>0)
-            {
-                Curve2D curve(data_x,
-                              data_y,
-                              QString("V(%3,%4)=f(%1,%2)").arg(table->getLogicalColName(id_list[k  ].column())).arg(table->getLogicalColName(id_list[k+1].column())).arg(table->getLogicalColName(id_list[k+2].column())).arg(table->getLogicalColName(id_list[k+3].column())),
-                        Curve2D::CURVE);
-                curve.setScalarField(data_s);
-                curve.setAlphaField(data_a);
-                curve.getStyle().mLineStyle=QCPCurve::lsNone;
-                curve.getStyle().mScatterShape=QCPScatterStyle::ssArrow;
-                curve.getStyle().mScatterSize=20;
-                viewer1d->slot_add_data(curve);
-            }
+        }
+        else if (id_list.size()==4)
+        {
+            data_x =table->getLogicalColDataDouble(id_list[0].column());
+            data_y =table->getLogicalColDataDouble(id_list[1].column());
+            data_vx=table->getLogicalColDataDouble(id_list[2].column());
+            data_vy=table->getLogicalColDataDouble(id_list[3].column());
+            legendString=QString("V(%3,%4)=f(%1,%2)").
+                    arg(table->getLogicalColName(id_list[0].column())).
+                    arg(table->getLogicalColName(id_list[1].column())).
+                    arg(table->getLogicalColName(id_list[2].column())).
+                    arg(table->getLogicalColName(id_list[3].column()));
+
+        }
+
+        Eigen::VectorXd data_a(data_vx.size());
+        Eigen::VectorXd data_s(data_vx.size());
+
+        for (int i=0; i<data_a.size(); i++)
+        {
+            data_a[i]=-atan2(data_vy[i],data_vx[i]);
+            data_s[i]=sqrt(data_vy[i]*data_vy[i]+data_vx[i]*data_vx[i]);
+        }
+
+        if (data_x.size()>0 && data_y.size()>0)
+        {
+            Curve2D curve(data_x,
+                          data_y,
+                          legendString,
+                          Curve2D::CURVE);
+            curve.setScalarField(data_s);
+            curve.setAlphaField(data_a);
+            curve.getStyle().mLineStyle=QCPCurve::lsNone;
+            curve.getStyle().mScatterShape=QCPScatterStyle::ssArrow;
+            curve.getStyle().mScatterSize=20;
+            viewer1d->slot_add_data(curve);
         }
     }
     else
@@ -428,33 +459,88 @@ void MainWindow::slot_plot_field_2D()
     }
 }
 
-
 void MainWindow::slot_plot_map_2D()
 {
-    QModelIndexList id_list=table->selectionModel()->selectedColumns();
+    QDialog* dialog=new QDialog;
+    dialog->setLocale(QLocale("C"));
+    dialog->setWindowTitle("Interpolation map");
+    dialog->setMinimumWidth(400);
 
-    if (id_list.size()==3)
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+    QSpinBox * sb_resX=new QSpinBox(dialog);
+    sb_resX->setRange(4,4096*2);
+    sb_resX->setValue(512);
+
+    QSpinBox * sb_resY=new QSpinBox(dialog);
+    sb_resY->setRange(4,4096*2);
+    sb_resY->setValue(512);
+
+    QGridLayout* gbox = new QGridLayout();
+    gbox->addWidget(sb_resX,0,0);
+    gbox->addWidget(sb_resY,0,1);
+    gbox->addWidget(buttonBox,1,0,1,2);
+
+    dialog->setLayout(gbox);
+
+    int result=dialog->exec();
+    if(result==QDialog::Accepted)
     {
-        Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[0].column());
-        Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[1].column());
-        Eigen::VectorXd data_z=table->getLogicalColDataDouble(id_list[2].column());
+        QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-        if (data_x.size()>0 && data_y.size()>0 && data_z.size()>0)
+        Eigen::Vector2d resolution(sb_resX->value(),sb_resY->value());
+
+        if (id_list.size()==2)//Phase plot
         {
-            Viewer2D* viewer2d=new Viewer2D();
-            viewer2d->setMinimumSize(600,400);
+            Eigen::VectorXd data_x=table->getLogicalColDataComplex(id_list[0].column()).real();
+            Eigen::VectorXd data_y=table->getLogicalColDataComplex(id_list[0].column()).imag();
+            Eigen::VectorXcd data_cplx_z=table->getLogicalColDataComplex(id_list[1].column());
+            Eigen::VectorXd data_z(data_cplx_z.rows());
 
-            QMdiSubWindow* subWindow = new QMdiSubWindow;
-            subWindow->setWidget(viewer2d);
-            subWindow->setAttribute(Qt::WA_DeleteOnClose);
-            mdiArea->addSubWindow(subWindow,Qt::WindowStaysOnTopHint);
-            viewer2d->show();
-            viewer2d->slot_setData(data_x,data_y,data_z,Eigen::Vector2d(512,512));
+            for(int i=0;i<data_cplx_z.rows();i++)
+            {
+                data_z[i]=std::arg(data_cplx_z[i]);
+            }
+
+            if (data_x.size()>0 && data_y.size()>0 && data_z.size()>0)
+            {
+                Viewer2D* viewer2d=new Viewer2D();
+                viewer2d->slot_setGradient(QCPColorGradient::gpHues);
+                viewer2d->setMinimumSize(600,400);
+
+                QMdiSubWindow* subWindow = new QMdiSubWindow;
+                subWindow->setWidget(viewer2d);
+                subWindow->setAttribute(Qt::WA_DeleteOnClose);
+                mdiArea->addSubWindow(subWindow,Qt::WindowStaysOnTopHint);
+                viewer2d->show();
+                viewer2d->slot_setData(data_x,data_y,data_z,resolution);
+            }
         }
-    }
-    else
-    {
-        QMessageBox::information(this,"Information","Please select 3 columns P(X,Y) and S in order to plot S(P)");
+        else if (id_list.size()==3)
+        {
+            Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[0].column());
+            Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[1].column());
+            Eigen::VectorXd data_z=table->getLogicalColDataDouble(id_list[2].column());
+
+            if (data_x.size()>0 && data_y.size()>0 && data_z.size()>0)
+            {
+                Viewer2D* viewer2d=new Viewer2D();
+                viewer2d->setMinimumSize(600,400);
+
+                QMdiSubWindow* subWindow = new QMdiSubWindow;
+                subWindow->setWidget(viewer2d);
+                subWindow->setAttribute(Qt::WA_DeleteOnClose);
+                mdiArea->addSubWindow(subWindow,Qt::WindowStaysOnTopHint);
+                viewer2d->show();
+                viewer2d->slot_setData(data_x,data_y,data_z,resolution);
+            }
+        }
+        else
+        {
+            QMessageBox::information(this,"Information","Please select 3 columns P(X,Y) and S in order to plot S(P)");
+        }
     }
 }
 

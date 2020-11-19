@@ -56,7 +56,7 @@ public:
     void setVariable(int i,VariableType value);
 
     bool compileExpression(int id);
-    VariableType currentCompiledExpressionValue();
+    void Register::currentCompiledExpressionValue(MyVariant & variant)const;
 
 signals:
     void sig_modified();

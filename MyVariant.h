@@ -16,12 +16,16 @@ class MyVariant:public QVariant
 {
 public:
     MyVariant();
+
+    MyVariant(const QString & value);
+    MyVariant(const std::complex<double> & value);
+    MyVariant(const double value);
     MyVariant(const QVariant & value);
+
 
     void operator=(const QString & other);
     void operator=(const std::complex<double> & other);
     void operator=(double other);
-
     void operator=(const MyVariant & other);
 
     QString saveToString()const;

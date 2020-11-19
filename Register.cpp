@@ -263,9 +263,9 @@ bool Register::compileExpression(int id)
     return parser.compile(variables_expressions[id].toStdString(),current_compiled_expression);
 }
 
-Register::VariableType Register::currentCompiledExpressionValue()
+void Register::currentCompiledExpressionValue(MyVariant & variant)const
 {
-    return current_compiled_expression.value();
+    variant=current_compiled_expression.value();
 }
 
 QStringList Register::getCustomExpressionList()

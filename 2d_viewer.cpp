@@ -188,8 +188,8 @@ void Viewer2D::interpolate(const Eigen::VectorXd& dataX,
         datapoints(1,i)=dataY[i];
     }
 
-    std::cout<<"data[box.idX].size()="<<datapoints.cols()<<std::endl;
-    std::cout<<datapoints.transpose()<<std::endl;
+    //std::cout<<"data[box.idX].size()="<<datapoints.cols()<<std::endl;
+    //std::cout<<datapoints.transpose()<<std::endl;
 
     kdt::KDTreed kdtree(datapoints);
     kdtree.build();

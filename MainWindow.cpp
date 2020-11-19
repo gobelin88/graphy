@@ -557,7 +557,7 @@ void MainWindow::slot_plot_map_2D()
         {
             Viewer2D* viewer2d=new Viewer2D();
             viewer2d->slot_setGradient(gradientType);
-            viewer2d->setMinimumSize(512+32,512);
+            viewer2d->setMinimumSize(512+54,512);
             QMdiSubWindow* subWindow = new QMdiSubWindow;
             subWindow->setWidget(viewer2d);
             subWindow->setAttribute(Qt::WA_DeleteOnClose);

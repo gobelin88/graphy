@@ -4,7 +4,7 @@
 
 int main(int argc, char* argv[])
 {
-    testVariant();
+    //testVariant();
 
     QApplication a(argc, argv);
 

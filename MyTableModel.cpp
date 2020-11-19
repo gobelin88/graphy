@@ -640,7 +640,7 @@ VectorXv MyModel::eval(int visualIndex)
                     reg.setVariable(j,m_data(i,j).toComplex());
                 }
 
-                colResults[i]=reg.currentCompiledExpressionValue();
+                reg.currentCompiledExpressionValue(colResults[i]);
             }
         }
         else
@@ -650,7 +650,7 @@ VectorXv MyModel::eval(int visualIndex)
                 reg.setActiveRow(i);
                 for (int j=0; j<m_data.cols(); j++)
                 {
-                    reg.setVariable(j,m_data(i,j).toDouble());
+                    reg.setVariable(j,m_data(i,j).toComplex());
                 }
 
                 // store a call to a member function and object ptr
@@ -743,6 +743,7 @@ void MyModel::slot_updateColumns()
             m_data.col(i)=eval(i);
         }
     }
+
     emit layoutChanged();
     emit sig_dataChanged();
 }

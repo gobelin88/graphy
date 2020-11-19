@@ -92,7 +92,12 @@ private:
     void saveShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
 
     //Constants
-    const float graphyVersion=4.5f;
+    const float graphyVersion=5.0f;
+    //1.0//Basic graphs
+    //2.0//Add lots of graph facilities
+    //3.0//Add Copy/Paste management between graphs and table
+    //4.0//Bigs files support
+    //5.0//complex support !
 };
 
 #endif // MAINWINDOW_H

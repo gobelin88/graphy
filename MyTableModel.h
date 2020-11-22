@@ -4,6 +4,7 @@
 #include <Eigen/Dense>
 #include <QScrollBar>
 #include <iostream>
+#include <QElapsedTimer>
 
 #include "Register.h"
 #include "MyVariant.h"
@@ -34,7 +35,7 @@ public:
     bool setData(const QModelIndex &index_logical, const QVariant &value, int role = Qt::EditRole) override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
     QVariant headerData(int logicalIndex, Qt::Orientation orientation, int role) const override;
-
+    int readHeader(QString line,QTextStream & stream);
     //I/O
     void createEmpty(int nbRows, int nbCols);
     bool open(QString filename);
@@ -64,7 +65,7 @@ public:
     void clearLogicalIndexesCols(const QModelIndexList & selectedIndexesCols);
 
     const MatrixXv &tableData();
-    VectorXv eval(int visualIndex);
+    void evalColumn(int visualIndex);
     QString copy(int x0,int y0,int nrows,int ncols);
     void paste(int x0,int y0,QString buffer);
 

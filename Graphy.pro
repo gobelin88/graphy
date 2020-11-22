@@ -103,6 +103,7 @@ FORMS += \
 INCLUDEPATH += $$(EIGEN_PATH)/
 
 QMAKE_CXXFLAGS += -Dexprtk_disable_caseinsensitivity
+QMAKE_CXXFLAGS_RELEASE += -O3
 
 msvc {
   QMAKE_CXXFLAGS += -openmp

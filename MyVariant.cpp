@@ -2,7 +2,6 @@
 
 MyVariant::MyVariant()
 {
-    *this=QVariant("");
     background=qRgb(255,255,255);
 }
 
@@ -90,133 +89,73 @@ QString MyVariant::complexToString(std::complex<double> value)const
     {
         return doubleToString( value.real())+QString(",")+doubleToString( value.imag());
     }
-
-//    if (value.imag()==0.0)
-//    {
-//        return doubleToString( value.real());
-//    }
-//    else if (value.real()==0.0)
-//    {
-//        if(value.imag()==1)
-//        {
-//            return QString("i");
-//        }
-//        else if(value.imag()==-1)
-//        {
-//            return QString("-i");
-//        }
-//        else
-//        {
-//            return doubleToString(value.imag())+QString("i");
-//        }
-//    }
-//    else
-//    {
-//        if(value.imag()==1)
-//        {
-//            return doubleToString( value.real() )+QString("+i");
-//        }
-//        else if(value.imag()==-1)
-//        {
-//            return doubleToString( value.real() )+QString("-i");
-//        }
-//        else if(value.imag()>0)
-//        {
-//            return doubleToString( value.real() )+QString("+")+doubleToString(value.imag())+QString("i");
-//        }
-//        else
-//        {
-//            return doubleToString( value.real() )+doubleToString(value.imag())+QString("i");
-//        }
-//    }
 }
 
-bool MyVariant::complexFromString(QString string,std::complex<double> & value)const
+bool MyVariant::complexFromStringRef(const QStringRef & string,std::complex<double> & value)const
 {
-//    if(string.endsWith("i"))
-//    {
-//        if(string==QString("i"))//i
-//        {
-//            value=std::complex<double>(0,1);
-//            return true;
-//        }
+    QVector<QStringRef> args=string.split(',');
+    if(args.size()==2)
+    {
+        bool okR,okI;
+        double valuedoubleR=args[0].toDouble(&okR);
+        double valuedoubleI=args[1].toDouble(&okI);
 
-//        if(string==QString("-i"))//-i
-//        {
-//            value=std::complex<double>(0,-1);
-//            return true;
-//        }
+        if(okR && okI)
+        {
+            value=std::complex<double>(valuedoubleR,valuedoubleI);
+        }
 
-//        //Remove the i
-//        string.chop(1);
+        return (okR && okI);
+    }
+    else if(args.size()==1)
+    {
+        bool okR;
+        double valuedoubleR=args[0].toDouble(&okR);
+        value=std::complex<double>(valuedoubleR,0);
 
-//        bool isPureImaginary;
-//        double imaginaryPart=string.toDouble(&isPureImaginary);
-//        if(isPureImaginary)//Yi
-//        {
-//            value=std::complex<double>(0,imaginaryPart);
-//        }
-//        else//A+Yi
-//        {
-//            bool realneg=false,imagneg=false;
-//            if(string.startsWith("-"))
-//            {
-//                realneg=true;
-//                string.remove(0,1);
-//            }
+        return okR;
+    }
+    else
+    {
+        return false;
+    }
 
-//            QStringList args;
-//            if(string.contains("-"))
-//            {
-//                args=string.split("-");
-//                imagneg=true;
-//            }
-//            else if(string.contains("+"))
-//            {
-//                args=string.split("+");
-//                imagneg=false;
-//            }
+}
 
-//            if(args.size()==2)
-//            {
-//                if(args[1].isEmpty())
-//                {
-//                    value=std::complex<double>( (realneg)?-args[0].toDouble():args[0].toDouble(),
-//                                                (imagneg)?-1:1);
-//                }
-//                else
-//                {
-//                    value=std::complex<double>( (realneg)?-args[0].toDouble():args[0].toDouble(),
-//                                                (imagneg)?-args[1].toDouble():args[1].toDouble());
-//                }
-//                return true;
-//            }
-//            else
-//            {
-////                std::cout<<string.toStdString()<<std::endl;
-////                std::cout<<argsP.size()<<" "<<argsN.size()<<std::endl;
-////                std::cout<<argsP[0].toStdString()<<" "<<argsN[0].toStdString()<<std::endl;
-//                return false;
-//            }
-//        }
-//    }
-//    else
-//    {
-//        bool ok;
-//        double valuedouble=string.toDouble(&ok);
-
-//        if(ok)
-//        {
-//            value=std::complex<double>(valuedouble,0);
-//            return true;
-//        }
-//        else
-//        {
-//            return false;
-//        }
-
-//    }
+bool MyVariant::complexFromString(const QString & string,std::complex<double> & value)const
+{
     QStringList args=string.split(",");
+    if(args.size()==2)
+    {
+        bool okR,okI;
+        double valuedoubleR=args[0].toDouble(&okR);
+        double valuedoubleI=args[1].toDouble(&okI);
+
+        if(okR && okI)
+        {
+            value=std::complex<double>(valuedoubleR,valuedoubleI);
+        }
+
+        return (okR && okI);
+    }
+    else if(args.size()==1)
+    {
+        bool okR;
+        double valuedoubleR=args[0].toDouble(&okR);
+        value=std::complex<double>(valuedoubleR,0);
+
+        return okR;
+    }
+    else
+    {
+        return false;
+    }
+
+}
+
+bool MyVariant::complexFromByteArray(const QByteArray & string,std::complex<double> & value)const
+{
+    QList<QByteArray> args=string.split(',');
     if(args.size()==2)
     {
         bool okR,okI;
@@ -261,7 +200,46 @@ QString MyVariant::saveToString()const
     }
 }
 
-void MyVariant::loadFromString(QString string)
+void MyVariant::loadFromByteArray(const QByteArray & string)
+{
+    bool canDouble=false;
+    double value_double=string.toDouble(&canDouble);
+    if(canDouble)
+    {
+        *this=value_double;
+        return ;
+    }
+
+    std::complex<double> value_cplx;
+    if(complexFromByteArray(string,value_cplx))
+    {
+        *this=value_cplx;
+        return;
+    }
+
+    *this=QString(string);
+}
+
+void MyVariant::loadFromStringRef(const QStringRef & string)
+{
+    bool canDouble=false;
+    *this=string.toDouble(&canDouble);
+    if(canDouble)
+    {
+        return;
+    }
+
+    std::complex<double> value_cplx;
+    if(complexFromStringRef(string,value_cplx))
+    {
+        *this=value_cplx;
+        return;
+    }
+
+    *this=string.toString();
+}
+
+void MyVariant::loadFromString(const QString & string)
 {
     bool canDouble=false;
     double value_double=string.toDouble(&canDouble);

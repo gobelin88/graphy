@@ -29,7 +29,9 @@ public:
     void operator=(const MyVariant & other);
 
     QString saveToString()const;
-    void loadFromString(QString string);
+    void loadFromStringRef(const QStringRef & string);
+    void loadFromString(const QString &string);
+    void loadFromByteArray(const QByteArray & string);
 
     bool isDouble() const;
     bool isString() const;
@@ -41,7 +43,9 @@ public:
     //
     QString doubleToString(double value) const;
     QString complexToString(std::complex<double> value)const;
-    bool complexFromString(QString string,std::complex<double> & value)const;
+    bool complexFromStringRef(const QStringRef & string,std::complex<double> & value)const;
+    bool complexFromString(const QString & string,std::complex<double> & value)const;
+    bool complexFromByteArray(const QByteArray &string, std::complex<double> & value)const;
 
     QRgb background;
 };

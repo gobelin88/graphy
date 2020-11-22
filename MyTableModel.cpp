@@ -104,26 +104,68 @@ void MyModel::exportLatex(QString filename)
     }
 }
 
+//int MyModel::readHeader(QString line,QTextStream & stream)
+//{
+//    if(line==QString("<header>"))
+//    {
+
+//    }
+//    else
+//    {
+//        return false;
+//    }
+//}
+
+//bool MyModel::open(QString filename)
+//{
+//    QElapsedTimer timer;
+//    timer.start();
+
+//    QFile file(filename);
+//    if (file.open(QIODevice::ReadOnly | QIODevice::Text))
+//    {
+//        QTextStream stream;
+//        QString line;
+//        line.reserve(1024);
+
+//        //header--------------------------------
+//        if(!readHeader(line,stream))
+//        {
+
+//        }
+
+//        //data----------------------------------
+//        while(!stream.atEnd())
+//        {
+//            stream.readLineInto(&line);
+
+
+//        }
+//        file.close();
+//    }
+//}
+
 bool MyModel::open(QString filename)
 {
+    QElapsedTimer timer;
+    timer.start();
     bool ok=true;
     QFile file(filename);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        QStringList content=QString(file.readAll()).split("\n",QString::SkipEmptyParts);
+        QString contentStr=file.readAll();
+        QVector<QStringRef> content=contentStr.splitRef('\n');
 
-        for(int i=0;i<content.size();)
+        std::cout<<"Open time (Opening): "<<timer.nsecsElapsed()*1e-9<<std::endl;
+
+        //Clean up
+        if( content.last().isEmpty() )content.removeLast();
+        while(content.first().startsWith('#'))
         {
-            if(content[i].startsWith("#"))
-            {
-                content.removeAt(i);
-            }
-            else
-            {
-                i++;
-            }
+            content.removeFirst();
         }
 
+        //Is there something
         if(content.size()>0)
         {
             reg.clear();
@@ -131,34 +173,35 @@ bool MyModel::open(QString filename)
             //Parse Header-----------------------------------
             int headerSize=0;
 
-            std::cout<<content[0].toLocal8Bit().data()<<std::endl;
-
             if(content[0]==QString("<header>"))
             {
                 if(content[2]==QString("</header>"))
                 {
-                    QStringList variablesNames=content[1].split(";");
+                    QVector<QStringRef> variablesNames=content[1].split(";");
                     for(int i=0;i<variablesNames.size();i++)
                     {
-                        reg.newVariable(variablesNames[i],"");
+                        reg.newVariable(variablesNames[i].toString(),"");
                     }
                     headerSize=3;
                 }
                 else if(content[3]==QString("</header>"))
                 {
-                    QStringList variablesNames=content[1].split(";");
-                    QStringList variablesExpressions=content[2].split(";");
+                    QVector<QStringRef> variablesNames=content[1].split(";");
+                    QVector<QStringRef> variablesExpressions=content[2].split(";");
 
                     if(variablesNames.size()==variablesExpressions.size())
                     {
                         for(int i=0;i<variablesNames.size();i++)
                         {
-                            reg.newVariable(variablesNames[i],"");
+                            reg.newVariable(variablesNames[i].toString(),"");
                         }
 
                         for(int i=0;i<variablesNames.size();i++)
                         {
-                            reg.renameVariable(variablesNames[i],variablesNames[i],"",variablesExpressions[i]);
+                            reg.renameVariable(variablesNames[i].toString(),
+                                               variablesNames[i].toString(),
+                                               "",
+                                               variablesExpressions[i].toString());
                         }
                     }
                     else
@@ -176,28 +219,32 @@ bool MyModel::open(QString filename)
             }
             else
             {
-                QStringList data=content[0].split(";");
-                for(int i=0;i<data.size();i++)
+                int dataSize=content[0].count(";");
+                for(int i=0;i<dataSize;i++)
                 {
                     reg.newVariable(QString("C%1").arg(i),"");
                 }
             }
 
+        std::cout<<"Open time (Variables): "<<timer.nsecsElapsed()*1e-9<<std::endl;
             //Parse Data-----------------------------------
             if(ok)
             {
                 int nbCols=reg.size(),nbRows=content.size()-headerSize;
-                m_data=MatrixXv(nbRows,nbCols);
+                m_data.resize(nbRows,nbCols);
+                std::cout<<"Open time (Allocate): "<<timer.nsecsElapsed()*1e-9<<std::endl;
 
-                for(int i=headerSize;i<content.size();i++)
+                int dataSize=content.size()-headerSize;
+
+                #pragma omp parallel for
+                for(int i=0;i<dataSize;++i)
                 {
-                    QStringList valueList=content[i].split(";");
-
+                    QVector<QStringRef> valueList=content[i+headerSize].split(';');
                     if(valueList.size()>=nbCols)
                     {
                         for(int j=0;j<nbCols;j++)
                         {
-                            m_data(i-headerSize,j).loadFromString(valueList[j]);
+                            m_data(i,j).loadFromStringRef(valueList[j]);
                         }
                     }
                     else
@@ -225,6 +272,8 @@ bool MyModel::open(QString filename)
 
     contentResized();
 
+    std::cout<<"Open time (Parsing): "<<timer.nsecsElapsed()*1e-9<<std::endl;
+
     return ok;
 }
 
@@ -233,36 +282,33 @@ bool MyModel::save(QString filename)
     QFile file(filename);
     if (file.open(QIODevice::WriteOnly | QIODevice::Text))
     {
-        QString textData;
+        //QString textData;
+        QTextStream out(&file);
 
-        textData += "<header>\n";
+        out<< "<header>\n";
         for (int j = 0; j < reg.variablesNames().size(); j++)
         {
-            textData+=reg.variablesNames()[j];
-            if(j!=reg.variablesNames().size()-1){textData += ";";}
+            out<<reg.variablesNames()[j];
+            if(j!=reg.variablesNames().size()-1){out<< ";";}
         }
-        textData += "\n";
+        out<< "\n";
         for (int j = 0; j < reg.variablesExpressions().size(); j++)
         {
-            textData+=reg.variablesExpressions()[j];
-            if(j!=reg.variablesExpressions().size()-1){textData += ";";}
+            out<<reg.variablesExpressions()[j];
+            if(j!=reg.variablesExpressions().size()-1){out<< ";";}
         }
-        textData += "\n";
-        textData += "</header>\n";
+        out<< "\n</header>\n";
 
         for (int i = 0; i < m_data.rows(); i++)
         {
             for (int j = 0; j < m_data.cols(); j++)
             {
 
-                textData += m_data(i,j).saveToString();
-                if(j!=m_data.cols()-1){textData += ";";}
+                out<< m_data(i,j).saveToString();
+                if(j!=m_data.cols()-1){out<< ";";}
             }
-            textData += "\n";             // (optional: for new line segmentation)
+            out<< "\n";             // (optional: for new line segmentation)
         }
-
-        QTextStream out(&file);
-        out << textData;
 
         file.close();
         return true;
@@ -618,18 +664,16 @@ void MyModel::clearLogicalIndexesCols(const QModelIndexList & selectedIndexesCol
     emit sig_dataChanged();
 }
 
-VectorXv MyModel::eval(int visualIndex)
+void MyModel::evalColumn(int visualIndex)
 {
     reg.setActiveCol(visualIndex);
 
     if (reg.variablesExpressions()[visualIndex].isEmpty())
     {
-        return VectorXv(m_data.rows());
+        m_data.col(visualIndex)=VectorXv(m_data.rows());
     }
     else
     {
-        VectorXv colResults(m_data.rows());
-
         if (reg.compileExpression(visualIndex))
         {
             for (int i=0; i<m_data.rows(); i++)
@@ -640,7 +684,7 @@ VectorXv MyModel::eval(int visualIndex)
                     reg.setVariable(j,m_data(i,j).toComplex());
                 }
 
-                reg.currentCompiledExpressionValue(colResults[i]);
+                reg.currentCompiledExpressionValue(m_data(i,visualIndex));
             }
         }
         else
@@ -654,14 +698,12 @@ VectorXv MyModel::eval(int visualIndex)
                 }
 
                 // store a call to a member function and object ptr
-                if(!reg.customExpressionParse(m_data,visualIndex,colResults[i],i))
+                if(!reg.customExpressionParse(m_data,visualIndex,m_data(i,visualIndex),i))
                 {
                     break;
                 }
             }
         }
-
-        return colResults;
     }
 }
 
@@ -708,7 +750,7 @@ void MyModel::slot_editColumn(int logicalIndex)
 
         if(!reg.variablesExpressions()[visualIndex].isEmpty())
         {
-            m_data.col(visualIndex)=eval(visualIndex);
+            evalColumn(visualIndex);
         }
 
         emit layoutChanged();
@@ -736,13 +778,19 @@ void MyModel::slot_newRows()
 
 void MyModel::slot_updateColumns()
 {
+    QElapsedTimer timer;
+
+    timer.start();
+
     for (int i=0; i<m_data.cols(); i++)
     {
         if(!reg.variablesExpressions()[i].isEmpty())
         {
-            m_data.col(i)=eval(i);
+            evalColumn(i);
         }
     }
+
+    std::cout<<"timer.elapsed()="<<timer.nsecsElapsed()*1e-9<<"s"<<std::endl;
 
     emit layoutChanged();
     emit sig_dataChanged();

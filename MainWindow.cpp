@@ -476,20 +476,27 @@ void MainWindow::slot_plot_map_2D()
 
     if (id_list.size()==2)
     {
-        cb_type->addItem("Complex Phase  Scalar field",1);
-        cb_type->addItem("Complex Module Scalar field",2);
-        cb_type->addItem("Complex Real   Scalar field",3);
-        cb_type->addItem("Complex Imag   Scalar field",4);
+        QString name_x=table->getLogicalColName(id_list[0].column());
+        QString name_y=table->getLogicalColName(id_list[1].column());
+
+        cb_type->addItem(QString("Real(%1):Abscissa  Imag(%1):Ordinate  Phase(%2) :Scalar").arg(name_x).arg(name_y),1);
+        cb_type->addItem(QString("Real(%1):Abscissa  Imag(%1):Ordinate  Module(%2):Scalar").arg(name_x).arg(name_y),2);
+        cb_type->addItem(QString("Real(%1):Abscissa  Imag(%1):Ordinate  Real(%2)  :Scalar").arg(name_x).arg(name_y),3);
+        cb_type->addItem(QString("Real(%1):Abscissa  Imag(%1):Ordinate  Imag(%2)  :Scalar").arg(name_x).arg(name_y),4);
     }
     else if (id_list.size()==3)
     {
-        cb_type->addItem("Standard Scalar field",0);
+        QString name_x=table->getLogicalColName(id_list[0].column());
+        QString name_y=table->getLogicalColName(id_list[1].column());
+        QString name_z=table->getLogicalColName(id_list[2].column());
+
+        cb_type->addItem(QString("%1:Abscissa  %2:Ordinate  %3:ScalarField").arg(name_x).arg(name_y).arg(name_z),0);
     }
 
     if(cb_type->count()==0)
     {
         QMessageBox::information(this,"Information",
-                                 "Please select\n"\
+                                 "You may select :\n"\
                                  "-3 columns of real numbers X,Y,Z in order to plot Z=f(X,Y)\n"\
                                  "-2 columns of complex numbers X,Y in order to plot mod(Y)=f(re(X),im(Y)) or arg(Y)=f(re(X),im(Y))\n");
         return;
@@ -708,28 +715,109 @@ void MainWindow::slot_plot_bode()
 {
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-    if (id_list.size()%3==0 && id_list.size()>0)
+    if (id_list.size()>0)
     {
-        ViewerBode * viewer_bode=createViewerBode();
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("Complex plot disambiguation");
+        dialog->setMinimumWidth(400);
 
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
-        for (int k=0; k<id_list.size(); k+=3)
+        QComboBox * cb_type=new QComboBox(dialog);
+
+        QString nameX,nameY,nameZ;
+
+        if (id_list.size()==1)
         {
-            Eigen::VectorXd data_f=table->getLogicalColDataDouble(id_list[k].column());
-            Eigen::VectorXd data_module=table->getLogicalColDataDouble(id_list[k+1].column());
-            Eigen::VectorXd data_phase=table->getLogicalColDataDouble(id_list[k+2].column());
+            nameX="x";
+            nameY=table->getLogicalColName(id_list[0].column());
+            nameZ=nameY;
 
-            if (data_f.size()>0 && data_module.size()>0 && data_phase.size()>0)
-            {
-                QString name=QString("%2=f(%1)").arg(table->getLogicalColName(id_list[k  ].column())).arg(table->getLogicalColName(id_list[k+1].column()));
-
-                viewer_bode->slot_add_data(Curve2DComplex(data_f,data_module,data_phase,Curve2DComplex::POLAR,name));
-            }
+            cb_type->addItem(QString("Real(%1):Ordinate  Imag(%1):Ordinate").arg(nameY),0);
         }
-    }
-    else
-    {
-        QMessageBox::information(this,"Information","Please select 3 columns (frequency,module,phase)");
+        else if (id_list.size()==2)
+        {
+            nameX=table->getLogicalColName(id_list[0].column());
+            nameY=table->getLogicalColName(id_list[1].column());
+            nameZ=nameY;
+
+            cb_type->addItem(QString("%1:Abscissa  Real(%2):Ordinate  Imag(%2):Ordinate").arg(nameX).arg(nameY),1);
+        }
+        else if (id_list.size()==3)
+        {
+            nameX=table->getLogicalColName(id_list[0].column());
+            nameY=table->getLogicalColName(id_list[1].column());
+            nameZ=table->getLogicalColName(id_list[2].column());
+
+            cb_type->addItem(QString("%1:Abscissa  Module(%2):Ordinate  Phase(%3):Ordinate").arg(nameX).arg(nameY).arg(nameZ),2);
+            cb_type->addItem(QString("%1:Abscissa  Real(%2)  :Ordinate  Imag(%3) :Ordinate").arg(nameX).arg(nameY).arg(nameZ),3);
+        }
+
+        if(cb_type->count()==0)
+        {
+            QMessageBox::information(this,"Information",
+                                     "You may select :\n"\
+                                     "-3 columns of real numbers\n"\
+                                     "-1 column of real numbers and 1 column of complex numbers\n");
+            return;
+        }
+
+        QGridLayout* gbox = new QGridLayout();
+        gbox->addWidget(new QLabel("What does the selected data represent ?"),0,0,1,3);
+        gbox->addWidget(cb_type,1,0,1,3);
+        gbox->addWidget(buttonBox,2,0,1,3);
+        dialog->setLayout(gbox);
+
+        int result=dialog->exec();
+        if(result==QDialog::Accepted)
+        {
+            Eigen::VectorXd data_x,data_y,data_z;
+
+            if (cb_type->currentData()==2 || cb_type->currentData()==3)
+            {
+                ViewerBode * viewer_bode=createViewerBode();
+                data_z=table->getLogicalColDataDouble(id_list[2].column());
+                data_y=table->getLogicalColDataDouble(id_list[1].column());
+                data_x=table->getLogicalColDataDouble(id_list[0].column());
+
+                QString name=QString("%2=f(%1)").arg(nameX).arg(nameY);
+
+                if(cb_type->currentData()==2)
+                {
+                    viewer_bode->slot_add_data(Curve2DComplex(data_x,data_y,data_z,Curve2DComplex::POLAR,name));
+                }
+                else
+                {
+                    viewer_bode->slot_add_data(Curve2DComplex(data_x,data_y,data_z,Curve2DComplex::CARTESIAN,name));
+                }
+            }
+            else if (cb_type->currentData()==1)
+            {
+                ViewerBode * viewer_bode=createViewerBode();
+                data_z=table->getLogicalColDataComplex(id_list[1].column()).imag();
+                data_y=table->getLogicalColDataComplex(id_list[1].column()).real();
+                data_x=table->getLogicalColDataDouble(id_list[0].column());
+
+                QString name=QString("%2=f(%1)").arg(nameX).arg(nameY);
+                viewer_bode->slot_add_data(Curve2DComplex(data_x,data_y,data_z,Curve2DComplex::CARTESIAN,name));
+            }
+            else if (cb_type->currentData()==0)
+            {
+                ViewerBode * viewer_bode=createViewerBode();
+                data_z=table->getLogicalColDataComplex(id_list[0].column()).imag();
+                data_y=table->getLogicalColDataComplex(id_list[0].column()).real();
+                data_x.resize(data_y.rows());
+
+                QString name=QString("%2=f(%1)").arg(nameX).arg(nameY);
+                viewer_bode->slot_add_data(Curve2DComplex(data_x,data_y,data_z,Curve2DComplex::CARTESIAN,name));
+            }
+
+
+        }
+
     }
 }
 

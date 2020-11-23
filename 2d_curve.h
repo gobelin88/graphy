@@ -8,6 +8,7 @@
 #include "MyCustomPlot.h"
 #include "FIR.h"
 #include "DataConvert.h"
+#include "FFT.h"
 
 class Curve2D
 {
@@ -123,7 +124,7 @@ public:
     //misc
     void knnMeanDistance(int knn);
     double getRms();
-    double guessMainFrequency();
+    std::complex<double> guessMainFrequencyPhaseModule(double & mainFrequency);
     uint getMaxIndex();
     Eigen::Vector2d getBarycenter();
     Eigen::VectorXd getLinX(int n)const;

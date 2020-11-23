@@ -227,12 +227,12 @@ void MainWindow::fileModified()
     isModified=true;
 }
 
-Viewer1D* MainWindow::createViewer1D()
+Viewer1D* MainWindow::createViewer1D(int sx,int sy)
 {
     Viewer1D* viewer1d=new Viewer1D(shortcuts,this);
     QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),table,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
     QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
-    viewer1d->setMinimumSize(600,400);
+    viewer1d->setMinimumSize(sx,sy);
     viewer1d->setAttribute(Qt::WA_DeleteOnClose);
 
     mdiArea->addSubWindow(viewer1d,Qt::WindowStaysOnTopHint);
@@ -389,7 +389,7 @@ void MainWindow::slot_plot_field_2D()
 
     if (id_list.size()==2 ||  (id_list.size()==4))
     {
-        Viewer1D* viewer1d=createViewer1D();
+        Viewer1D* viewer1d=createViewer1D(512+54,512);
 
         Eigen::VectorXd data_x ;
         Eigen::VectorXd data_y ;
@@ -450,6 +450,8 @@ void MainWindow::slot_plot_field_2D()
             curve.getStyle().mLineStyle=QCPCurve::lsNone;
             curve.getStyle().mScatterShape=QCPScatterStyle::ssArrow;
             curve.getStyle().mScatterSize=20;
+
+
             viewer1d->slot_add_data(curve);
         }
     }

@@ -1143,7 +1143,6 @@ void MyModel::slot_newColumn(QString varName,VectorXv dataColv)
     {
         slot_newColumn(varName+QString("_%1").arg(reg.countVariable(varName)),dataColv);
     }
-    std::cout<<"slot_newColumn end"<<std::endl;
 }
 
 void MyModel::setRowSpan(int rowSpan)

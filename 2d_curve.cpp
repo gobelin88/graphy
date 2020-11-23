@@ -377,11 +377,29 @@ double Curve2D::getRms()
     return sqrt(y.cwiseAbs2().mean());
 }
 
-double Curve2D::guessMainFrequency()
+std::complex<double> Curve2D::guessMainFrequencyPhaseModule(double & mainFrequency)
 {
     //Curve2D fft=getFFT(Curve2D::BLACKMAN,1.0,true,true,false);
     //return fft.getX()[fft.getMaxIndex()];
-    return 1.0;//Todo
+
+    Eigen::VectorXcd s_in=y;
+
+    Eigen::VectorXcd s_out=MyFFT::getFFT(s_in,
+                  MyFFT::WindowsType::BLACKMAN,
+                  true,
+                  false,
+                  false);
+
+    Eigen::VectorXd s_mod=s_out.segment(0,s_out.size()/2).cwiseAbs();
+
+
+
+    int maxindex;
+    s_mod.maxCoeff(&maxindex);
+
+    mainFrequency=double(maxindex)/s_out.rows();
+
+    return s_out[maxindex]*sqrt(s_out.rows())*2.0;//+s_out[s_out.size()-maxindex];//Todo
 }
 
 Eigen::Vector2d Curve2D::getBarycenter()

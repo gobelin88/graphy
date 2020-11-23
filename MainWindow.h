@@ -68,7 +68,7 @@ private:
     QTabWidget* te_widget;
     Ui::MainWindow* ui;
     MyTableView * table;
-    Viewer1D* createViewer1D();
+    Viewer1D* createViewer1D(int sx=600,int sy=400);
     ViewerBode* createViewerBode();
     QAction* a_newColumn;
     QAction* a_newRow;

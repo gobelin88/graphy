@@ -516,7 +516,7 @@ public:
         getF->setDecimals(4);
         getF->setPrefix("F=");
         getP=new QDoubleSpinBox(dialog);
-        getP->setRange(0.0001,1e8);
+        getP->setRange(-1e8,1e8);
         getP->setDecimals(4);
         getP->setPrefix("Phi=");
         getP->setValue(0.0);
@@ -597,7 +597,7 @@ public:
         double A=getA();
         double F=getF();
         double P=getP();
-        std::cout<<t<<" "<<A<<" "<<F<<" "<<P<<" "<<A* std::sin(2*M_PI*F*t+P)<<std::endl;
+        //std::cout<<t<<" "<<A<<" "<<F<<" "<<P<<" "<<A* std::sin(2*M_PI*F*t+P)<<std::endl;
         return A*std::sin(2*M_PI*F*t+P);
     }
 

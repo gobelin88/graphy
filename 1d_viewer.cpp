@@ -1071,8 +1071,13 @@ void Viewer1D::slot_fit_sinusoide()
     {
         QDoubleSpinBox* A,*F,*P;
         QDialog* dialog=Sinusoide::createDialog(A,F,P);
-        A->setValue(curves[0].getRms()*sqrt(2.0));
-        F->setValue(curves[0].guessMainFrequency());
+
+        double frequencyGuess;
+        std::complex<double> pm=curves[0].guessMainFrequencyPhaseModule(frequencyGuess);
+
+        A->setValue(std::abs(pm));
+        F->setValue(frequencyGuess);
+        P->setValue(std::arg(pm)+M_PI/2);
         int result=dialog->exec();
 
         if (result == QDialog::Accepted)

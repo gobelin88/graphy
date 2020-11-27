@@ -47,7 +47,7 @@ public:
     bool complexFromString(const QString & string,std::complex<double> & value)const;
     bool complexFromByteArray(const QByteArray &string, std::complex<double> & value)const;
 
-    QRgb background;
+    QRgb color;
 };
 
 void testVariant();

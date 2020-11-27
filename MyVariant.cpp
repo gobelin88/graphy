@@ -2,35 +2,35 @@
 
 MyVariant::MyVariant()
 {
-    background=qRgb(255,255,255);
+    color=qRgb(255,255,255);
 }
 
 MyVariant::MyVariant(const QString & value)
 {
     *this=value;
-    background=qRgb(255,255,255);
+    color=qRgb(255,255,255);
 }
 MyVariant::MyVariant(const std::complex<double> & value)
 {
     *this=value;
-    background=qRgb(255,255,255);
+    color=qRgb(255,255,255);
 }
 MyVariant::MyVariant(const double value)
 {
     *this=value;
-    background=qRgb(255,255,255);
+    color=qRgb(255,255,255);
 }
 
 MyVariant::MyVariant(const QVariant & value)
 {
     *dynamic_cast<QVariant*>(this)=value;
-    background=qRgb(255,255,255);
+    color=qRgb(255,255,255);
 }
 
 void MyVariant::operator=(const MyVariant & other)
 {
     *dynamic_cast<QVariant*>(this)=other;
-    background=other.background;
+    color=other.color;
 }
 
 void MyVariant::operator=(const QString & other)

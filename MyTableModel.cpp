@@ -83,7 +83,14 @@ void MyModel::exportLatex(QString filename)
         {
             for (int j = 0; j < m_data.cols(); j++)
             {
-                textData += m_data(i,j).saveToString();
+                if(m_data(i,j).color==qRgb(255,255,255))
+                {
+                    textData += m_data(i,j).saveToString();
+                }
+                else
+                {
+                    textData +=QString("\\cellcolor[rgb]{%1,%2,%3}").arg(qRed(m_data(i,j).color)/255.0).arg(qGreen(m_data(i,j).color)/255.0).arg(qBlue(m_data(i,j).color)/255.0)+m_data(i,j).saveToString();
+                }
 
                 if (j!=m_data.cols()-1)
                 {
@@ -865,13 +872,13 @@ QVariant MyModel::data(const QModelIndex &index_logical, int role) const
     if (role == Qt::BackgroundRole)
     {
         QModelIndex index=toVisualIndex(index_logical);
-        QRgb backgroundColor=m_data(index.row()+m_rowOffset,index.column()).background;
+        QRgb backgroundColor=m_data(index.row()+m_rowOffset,index.column()).color;
         return QBrush(QColor(backgroundColor));
     }
     if (role == Qt::ForegroundRole)
     {
         QModelIndex index=toVisualIndex(index_logical);
-        QRgb backgroundColor=m_data(index.row()+m_rowOffset,index.column()).background;
+        QRgb backgroundColor=m_data(index.row()+m_rowOffset,index.column()).color;
         if(qGray(backgroundColor)>100)
         {
             return QBrush(QColor(Qt::black));
@@ -891,7 +898,7 @@ void MyModel::colourizeCol(unsigned int visualColIndex,const std::vector<QRgb> &
     {
         for(int i=0;i<m_data.rows();i++)
         {
-            m_data(i,visualColIndex).background=colors[i];
+            m_data(i,visualColIndex).color=colors[i];
         }
     }
 }
@@ -900,7 +907,7 @@ void MyModel::colourizeCol(unsigned int visualColIndex,QRgb color)
 {
     for(int i=0;i<m_data.rows();i++)
     {
-        m_data(i,visualColIndex).background=color;
+        m_data(i,visualColIndex).color=color;
     }
 }
 

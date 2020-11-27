@@ -441,7 +441,7 @@ namespace exprtk
                                     "repeat", "return", "root", "round", "roundn", "sec", "sgn",
                                     "shl", "shr", "sin", "sinc", "sinh", "sqrt",  "sum", "swap",
                                     "switch", "tan",  "tanh", "true",  "trunc", "until",  "var",
-                                    "while", "xnor", "xor", "&", "|"
+                                    "while", "xnor", "xor", "&", "|","arg","real","imag"
                                   };
 
       static const std::size_t reserved_symbols_size = sizeof(reserved_symbols) / sizeof(std::string);
@@ -456,7 +456,7 @@ namespace exprtk
                                     "ncdf",  "pow",  "root",  "round",  "roundn",  "sec", "sgn",
                                     "sin", "sinc", "sinh", "sqrt", "sum", "swap", "tan", "tanh",
                                     "trunc",  "not_equal",  "inrange",  "deg2grad",   "deg2rad",
-                                    "rad2deg", "grad2deg"
+                                    "rad2deg", "grad2deg","arg","real","imag"
                                   };
 
       static const std::size_t base_function_list_size = sizeof(base_function_list) / sizeof(std::string);
@@ -892,6 +892,42 @@ namespace exprtk
             inline T abs_impl(const T v, complex_type_tag)
             {
                return std::abs(v);
+            }
+
+            template <typename T>
+            inline T arg_impl(const T v, real_type_tag)
+            {
+               return std::arg(v);
+            }
+
+            template <typename T>
+            inline T arg_impl(const T v, complex_type_tag)
+            {
+               return std::arg(v);
+            }
+
+            template <typename T>
+            inline T real_impl(const T v, real_type_tag)
+            {
+               return v;
+            }
+
+            template <typename T>
+            inline T real_impl(const T v, complex_type_tag)
+            {
+               return std::real(v);
+            }
+
+            template <typename T>
+            inline T imag_impl(const T v, real_type_tag)
+            {
+               return 0;
+            }
+
+            template <typename T>
+            inline T imag_impl(const T v, complex_type_tag)
+            {
+               return std::imag(v);
             }
 
             template <typename T>
@@ -1563,7 +1599,11 @@ namespace exprtk
             template <typename T> inline T const_pi_impl(real_type_tag) { return T(numeric::constant::pi); }
             template <typename T> inline T const_e_impl (real_type_tag) { return T(numeric::constant::e);  }
 
+            template <typename T> inline T   real_impl(const T v, int_type_tag) { return v; }
+            template <typename T> inline T   imag_impl(const T v, int_type_tag) { return 0; }
+            template <typename T> inline T   arg_impl(const T v, int_type_tag) { return std::arg(v); }
             template <typename T> inline T   abs_impl(const T v, int_type_tag) { return ((v >= T(0)) ? v : -v); }
+
             template <typename T> inline T   exp_impl(const T v, int_type_tag) { return std::exp  (v); }
             template <typename T> inline T   log_impl(const T v, int_type_tag) { return std::log  (v); }
             template <typename T> inline T log10_impl(const T v, int_type_tag) { return std::log10(v); }
@@ -1826,6 +1866,9 @@ namespace exprtk
             return  FunctionName##_impl(v,num_type);               \
          }                                                         \
 
+         exprtk_define_unary_function(real )
+         exprtk_define_unary_function(imag )
+         exprtk_define_unary_function(arg  )
          exprtk_define_unary_function(abs  )
          exprtk_define_unary_function(acos )
          exprtk_define_unary_function(acosh)
@@ -4775,7 +4818,7 @@ namespace exprtk
          e_trunc   , e_assign  , e_addass  , e_subass  ,
          e_mulass  , e_divass  , e_modass  , e_in      ,
          e_like    , e_ilike   , e_multi   , e_smulti  ,
-         e_swap    ,
+         e_swap    , e_arg     , e_real    , e_imag    ,
 
          // Do not add new functions/operators after this point.
          e_sf00 = 1000, e_sf01 = 1001, e_sf02 = 1002, e_sf03 = 1003,
@@ -5119,6 +5162,9 @@ namespace exprtk
             {
                switch (operation)
                {
+                  case e_imag  : return numeric::imag (arg);
+                  case e_real  : return numeric::real (arg);
+                  case e_arg   : return numeric::arg  (arg);
                   case e_abs   : return numeric::abs  (arg);
                   case e_acos  : return numeric::acos (arg);
                   case e_acosh : return numeric::acosh(arg);
@@ -5300,7 +5346,7 @@ namespace exprtk
             e_vecopvecass   , e_vecfunc       , e_vecvecswap  , e_vecvecineq   ,
             e_vecvalineq    , e_valvecineq    , e_vecvecarith , e_vecvalarith  ,
             e_valvecarith   , e_vecunaryop    , e_break       , e_continue     ,
-            e_swap
+            e_swap          , e_arg           , e_real        , e_imag
          };
 
          typedef T value_type;
@@ -12292,6 +12338,9 @@ namespace exprtk
          }                                                      \
       };                                                        \
 
+      exprtk_define_unary_op(real  )
+      exprtk_define_unary_op(imag  )
+      exprtk_define_unary_op(arg  )
       exprtk_define_unary_op(abs  )
       exprtk_define_unary_op(acos )
       exprtk_define_unary_op(acosh)
@@ -16086,6 +16135,9 @@ namespace exprtk
          #define register_op(Symbol,Type,Args)                                               \
          m.insert(std::make_pair(std::string(Symbol),details::base_operation_t(Type,Args))); \
 
+         register_op(     "real", e_real    , 1)
+         register_op(     "imag", e_imag    , 1)
+         register_op(      "arg", e_arg     , 1)
          register_op(      "abs", e_abs     , 1)
          register_op(     "acos", e_acos    , 1)
          register_op(    "acosh", e_acosh   , 1)
@@ -19751,7 +19803,8 @@ namespace exprtk
             e_bf_sinc      , e_bf_sinh     , e_bf_sqrt     , e_bf_sum    ,
             e_bf_swap      , e_bf_tan      , e_bf_tanh     , e_bf_trunc  ,
             e_bf_not_equal , e_bf_inrange  , e_bf_deg2grad , e_bf_deg2rad,
-            e_bf_rad2deg   , e_bf_grad2deg
+            e_bf_rad2deg   , e_bf_grad2deg , e_bf_arg      , e_bf_real   ,
+            e_bf_imag
          };
 
          enum settings_control_structs
@@ -26385,7 +26438,8 @@ namespace exprtk
 
          inline bool unary_optimisable(const details::operator_type& operation) const
          {
-            return (details::e_abs   == operation) || (details::e_acos  == operation) ||
+            return (details::e_real  == operation) || (details::e_imag  == operation) ||
+                   (details::e_arg   == operation) || (details::e_abs   == operation) || (details::e_acos  == operation) ||
                    (details::e_acosh == operation) || (details::e_asin  == operation) ||
                    (details::e_asinh == operation) || (details::e_atan  == operation) ||
                    (details::e_atanh == operation) || (details::e_ceil  == operation) ||
@@ -27511,6 +27565,9 @@ namespace exprtk
          }
 
          #define unary_opr_switch_statements            \
+         case_stmt(details::  e_real, details::  real_op) \
+         case_stmt(details::  e_imag, details::  imag_op) \
+         case_stmt(details::  e_arg, details::  arg_op) \
          case_stmt(details::  e_abs, details::  abs_op) \
          case_stmt(details:: e_acos, details:: acos_op) \
          case_stmt(details::e_acosh, details::acosh_op) \
@@ -35442,6 +35499,9 @@ namespace exprtk
          #define register_unary_op(Op,UnaryFunctor)             \
          m.insert(std::make_pair(Op,UnaryFunctor<T>::process)); \
 
+         register_unary_op(details:: e_real, details:: real_op)
+         register_unary_op(details:: e_imag, details:: imag_op)
+         register_unary_op(details::  e_arg, details::  arg_op)
          register_unary_op(details::  e_abs, details::  abs_op)
          register_unary_op(details:: e_acos, details:: acos_op)
          register_unary_op(details::e_acosh, details::acosh_op)

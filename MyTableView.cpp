@@ -8,7 +8,7 @@ MyTableView::MyTableView(int nbRow,
 {
     createNew(nbRow,nbCols,rowsSpan);
 
-
+    createPopup();
     //this->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectColumns);
 }
 
@@ -224,3 +224,86 @@ void MyTableView::setSelectionPattern(QString pattern)
     setSelectionMode(currentSelectionMode);
 }
 
+void MyTableView::createPopup()
+{
+    popup_menu=new QMenu(this);
+    menuNewRows=new QMenu("Rows",this);
+
+    actNewRowBelow = new QAction("Insert below" ,  this);
+    actNewRowAbove = new QAction("Insert above" ,  this);
+    actNewRowBegin = new QAction("Add begin" ,  this);
+    actNewRowEnd   = new QAction("Add end"   ,  this);
+    actNewRowsBegin= new QAction("Add begin",  this);
+    actNewRowsEnd  = new QAction("Add end"  ,  this);
+
+    actNewRowBelow ->setShortcut(QKeySequence("PgDown"));
+    actNewRowAbove ->setShortcut(QKeySequence("PgUp"));
+    actNewRowBegin ->setShortcut(QKeySequence("Alt+PgUp"));
+    actNewRowEnd   ->setShortcut(QKeySequence("Alt+PgDown"));
+    actNewRowsBegin->setShortcut(QKeySequence("Ctrl+Alt+PgUp"));
+    actNewRowsEnd  ->setShortcut(QKeySequence("Ctrl+Alt+PgDown"));
+
+    this->addAction(actNewRowBelow );
+    this->addAction(actNewRowAbove );
+    this->addAction(actNewRowBegin );
+    this->addAction(actNewRowEnd   );
+    this->addAction(actNewRowsBegin);
+    this->addAction(actNewRowsEnd  );
+
+    popup_menu->addMenu(menuNewRows);
+    menuNewRows->addAction(actNewRowBelow );
+    menuNewRows->addAction(actNewRowAbove );
+    menuNewRows->addAction(actNewRowBegin );
+    menuNewRows->addAction(actNewRowEnd   );
+    menuNewRows->addAction(actNewRowsBegin);
+    menuNewRows->addAction(actNewRowsEnd  );
+
+    auto customContainerActions=this->actions();
+    for(auto act:customContainerActions)
+    {
+        act->setShortcutVisibleInContextMenu(true);
+    }
+
+    connect(actNewRowEnd ,&QAction::triggered,m_model,&MyModel::slot_newRowEnd);
+    connect(actNewRowsEnd,&QAction::triggered,m_model,&MyModel::slot_newRowsEnd);
+    connect(actNewRowBegin ,&QAction::triggered,m_model,&MyModel::slot_newRowBegin);
+    connect(actNewRowsBegin,&QAction::triggered,m_model,&MyModel::slot_newRowsBegin);
+
+    connect(actNewRowBelow ,&QAction::triggered,this,&MyTableView::slot_newRowBelow);
+    connect(actNewRowAbove,&QAction::triggered,this,&MyTableView::slot_newRowAbove);
+}
+
+void MyTableView::mousePressEvent(QMouseEvent* event)
+{
+    QTableView::mousePressEvent(event);
+    if (event->button() == Qt::RightButton)
+    {
+        popup_menu->exec(mapToGlobal(event->pos()));
+    }
+}
+
+void MyTableView::slot_newRowBelow()
+{
+    QModelIndexList selectedRows=selectionModel()->selectedRows();
+    if(selectedRows.size()>0)
+    {
+        for(int i=0;i<selectedRows.size();i++)
+        {
+            int index=verticalHeader()->visualIndex(selectedRows[i].row()+1);
+            m_model->slot_newRowBelow(index);
+        }
+    }
+}
+
+void MyTableView::slot_newRowAbove()
+{
+    QModelIndexList selectedRows=selectionModel()->selectedRows();
+    if(selectedRows.size()>0)
+    {
+        for(int i=0;i<selectedRows.size();i++)
+        {
+            int index=verticalHeader()->visualIndex(selectedRows[i].row()+1);
+            m_model->slot_newRowAbove(index);
+        }
+    }
+}

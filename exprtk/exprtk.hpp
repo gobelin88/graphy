@@ -441,7 +441,7 @@ namespace exprtk
                                     "repeat", "return", "root", "round", "roundn", "sec", "sgn",
                                     "shl", "shr", "sin", "sinc", "sinh", "sqrt",  "sum", "swap",
                                     "switch", "tan",  "tanh", "true",  "trunc", "until",  "var",
-                                    "while", "xnor", "xor", "&", "|","arg","real","imag"
+                                    "while", "xnor", "xor", "&", "|","arg","real","imag","mandel"
                                   };
 
       static const std::size_t reserved_symbols_size = sizeof(reserved_symbols) / sizeof(std::string);
@@ -456,7 +456,7 @@ namespace exprtk
                                     "ncdf",  "pow",  "root",  "round",  "roundn",  "sec", "sgn",
                                     "sin", "sinc", "sinh", "sqrt", "sum", "swap", "tan", "tanh",
                                     "trunc",  "not_equal",  "inrange",  "deg2grad",   "deg2rad",
-                                    "rad2deg", "grad2deg","arg","real","imag"
+                                    "rad2deg", "grad2deg","arg","real","imag","mandel"
                                   };
 
       static const std::size_t base_function_list_size = sizeof(base_function_list) / sizeof(std::string);
@@ -1201,6 +1201,32 @@ namespace exprtk
             }
 
             template <typename T>
+            inline T mandel_impl(const T v0, const T v1, real_type_tag)
+            {
+                //not implemented
+                return v0;
+            }
+
+            template <typename T>
+            inline T mandel_impl(const T v0, const T v1, complex_type_tag)
+            {
+               unsigned int n=std::abs(v1);
+
+               T z=v0;
+               unsigned int i;
+               for(i=0;i<n;i++)
+               {
+                    z=z*z+v0;
+                    if(std::norm(z)>4.0)
+                    {
+                        break;
+                    }
+               }
+
+               return double(i)/n;
+            }
+
+            template <typename T>
             inline T atan2_impl(const T, const T, int_type_tag)
             {
                return 0;
@@ -1708,6 +1734,13 @@ namespace exprtk
          {
             const typename details::number_type<T>::type num_type;
             return nequal_impl(v0, v1, num_type);
+         }
+
+         template <typename T>
+         inline T mandel(const T v0, const T v1)
+         {
+            const typename details::number_type<T>::type num_type;
+            return mandel_impl(v0, v1, num_type);
          }
 
          template <typename T>
@@ -4819,6 +4852,7 @@ namespace exprtk
          e_mulass  , e_divass  , e_modass  , e_in      ,
          e_like    , e_ilike   , e_multi   , e_smulti  ,
          e_swap    , e_arg     , e_real    , e_imag    ,
+         e_mandel,
 
          // Do not add new functions/operators after this point.
          e_sf00 = 1000, e_sf01 = 1001, e_sf02 = 1002, e_sf03 = 1003,
@@ -5223,6 +5257,7 @@ namespace exprtk
                   case e_mod    : return modulus<T>(arg0,arg1);
                   case e_pow    : return std::pow(arg0,arg1);
                   case e_atan2  : return atan2<T>(arg0,arg1);
+                  case e_mandel : return mandel<T>(arg0,arg1);
                   case e_min    : return std::min<T>(arg0,arg1);
                   case e_max    : return std::max<T>(arg0,arg1);
                   case e_logn   : return logn<T>(arg0,arg1);
@@ -16135,6 +16170,7 @@ namespace exprtk
          #define register_op(Symbol,Type,Args)                                               \
          m.insert(std::make_pair(std::string(Symbol),details::base_operation_t(Type,Args))); \
 
+
          register_op(     "real", e_real    , 1)
          register_op(     "imag", e_imag    , 1)
          register_op(      "arg", e_arg     , 1)
@@ -16177,6 +16213,7 @@ namespace exprtk
          register_op(     "frac", e_frac    , 1)
          register_op(    "trunc", e_trunc   , 1)
          register_op(    "atan2", e_atan2   , 2)
+         register_op("mandel", e_mandel, 2)
          register_op(      "mod", e_mod     , 2)
          register_op(     "logn", e_logn    , 2)
          register_op(      "pow", e_pow     , 2)
@@ -19804,7 +19841,7 @@ namespace exprtk
             e_bf_swap      , e_bf_tan      , e_bf_tanh     , e_bf_trunc  ,
             e_bf_not_equal , e_bf_inrange  , e_bf_deg2grad , e_bf_deg2rad,
             e_bf_rad2deg   , e_bf_grad2deg , e_bf_arg      , e_bf_real   ,
-            e_bf_imag
+            e_bf_imag      , e_bf_mandel
          };
 
          enum settings_control_structs

@@ -35,8 +35,6 @@ MainWindow::MainWindow(QWidget* parent) :
     //Action Edition----------------------------------------------------------------
     a_updateColumns=new QAction(this);
     a_newColumn=new QAction(this);
-    a_newRow=new QAction(this);
-    a_newRows=new QAction(this);
     a_delete=new QAction(this);
     a_removeColumnsRows=new QAction(this);
     a_copy=new QAction(this);
@@ -48,8 +46,6 @@ MainWindow::MainWindow(QWidget* parent) :
     table->addAction(a_copy);
     table->addAction(a_paste);
     table->addAction(a_newColumn);
-    table->addAction(a_newRow);
-    table->addAction(a_newRows);
     table->addAction(a_delete);
     table->addAction(a_removeColumnsRows);
     table->addAction(a_updateColumns);
@@ -59,8 +55,6 @@ MainWindow::MainWindow(QWidget* parent) :
 
     //I/O Edition
     connect(ui->actionFilter, &QAction::triggered,table,&MyTableView::slot_filter);
-    connect(a_newRow,&QAction::triggered,table->model(),&MyModel::slot_newRow);
-    connect(a_newRows,&QAction::triggered,table->model(),&MyModel::slot_newRows);
     connect(a_updateColumns,&QAction::triggered,table->model(),&MyModel::slot_updateColumns);
     connect(a_delete,&QAction::triggered,table,&MyTableView::slot_deleteSelected);
     connect(a_removeColumnsRows,&QAction::triggered,table,&MyTableView::slot_removeSelectedRowsAndCols);
@@ -1010,8 +1004,6 @@ void MainWindow::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     shortcuts_links.insert(QString("Parameters"),ui->actionParameters);
     shortcuts_links.insert(QString("Update"),a_updateColumns);
     shortcuts_links.insert(QString("Edit/Add-variable"),a_newColumn);
-    shortcuts_links.insert(QString("New-row"),a_newRow);
-    shortcuts_links.insert(QString("New-rows"),a_newRows);
     shortcuts_links.insert(QString("Delete"),a_delete);
     shortcuts_links.insert(QString("Delete-cols-rows"),a_removeColumnsRows);
     shortcuts_links.insert(QString("Filter"),ui->actionFilter);

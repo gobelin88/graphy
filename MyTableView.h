@@ -29,6 +29,8 @@ public:
     QString getSelectionPattern();
     void setSelectionPattern(QString pattern);
 
+
+
 public slots:
     void slot_deleteSelected();
     void slot_removeSelectedRowsAndCols();
@@ -39,6 +41,8 @@ public slots:
     void slot_newColumn(QString varName,Eigen::VectorXd data);
     void slot_newColumn(QString varName,Eigen::VectorXcd data);
     void slot_newColumn(QString varName,QVector<QString> data);
+    void slot_newRowBelow();
+    void slot_newRowAbove();
 
 protected:
     //void wheelEvent(QWheelEvent * event);
@@ -49,6 +53,21 @@ private:
     MyModel * m_model;
     MyItemDelegate * m_delegate;
     QWidget * container;
+
+    //Popup
+    void createPopup();
+    QMenu* popup_menu;
+    QMenu* menuNewRows;
+
+    QAction * actNewRowBelow ;
+    QAction * actNewRowAbove ;
+    QAction * actNewRowBegin ;
+    QAction * actNewRowEnd   ;
+    QAction * actNewRowsBegin;
+    QAction * actNewRowsEnd  ;
+
+protected :
+    void mousePressEvent(QMouseEvent* event);
 };
 
 #endif // MYTABLEVIEW_H

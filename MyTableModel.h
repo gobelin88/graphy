@@ -90,8 +90,14 @@ public slots:
     void slot_newColumn(QString varName, VectorXv dataCol);
 
     void slot_editColumn(int logicalIndex);
-    void slot_newRow();
-    void slot_newRows();
+
+    void slot_newRowAbove(int j);
+    void slot_newRowBelow(int j);
+
+    void slot_newRowBegin();
+    void slot_newRowsBegin();
+    void slot_newRowEnd();
+    void slot_newRowsEnd();
     void slot_updateColumns();
 
     void slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
@@ -119,6 +125,7 @@ private:
     Register reg;
 
     //Data management
+    void dataTest();
     void dataSwapColumns(MatrixXv &matrix, int ida, int idb);
     void dataMoveColumn(MatrixXv & matrix,int ida,int idb);
     void dataSwapRows(MatrixXv &matrix, int ida, int idb);
@@ -130,6 +137,8 @@ private:
     void dataRemoveColumns(MatrixXv& matrix, unsigned int colToRemove,unsigned int nbCol);
     void dataSortBy(MatrixXv& matrix, int colId, SortMode mode);
     void dataThresholdBy(MatrixXv & matrix, int colId,ThresholdMode mode,double thresholdValue);
+    void dataInsertRows(MatrixXv& matrix,int n,int j);
+
 
     QModelIndex toVisualIndex(const QModelIndex &index) const;
     QModelIndex toLogicalIndex(const QModelIndex &index) const;

@@ -13,6 +13,8 @@
 MyModel::MyModel(int nbRows, int nbCols, int rowSpan, QObject *parent): QAbstractTableModel(parent)
 {
    create(nbRows, nbCols,rowSpan) ;
+
+   dataTest();
 }
 //-----------------------------------------------------------------
 void MyModel::create(int nbRows, int nbCols,int rowSpan)
@@ -765,13 +767,46 @@ void MyModel::slot_editColumn(int logicalIndex)
     }
 }
 
-void MyModel::slot_newRow()
+void MyModel::slot_newRowAbove(int j)
+{
+    if((j-1)>=0)
+    {
+        dataInsertRows(m_data,1,j-1);
+        contentResized();
+    }
+}
+
+void MyModel::slot_newRowBelow(int j)
+{
+    dataInsertRows(m_data,1,j);
+    contentResized();
+}
+
+void MyModel::slot_newRowBegin()
+{
+    dataInsertRows(m_data,1,0);
+    contentResized();
+}
+
+void MyModel::slot_newRowsBegin()
+{
+    bool ok=false;
+    int N=QInputDialog::getInt(nullptr,"Number of rows","Number of rows to add",1,1,10000000,1,&ok);
+
+    if (ok)
+    {
+        dataInsertRows(m_data,N,0);
+        contentResized();
+    }
+}
+
+void MyModel::slot_newRowEnd()
 {
     dataAddRows(m_data,1);
     contentResized();
 }
 
-void MyModel::slot_newRows()
+void MyModel::slot_newRowsEnd()
 {
     bool ok=false;
     int N=QInputDialog::getInt(nullptr,"Number of rows","Number of rows to add",1,1,10000000,1,&ok);
@@ -1004,12 +1039,42 @@ void MyModel::dataAddRows(MatrixXv& matrix, int n)
     unsigned int numRows = matrix.rows()+n;
     unsigned int numCols = matrix.cols();
     matrix.conservativeResize(numRows,numCols);
-    matrix.block(numRows-n,0,n,numCols);
+    //matrix.block(numRows-n,0,n,numCols);
+}
+
+void MyModel::dataTest()
+{
+//    std::cout<<"---------dataInsertRows"<<std::endl;
+//    MatrixXv matrix(3,3);
+//    for(int i=0;i<3;i++)
+//    {
+//        for(int j=0;j<3;j++)
+//        {
+//            matrix(i,j)=i*3+j;
+//        }
+//    }
+//    std::cout<<matrix<<std::endl;
+//    dataInsertRows(matrix,2,3);
+
+//    std::cout<<"---------"<<std::endl;
+//    std::cout<<matrix<<std::endl;
+}
+
+
+void MyModel::dataInsertRows(MatrixXv& matrix,int n,int j)
+{
+    unsigned int numRows = matrix.rows()+n;
+    unsigned int numCols = matrix.cols();
+    matrix.conservativeResize(numRows,numCols);
+    if((numRows-j-n)>0)
+    {
+        matrix.block(j+n,0,numRows-j-n,numCols)=matrix.block(j,0,numRows-j-n,numCols).eval();
+    }
+    matrix.block(j,0,n,numCols).setConstant(MyVariant());
 }
 
 void MyModel::dataAddColumn(MatrixXv& matrix, VectorXv colToAdd)
 {
-
     unsigned int numRows = matrix.rows();
     unsigned int numCols = matrix.cols()+1;
     if(numRows==colToAdd.rows())

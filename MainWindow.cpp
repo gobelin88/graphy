@@ -33,33 +33,16 @@ MainWindow::MainWindow(QWidget* parent) :
     mdiArea->setSizeAdjustPolicy (QAbstractScrollArea::AdjustToContents);
 
     //Action Edition----------------------------------------------------------------
-    a_updateColumns=new QAction(this);
-    a_newColumn=new QAction(this);
-    a_delete=new QAction(this);
-    a_removeColumnsRows=new QAction(this);
-    a_copy=new QAction(this);
-    a_paste=new QAction(this);
-    a_copy->setShortcut(QKeySequence("Ctrl+C"));
-    a_paste->setShortcut(QKeySequence("Ctrl+V"));
-
     table->addAction(ui->actionSave);
-    table->addAction(a_copy);
-    table->addAction(a_paste);
-    table->addAction(a_newColumn);
-    table->addAction(a_delete);
-    table->addAction(a_removeColumnsRows);
-    table->addAction(a_updateColumns);
+
 
     //------------------------------------------------------------------------------
     isModified=false;
 
     //I/O Edition
     connect(ui->actionFilter, &QAction::triggered,table,&MyTableView::slot_filter);
-    connect(a_updateColumns,&QAction::triggered,table->model(),&MyModel::slot_updateColumns);
-    connect(a_delete,&QAction::triggered,table,&MyTableView::slot_deleteSelected);
-    connect(a_removeColumnsRows,&QAction::triggered,table,&MyTableView::slot_removeSelectedRowsAndCols);
-    connect(a_copy,&QAction::triggered,table,&MyTableView::slot_copy);
-    connect(a_paste,&QAction::triggered,table,&MyTableView::slot_paste);
+
+
 
     connect(ui->actionNew, &QAction::triggered,this,&MainWindow::slot_new);//ok
     connect(ui->actionOpen, &QAction::triggered,this,&MainWindow::slot_open);//ok
@@ -997,17 +980,12 @@ bool MainWindow::loadShortcuts()
 void MainWindow::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
 {
     QMap<QString,QAction*> shortcuts_links;
-    shortcuts_links.insert(QString("New"),ui->actionNew);
-    shortcuts_links.insert(QString("Save"),ui->actionSave);
-    shortcuts_links.insert(QString("Open"),ui->actionOpen);
-    shortcuts_links.insert(QString("Export"),ui->actionExport);
+    shortcuts_links.insert(QString("New")       ,ui->actionNew);
+    shortcuts_links.insert(QString("Save")      ,ui->actionSave);
+    shortcuts_links.insert(QString("Open")      ,ui->actionOpen);
+    shortcuts_links.insert(QString("Export")    ,ui->actionExport);
     shortcuts_links.insert(QString("Parameters"),ui->actionParameters);
-    shortcuts_links.insert(QString("Update"),a_updateColumns);
-    shortcuts_links.insert(QString("Edit/Add-variable"),a_newColumn);
-    shortcuts_links.insert(QString("Delete"),a_delete);
-    shortcuts_links.insert(QString("Delete-cols-rows"),a_removeColumnsRows);
-    shortcuts_links.insert(QString("Filter"),ui->actionFilter);
-
+    shortcuts_links.insert(QString("Filter")    ,ui->actionFilter);
 
     QMapIterator<QString, QKeySequence> i(shortcuts_map);
     while (i.hasNext())
@@ -1018,11 +996,9 @@ void MainWindow::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
         {
             shortcuts_links[i.key()]->setShortcut(i.value());
         }
-        else
-        {
-            //std::cout<<"not in main shortcut list : "<<i.key().toLocal8Bit().data()<<std::endl;
-        }
     }
+
+    table->applyShortcuts(shortcuts_map);
 }
 
 void MainWindow::saveShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)

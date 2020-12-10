@@ -70,12 +70,7 @@ private:
     MyTableView * table;
     Viewer1D* createViewer1D(int sx=600,int sy=400);
     ViewerBode* createViewerBode();
-    QAction* a_newColumn;
-    QAction* a_delete;
-    QAction* a_removeColumnsRows;
-    QAction* a_updateColumns;
-    QAction* a_copy;
-    QAction* a_paste;
+
     QMdiArea* mdiArea;
 
     //Io

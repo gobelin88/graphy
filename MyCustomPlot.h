@@ -7108,6 +7108,8 @@ public:
     virtual QCPRange getKeyRange(bool& foundRange, QCP::SignDomain inSignDomain=QCP::sdBoth) const Q_DECL_OVERRIDE;
     virtual QCPRange getValueRange(bool& foundRange, QCP::SignDomain inSignDomain=QCP::sdBoth, const QCPRange& inKeyRange=QCPRange()) const Q_DECL_OVERRIDE;
 
+    const QImage & getImage(){return mMapImage;}
+
 signals:
     void dataRangeChanged(const QCPRange& newRange);
     void dataScaleTypeChanged(QCPAxis::ScaleType scaleType);

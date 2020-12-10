@@ -253,6 +253,6 @@ void Viewer2D::slot_saveImage()
     {
         this->current_filename=filename;
 
-        this->savePng(current_filename,512,512,1);
+        this->savePng(current_filename,0,0,1);
     }
 }

@@ -29,7 +29,7 @@ public:
     QString getSelectionPattern();
     void setSelectionPattern(QString pattern);
 
-
+    void applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
 
 public slots:
     void slot_deleteSelected();
@@ -57,7 +57,8 @@ private:
     //Popup
     void createPopup();
     QMenu* popup_menu;
-    QMenu* menuNewRows;
+    QMenu* menuRows;
+    QMenu* menuColumns;
 
     QAction * actNewRowBelow ;
     QAction * actNewRowAbove ;
@@ -65,6 +66,13 @@ private:
     QAction * actNewRowEnd   ;
     QAction * actNewRowsBegin;
     QAction * actNewRowsEnd  ;
+    QAction * actCopy;
+    QAction * actPaste;
+
+    QAction * actNewColumn;
+    QAction * actDelete;
+    QAction * actRemoveColumnsRows;
+    QAction * actUpdateColumns;
 
 protected :
     void mousePressEvent(QMouseEvent* event);

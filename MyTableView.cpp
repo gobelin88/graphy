@@ -68,6 +68,7 @@ void MyTableView::slot_filter()
 
 void MyTableView::slot_copy()
 {
+    std::cout<<"copy"<<std::endl;
     QCPRange range_row,range_col;
     getVisualRowColSelectedRanges(range_row,range_col);
 
@@ -79,6 +80,7 @@ void MyTableView::slot_copy()
 
 void MyTableView::slot_paste()
 {
+    std::cout<<"paste"<<std::endl;
     QString clipboardbuffer=QApplication::clipboard()->text();
 
     if(!clipboardbuffer.isEmpty())
@@ -224,10 +226,40 @@ void MyTableView::setSelectionPattern(QString pattern)
     setSelectionMode(currentSelectionMode);
 }
 
+void MyTableView::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
+{
+    QMap<QString,QAction*> shortcuts_links;
+    shortcuts_links.insert(QString("Update"),actUpdateColumns);
+    shortcuts_links.insert(QString("Edit/Add-variable"),actNewColumn);
+    shortcuts_links.insert(QString("Delete"),actDelete);
+    shortcuts_links.insert(QString("Delete-cols-rows"),actRemoveColumnsRows);
+
+    QMapIterator<QString, QKeySequence> i(shortcuts_map);
+    while (i.hasNext())
+    {
+        i.next();
+
+        if (shortcuts_links.contains(i.key()))
+        {
+            shortcuts_links[i.key()]->setShortcut(i.value());
+        }
+    }
+}
+
 void MyTableView::createPopup()
 {
     popup_menu=new QMenu(this);
-    menuNewRows=new QMenu("Rows",this);
+    menuRows=new QMenu("Rows",this);
+    menuColumns=new QMenu("Columns",this);
+
+    actCopy=new QAction("Copy",this);
+    actPaste=new QAction("Paste",this);
+
+    actDelete=new QAction("Delete",this);
+    actRemoveColumnsRows=new QAction("Remove",this);
+
+    actNewColumn=new QAction("New",this);
+    actUpdateColumns=new QAction("Update",this);
 
     actNewRowBelow = new QAction("Insert below" ,  this);
     actNewRowAbove = new QAction("Insert above" ,  this);
@@ -242,6 +274,14 @@ void MyTableView::createPopup()
     actNewRowEnd   ->setShortcut(QKeySequence("Alt+PgDown"));
     actNewRowsBegin->setShortcut(QKeySequence("Ctrl+Alt+PgUp"));
     actNewRowsEnd  ->setShortcut(QKeySequence("Ctrl+Alt+PgDown"));
+    actCopy ->setShortcut(QKeySequence("Ctrl+C"));
+    actPaste->setShortcut(QKeySequence("Ctrl+V"));
+
+    this->addAction(actCopy );
+    this->addAction(actPaste );
+    this->addAction(actDelete);
+    this->addAction(actNewColumn);
+    this->addAction(actRemoveColumnsRows);
 
     this->addAction(actNewRowBelow );
     this->addAction(actNewRowAbove );
@@ -250,13 +290,20 @@ void MyTableView::createPopup()
     this->addAction(actNewRowsBegin);
     this->addAction(actNewRowsEnd  );
 
-    popup_menu->addMenu(menuNewRows);
-    menuNewRows->addAction(actNewRowBelow );
-    menuNewRows->addAction(actNewRowAbove );
-    menuNewRows->addAction(actNewRowBegin );
-    menuNewRows->addAction(actNewRowEnd   );
-    menuNewRows->addAction(actNewRowsBegin);
-    menuNewRows->addAction(actNewRowsEnd  );
+    popup_menu->addAction(actCopy);
+    popup_menu->addAction(actPaste);
+    popup_menu->addAction(actDelete);
+    popup_menu->addAction(actRemoveColumnsRows);
+    popup_menu->addMenu(menuColumns);
+    menuColumns->addAction(actNewColumn);
+    menuColumns->addAction(actUpdateColumns);
+    popup_menu->addMenu(menuRows);
+    menuRows->addAction(actNewRowBelow );
+    menuRows->addAction(actNewRowAbove );
+    menuRows->addAction(actNewRowBegin );
+    menuRows->addAction(actNewRowEnd   );
+    menuRows->addAction(actNewRowsBegin);
+    menuRows->addAction(actNewRowsEnd  );
 
     auto customContainerActions=this->actions();
     for(auto act:customContainerActions)
@@ -271,6 +318,12 @@ void MyTableView::createPopup()
 
     connect(actNewRowBelow ,&QAction::triggered,this,&MyTableView::slot_newRowBelow);
     connect(actNewRowAbove,&QAction::triggered,this,&MyTableView::slot_newRowAbove);
+    connect(actCopy,&QAction::triggered,this,&MyTableView::slot_copy);
+    connect(actPaste,&QAction::triggered,this,&MyTableView::slot_paste);
+
+    connect(actDelete,&QAction::triggered,this,&MyTableView::slot_deleteSelected);
+    connect(actRemoveColumnsRows,&QAction::triggered,this,&MyTableView::slot_removeSelectedRowsAndCols);
+    connect(actUpdateColumns,&QAction::triggered,model(),&MyModel::slot_updateColumns);
 }
 
 void MyTableView::mousePressEvent(QMouseEvent* event)
@@ -289,7 +342,7 @@ void MyTableView::slot_newRowBelow()
     {
         for(int i=0;i<selectedRows.size();i++)
         {
-            int index=verticalHeader()->visualIndex(selectedRows[i].row()+1);
+            int index=verticalHeader()->visualIndex(selectedRows[i].row());
             m_model->slot_newRowBelow(index);
         }
     }
@@ -302,7 +355,7 @@ void MyTableView::slot_newRowAbove()
     {
         for(int i=0;i<selectedRows.size();i++)
         {
-            int index=verticalHeader()->visualIndex(selectedRows[i].row()+1);
+            int index=verticalHeader()->visualIndex(selectedRows[i].row());
             m_model->slot_newRowAbove(index);
         }
     }

@@ -30,19 +30,21 @@ public:
     bool editVariableAndExpression(int currentIndex);
 
     void clear();
-    bool newVariable(QString varname,QString varexpr);
-    void delVariable(QString varname);
+    bool newVariable   (QString varname,QString varexpr);
+    void delVariable   (QString varname);
     bool renameVariable(QString old_varname, QString new_varname, QString oldExpression, QString newExpression);
 
     bool isValidExpression(QString variableExpression);
-    bool isValidVariable(QString variableName);
-    bool existVariable(QString variableName);
-    int countVariable(QString variableName);
+    bool isValidVariable  (QString variableName);
+    bool existVariable    (QString variableName);
+    int  countVariable    (QString variableName);
 
     void setActiveRow(int i){this->activeRow=i;}
     void setActiveCol(int i){this->activeCol=i;}
 
+    QStringList getVariablesList();
     QStringList getCustomExpressionList();
+
     //bool customExpressionParse(unsigned int id, QString& result, std::function<QString(int,int)> at, int currentRow);
     bool customExpressionParse(const MatrixXv & data,unsigned int id, MyVariant & result, int currentRow);
 
@@ -83,8 +85,6 @@ private:
     std::uniform_real<double> * noise_uniform;
 
     //Misc
-    QString fromNumber(double value);
-
     int getVarExpDialog(QString currentName, QString currentExpression, QString & newName, QString & newExpression);
 };
 

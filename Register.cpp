@@ -218,18 +218,6 @@ void Register::error(QString title,QString msg)
     std::cout<<"Error : "<<msg.toLocal8Bit().data()<<std::endl;
 }
 
-QString Register::fromNumber(double value)
-{
-    if(!std::isnan(value))
-    {
-        return QString::number(value);
-    }
-    else
-    {
-        return QString("");
-    }
-}
-
 const QStringList & Register::variablesNames() const
 {
     return variables_names;
@@ -266,6 +254,19 @@ bool Register::compileExpression(int id)
 void Register::currentCompiledExpressionValue(MyVariant & variant)const
 {
     variant=current_compiled_expression.value();
+}
+
+QStringList Register::getVariablesList()
+{
+    QStringList qlist;
+    std::vector<std::string> list;
+    symbolsTable.get_variable_list(list);
+    for(int i=0;i<list.size();i++)
+    {
+        qlist.append(QString::fromStdString(list[i]));
+    }
+
+    return qlist;
 }
 
 QStringList Register::getCustomExpressionList()
@@ -560,7 +561,7 @@ int Register::getVarExpDialog(QString currentName, QString currentExpression, QS
     QLineEdit* le_variableName=new QLineEdit(newName);
     QLineEdit* le_variableExpression=new QLineEdit(newExpression);
 
-    QCompleter * completer= new QCompleter(getCustomExpressionList(), nullptr);
+    QCompleter * completer= new QCompleter(getCustomExpressionList()+getVariablesList(), nullptr);
     le_variableExpression->setCompleter(completer);
 
     QDialog* dialog=new QDialog;

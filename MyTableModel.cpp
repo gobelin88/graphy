@@ -228,7 +228,7 @@ bool MyModel::open(QString filename)
             }
             else
             {
-                int dataSize=content[0].count(";");
+                int dataSize=content[0].count(";")+1;
                 for(int i=0;i<dataSize;i++)
                 {
                     reg.newVariable(QString("C%1").arg(i),"");
@@ -706,7 +706,6 @@ void MyModel::evalColumn(int visualIndex)
                     reg.setVariable(j,m_data(i,j).toComplex());
                 }
 
-                // store a call to a member function and object ptr
                 if(!reg.customExpressionParse(m_data,visualIndex,m_data(i,visualIndex),i))
                 {
                     break;
@@ -769,16 +768,16 @@ void MyModel::slot_editColumn(int logicalIndex)
 
 void MyModel::slot_newRowAbove(int j)
 {
-    if((j-1)>=0)
+    if(j>=0)
     {
-        dataInsertRows(m_data,1,j-1);
+        dataInsertRows(m_data,1,j);
         contentResized();
     }
 }
 
 void MyModel::slot_newRowBelow(int j)
 {
-    dataInsertRows(m_data,1,j);
+    dataInsertRows(m_data,1,j+1);
     contentResized();
 }
 
@@ -1063,6 +1062,7 @@ void MyModel::dataTest()
 
 void MyModel::dataInsertRows(MatrixXv& matrix,int n,int j)
 {
+    std::cout<<"n="<<n<<" j="<<j<<" ("<<matrix.rows()<<" "<<matrix.cols()<<")"<<std::endl;
     unsigned int numRows = matrix.rows()+n;
     unsigned int numCols = matrix.cols();
     matrix.conservativeResize(numRows,numCols);

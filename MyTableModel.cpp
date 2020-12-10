@@ -683,17 +683,35 @@ void MyModel::evalColumn(int visualIndex)
     }
     else
     {
+        //#pragma omp parallel for default(none) num_threads(numthreads)
+        //int tid = omp_get_thread_num();
+
+        int numthreads=8;
         if (reg.compileExpression(visualIndex))
         {
+            std::vector<Register *> regt(numthreads,nullptr);
+            for(int i=0;i<numthreads;i++)
+            {
+                regt[i]=reg.copy();
+                regt[i]->compileExpression(visualIndex);
+            }
+
+            #pragma omp parallel for default(none) num_threads(numthreads)
             for (int i=0; i<m_data.rows(); i++)
             {
-                reg.setActiveRow(i);
+                int tid = omp_get_thread_num();
+                regt[tid]->setActiveRow(i);
                 for (int j=0; j<m_data.cols(); j++)
                 {
-                    reg.setVariable(j,m_data(i,j).toComplex());
+                    regt[tid]->setVariable(j,m_data(i,j).toComplex());
                 }
 
-                reg.currentCompiledExpressionValue(m_data(i,visualIndex));
+                regt[tid]->currentCompiledExpressionValue(m_data(i,visualIndex));
+            }
+
+            for(int i=0;i<numthreads;i++)
+            {
+                delete regt[i];
             }
         }
         else

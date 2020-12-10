@@ -18,6 +18,18 @@ Register::Register()
     current_compiled_expression.register_symbol_table(symbolsTable);
 }
 
+Register::~Register()
+{
+    delete noise_normal;
+    delete noise_uniform;
+
+    variables_names.clear();
+    variables_expressions.clear();
+    variables.clear();
+    symbolsTable.clear();
+
+}
+
 void Register::swapVariables(int ida,int idb)
 {
     std::swap(variables[ida],variables[idb]);
@@ -249,6 +261,24 @@ void Register::setVariable(int i,Register::VariableType value)
 bool Register::compileExpression(int id)
 {
     return parser.compile(variables_expressions[id].toStdString(),current_compiled_expression);
+}
+
+Register * Register::copy()
+{
+    Register * copy_reg=new Register;
+
+    copy_reg->variables.clear();
+    copy_reg->symbolsTable.clear();
+    for(int i=0;i<variables.size();i++)
+    {
+        VariableType * p_variable =new VariableType;
+        copy_reg->variables.push_back(p_variable);
+        copy_reg->symbolsTable.add_variable(variables_names[i].toStdString(),*p_variable);
+    }
+    copy_reg->variables_names=variables_names;
+    copy_reg->variables_expressions=variables_expressions;
+
+    return copy_reg;
 }
 
 void Register::currentCompiledExpressionValue(MyVariant & variant)const

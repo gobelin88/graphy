@@ -282,7 +282,7 @@ void MyTableView::createPopup()
     this->addAction(actDelete);
     this->addAction(actNewColumn);
     this->addAction(actRemoveColumnsRows);
-
+    this->addAction(actUpdateColumns);
     this->addAction(actNewRowBelow );
     this->addAction(actNewRowAbove );
     this->addAction(actNewRowBegin );
@@ -311,19 +311,20 @@ void MyTableView::createPopup()
         act->setShortcutVisibleInContextMenu(true);
     }
 
-    connect(actNewRowEnd ,&QAction::triggered,m_model,&MyModel::slot_newRowEnd);
-    connect(actNewRowsEnd,&QAction::triggered,m_model,&MyModel::slot_newRowsEnd);
-    connect(actNewRowBegin ,&QAction::triggered,m_model,&MyModel::slot_newRowBegin);
-    connect(actNewRowsBegin,&QAction::triggered,m_model,&MyModel::slot_newRowsBegin);
+    connect(actNewRowEnd    ,&QAction::triggered,m_model,&MyModel::slot_newRowEnd);
+    connect(actNewRowsEnd   ,&QAction::triggered,m_model,&MyModel::slot_newRowsEnd);
+    connect(actNewRowBegin  ,&QAction::triggered,m_model,&MyModel::slot_newRowBegin);
+    connect(actNewRowsBegin ,&QAction::triggered,m_model,&MyModel::slot_newRowsBegin);
 
-    connect(actNewRowBelow ,&QAction::triggered,this,&MyTableView::slot_newRowBelow);
-    connect(actNewRowAbove,&QAction::triggered,this,&MyTableView::slot_newRowAbove);
-    connect(actCopy,&QAction::triggered,this,&MyTableView::slot_copy);
-    connect(actPaste,&QAction::triggered,this,&MyTableView::slot_paste);
+    connect(actNewRowBelow  ,&QAction::triggered,this   ,&MyTableView::slot_newRowBelow);
+    connect(actNewRowAbove  ,&QAction::triggered,this   ,&MyTableView::slot_newRowAbove);
+    connect(actCopy         ,&QAction::triggered,this   ,&MyTableView::slot_copy);
+    connect(actPaste        ,&QAction::triggered,this   ,&MyTableView::slot_paste);
 
+    connect(actNewColumn,&QAction::triggered,m_model,&MyModel::slot_editColumn);
     connect(actDelete,&QAction::triggered,this,&MyTableView::slot_deleteSelected);
     connect(actRemoveColumnsRows,&QAction::triggered,this,&MyTableView::slot_removeSelectedRowsAndCols);
-    connect(actUpdateColumns,&QAction::triggered,model(),&MyModel::slot_updateColumns);
+    connect(actUpdateColumns,&QAction::triggered,m_model,&MyModel::slot_updateColumns);
 }
 
 void MyTableView::mousePressEvent(QMouseEvent* event)

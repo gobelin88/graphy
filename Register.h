@@ -23,6 +23,7 @@ public:
 
 
     Register();
+    ~Register();
 
     void swapVariables(int ida,int idb);
     void moveVariable(int ida,int idb);
@@ -60,14 +61,17 @@ public:
     bool compileExpression(int id);
     void Register::currentCompiledExpressionValue(MyVariant & variant)const;
 
+    Register * copy();
+
 signals:
     void sig_modified();
 
 private:
     //Exprtk
     exprtk::parser<VariableType> parser;
-    exprtk::symbol_table<VariableType> symbolsTable;
     exprtk::expression<VariableType> current_compiled_expression;
+
+    exprtk::symbol_table<VariableType> symbolsTable;
     QVector<VariableType*> variables;
     QStringList variables_names;
     QStringList variables_expressions;

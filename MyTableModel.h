@@ -4,6 +4,8 @@
 #include <Eigen/Dense>
 #include <QScrollBar>
 #include <iostream>
+#include <QTableView>
+#include <QStandardItem>
 #include <QElapsedTimer>
 
 #include "Register.h"
@@ -82,7 +84,23 @@ public:
     //register
     const Register & getRegister(){return reg;}
 
-    //copy/paste
+    //
+    bool isModified(){return modified;}
+    QString getCurrentFilename(){return currentFilename;}
+    QString getTabTitle()
+    {
+        QFileInfo info(currentFilename);
+        if(modified)
+        {
+            return info.baseName()+"*";
+        }
+        else
+        {
+            return info.baseName();
+        }
+    }
+
+    QTableView* MyModel::createVariablesTable();
 
 public slots:
     void setRowOffset(int rowOffset);
@@ -145,6 +163,9 @@ private:
 
     void error(QString title,QString msg);
 
+    //Io
+    bool modified;
+    QString currentFilename;
 
 };
 

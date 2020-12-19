@@ -197,38 +197,61 @@ void Viewer2D::interpolate(const Eigen::VectorXd& dataX,
     kdt::KDTreed::Matrix dists; // basically Eigen::MatrixXd
     kdt::KDTreed::MatrixI idx; // basically Eigen::Matrix<Eigen::Index>
 
-    for (uint i=0; i<box[0]; i++)
-    {
-        for (uint j=0; j<box[1]; j++)
-        {
-            kdt::KDTreed::Matrix queryPoints(2,1);
-            map->data()->cellToCoord(int(i),int(j),&queryPoints(0,0),&queryPoints(1,0));
+    int nx=int(box[0]);
+    int ny=int(box[1]);
 
+    //Query points
+    kdt::KDTreed::Matrix queryPoints(2,nx*ny);
+    int id=0;
+    for (uint i=0; i<nx; i++)
+    {
+        for (uint j=0; j<ny; j++)
+        {
+            map->data()->cellToCoord(int(i),int(j),&queryPoints(0,id),&queryPoints(1,id));
+            id++;
+        }
+    }
+
+    //Do the job
+    if (mode==MODE_WEIGHTED)
+    {
+        kdtree.query(queryPoints, knn, idx, dists);
+    }
+    else if (mode==MODE_NEAREST)
+    {
+        kdtree.query(queryPoints, 1, idx, dists);
+    }
+
+    //Results
+    id=0;
+    for (uint i=0; i<nx; i++)
+    {
+        for (uint j=0; j<ny; j++)
+        {
             double value=0;
             if (mode==MODE_WEIGHTED)
-            {
-                kdtree.query(queryPoints, knn, idx, dists);
+            {                
                 double weight_sum=0;
                 for (int k=0; k<knn; k++)
                 {
-                    if (idx(k,0)>=0)
+                    if (idx(k,id)>=0)
                     {
-                        value+=(1.0/dists(k,0))* dataZ[idx(k,0)];
-                        weight_sum+=(1.0/dists(k,0));
+                        value+=(1.0/dists(k,id))* dataZ[idx(k,id)];
+                        weight_sum+=(1.0/dists(k,id));
                     }
                 }
                 value/=weight_sum;
             }
             else if (mode==MODE_NEAREST)
             {
-                kdtree.query(queryPoints, 1, idx, dists);
-                if (idx(0,0)>=0)
+                if (idx(0,id)>=0)
                 {
-                    value=dataZ[idx(0,0)];
+                    value=dataZ[idx(0,id)];
                 }
             }
 
             map->data()->setCell(i,j,value);
+            id++;
         }
     }
 }

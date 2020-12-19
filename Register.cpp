@@ -20,14 +20,23 @@ Register::Register()
 
 Register::~Register()
 {
+    std::cout<<"Delete register1"<<std::endl;
     delete noise_normal;
+
+    std::cout<<"Delete register2"<<std::endl;
     delete noise_uniform;
 
+    std::cout<<"Delete register3"<<std::endl;
     variables_names.clear();
-    variables_expressions.clear();
-    variables.clear();
-    symbolsTable.clear();
 
+    std::cout<<"Delete register4"<<std::endl;
+    variables_expressions.clear();
+
+    std::cout<<"Delete register5"<<std::endl;
+    variables.clear();
+
+    std::cout<<"Delete register6"<<std::endl;
+    symbolsTable.clear();
 }
 
 void Register::swapVariables(int ida,int idb)
@@ -267,8 +276,6 @@ Register * Register::copy()
 {
     Register * copy_reg=new Register;
 
-    copy_reg->variables.clear();
-    copy_reg->symbolsTable.clear();
     for(int i=0;i<variables.size();i++)
     {
         VariableType * p_variable =new VariableType;

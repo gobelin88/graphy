@@ -27,6 +27,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+DEFINES += QAPPLICATION_CLASS=QApplication
+
 CONFIG += c++11
 
 SOURCES += \
@@ -60,7 +62,9 @@ SOURCES += \
         ShapeFit.cpp \
         bode_viewer.cpp \
         complex_hack.cpp \
-        main.cpp
+        main.cpp \
+        single_application/singleapplication.cpp \
+        single_application/singleapplication_p.cpp
 
 HEADERS += \
         1d_viewer.h \
@@ -95,10 +99,14 @@ HEADERS += \
         ShapeFit.h \
         bode_viewer.h \
         complex_hack.h \
-        exprtk\exprtk.hpp
+        exprtk\exprtk.hpp \
+        single_application/singleapplication.h \
+        single_application/singleapplication_p.h
 
 FORMS += \
         mainwindow.ui
+
+LIBS += Advapi32.lib
 
 INCLUDEPATH += $$(EIGEN_PATH)/
 

@@ -1,25 +1,46 @@
 #include "MainWindow.h"
 #include <QApplication>
 #include <iostream>
+#include <single_application/SingleApplication>
 
 int main(int argc, char* argv[])
 {
-    //testVariant();
+    SingleApplication app(argc, argv,true,SingleApplication::Mode::SecondaryNotification,1000);
 
-    QApplication a(argc, argv);
+    QStringList args=app.arguments();
 
-    QStringList args=a.arguments();
+    args.removeAt(0);
 
-    MainWindow w;
-    if (args.size()==2)
+    if( app.isSecondary() )
     {
-        w.direct_open(args[1]);
+        QByteArray msg=args.join(';').toUtf8();
+        if(!app.sendMessage(msg,1000))
+        {
+            QMessageBox::information(nullptr,"Error send",QString(msg));
+        }
+
+        app.exit( 0 );
     }
     else
     {
-        std::cout<<args.size()<<std::endl;
+        MainWindow w;
+
+        QObject::connect(&app, &SingleApplication::instanceStarted, [ &w ]() {w.raise();w.activateWindow();});
+        QObject::connect(&app,&SingleApplication::receivedMessage,&w,&MainWindow::receivedMessage);
+
+        if (args.size()>=1)
+        {
+            w.direct_open(args);
+        }
+        else
+        {
+            std::cout<<args.size()<<std::endl;
+        }
+
+        w.show();
+
+        return app.exec();
     }
 
-    w.showMaximized();
-    return a.exec();
+
 }

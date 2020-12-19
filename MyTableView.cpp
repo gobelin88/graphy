@@ -10,6 +10,17 @@ MyTableView::MyTableView(int nbRow,
 
     createPopup();
     //this->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectColumns);
+    resizeColumnsToContents();
+}
+
+MyTableView::MyTableView(QString filename,
+                         int rowsSpan,
+                         QWidget * parent):QTableView(parent)
+{
+    createNew(1,1,rowsSpan);
+    createPopup();
+    model()->open(filename);
+    resizeColumnsToContents();
 }
 
 void MyTableView::createNew(int nbRow,int nbCols,int rowsSpan)
@@ -68,7 +79,6 @@ void MyTableView::slot_filter()
 
 void MyTableView::slot_copy()
 {
-    std::cout<<"copy"<<std::endl;
     QCPRange range_row,range_col;
     getVisualRowColSelectedRanges(range_row,range_col);
 
@@ -80,7 +90,6 @@ void MyTableView::slot_copy()
 
 void MyTableView::slot_paste()
 {
-    std::cout<<"paste"<<std::endl;
     QString clipboardbuffer=QApplication::clipboard()->text();
 
     if(!clipboardbuffer.isEmpty())

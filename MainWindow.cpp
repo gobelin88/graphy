@@ -13,37 +13,25 @@ MainWindow::MainWindow(QWidget* parent) :
 {
     //Gui--------------------------------------------------------------------------
     ui->setupUi(this);
-    setCurrentFilename("empty");
+    this->setWindowTitle(QString("Graphy %1").arg(graphyVersion));
+
     mdiArea=new QMdiArea();
-    table=new MyTableView(4,4,24,mdiArea);
-    //  tableview.setSelectionBehavior(tableview.SelectRows)
-    //  tableview.setSelectionMode(tableview.SingleSelection)
-    //  table->setDragDropMode(QTableView::InternalMove);
-    //  table->setDragDropOverwriteMode(false);
-    //  table->setSortingEnabled(true);
+
     this->setCentralWidget(mdiArea);
 
     te_results=new QTextEdit;
     te_widget=new QTabWidget();
-    te_widget->addTab(table->getContainer(),"Data");
-    te_widget->addTab(te_results,"Results");
+    te_widget->setTabsClosable(true);
+    connect(te_widget,&QTabWidget::tabCloseRequested,this,&MainWindow::closeTable);
+
     QMdiSubWindow* subWindow = mdiArea->addSubWindow(te_widget, Qt::FramelessWindowHint );
     subWindow->showMaximized();
     mdiArea->setOption(QMdiArea::DontMaximizeSubWindowOnActivation);
     mdiArea->setSizeAdjustPolicy (QAbstractScrollArea::AdjustToContents);
 
-    //Action Edition----------------------------------------------------------------
-    table->addAction(ui->actionSave);
-
-
     //------------------------------------------------------------------------------
-    isModified=false;
-
     //I/O Edition
-    connect(ui->actionFilter, &QAction::triggered,table,&MyTableView::slot_filter);
-
-
-
+    connect(ui->actionFilter, &QAction::triggered,this,&MainWindow::slot_filter);
     connect(ui->actionNew, &QAction::triggered,this,&MainWindow::slot_new);//ok
     connect(ui->actionOpen, &QAction::triggered,this,&MainWindow::slot_open);//ok
     connect(ui->actionSave, &QAction::triggered,this,&MainWindow::slot_save);//ok
@@ -65,8 +53,6 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(ui->actionFFT, &QAction::triggered,this,&MainWindow::slot_plot_fft);
     connect(ui->actionPlot_Gain_Phase, &QAction::triggered,this,&MainWindow::slot_plot_bode);
 
-    connect(table->model(),&MyModel::sig_dataChanged,this,&MainWindow::fileModified);
-
     //------------------------------------------------------------------------------
 
     loadShortcuts();
@@ -75,6 +61,24 @@ MainWindow::MainWindow(QWidget* parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::receivedMessage(int instanceId, QByteArray message)
+{
+    Q_UNUSED(instanceId);
+
+    QStringList filenames=QString(message).split(';',QString::SkipEmptyParts);
+
+    direct_open(filenames);
+}
+
+void MainWindow::slot_filter()
+{
+    MyTableView * table=getCurrentTable();
+    if(table)
+    {
+        table->slot_filter();
+    }
 }
 
 void MainWindow::slot_new()
@@ -109,37 +113,85 @@ void MainWindow::slot_new()
 
     if (result == QDialog::Accepted)
     {
-        table->model()->createEmpty(sb_sx->value(),sb_sy->value());
-
-        setCurrentFilename("new");
-        isModified=false;
+        addNewTable(new MyTableView(sb_sx->value(),sb_sy->value(),1,this));
     }
 }
 
+void MainWindow::slot_currentTableModified()
+{
+    unsigned int id=te_widget->currentIndex();
+    if(id<tables.size())
+    {
+        te_widget->setTabText(id,tables[id]->model()->getTabTitle());
+    }
+}
+
+void MainWindow::addNewTable(MyTableView * newTable)
+{
+    QRect rec = QApplication::desktop()->screenGeometry();
+
+    newTable->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    newTable->verticalHeader()->setDefaultSectionSize(24);
+    newTable->model()->setRowSpan((rec.height()-350)/24-1);
+    newTable->addAction(ui->actionSave);
+    tables.push_back(newTable);
+    newTable->applyShortcuts(shortcuts);
+    newTable->getContainer()->setToolTip(newTable->model()->getCurrentFilename());
+    te_widget->addTab(newTable->getContainer(),newTable->model()->getTabTitle());
+
+    connect(newTable->model(),&MyModel::sig_dataChanged,this,&MainWindow::slot_currentTableModified);
+}
+
+MyTableView * MainWindow::getCurrentTable()
+{
+    unsigned int id=te_widget->currentIndex();
+    if(id<tables.size())
+    {
+        return tables[id];
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
+QString MainWindow::getCurrentFilename()
+{
+    MyTableView * table=getCurrentTable();
+    if(table)
+    {
+        return table->model()->getCurrentFilename();
+    }
+    else
+    {
+        return QString("");
+    }
+}
 
 void MainWindow::slot_open()
 {
-    QString filename=QFileDialog::getOpenFileName(this,"Open data",current_filename,tr("Data file (*.csv *.graphy)"));
+    QStringList filenames=QFileDialog::getOpenFileNames(this,"Open data",getCurrentFilename(),tr("Data file (*.csv *.graphy)"));
 
-    if (!filename.isEmpty())
+    if (!filenames.isEmpty())
     {
-        direct_open(filename);
+        direct_open(filenames);
     }
 }
 
-void MainWindow::direct_open(QString filename)
+void MainWindow::direct_open(QStringList filenames)
 {
-    table->model()->open(filename);
-    table->resizeColumnsToContents();
-    setCurrentFilename(filename);
-    isModified=false;
+    for(int i=0;i<filenames.size();i++)
+    {
+        addNewTable(new MyTableView(filenames[i],25,this));
+    }
 }
 
 void MainWindow::slot_save()
 {
-    if (!current_filename.isEmpty())
+    std::cout<<"Save"<<std::endl;
+    if (QFile(getCurrentFilename()).exists())
     {
-        direct_save(current_filename);
+        direct_save(getCurrentFilename());
     }
     else
     {
@@ -149,7 +201,7 @@ void MainWindow::slot_save()
 
 void MainWindow::slot_save_as()
 {
-    QString filename=QFileDialog::getSaveFileName(this,"Save data",current_filename,tr("Data file (*.csv *.graphy)"));
+    QString filename=QFileDialog::getSaveFileName(this,"Save data",getCurrentFilename(),tr("Data file (*.csv *.graphy)"));
 
     if (!filename.isEmpty())
     {
@@ -159,21 +211,22 @@ void MainWindow::slot_save_as()
 
 void MainWindow::slot_export()
 {
-    QFileInfo info(current_filename);
+    QFileInfo info(getCurrentFilename());
     QString filename=QFileDialog::getSaveFileName(this,"Export data",info.path()+"/"+info.baseName()+".tex","*.tex");
 
     if (!filename.isEmpty())
     {
-        table->model()->exportLatex(filename);
+        getCurrentTable()->model()->exportLatex(filename);
     }
 }
 
 void MainWindow::direct_save(QString filename)
 {
-    if(table->model()->save(filename))
+    MyTableView * table=getCurrentTable();
+    if(table)
     {
-        setCurrentFilename(filename);
-        isModified=false;
+        table->model()->save(filename);
+        te_widget->setTabText(te_widget->currentIndex(),table->model()->getTabTitle());
     }
 }
 
@@ -189,25 +242,10 @@ void MainWindow::error(QString title,QString msg)
     std::cout<<"Error : "<<msg.toLocal8Bit().data()<<std::endl;
 }
 
-void MainWindow::setCurrentFilename(QString filename)
-{
-
-    current_filename=filename;
-    this->setWindowTitle(QString("Graphy %1 : %2").arg(graphyVersion).arg(current_filename));
-
-    std::cout<<this->windowTitle().toLocal8Bit().data()<<std::endl;
-}
-
-void MainWindow::fileModified()
-{
-    this->setWindowTitle(QString("Graphy %1 : %2*").arg(graphyVersion).arg(current_filename));
-    isModified=true;
-}
-
 Viewer1D* MainWindow::createViewer1D(int sx,int sy)
 {
     Viewer1D* viewer1d=new Viewer1D(shortcuts,this);
-    QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),table,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
+    QObject::connect(viewer1d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),getCurrentTable(),SLOT(slot_newColumn(QString,Eigen::VectorXd)));
     QObject::connect(viewer1d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
     viewer1d->setMinimumSize(sx,sy);
     viewer1d->setAttribute(Qt::WA_DeleteOnClose);
@@ -221,7 +259,7 @@ Viewer1D* MainWindow::createViewer1D(int sx,int sy)
 ViewerBode* MainWindow::createViewerBode()
 {
     ViewerBode* viewerBode=new ViewerBode(shortcuts,this);
-    QObject::connect(viewerBode,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),table,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
+    QObject::connect(viewerBode,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),getCurrentTable(),SLOT(slot_newColumn(QString,Eigen::VectorXd)));
     QObject::connect(viewerBode,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
 
     viewerBode->setMinimumSize(600,400);
@@ -235,6 +273,9 @@ ViewerBode* MainWindow::createViewerBode()
 
 void MainWindow::slot_plot_y()
 {
+    MyTableView * table=getCurrentTable();
+    if(table==nullptr)return;
+
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
     if (id_list.size()>0)
@@ -263,6 +304,9 @@ void MainWindow::slot_plot_y()
 
 void MainWindow::slot_plot_graph_xy()
 {
+    MyTableView * table=getCurrentTable();
+    if(table==nullptr)return;
+
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
     if (id_list.size()>=2)
@@ -298,6 +342,9 @@ void MainWindow::slot_plot_graph_xy()
 
 void MainWindow::slot_plot_curve_xy()
 {
+    MyTableView * table=getCurrentTable();
+    if(table==nullptr)return;
+
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
     if (id_list.size()>=2)
@@ -326,6 +373,9 @@ void MainWindow::slot_plot_curve_xy()
 
 void MainWindow::slot_plot_cloud_2D()
 {
+    MyTableView * table=getCurrentTable();
+    if(table==nullptr)return;
+
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
     if (id_list.size()==3 || id_list.size()==2)
@@ -362,6 +412,9 @@ void MainWindow::slot_plot_cloud_2D()
 
 void MainWindow::slot_plot_field_2D()
 {
+    MyTableView * table=getCurrentTable();
+    if(table==nullptr)return;
+
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
     if (id_list.size()==2 ||  (id_list.size()==4))
@@ -440,6 +493,9 @@ void MainWindow::slot_plot_field_2D()
 
 void MainWindow::slot_plot_map_2D()
 {
+    MyTableView * table=getCurrentTable();
+    if(table==nullptr)return;
+
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
     QDialog* dialog=new QDialog;
@@ -574,6 +630,9 @@ void MainWindow::slot_plot_map_2D()
 
 void MainWindow::slot_plot_fft()
 {
+    MyTableView * table=getCurrentTable();
+    if(table==nullptr)return;
+
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
     if (id_list.size()==1 )//1 real or complex signal
@@ -625,6 +684,9 @@ void MainWindow::slot_plot_fft()
 
 void MainWindow::slot_plot_cloud_3D()
 {
+    MyTableView * table=getCurrentTable();
+    if(table==nullptr)return;
+
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
     if (id_list.size()==0 || id_list.size()%3==0 || id_list.size()%4==0)
@@ -692,6 +754,9 @@ void MainWindow::slot_plot_cloud_3D()
 
 void MainWindow::slot_plot_bode()
 {
+    MyTableView * table=getCurrentTable();
+    if(table==nullptr)return;
+
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
     if (id_list.size()>0)
@@ -802,6 +867,9 @@ void MainWindow::slot_plot_bode()
 
 void MainWindow::slot_plot_histogram()
 {
+    MyTableView * table=getCurrentTable();
+    if(table==nullptr)return;
+
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
     if (id_list.size()>0)
@@ -860,24 +928,8 @@ void MainWindow::slot_parameters()
     tableShortcuts->setModel(modelParametersShortcuts);
 
     //Table variables
-    QTableView* tableVariables=new QTableView();
-    QStandardItemModel* modelParametersVariables = new QStandardItemModel;
-
-    const Register & reg=table->model()->getRegister();
-    for (int i=0; i<reg.variablesNames().size(); i++)
-    {
-        QStandardItem* itemA=new QStandardItem(reg.variablesNames()[i]);
-        QStandardItem* itemB=new QStandardItem(reg.variablesExpressions()[i]);
-        itemA->setEditable(false);
-        itemB->setEditable(false);
-        modelParametersVariables->setItem(i,0,itemA);
-        modelParametersVariables->setItem(i,1,itemB);
-    }
-    tableVariables->setModel(modelParametersVariables);
-
     QTabWidget* tab=new QTabWidget(dialog);
     tab->addTab(tableShortcuts,"Shortcuts");
-    tab->addTab(tableVariables,"Variables");
 
     QGridLayout* gbox = new QGridLayout();
     gbox->addWidget(tab,0,0);
@@ -902,6 +954,9 @@ void MainWindow::slot_parameters()
 
 void MainWindow::slot_select()
 {
+    MyTableView * table=getCurrentTable();
+    if(table==nullptr)return;
+
     QDialog* dialog=new QDialog;
     dialog->setLocale(QLocale("C"));
     dialog->setWindowTitle(QString("Selection pattern"));
@@ -997,8 +1052,6 @@ void MainWindow::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
             shortcuts_links[i.key()]->setShortcut(i.value());
         }
     }
-
-    table->applyShortcuts(shortcuts_map);
 }
 
 void MainWindow::saveShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
@@ -1026,8 +1079,18 @@ void MainWindow::saveShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     applyShortcuts(shortcuts);
 }
 
+void MainWindow::closeTable(int index)
+{
+    delete tables[index];
+    tables.removeAt(index);
+    te_widget->removeTab(index);
+}
+
 void MainWindow::slot_colourize()
 {
+    MyTableView * table=getCurrentTable();
+    if(table==nullptr)return;
+
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
     if (id_list.size()>0)
@@ -1115,7 +1178,18 @@ void MainWindow::slot_colourize()
 
 void MainWindow::closeEvent (QCloseEvent *event)
 {
-    if(isModified)
+    bool somethingModified=false;
+
+    for(unsigned int i=0;i<tables.size();i++)
+    {
+        if(tables[i]->model()->isModified())
+        {
+            somethingModified=true;
+            break;
+        }
+    }
+
+    if(somethingModified)
     {
         QMessageBox::StandardButton resBtn =
                 QMessageBox::question( this, "File is not saved" ,tr("Are you sure?\n"),

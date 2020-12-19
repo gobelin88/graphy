@@ -16,6 +16,10 @@ public:
                 int rowsSpan,
                 QWidget * parent);
 
+    MyTableView(QString filename,
+                int rowsSpan,
+                QWidget * parent);
+
     void createNew(int nbRow,int nbCols,int rowsSpan);
 
     MyModel * model() {return m_model;}
@@ -68,7 +72,6 @@ private:
     QAction * actNewRowsEnd  ;
     QAction * actCopy;
     QAction * actPaste;
-
     QAction * actNewColumn;
     QAction * actDelete;
     QAction * actRemoveColumnsRows;

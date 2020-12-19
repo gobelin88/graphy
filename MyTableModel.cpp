@@ -19,7 +19,6 @@ MyModel::MyModel(int nbRows, int nbCols, int rowSpan, QObject *parent): QAbstrac
 //-----------------------------------------------------------------
 void MyModel::create(int nbRows, int nbCols,int rowSpan)
 {
-
     v_scrollBar=new QScrollBar();
     h_header=new QHeaderView(Qt::Horizontal);
     v_header=new QHeaderView(Qt::Vertical);
@@ -44,6 +43,8 @@ void MyModel::create(int nbRows, int nbCols,int rowSpan)
     connect(v_header,&QHeaderView::sectionMoved        ,this,&MyModel::slot_vSectionMoved);
     connect(v_scrollBar,&QScrollBar::valueChanged      ,this,&MyModel::setRowOffset);
 
+    modified=true;
+    currentFilename=QString("new.graphy");
 }
 
 void MyModel::createEmpty(int nbRows, int nbCols)
@@ -57,7 +58,28 @@ void MyModel::createEmpty(int nbRows, int nbCols)
     }
 
     contentResized();
+
+    modified=true;
     emit sig_dataChanged();
+}
+
+QTableView* MyModel::createVariablesTable()
+{
+    QTableView* tableVariables=new QTableView();
+    QStandardItemModel* modelParametersVariables = new QStandardItemModel;
+
+    for (int i=0; i<reg.variablesNames().size(); i++)
+    {
+        QStandardItem* itemA=new QStandardItem(reg.variablesNames()[i]);
+        QStandardItem* itemB=new QStandardItem(reg.variablesExpressions()[i]);
+        itemA->setEditable(false);
+        itemB->setEditable(false);
+        modelParametersVariables->setItem(i,0,itemA);
+        modelParametersVariables->setItem(i,1,itemB);
+    }
+    tableVariables->setModel(modelParametersVariables);
+
+    return tableVariables;
 }
 
 void MyModel::exportLatex(QString filename)
@@ -272,6 +294,9 @@ bool MyModel::open(QString filename)
             ok=false;
         }
         file.close();
+
+        currentFilename=filename;
+        modified=false;
     }
     else
     {
@@ -320,6 +345,10 @@ bool MyModel::save(QString filename)
         }
 
         file.close();
+
+        currentFilename=filename;
+        modified=false;
+
         return true;
     }
     else
@@ -382,6 +411,8 @@ void MyModel::paste(int x0,int y0,QString buffer)
     }
 
     emit layoutChanged();
+
+    modified=true;
     emit sig_dataChanged();
 }
 
@@ -539,6 +570,8 @@ void MyModel::applyFilters(const QModelIndexList & selectedColsIndexes)
 
 
         contentResized();
+
+        modified=true;
         emit sig_dataChanged();
     }
 }
@@ -588,6 +621,7 @@ void MyModel::removeLogicalIndexesRows(const QModelIndexList & selectedIndexesRo
      }
 
      contentResized();
+     modified=true;
      emit sig_dataChanged();
 }
 
@@ -635,6 +669,7 @@ void MyModel::removeLogicalIndexesCols(const QModelIndexList & selectedIndexesCo
     }
 
     contentResized();
+    modified=true;
     emit sig_dataChanged();
 }
 
@@ -645,6 +680,8 @@ void MyModel::clearLogicalIndexes(const QModelIndexList & selectedIndexes)
         at(selectedIndexes[i])=MyVariant();
     }
     emit layoutChanged();
+
+    modified=true;
     emit sig_dataChanged();
 }
 
@@ -670,6 +707,8 @@ void MyModel::clearLogicalIndexesCols(const QModelIndexList & selectedIndexesCol
     }
 
     emit layoutChanged();
+
+    modified=true;
     emit sig_dataChanged();
 }
 
@@ -692,7 +731,7 @@ void MyModel::evalColumn(int visualIndex)
             std::vector<Register *> regt(numthreads,nullptr);
             for(int i=0;i<numthreads;i++)
             {
-                regt[i]=reg.copy();
+                regt[i]=(i==0)?&reg:reg.copy();
                 regt[i]->compileExpression(visualIndex);
             }
 
@@ -709,7 +748,7 @@ void MyModel::evalColumn(int visualIndex)
                 regt[tid]->currentCompiledExpressionValue(m_data(i,visualIndex));
             }
 
-            for(int i=0;i<numthreads;i++)
+            for(int i=1;i<numthreads;i++)
             {
                 delete regt[i];
             }
@@ -780,6 +819,8 @@ void MyModel::slot_editColumn(int logicalIndex)
         }
 
         emit layoutChanged();
+
+        modified=true;
         emit sig_dataChanged();
     }
 }
@@ -852,6 +893,8 @@ void MyModel::slot_updateColumns()
     std::cout<<"timer.elapsed()="<<timer.nsecsElapsed()*1e-9<<"s"<<std::endl;
 
     emit layoutChanged();
+
+    modified=true;
     emit sig_dataChanged();
 }
 
@@ -861,8 +904,8 @@ void MyModel::slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisu
     Q_UNUSED(logicalIndex);
     dataMoveRow(m_data,oldVisualIndex+m_rowOffset,newVisualIndex+m_rowOffset);
 
-//    std::cout<<"---------------"<<std::endl;
-//    std::cout<<m_data<<std::endl;
+
+    modified=true;
     emit sig_dataChanged();
 }
 
@@ -877,6 +920,7 @@ void MyModel::slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisu
 //    std::cout<<m_data<<std::endl;
 
     reg.dispVariables();
+    modified=true;
     emit sig_dataChanged();
 }
 
@@ -980,6 +1024,7 @@ bool MyModel::setData(const QModelIndex &index_logical, const QVariant &value, i
 //        std::cout<<"---------------"<<std::endl;
         //std::cout<<m_data<<std::endl;
 
+        modified=true;
         emit sig_dataChanged();
 
         return true;
@@ -1216,6 +1261,7 @@ void MyModel::slot_newColumn(QString varName,VectorXv dataColv)
             dataAddColumn(m_data,dataColv);
 
             emit layoutChanged();
+            modified=true;
             emit sig_dataChanged();
         }
         else

@@ -29,12 +29,15 @@ public:
 
 public slots:
     //IO & edition
+    void receivedMessage(int instanceId, QByteArray message);
+
+    void slot_filter();
     void slot_new();
     void slot_open();
     void slot_save();
     void slot_save_as();
     void slot_export();
-    void direct_open(QString filename);
+    void direct_open(QStringList filenames);
     void direct_save(QString filename);
 
     //Graphs
@@ -54,7 +57,10 @@ public slots:
     void slot_parameters();
     void slot_results(QString results);
     void slot_colourize();
-    void fileModified();
+    void slot_currentTableModified();
+
+    //tab
+    void closeTable(int index);
 
 private:
     //Close
@@ -67,22 +73,23 @@ private:
     QTextEdit* te_results;
     QTabWidget* te_widget;
     Ui::MainWindow* ui;
-    MyTableView * table;
+
     Viewer1D* createViewer1D(int sx=600,int sy=400);
     ViewerBode* createViewerBode();
 
     QMdiArea* mdiArea;
-
-    //Io
-    bool isModified;
-    QString current_filename;
-    void setCurrentFilename(QString filename);
 
     //Shortcuts
     QMap<QString,QKeySequence> shortcuts;
     void applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
     bool loadShortcuts();
     void saveShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
+
+    //Tables
+    void addNewTable(MyTableView * newTable);
+    QList<MyTableView*> tables;
+    MyTableView * getCurrentTable();
+    QString getCurrentFilename();
 
     //Constants
     const float graphyVersion=5.0f;
@@ -91,6 +98,7 @@ private:
     //3.0//Add Copy/Paste management between graphs and table
     //4.0//Bigs files support
     //5.0//complex support !
+    //6.0//multithread and multifiles tab + console
 };
 
 #endif // MAINWINDOW_H

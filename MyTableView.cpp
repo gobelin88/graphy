@@ -13,14 +13,11 @@ MyTableView::MyTableView(int nbRow,
     resizeColumnsToContents();
 }
 
-MyTableView::MyTableView(QString filename,
-                         int rowsSpan,
-                         QWidget * parent):QTableView(parent)
+MyTableView::MyTableView(int rowsSpan,QWidget * parent):QTableView(parent)
 {
     createNew(1,1,rowsSpan);
     createPopup();
-    model()->open(filename);
-    resizeColumnsToContents();
+
 }
 
 void MyTableView::createNew(int nbRow,int nbCols,int rowsSpan)

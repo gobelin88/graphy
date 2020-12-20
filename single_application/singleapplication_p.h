@@ -37,6 +37,8 @@
 #include <QtNetwork/QLocalSocket>
 #include "singleapplication.h"
 
+#include <iostream>
+
 struct InstancesInfo {
     bool primary;
     quint32 secondary;

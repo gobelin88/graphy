@@ -45,6 +45,7 @@
    <addaction name="actionOpen"/>
    <addaction name="actionExport"/>
    <addaction name="actionParameters"/>
+   <addaction name="actionTerminal"/>
   </widget>
   <widget class="QToolBar" name="toolbar_graph">
    <property name="windowTitle">
@@ -323,6 +324,15 @@
    </property>
    <property name="text">
     <string>Colourize</string>
+   </property>
+  </action>
+  <action name="actionTerminal">
+   <property name="icon">
+    <iconset resource="rsc.qrc">
+     <normaloff>:/img/icons/terminal.png</normaloff>:/img/icons/terminal.png</iconset>
+   </property>
+   <property name="text">
+    <string>Terminal</string>
    </property>
   </action>
  </widget>

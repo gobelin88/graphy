@@ -297,6 +297,7 @@ bool MyModel::open(QString filename)
 
         currentFilename=filename;
         modified=false;
+
     }
     else
     {
@@ -725,7 +726,7 @@ void MyModel::evalColumn(int visualIndex)
         //#pragma omp parallel for default(none) num_threads(numthreads)
         //int tid = omp_get_thread_num();
 
-        int numthreads=8;
+        int numthreads=1;
         if (reg.compileExpression(visualIndex))
         {
             std::vector<Register *> regt(numthreads,nullptr);

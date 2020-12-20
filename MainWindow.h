@@ -61,6 +61,10 @@ public slots:
 
     //tab
     void closeTable(int index);
+    void slot_tab_moved(int from,int to);
+
+    //term
+    void slot_showHideTerminal();
 
 private:
     //Close
@@ -71,6 +75,7 @@ private:
 
     //View & Gui
     QTextEdit* te_results;
+    QMdiSubWindow * subWindowsResults;
     QTabWidget* te_widget;
     Ui::MainWindow* ui;
 
@@ -92,7 +97,7 @@ private:
     QString getCurrentFilename();
 
     //Constants
-    const float graphyVersion=5.0f;
+    const float graphyVersion=6.0f;
     //1.0//Basic graphs
     //2.0//Add lots of graph facilities
     //3.0//Add Copy/Paste management between graphs and table

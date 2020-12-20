@@ -25,6 +25,7 @@
 
 #include <QtCore/QtGlobal>
 #include <QtNetwork/QLocalSocket>
+#include <QDataStream>
 
 #ifndef QAPPLICATION_CLASS
   #define QAPPLICATION_CLASS QCoreApplication

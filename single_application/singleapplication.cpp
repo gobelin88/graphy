@@ -61,7 +61,7 @@ SingleApplication::SingleApplication( int &argc, char *argv[], bool allowSeconda
 
     // To mitigate QSharedMemory issues with large amount of processes
     // attempting to attach at the same time
-    SingleApplicationPrivate::randomSleep();
+    //SingleApplicationPrivate::randomSleep();
 
 #ifdef Q_OS_UNIX
     // By explicitly attaching it and then deleting it we make sure that the
@@ -248,9 +248,15 @@ bool SingleApplication::sendMessage( const QByteArray &message, int timeout )
     if( ! d->connectToPrimary( timeout,  SingleApplicationPrivate::Reconnect ) )
       return false;
 
-    d->socket->write( message );
+
+    //quint64 msgLen(message.size());
+    //d->socket->write(reinterpret_cast<const char*>(&msgLen),sizeof(quint64));
+    d->socket->write(message);
     bool dataWritten = d->socket->waitForBytesWritten( timeout );
     d->socket->flush();
+
+    d->socket->close();
+    d->socket->waitForDisconnected();
     return dataWritten;
 }
 

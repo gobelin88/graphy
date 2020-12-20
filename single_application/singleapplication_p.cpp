@@ -378,6 +378,8 @@ void SingleApplicationPrivate::readInitMessageHeader( QLocalSocket *sock )
     info.stage = StageBody;
     info.msgLen = msgLen;
 
+    std::cout<<"msgLen="<<msgLen<<std::endl;
+
     if ( sock->bytesAvailable() >= (qint64) msgLen ){
         readInitMessageBody( sock );
     }
@@ -385,6 +387,7 @@ void SingleApplicationPrivate::readInitMessageHeader( QLocalSocket *sock )
 
 void SingleApplicationPrivate::readInitMessageBody( QLocalSocket *sock )
 {
+    std::cout<<"readInitMessageBody"<<std::endl;
     Q_Q(SingleApplication);
 
     if (!connectionMap.contains( sock )){
@@ -396,9 +399,14 @@ void SingleApplicationPrivate::readInitMessageBody( QLocalSocket *sock )
         return;
     }
 
+    std::cout<<"readInitMessageBody A"<<std::endl;
+
     // Read the message body
+    sock->waitForReadyRead();
     QByteArray msgBytes = sock->read(info.msgLen);
     QDataStream readStream(msgBytes);
+
+    std::cout<<"readInitMessageBody B :"<<msgBytes.toStdString() <<std::endl;
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
     readStream.setVersion( QDataStream::Qt_5_6 );
@@ -455,6 +463,7 @@ void SingleApplicationPrivate::readInitMessageBody( QLocalSocket *sock )
 void SingleApplicationPrivate::slotDataAvailable( QLocalSocket *dataSocket, quint32 instanceId )
 {
     Q_Q(SingleApplication);
+    dataSocket->waitForReadyRead();
     Q_EMIT q->receivedMessage( instanceId, dataSocket->readAll() );
 }
 

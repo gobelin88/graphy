@@ -16,8 +16,7 @@ public:
                 int rowsSpan,
                 QWidget * parent);
 
-    MyTableView(QString filename,
-                int rowsSpan,
+    MyTableView(int rowsSpan,
                 QWidget * parent);
 
     void createNew(int nbRow,int nbCols,int rowsSpan);

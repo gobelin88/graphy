@@ -20,8 +20,15 @@ MainWindow::MainWindow(QWidget* parent) :
     this->setCentralWidget(mdiArea);
 
     te_results=new QTextEdit;
+    subWindowsResults=mdiArea->addSubWindow(te_results,Qt::WindowStaysOnTopHint );
+    subWindowsResults->setAttribute( Qt::WA_DeleteOnClose, false );
+    subWindowsResults->hide();
+
     te_widget=new QTabWidget();
     te_widget->setTabsClosable(true);
+    te_widget->setTabShape(QTabWidget::Triangular);
+    te_widget->setMovable(true);
+
     connect(te_widget,&QTabWidget::tabCloseRequested,this,&MainWindow::closeTable);
 
     QMdiSubWindow* subWindow = mdiArea->addSubWindow(te_widget, Qt::FramelessWindowHint );
@@ -53,6 +60,9 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(ui->actionFFT, &QAction::triggered,this,&MainWindow::slot_plot_fft);
     connect(ui->actionPlot_Gain_Phase, &QAction::triggered,this,&MainWindow::slot_plot_bode);
 
+    connect(te_widget->tabBar(), &QTabBar::tabMoved ,this,&MainWindow::slot_tab_moved);
+
+    connect(ui->actionTerminal,&QAction::triggered,this,&MainWindow::slot_showHideTerminal);
     //------------------------------------------------------------------------------
 
     loadShortcuts();
@@ -66,8 +76,12 @@ MainWindow::~MainWindow()
 void MainWindow::receivedMessage(int instanceId, QByteArray message)
 {
     Q_UNUSED(instanceId);
+//    message.replace('=','\\');
+//    message.replace('+',':');
 
-    QStringList filenames=QString(message).split(';',QString::SkipEmptyParts);
+    //QMessageBox::information(nullptr,"Recv",QString(message));
+
+    QStringList filenames=QString(message).split('#',QString::SkipEmptyParts);
 
     direct_open(filenames);
 }
@@ -182,7 +196,12 @@ void MainWindow::direct_open(QStringList filenames)
 {
     for(int i=0;i<filenames.size();i++)
     {
-        addNewTable(new MyTableView(filenames[i],25,this));
+        MyTableView * table=new MyTableView(25,this);
+        if(table->model()->open(filenames[i]))
+        {
+            table->resizeColumnsToContents();
+            addNewTable(table);
+        }
     }
 }
 
@@ -1079,11 +1098,22 @@ void MainWindow::saveShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     applyShortcuts(shortcuts);
 }
 
+void MainWindow::slot_tab_moved(int from,int to)
+{
+    std::swap(tables[from],tables[to]);
+}
+
 void MainWindow::closeTable(int index)
 {
     delete tables[index];
     tables.removeAt(index);
     te_widget->removeTab(index);
+}
+
+
+void MainWindow::slot_showHideTerminal()
+{
+    te_results->show();
 }
 
 void MainWindow::slot_colourize()

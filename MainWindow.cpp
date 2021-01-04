@@ -762,7 +762,7 @@ void MainWindow::slot_plot_cloud_3D()
             }
         }
 
-        mdiArea->addSubWindow(view3d->getContainer(),Qt::WindowStaysOnTopHint);
+        //mdiArea->addSubWindow(view3d->getContainer(),Qt::WindowStaysOnTopHint);
         view3d->getContainer()->show();
     }
     else

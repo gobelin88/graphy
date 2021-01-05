@@ -38,6 +38,66 @@ void MyVariant::operator=(const QString & other)
     *dynamic_cast<QVariant*>(this)=other;
 }
 
+bool MyVariant::operator>(const MyVariant & other)
+{
+    if( isDouble() && other.isDouble())
+    {
+        return toDouble()>other.toDouble();
+    }
+    else if( isComplex() && other.isComplex())
+    {
+        return std::abs(toComplex())>std::abs(other.toComplex());
+    }
+    else if( isString() && other.isString())
+    {
+        return toString()>other.toString();
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool MyVariant::operator<(const MyVariant & other)
+{
+    if( isDouble() && other.isDouble())
+    {
+        return toDouble()<other.toDouble();
+    }
+    else if( isComplex() && other.isComplex())
+    {
+        return std::abs(toComplex())<std::abs(other.toComplex());
+    }
+    else if( isString() && other.isString())
+    {
+        return toString()<other.toString();
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool MyVariant::operator==(const MyVariant & other)
+{
+    if( isDouble() && other.isDouble())
+    {
+        return toDouble()==other.toDouble();
+    }
+    else if( isComplex() && other.isComplex())
+    {
+        return std::abs(toComplex())==std::abs(other.toComplex());
+    }
+    else if( isString() && other.isString())
+    {
+        return toString()==other.toString();
+    }
+    else
+    {
+        return false;
+    }
+}
+
 void MyVariant::operator=(const std::complex<double> & other)
 {
     if(other.imag()==0)

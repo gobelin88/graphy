@@ -460,6 +460,16 @@ QVector<QString> MyModel::getColLogicalDataString(int logicalIndex)const
     return getColVisualDataString(h_header->visualIndex(logicalIndex));
 }
 
+const VectorXv & MyModel::getColLogicalData(int logicalIndex)const
+{
+    return getColVisualData(h_header->visualIndex(logicalIndex));
+}
+
+const VectorXv & MyModel::getColVisualData(int visualIndex)const
+{
+    return m_data.col(visualIndex);
+}
+
 QVector<QString> MyModel::getColVisualDataString(int visualIndex)const
 {
     //something better to be done here
@@ -516,23 +526,37 @@ void MyModel::applyFilters(const QModelIndexList & selectedColsIndexes)
         QComboBox* cb_mode=new QComboBox(dialog);
         cb_mode->addItem("Ascending sort");
         cb_mode->addItem("Decending sort");
-        cb_mode->addItem("Keep greater than threshold");
-        cb_mode->addItem("Keep lower than threshold");
+        cb_mode->addItem("Keep greater than value");
+        cb_mode->addItem("Keep lower than value");
+        cb_mode->addItem("Keep equal to value");
+        cb_mode->addItem("Keep not equal to value");
 
-        QDoubleSpinBox* sb_threshold=new QDoubleSpinBox(dialog);
-        sb_threshold->setPrefix("Threshold=");
-        sb_threshold->setRange(-1e100,1e100);
+        QLineEdit* sb_value=new QLineEdit(dialog);
+        sb_value->setToolTip("Value");
 
-        double defaultThresholdValue=getColVisualDataDouble(visualIndex).mean();
-        if(std::isnan(defaultThresholdValue))
+
+        if(asColumnStrings(visualIndex))
         {
-            sb_threshold->setValue(0);
+            QVector<QString> values=getColVisualDataString(visualIndex);
+            if(values.size()>0)
+            {
+                sb_value->setText(values.first());
+            }
         }
         else
         {
-            sb_threshold->setValue(defaultThresholdValue);
+            std::complex<double> defaultValue=getColVisualDataComplex(visualIndex).mean();
+            if(std::isnan(defaultValue.real()) || std::isnan(defaultValue.imag()))
+            {
+                sb_value->setText("");
+            }
+            else
+            {
+                MyVariant value;
+                value=defaultValue;
+                sb_value->setText(value.toString());
+            }
         }
-        //sb_threshold->setEnabled(false);
 
         QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
                                                            | QDialogButtonBox::Cancel);
@@ -542,7 +566,7 @@ void MyModel::applyFilters(const QModelIndexList & selectedColsIndexes)
 
 
         gbox->addWidget(cb_mode,0,0);
-        gbox->addWidget(sb_threshold,0,1);
+        gbox->addWidget(sb_value,0,1);
         gbox->addWidget(buttonBox,2,0,1,2);
 
         dialog->setLayout(gbox);
@@ -551,6 +575,9 @@ void MyModel::applyFilters(const QModelIndexList & selectedColsIndexes)
         int result=dialog->exec();
         if (result == QDialog::Accepted)
         {
+            MyVariant value;
+            value.loadFromString(sb_value->text());
+
             if(cb_mode->currentIndex()==0)
             {
                 dataSortBy(m_data,visualIndex,MyModel::SortMode::ASCENDING);
@@ -561,11 +588,19 @@ void MyModel::applyFilters(const QModelIndexList & selectedColsIndexes)
             }
             else if(cb_mode->currentIndex()==2)
             {
-                dataThresholdBy(m_data,visualIndex,MyModel::ThresholdMode::KEEP_GREATER,sb_threshold->value());
+                dataThresholdBy(m_data,visualIndex,MyModel::ThresholdMode::KEEP_GREATER,value);
             }
             else if(cb_mode->currentIndex()==3)
             {
-                dataThresholdBy(m_data,visualIndex,MyModel::ThresholdMode::KEEP_LOWER,sb_threshold->value());
+                dataThresholdBy(m_data,visualIndex,MyModel::ThresholdMode::KEEP_LOWER,value);
+            }
+            else if(cb_mode->currentIndex()==4)
+            {
+                dataThresholdBy(m_data,visualIndex,MyModel::ThresholdMode::KEEP_EQUAL,value);
+            }
+            else if(cb_mode->currentIndex()==5)
+            {
+                dataThresholdBy(m_data,visualIndex,MyModel::ThresholdMode::KEEP_NOT_EQUAL,value);
             }
         }
 
@@ -1191,21 +1226,35 @@ void MyModel::dataSortBy(MatrixXv & matrix, int colId,SortMode mode)
         matrix.row(i) = vec[i];
 }
 
-void MyModel::dataThresholdBy(MatrixXv & matrix, int colId,ThresholdMode mode,double thresholdValue)
+void MyModel::dataThresholdBy(MatrixXv & matrix, int colId,ThresholdMode mode,MyVariant thresholdValue)
 {
     std::vector<VectorXv> vec;
     for (unsigned int i = 0; i < matrix.rows(); ++i)
     {
         if(mode==KEEP_GREATER)
         {
-            if(matrix(i,colId).toDouble()>thresholdValue)//KEEP_GREATER
+            if(matrix(i,colId)>thresholdValue)
             {
                 vec.push_back(matrix.row(i));
             }
         }
-        else
+        else if(mode==KEEP_LOWER)
         {
-            if(matrix(i,colId).toDouble()<thresholdValue)//KEEP_LOWER
+            if(matrix(i,colId)<thresholdValue)
+            {
+                vec.push_back(matrix.row(i));
+            }
+        }
+        else if(mode==KEEP_EQUAL)
+        {
+            if(matrix(i,colId)==thresholdValue)
+            {
+                vec.push_back(matrix.row(i));
+            }
+        }
+        else if(mode==KEEP_NOT_EQUAL)
+        {
+            if(matrix(i,colId)!=thresholdValue)
             {
                 vec.push_back(matrix.row(i));
             }

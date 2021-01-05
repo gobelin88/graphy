@@ -27,7 +27,9 @@ public:
     enum ThresholdMode
     {
         KEEP_GREATER,
-        KEEP_LOWER
+        KEEP_LOWER,
+        KEEP_EQUAL,
+        KEEP_NOT_EQUAL
     };
 
     MyModel(int nbRows,int nbCols,int rowSpan,QObject *parent=nullptr);
@@ -56,7 +58,9 @@ public:
     Eigen::VectorXd  getColLogicalDataDouble(int logicalIndex)const;
     Eigen::VectorXd  getColVisualDataDouble(int visualIndex)const;
     Eigen::VectorXcd getColLogicalDataComplex(int logicalIndex)const;
-    Eigen::VectorXcd getColVisualDataComplex(int visualIndex)const;
+    Eigen::VectorXcd getColVisualDataComplex(int visualIndex)const;    
+    const VectorXv &getColLogicalData(int logicalIndex)const;
+    const VectorXv &getColVisualData(int visualIndex)const;
 
     bool asColumnStrings(int idCol);
     void applyFilters(const QModelIndexList & selectedColsIndexes);
@@ -154,7 +158,7 @@ private:
     void dataRemoveRows(MatrixXv& matrix, unsigned int rowToRemove, unsigned int nbRow);
     void dataRemoveColumns(MatrixXv& matrix, unsigned int colToRemove,unsigned int nbCol);
     void dataSortBy(MatrixXv& matrix, int colId, SortMode mode);
-    void dataThresholdBy(MatrixXv & matrix, int colId,ThresholdMode mode,double thresholdValue);
+    void dataThresholdBy(MatrixXv & matrix, int colId,ThresholdMode mode,MyVariant thresholdValue);
     void dataInsertRows(MatrixXv& matrix,int n,int j);
 
 

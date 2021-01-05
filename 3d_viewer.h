@@ -205,6 +205,7 @@ private:
     bool xy_reversed;
     bool yz_reversed;
     bool xz_reversed;
+    void setCloudPointSize(Cloud3D * currentCloud3D, double value);
 
 };
 #endif // VIEW3D_H

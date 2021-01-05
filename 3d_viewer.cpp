@@ -717,7 +717,7 @@ void Viewer3D::addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::P
     labely->setText(currentCloud3D->cloud->getLabelY());
     labelz->setText(currentCloud3D->cloud->getLabelZ());
 
-    slot_setPointSize(currentCloud3D->pointSize->value());
+    setCloudPointSize(currentCloud3D,currentCloud3D->pointSize->value());
     slot_resetView();
 
     customContainer->adjustSize();
@@ -832,29 +832,30 @@ void Viewer3D::slot_removeSelected()
 
 }
 
+void Viewer3D::setCloudPointSize(Cloud3D * currentCloud3D,double value)
+{
+    currentCloud3D->pointSize->setValue(value);
+    currentCloud3D->lineWidth->setValue(value);
+    currentCloud3D->lineWidth->setSmooth(true);
+
+    auto effect = currentCloud3D->material->effect();
+    for (auto t : effect->techniques())
+    {
+        for (auto rp : t->renderPasses())
+        {
+            rp->addRenderState(currentCloud3D->pointSize);
+            rp->addRenderState(currentCloud3D->lineWidth);
+        }
+    }
+}
+
 void Viewer3D::slot_setPointSize(double value)
 {
     std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
-
-
     for(int i=0;i<selectedClouds.size();i++)
     {
-        Cloud3D * currentCloud3D=selectedClouds[i];
-        currentCloud3D->pointSize->setValue(value);
-        currentCloud3D->lineWidth->setValue(value);
-        currentCloud3D->lineWidth->setSmooth(true);
-
-        auto effect = currentCloud3D->material->effect();
-        for (auto t : effect->techniques())
-        {
-            for (auto rp : t->renderPasses())
-            {
-                rp->addRenderState(currentCloud3D->pointSize);
-                rp->addRenderState(currentCloud3D->lineWidth);
-            }
-        }
-
+        setCloudPointSize(selectedClouds[i],value);
     }
 }
 

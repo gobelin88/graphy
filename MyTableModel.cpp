@@ -406,7 +406,7 @@ void MyModel::paste(int x0,int y0,QString buffer)
 
             if(indexRow<m_data.rows() && indexCol<m_data.cols())
             {
-                m_data(indexRow,indexCol)=valuesToken[j];
+                m_data(indexRow,indexCol).loadFromString(valuesToken[j]);
             }
         }
     }

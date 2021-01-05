@@ -48,7 +48,8 @@ public slots:
     void slot_newRowAbove();
 
 protected:
-    //void wheelEvent(QWheelEvent * event);
+    void wheelEvent(QWheelEvent * event);
+    void resizeEvent(QResizeEvent *event);
 
 private:
     void getVisualRowColSelectedRanges(QCPRange &range_row,QCPRange &range_col);

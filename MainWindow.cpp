@@ -142,16 +142,18 @@ void MainWindow::slot_currentTableModified()
 
 void MainWindow::addNewTable(MyTableView * newTable)
 {
-    QRect rec = QApplication::desktop()->screenGeometry();
+    //QRect rec = QApplication::desktop()->screenGeometry();
 
     newTable->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     newTable->verticalHeader()->setDefaultSectionSize(24);
-    newTable->model()->setRowSpan((rec.height()-350)/24-1);
+    newTable->model()->setRowSpan(100);
     newTable->addAction(ui->actionSave);
     tables.push_back(newTable);
     newTable->applyShortcuts(shortcuts);
     newTable->getContainer()->setToolTip(newTable->model()->getCurrentFilename());
     te_widget->addTab(newTable->getContainer(),newTable->model()->getTabTitle());
+    te_widget->setCurrentWidget(newTable->getContainer());
+    resizeEvent(nullptr);
 
     connect(newTable->model(),&MyModel::sig_dataChanged,this,&MainWindow::slot_currentTableModified);
 }
@@ -328,7 +330,7 @@ void MainWindow::slot_plot_graph_xy()
 
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-    if (id_list.size()>=2)
+    if (id_list.size()==2)
     {
         Viewer1D* viewer1d=createViewer1D();
 
@@ -353,9 +355,23 @@ void MainWindow::slot_plot_graph_xy()
             }
         }
     }
+    else if (id_list.size()==1)
+    {
+        Viewer1D* viewer1d=createViewer1D();
+
+        Eigen::VectorXcd data_cplx=table->getLogicalColDataComplex(id_list[0  ].column());
+        Eigen::VectorXd data_x=data_cplx.real();
+        Eigen::VectorXd data_y=data_cplx.imag();
+
+        if (data_x.size()>0 && data_y.size()>0)
+        {
+            Curve2D curve(data_x,data_y,QString("Im(%1)=f(Re(%1))").arg(table->getLogicalColName(id_list[0  ].column())),Curve2D::GRAPH);
+            viewer1d->slot_add_data(curve);
+        }
+    }
     else
     {
-        QMessageBox::information(this,"Information","Please select 2 columns or more X and Yi in order to plot (X,Yi)");
+        QMessageBox::information(this,"Information","Please select 2 columns X and Y in order to plot (X,Y) or 1 column X in order to plot (Re(X),Im(X))");
     }
 }
 
@@ -1203,8 +1219,6 @@ void MainWindow::slot_colourize()
         }
     }
 }
-
-
 
 void MainWindow::closeEvent (QCloseEvent *event)
 {

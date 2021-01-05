@@ -38,18 +38,28 @@ void MyTableView::createNew(int nbRow,int nbCols,int rowsSpan)
     setModel(m_model);
 }
 
-//void MyTableView::wheelEvent(QWheelEvent * event)
-//{
-//    if(event->delta()>0)
-//    {
-//        m_model->setRowOffset(m_model->getRowOffset()+1);
-//    }
-//    else
-//    {
-//        m_model->setRowOffset(m_model->getRowOffset()-1);
-//    }
-//}
+void MyTableView::wheelEvent(QWheelEvent * event)
+{
+    if(event->delta()>0)
+    {
+        m_model->setRowOffset(m_model->getRowOffset()-1);
+    }
+    else
+    {
+        m_model->setRowOffset(m_model->getRowOffset()+1);
+    }
+}
 
+void MyTableView::resizeEvent(QResizeEvent *event)
+{
+    if(event)
+    {
+        QTableView::resizeEvent(event);
+    }
+
+    this->model()->setRowSpan((this->size().height()-this->horizontalHeader()->size().height())/
+                                   (this->verticalHeader()->defaultSectionSize())-1);
+}
 void MyTableView::slot_deleteSelected()
 {
     QModelIndexList selectedIndexes=selectionModel()->selectedIndexes();

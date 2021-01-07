@@ -22,9 +22,9 @@ public:
     MyVariant(const double value);
     MyVariant(const QVariant & value);
 
-    bool operator>(const MyVariant & other);
-    bool operator<(const MyVariant & other);
-    bool operator==(const MyVariant & other);
+    bool operator>(const MyVariant & other)const;
+    bool operator<(const MyVariant & other)const;
+    bool operator==(const MyVariant & other)const;
 
     void operator=(const QString & other);
     void operator=(const std::complex<double> & other);

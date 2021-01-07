@@ -34,6 +34,10 @@ Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* par
     arrowItem=nullptr;
 
     legend->setVisible(true);
+
+//    plotLayout()->elementAt(0)->setMinimumSize(QSize(512,512));
+//    plotLayout()->elementAt(0)->setMaximumSize(QSize(512,512));
+//    plotLayout()->elementAt(0)->setSizeConstraintRect(QCPLayoutElement::scrInnerRect);
 }
 
 Viewer1D::~Viewer1D()

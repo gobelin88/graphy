@@ -218,24 +218,44 @@ void MyTableView::setSelectionPattern(QString pattern)
 
     for(int i=0;i<patterns.size();i++)
     {
-        if(patterns[i].startsWith('R'))
+        if(patterns[i].startsWith('R') || patterns[i].startsWith('C'))
         {
-            patterns[i].remove('R');
-            bool ok=false;
-            unsigned int index=patterns[i].toUInt(&ok);
-            if(ok && index>0)
+            bool isRow;
+            if(patterns[i].startsWith('R'))
             {
-                selectRow(index-1);
+                patterns[i].remove('R');
+                isRow=true;
             }
-        }
-        else if(patterns[i].startsWith('C'))
-        {
-            patterns[i].remove('C');
-            bool ok=false;
+            else
+            {
+                patterns[i].remove('C');
+                isRow=false;
+            }
+
+            bool ok=false,ok2=false;
             unsigned int index=patterns[i].toUInt(&ok);
             if(ok && index>0)
             {
-                selectColumn(index-1);
+                if(isRow){selectRow(index-1);}else{selectColumn(index-1);}
+            }
+            else if(patterns[i].startsWith('%'))
+            {
+                patterns[i].remove('%');
+                QStringList args=patterns[i].split('+',QString::SkipEmptyParts);
+                std::cout<<args[0].toStdString()<<std::endl;
+                unsigned int modulo=args[0].toUInt(&ok);
+                unsigned int dec=0;
+                if(args.size()==2){dec=args[1].toInt(&ok2);}else{ok2=true;}
+                if(ok && modulo>0 && ok2)
+                {
+                    for(int index=0;index<model()->getRowSpan();index++)
+                    {
+                        if((index+dec)%modulo==0)
+                        {
+                            if(isRow){selectRow(index-1);}else{selectColumn(index-1);}
+                        }
+                    }
+                }
             }
         }
     }

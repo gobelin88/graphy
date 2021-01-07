@@ -81,7 +81,7 @@ void MainWindow::receivedMessage(int instanceId, QByteArray message)
 
     //QMessageBox::information(nullptr,"Recv",QString(message));
 
-    QStringList filenames=QString(message).split('#',QString::SkipEmptyParts);
+    QStringList filenames=QString::fromLocal8Bit(message).split('#',QString::SkipEmptyParts);
 
     direct_open(filenames);
 }
@@ -1005,7 +1005,9 @@ void MainWindow::slot_select()
 
     QLineEdit * le_pattern=new QLineEdit();
     le_pattern->setText(table->getSelectionPattern());
-    le_pattern->setToolTip("For example to select row 1 and column 1 type : R1,C1");
+    le_pattern->setToolTip("Examples :\n"\
+                           "To select row 1 and column 1 : R1,C1\n"\
+                           "To select rows modulo two plus one : R%2+1");
 
     gbox->addWidget(le_pattern,0,0);
     gbox->addWidget(buttonBox,1,0,1,2);
@@ -1224,20 +1226,22 @@ void MainWindow::closeEvent (QCloseEvent *event)
 {
     bool somethingModified=false;
 
+    QString filesNotSaved;
+
     for(unsigned int i=0;i<tables.size();i++)
     {
         if(tables[i]->model()->isModified())
         {
             somethingModified=true;
-            break;
+            filesNotSaved+=tables[i]->model()->getTabTitle()+QString("\n");
         }
     }
 
     if(somethingModified)
     {
         QMessageBox::StandardButton resBtn =
-                QMessageBox::question( this, "File is not saved" ,tr("Are you sure?\n"),
-                                       QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
+                QMessageBox::question( this, "Confirm quit" ,QString("Some changes have not been saved :\n\n")+filesNotSaved+QString("\nDiscard changes and exit ?\n"),
+                                       QMessageBox::No | QMessageBox::Yes,
                                        QMessageBox::Yes);
         if (resBtn != QMessageBox::Yes)
         {

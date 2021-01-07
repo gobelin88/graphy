@@ -38,7 +38,7 @@ void MyVariant::operator=(const QString & other)
     *dynamic_cast<QVariant*>(this)=other;
 }
 
-bool MyVariant::operator>(const MyVariant & other)
+bool MyVariant::operator>(const MyVariant & other)const
 {
     if( isDouble() && other.isDouble())
     {
@@ -58,7 +58,7 @@ bool MyVariant::operator>(const MyVariant & other)
     }
 }
 
-bool MyVariant::operator<(const MyVariant & other)
+bool MyVariant::operator<(const MyVariant & other)const
 {
     if( isDouble() && other.isDouble())
     {
@@ -78,7 +78,7 @@ bool MyVariant::operator<(const MyVariant & other)
     }
 }
 
-bool MyVariant::operator==(const MyVariant & other)
+bool MyVariant::operator==(const MyVariant & other)const
 {
     if( isDouble() && other.isDouble())
     {

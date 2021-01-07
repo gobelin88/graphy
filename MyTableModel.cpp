@@ -1215,11 +1215,11 @@ void MyModel::dataSortBy(MatrixXv & matrix, int colId,SortMode mode)
 
     if(mode==ASCENDING)
     {
-        std::sort(vec.begin(), vec.end(), [&colId](VectorXv const& t1, VectorXv const& t2){ return t1(colId).toDouble() < t2(colId).toDouble(); } );
+        std::sort(vec.begin(), vec.end(), [&colId](VectorXv const& t1, VectorXv const& t2){ return t1[colId] < t2[colId]; } );
     }
     else if(mode==DECENDING)
     {
-        std::sort(vec.begin(), vec.end(), [&colId](VectorXv const& t1, VectorXv const& t2){ return t1(colId).toDouble() > t2(colId).toDouble(); } );
+        std::sort(vec.begin(), vec.end(), [&colId](VectorXv const& t1, VectorXv const& t2){ return t1[colId] > t2[colId]; } );
     }
 
     for (int64_t i = 0; i < matrix.rows(); ++i)

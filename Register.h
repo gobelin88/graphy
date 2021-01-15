@@ -3,7 +3,7 @@
 #include <QDir>
 #include <QVector>
 #include "exprtk/exprtk.hpp"
-#include "random"
+#include "ExprtkCustomFunctions.hpp"
 #include <cmath>
 #include <qmath.h>
 
@@ -44,13 +44,17 @@ public:
     void setActiveCol(int i){this->activeCol=i;}
 
     QStringList getVariablesList();
-    QStringList getCustomExpressionList();
+
+    QStringList getFunctionsList();
+    QStringList getReservedList();
 
     //bool customExpressionParse(unsigned int id, QString& result, std::function<QString(int,int)> at, int currentRow);
-    bool customExpressionParse(const MatrixXv & data,unsigned int id, MyVariant & result, int currentRow);
 
     const QStringList & variablesNames()const;
     const QStringList & variablesExpressions()const;
+
+    QString getSaveVariablesExpression(int i) const;
+    static QString getLoadVariableExpression(QString var);
 
     int size();
 
@@ -76,6 +80,10 @@ private:
     QStringList variables_names;
     QStringList variables_expressions;
 
+    //Custom functions
+    uniformFunction<VariableType> cf_uniform;
+    normalFunction<VariableType> cf_normal;
+
     //Misc variables
     VariableType activeRow;
     VariableType activeCol;
@@ -83,10 +91,7 @@ private:
     //Error message
     void error(QString title,QString msg);
 
-    //Noise management
-    std::default_random_engine generator;
-    std::normal_distribution<double> * noise_normal;
-    std::uniform_real<double> * noise_uniform;
+
 
     //Misc
     int getVarExpDialog(QString currentName, QString currentExpression, QString & newName, QString & newExpression);

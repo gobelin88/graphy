@@ -232,7 +232,7 @@ bool MyModel::open(QString filename)
                             reg.renameVariable(variablesNames[i].toString(),
                                                variablesNames[i].toString(),
                                                "",
-                                               variablesExpressions[i].toString());
+                                               Register::getLoadVariableExpression( variablesExpressions[i].toString()));
                         }
                     }
                     else
@@ -329,7 +329,7 @@ bool MyModel::save(QString filename)
         out<< "\n";
         for (int j = 0; j < reg.variablesExpressions().size(); j++)
         {
-            out<<reg.variablesExpressions()[j];
+            out<<reg.getSaveVariablesExpression(j);
             if(j!=reg.variablesExpressions().size()-1){out<< ";";}
         }
         out<< "\n</header>\n";
@@ -768,7 +768,7 @@ void MyModel::evalColumn(int visualIndex)
             for(int i=0;i<numthreads;i++)
             {
                 regt[i]=(i==0)?&reg:reg.copy();
-                regt[i]->compileExpression(visualIndex);
+                if(i!=0)regt[i]->compileExpression(visualIndex);
             }
 
             #pragma omp parallel for default(none) num_threads(numthreads)
@@ -787,22 +787,6 @@ void MyModel::evalColumn(int visualIndex)
             for(int i=1;i<numthreads;i++)
             {
                 delete regt[i];
-            }
-        }
-        else
-        {
-            for (int i=0; i<m_data.rows(); i++)
-            {
-                reg.setActiveRow(i);
-                for (int j=0; j<m_data.cols(); j++)
-                {
-                    reg.setVariable(j,m_data(i,j).toComplex());
-                }
-
-                if(!reg.customExpressionParse(m_data,visualIndex,m_data(i,visualIndex),i))
-                {
-                    break;
-                }
             }
         }
     }

@@ -79,7 +79,17 @@ const QCPColorGradient& Cloud::getGradient()
 
 QCPRange Cloud::getRange(const Eigen::VectorXd& v)
 {
-    return QCPRange(v.minCoeff(),v.maxCoeff());
+    double min=v.minCoeff();
+    double max=v.maxCoeff();
+    if(min!=max)
+    {
+        return QCPRange(min,max);
+    }
+    else
+    {
+        double eps=0.1;
+        return QCPRange(min-eps,max+eps);
+    }
 }
 
 QCPRange Cloud::getXRange()

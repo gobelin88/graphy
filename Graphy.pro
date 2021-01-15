@@ -53,9 +53,11 @@ SOURCES += \
         MainWindow.cpp \
         MyCustomPlot.cpp \
         MyGradientComboBox.cpp \
+        MyHighLighter.cpp \
         MyItemDelegate.cpp \
         MyTableModel.cpp \
         MyTableView.cpp \
+        MyTextEdit.cpp \
         MyVariant.cpp \
         PosAtt.cpp \
         Register.cpp \
@@ -84,15 +86,18 @@ HEADERS += \
         Cloud.h \
         ColorWheel.hpp \
         DataConvert.h \
+        ExprtkCustomFunctions.hpp \
         FFT.h \
         FIR.h \
         Functor.h \
         MainWindow.h \
         MyCustomPlot.h \
         MyGradientComboBox.h \
+        MyHighLighter.h \
         MyItemDelegate.h \
         MyTableModel.h \
         MyTableView.h \
+        MyTextEdit.h \
         MyVariant.h \
         PosAtt.h \
         Register.h \

@@ -55,6 +55,7 @@
 #include <utility>
 #include <vector>
 #include "complex_hack.h"
+#include <random>
 
 namespace exprtk
 {
@@ -2777,7 +2778,7 @@ namespace exprtk
             #endif
          }
 
-         inline void scan_token()
+         inline void scan_token()//Scan<--
          {
             if (details::is_whitespace(*s_itr_))
             {
@@ -4747,7 +4748,7 @@ namespace exprtk
             else if (!exprtk::details::numeric::is_integer(v_))
                return false;
 
-            u = static_cast<UIntType>(v_);
+            u = static_cast<UIntType>(std::abs(v_));//hack here added std::abs()
 
             return true;
          }
@@ -17802,6 +17803,16 @@ namespace exprtk
 
       template <typename Allocator,
                 template <typename, typename> class Sequence>
+      inline std::size_t get_function_list(Sequence<std::string,Allocator>& vlist) const
+      {
+         if (!valid())
+            return 0;
+         else
+            return local_data().function_store.get_list(vlist);
+      }
+
+      template <typename Allocator,
+                template <typename, typename> class Sequence>
       inline std::size_t get_variable_list(Sequence<std::string,Allocator>& vlist) const
       {
          if (!valid())
@@ -20000,6 +20011,7 @@ namespace exprtk
             return (*this);
          }
 
+         //optimisations<--
          bool replacer_enabled           () const { return enable_replacer_;           }
          bool commutative_check_enabled  () const { return enable_commutative_check_;  }
          bool joiner_enabled             () const { return enable_joiner_;             }
@@ -20311,7 +20323,7 @@ namespace exprtk
             return (*this);
          }
 
-      private:
+
 
          void load_compile_options(const std::size_t compile_options)
          {
@@ -20329,6 +20341,8 @@ namespace exprtk
             disable_rsrvd_sym_usr_     = (compile_options & e_disable_usr_on_rsrvd) == e_disable_usr_on_rsrvd;
             disable_zero_return_       = (compile_options & e_disable_zero_return ) == e_disable_zero_return;
          }
+
+         private:
 
          std::string assign_opr_to_string(details::operator_type opr) const
          {
@@ -20516,7 +20530,7 @@ namespace exprtk
          }
       }
 
-      inline bool compile(const std::string& expression_string, expression<T>& expr)
+      inline bool compile(const std::string& expression_string, expression<T>& expr)//Compile<--
       {
          state_          .reset();
          error_list_     .clear();
@@ -20660,7 +20674,7 @@ namespace exprtk
          }
       }
 
-      inline bool run_assemblies()
+      inline bool run_assemblies()//<--
       {
          if (settings_.commutative_check_enabled())
          {
@@ -23085,6 +23099,7 @@ namespace exprtk
          }
       }
 
+      //simplify<--
       template <typename Allocator1,
                 typename Allocator2,
                 template <typename, typename> class Sequence>
@@ -28002,8 +28017,8 @@ namespace exprtk
 
                return error_node();
             }
-            else if (is_constant_foldable(arg_list))
-               return const_optimise_varargfunc(operation,arg_list);
+            else if (is_constant_foldable(arg_list))//ici <--
+              return const_optimise_varargfunc(operation,arg_list);
             else if ((arg_list.size() == 1) && details::is_ivector_node(arg_list[0]))
                return vectorize_func(operation,arg_list);
             else if ((arg_list.size() == 1) && special_one_parameter_vararg(operation))
@@ -28135,7 +28150,7 @@ namespace exprtk
 
             alloc_type1* genfunc_node_ptr = static_cast<alloc_type1*>(result);
 
-            if (
+            if (//ici peu etre
                  !arg_list.empty()                  &&
                  !gf->has_side_effects()            &&
                  parser_->state_.type_check_enabled &&

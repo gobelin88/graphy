@@ -8,24 +8,17 @@
 #include <QLocale>
 #include <QLabel>
 #include <iostream>
+#include "MyTextEdit.h"
+#include "MyHighLighter.h"
 
 Register::Register()
-{
-    noise_normal=new std::normal_distribution<double>(0.0,1.0);
-    noise_uniform=new std::uniform_real<double>(0.0,1.0);
-
+{    
     clear();
     current_compiled_expression.register_symbol_table(symbolsTable);
 }
 
 Register::~Register()
 {
-    std::cout<<"Delete register1"<<std::endl;
-    delete noise_normal;
-
-    std::cout<<"Delete register2"<<std::endl;
-    delete noise_uniform;
-
     std::cout<<"Delete register3"<<std::endl;
     variables_names.clear();
 
@@ -84,6 +77,8 @@ void Register::clear()
     symbolsTable.add_constant("pi",VariableType(M_PI));
     symbolsTable.add_variable("Row",activeRow);
     symbolsTable.add_variable("Col",activeCol);
+    symbolsTable.add_function("uniform"  ,  cf_uniform);
+    symbolsTable.add_function("normal"  ,  cf_normal);
 }
 
 bool Register::newVariable(QString varname,QString varexpr)
@@ -249,6 +244,21 @@ const QStringList & Register::variablesExpressions() const
     return variables_expressions;
 }
 
+QString Register::getSaveVariablesExpression(int i) const
+{
+    QString exp=variables_expressions[i];
+    exp.replace('\n','#');
+    exp.replace(';','@');
+    return exp;
+}
+
+QString Register::getLoadVariableExpression(QString exp)
+{
+    exp.replace('#','\n');
+    exp.replace('@',';');
+    return exp;
+}
+
 int Register::size()
 {
     return variables.size();
@@ -269,6 +279,30 @@ void Register::setVariable(int i,Register::VariableType value)
 
 bool Register::compileExpression(int id)
 {
+
+//Compilation options
+//    static const std::size_t compile_options =
+//            exprtk::parser<double>::settings_store::settings_compilation_options::e_replacer         +
+//            exprtk::parser<double>::settings_store::settings_compilation_options::e_joiner            +
+//            exprtk::parser<double>::settings_store::settings_compilation_options::e_numeric_check     +
+//            exprtk::parser<double>::settings_store::settings_compilation_options::e_bracket_check     +
+//            exprtk::parser<double>::settings_store::settings_compilation_options::e_sequence_check    +
+//            exprtk::parser<double>::settings_store::settings_compilation_options::e_commutative_check +
+//            exprtk::parser<double>::settings_store::settings_compilation_options::e_strength_reduction;
+//    parser.settings().load_compile_options(compile_options);
+//    std::cout<<"replacer_enabled="<<parser.settings().replacer_enabled()<<std::endl;
+//    std::cout<<"commutative_check_enabled="<<parser.settings().commutative_check_enabled()<<std::endl;
+//    std::cout<<"joiner_enabled="<<parser.settings().joiner_enabled()<<std::endl;
+//    std::cout<<"numeric_check_enabled="<<parser.settings().numeric_check_enabled()<<std::endl;
+//    std::cout<<"bracket_check_enabled="<<parser.settings().bracket_check_enabled()<<std::endl;
+//    std::cout<<"sequence_check_enabled="<<parser.settings().sequence_check_enabled()<<std::endl;
+//    std::cout<<"collect_variables_enabled="<<parser.settings().collect_variables_enabled()<<std::endl;
+//    std::cout<<"collect_functions_enabled="<<parser.settings().collect_functions_enabled()<<std::endl;
+//    std::cout<<"collect_assignments_enabled="<<parser.settings().collect_assignments_enabled()<<std::endl;
+
+
+
+
     return parser.compile(variables_expressions[id].toStdString(),current_compiled_expression);
 }
 
@@ -306,16 +340,29 @@ QStringList Register::getVariablesList()
     return qlist;
 }
 
-QStringList Register::getCustomExpressionList()
+QStringList Register::getFunctionsList()
 {
-    QStringList customExpList;
-    customExpList<<"$uniform";
-    customExpList<<"$normal";
-    customExpList<<"$cplx_uniform";
-    customExpList<<"$cplx_normal";
-    customExpList<<"$search contains-varName *.txt depth where";
-    customExpList<<"$str ABCDEF%1 varName,#";
-    return customExpList;
+    QStringList qlist;
+    std::vector<std::string> list;
+    symbolsTable.get_function_list(list);
+    for(int i=0;i<list.size();i++)
+    {
+        qlist.append(QString::fromStdString(list[i]));
+    }
+
+    return qlist;
+}
+
+QStringList Register::getReservedList()
+{
+    QStringList qlist;
+
+    for(int i=0;i<exprtk::details::reserved_symbols_size;i++)
+    {
+        qlist.append(QString::fromStdString(exprtk::details::reserved_symbols[i]));
+    }
+
+    return qlist;
 }
 
 void custom_scanDir(QDir dir,QStringList filters,QString name,QString& result,int depth)
@@ -503,102 +550,13 @@ void custom_scanDir(QDir dir,QStringList filters,QString name,QString& result,in
 //    return false;
 //}
 
-bool Register::customExpressionParse(const MatrixXv & m_data,unsigned int id, MyVariant & result, int currentRow)
-{
-    QString expression=variables_expressions[id];
-        expression.remove('$');
-        QStringList args=expression.split(" ");
-        if (args.size()>0)
-        {
-
-            if (args[0]=="uniform" && args.size()==1)
-            {
-                result=2.0*((*noise_uniform)(generator)-0.5);
-                return true;
-            }
-            else if (args[0]=="normal" && args.size()==1)
-            {
-                result=(*noise_normal)(generator);
-                return true;
-            }
-            else if (args[0]=="cplx_uniform" && args.size()==1)
-            {
-                result=std::complex<double>(2.0*((*noise_uniform)(generator)-0.5),2.0*((*noise_uniform)(generator)-0.5));
-                return true;
-            }
-            else if (args[0]=="cplx_normal" && args.size()==1)
-            {
-                result=std::complex<double>((*noise_normal)(generator),(*noise_normal)(generator));
-                return true;
-            }
-            else if (args[0]=="search" && args.size()>=5)
-            {
-                result=QString("none");
-
-                //0      1                  2     3     4      5      6      i
-                //search contains-variable *.txt depth where0 where1 where2 wherei...
-
-                QString search_for_name;
-                int index=variables_names.indexOf(args[1]);
-                if (index>=0)
-                {
-                    search_for_name=m_data(currentRow,index).toString();
-                }
-                else
-                {
-                    return false;
-                }
-
-                for (int i=4; i<args.size(); i++)
-                {
-                    QStringList filters;
-                    filters<<args[2];
-                    QString str=result.toString();
-                    custom_scanDir(args[i],filters,search_for_name,str,args[3].toInt());
-                    result=str;
-                }
-
-                return true;
-            }
-            else if (args[0]=="str" && args.size()==3)
-            {
-                //0   1      2
-                //str ABCDEF%1 VariableName
-                int index=variables_names.indexOf(args[1]);
-                if (index>=0)
-                {
-                    result=args[1].arg( m_data(currentRow,index).saveToString() );
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-
-            }
-            else
-            {
-                error("Bad custom expression",QString("Expression : ")+expression);
-                return false;
-            }
-
-        }
-        else
-        {
-            error("Bad custom expression",QString("Expression : ")+expression);
-            return false;
-        }
-
-        return false;
-}
-
-
 int Register::getVarExpDialog(QString currentName, QString currentExpression, QString & newName, QString & newExpression)
 {
     QLineEdit* le_variableName=new QLineEdit(newName);
-    QLineEdit* le_variableExpression=new QLineEdit(newExpression);
+    MyTextEdit* le_variableExpression=new MyTextEdit(newExpression);
+    QScopedPointer<MyHighLighter> highlighter(new MyHighLighter(getVariablesList(),getFunctionsList()+getReservedList(),le_variableExpression->document()) );
 
-    QCompleter * completer= new QCompleter(getCustomExpressionList()+getVariablesList(), nullptr);
+    QCompleter * completer= new QCompleter(getVariablesList()+getFunctionsList()+getReservedList(), nullptr);
     le_variableExpression->setCompleter(completer);
 
     QDialog* dialog=new QDialog;
@@ -624,7 +582,7 @@ int Register::getVarExpDialog(QString currentName, QString currentExpression, QS
     if (result == QDialog::Accepted)
     {
         newName=le_variableName->text();
-        newExpression=le_variableExpression->text();
+        newExpression=le_variableExpression->textContent();
 
         if (currentName.isEmpty()) //add New
         {
@@ -671,7 +629,7 @@ bool Register::editVariableAndExpression(int currentIndex)
     int ret=0;
     do
     {
-       ret=getVarExpDialog(currentName,currentExpression, newName, newExpression);
+        ret=getVarExpDialog(currentName,currentExpression, newName, newExpression);
     }
     while(ret==-1);
 

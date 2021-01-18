@@ -413,12 +413,29 @@ void MainWindow::slot_plot_cloud_2D()
 
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-    if (id_list.size()==3 || id_list.size()==2)
+    if (id_list.size()==3 || id_list.size()==2 || id_list.size()==1)
     {
         Viewer1D* viewer1d=createViewer1D();
 
-        Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[0].column());
-        Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[1].column());
+        Eigen::VectorXd data_x,data_y;
+        QString legend;
+
+        if(id_list.size()==1)
+        {
+            Eigen::VectorXcd data_cplx=table->getLogicalColDataComplex(id_list[0].column());
+            data_x=data_cplx.real();
+            data_y=data_cplx.imag();
+            legend=QString("(Re(%1),Im(%1))")
+                    .arg(table->getLogicalColName(id_list[0].column()));
+        }
+        else
+        {
+            data_x=table->getLogicalColDataDouble(id_list[0].column());
+            data_y=table->getLogicalColDataDouble(id_list[1].column());
+            legend=QString("(%1,%2)")
+                    .arg(table->getLogicalColName(id_list[0].column()))
+                    .arg(table->getLogicalColName(id_list[1].column()));
+        }
         Eigen::VectorXd data_s=Eigen::VectorXd::Zero(data_x.rows());
 
         if(id_list.size()==3)
@@ -430,8 +447,8 @@ void MainWindow::slot_plot_cloud_2D()
         {
             Curve2D curve(data_x,
                           data_y,
-                          QString("(%1,%2)").arg(table->getLogicalColName(id_list[0  ].column())).arg(table->getLogicalColName(id_list[1].column())),
-                    Curve2D::CURVE);
+                          legend,
+                          Curve2D::CURVE);
 
             curve.setScalarField(data_s);
             curve.getStyle().mLineStyle=QCPCurve::lsNone;

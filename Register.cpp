@@ -75,10 +75,17 @@ void Register::clear()
 
     symbolsTable.add_constant("i",VariableType(0,1));
     symbolsTable.add_constant("pi",VariableType(M_PI));
+    symbolsTable.add_variable("Rows",numberRows);
+    symbolsTable.add_variable("Cols",numberCols);
     symbolsTable.add_variable("Row",activeRow);
     symbolsTable.add_variable("Col",activeCol);
     symbolsTable.add_function("uniform"  ,  cf_uniform);
     symbolsTable.add_function("normal"  ,  cf_normal);
+    symbolsTable.add_function("gamma"  ,  cf_gamma);
+    symbolsTable.add_function("lin"  ,  cf_lin);
+
+    cf_lin.setNumberOfRowsPtr(&numberRows);
+    cf_lin.setCurrentRowPtr(&activeRow);
 }
 
 bool Register::newVariable(QString varname,QString varexpr)

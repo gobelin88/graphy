@@ -40,7 +40,11 @@ public:
     bool existVariable    (QString variableName);
     int  countVariable    (QString variableName);
 
-    void setActiveRow(int i){this->activeRow=i;}
+    void setActiveRow(int i,int rowCount)
+    {
+        this->activeRow=i;
+        this->numberRows=rowCount;
+    }
     void setActiveCol(int i){this->activeCol=i;}
 
     QStringList getVariablesList();
@@ -83,10 +87,14 @@ private:
     //Custom functions
     uniformFunction<VariableType> cf_uniform;
     normalFunction<VariableType> cf_normal;
+    gammaFunction<VariableType> cf_gamma;
+    linFunction<VariableType> cf_lin;
 
     //Misc variables
     VariableType activeRow;
     VariableType activeCol;
+    VariableType numberRows;
+    VariableType numberCols;
 
     //Error message
     void error(QString title,QString msg);

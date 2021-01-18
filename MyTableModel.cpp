@@ -775,7 +775,7 @@ void MyModel::evalColumn(int visualIndex)
             for (int i=0; i<m_data.rows(); i++)
             {
                 int tid = omp_get_thread_num();
-                regt[tid]->setActiveRow(i);
+                regt[tid]->setActiveRow(i,m_data.rows());
                 for (int j=0; j<m_data.cols(); j++)
                 {
                     regt[tid]->setVariable(j,m_data(i,j).toComplex());

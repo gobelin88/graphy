@@ -905,7 +905,8 @@ void MainWindow::slot_plot_bode()
                 ViewerBode * viewer_bode=createViewerBode();
                 data_z=table->getLogicalColDataComplex(id_list[0].column()).imag();
                 data_y=table->getLogicalColDataComplex(id_list[0].column()).real();
-                data_x.resize(data_y.rows());
+                //data_x.resize(data_y.rows());
+                data_x=Eigen::VectorXd::LinSpaced(data_y.rows(),0,1);
 
                 QString name=QString("%2=f(%1)").arg(nameX).arg(nameY);
                 viewer_bode->slot_add_data(Curve2DComplex(data_x,data_y,data_z,Curve2DComplex::CARTESIAN,name));
@@ -1140,6 +1141,20 @@ void MainWindow::slot_tab_moved(int from,int to)
 
 void MainWindow::closeTable(int index)
 {
+    if(tables[index]->model()->isModified())
+    {
+        QMessageBox::StandardButton resBtn =
+                QMessageBox::question( this, "Confirm close" ,
+                                       QString("Some changes have not been saved :\n\n")+tables[index]->model()->getTabTitle()+QString("\n\nDiscard changes and exit ?\n"),
+                                       QMessageBox::No | QMessageBox::Yes,
+                                       QMessageBox::Yes);
+
+        if (resBtn != QMessageBox::Yes)
+        {
+            return;
+        }
+    }
+
     delete tables[index];
     tables.removeAt(index);
     te_widget->removeTab(index);

@@ -299,7 +299,7 @@ void MainWindow::slot_plot_y()
 
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-    if (id_list.size()>0)
+    if (id_list.size()>0)//y1 y2 y3 y4 ...
     {
         Viewer1D* viewer1d=createViewer1D();
 
@@ -322,15 +322,14 @@ void MainWindow::slot_plot_y()
 
 }
 
-
-void MainWindow::slot_plot_graph_xy()
+void MainWindow::plot_xy(Curve2D::CurveType type)
 {
     MyTableView * table=getCurrentTable();
     if(table==nullptr)return;
 
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-    if (id_list.size()==2)
+    if (id_list.size()>=2)//x y1 y2 y3 y4...
     {
         Viewer1D* viewer1d=createViewer1D();
 
@@ -348,14 +347,14 @@ void MainWindow::slot_plot_graph_xy()
                 }
                 else
                 {
-                    Curve2D curve(data_y,QString("%2=f(%1)").arg(table->getLogicalColName(id_list[0  ].column())).arg(table->getLogicalColName(id_list[k].column())),Curve2D::GRAPH);
+                    Curve2D curve(data_y,QString("%2=f(%1)").arg(table->getLogicalColName(id_list[0  ].column())).arg(table->getLogicalColName(id_list[k].column())),type);
                     curve.setLabelsField(table->getLogicalColDataString(table->horizontalHeader()->visualIndex(id_list[k  ].column())));
                     viewer1d->slot_add_data(curve);
                 }
             }
         }
     }
-    else if (id_list.size()==1)
+    else if (id_list.size()==1)//Single complex entry possible
     {
         Viewer1D* viewer1d=createViewer1D();
 
@@ -365,7 +364,7 @@ void MainWindow::slot_plot_graph_xy()
 
         if (data_x.size()>0 && data_y.size()>0)
         {
-            Curve2D curve(data_x,data_y,QString("Im(%1)=f(Re(%1))").arg(table->getLogicalColName(id_list[0  ].column())),Curve2D::GRAPH);
+            Curve2D curve(data_x,data_y,QString("Im(%1)=f(Re(%1))").arg(table->getLogicalColName(id_list[0  ].column())),type);
             viewer1d->slot_add_data(curve);
         }
     }
@@ -375,35 +374,14 @@ void MainWindow::slot_plot_graph_xy()
     }
 }
 
+void MainWindow::slot_plot_graph_xy()
+{
+    plot_xy(Curve2D::GRAPH);
+}
+
 void MainWindow::slot_plot_curve_xy()
 {
-    MyTableView * table=getCurrentTable();
-    if(table==nullptr)return;
-
-    QModelIndexList id_list=table->selectionModel()->selectedColumns();
-
-    if (id_list.size()>=2)
-    {
-        Viewer1D* viewer1d=createViewer1D();
-
-        Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[0  ].column());
-        for (int k=1; k<id_list.size(); k+=2)
-        {
-            Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[k].column());
-
-            if (data_x.size()>0 && data_y.size()>0)
-            {
-                viewer1d->slot_add_data(Curve2D(data_x,
-                                                data_y,
-                                                QString("(%1,%2)").arg(table->getLogicalColName(id_list[0  ].column())).arg(table->getLogicalColName(id_list[k].column())),
-                                        Curve2D::CURVE));
-            }
-        }
-    }
-    else
-    {
-        QMessageBox::information(this,"Information","Please select 2 columns or more X and Yi in order to plot (X,Yi)");
-    }
+    plot_xy(Curve2D::CURVE);
 }
 
 void MainWindow::slot_plot_cloud_2D()

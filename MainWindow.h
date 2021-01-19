@@ -104,6 +104,9 @@ private:
     //4.0//Bigs files support
     //5.0//complex support !
     //6.0//multithread and multifiles tab + console
+
+    //Helpers
+    void plot_xy(Curve2D::CurveType type);
 };
 
 #endif // MAINWINDOW_H

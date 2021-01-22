@@ -10,9 +10,7 @@
 #define EXPRTKCUSTOMFUNCTIONS_HPP
 
 //Noise management
-static std::default_random_engine generator;
-static std::uniform_real<double> noise_uniform(0.0,1.0);
-static std::normal_distribution<double> noise_normal(0.0,1.0);
+
 
 template <typename T>
 struct uniformFunction : public exprtk::ifunction<T>
@@ -22,6 +20,7 @@ struct uniformFunction : public exprtk::ifunction<T>
    uniformFunction()
    : exprtk::ifunction<T>(2)
    {
+       noise_uniform=std::uniform_real<double>(0,1.0);
        //exprtk::disable_has_side_effects(*this);
    }
 
@@ -29,6 +28,9 @@ struct uniformFunction : public exprtk::ifunction<T>
    {
       return (b-a)*noise_uniform(generator)+a;
    }
+
+   std::default_random_engine generator;
+   std::uniform_real<double> noise_uniform;
 };
 
 template <typename T>
@@ -39,6 +41,7 @@ struct normalFunction : public exprtk::ifunction<T>
    normalFunction()
    : exprtk::ifunction<T>(2)
    {
+       noise_normal=std::normal_distribution<double>(0,1.0);
        //exprtk::disable_has_side_effects(*this);
    }
 
@@ -46,6 +49,9 @@ struct normalFunction : public exprtk::ifunction<T>
    {
       return sigma*noise_normal(generator)+mu;
    }
+
+   std::default_random_engine generator;
+   std::normal_distribution<double> noise_normal;
 };
 
 template <typename T>

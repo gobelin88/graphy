@@ -335,6 +335,11 @@
     <string>Terminal</string>
    </property>
   </action>
+  <action name="actionCloseTab">
+   <property name="text">
+    <string>CloseTab</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources>

@@ -60,6 +60,7 @@ public slots:
     void slot_currentTableModified();
 
     //tab
+    void closeCurrentTable();
     void closeTable(int index);
     void slot_tab_moved(int from,int to);
 

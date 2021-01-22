@@ -29,6 +29,7 @@ MainWindow::MainWindow(QWidget* parent) :
     te_widget->setTabShape(QTabWidget::Triangular);
     te_widget->setMovable(true);
 
+
     connect(te_widget,&QTabWidget::tabCloseRequested,this,&MainWindow::closeTable);
 
     QMdiSubWindow* subWindow = mdiArea->addSubWindow(te_widget, Qt::FramelessWindowHint );
@@ -47,6 +48,9 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(ui->actionParameters, &QAction::triggered,this,&MainWindow::slot_parameters);
     connect(ui->actionSelection_Pattern, &QAction::triggered,this,&MainWindow::slot_select);
     connect(ui->actionColourize, &QAction::triggered,this,&MainWindow::slot_colourize);//todo
+    connect(ui->actionCloseTab,&QAction::triggered,this,&MainWindow::closeCurrentTable);
+
+    this->addAction(ui->actionCloseTab);
 
     //Graphs
     connect(ui->actionPlot_GraphY, &QAction::triggered,this,&MainWindow::slot_plot_y);
@@ -116,7 +120,7 @@ void MainWindow::slot_new()
     QSpinBox* sb_sy=new QSpinBox(dialog);
     sb_sy->setValue(10);
     sb_sy->setPrefix("nbCols=");
-    sb_sy->setRange(1,100);
+    sb_sy->setRange(1,1000);
 
     gbox->addWidget(sb_sx,0,0);
     gbox->addWidget(sb_sy,0,1);
@@ -342,7 +346,7 @@ void MainWindow::plot_xy(Curve2D::CurveType type)
             {
                 if (!table->model()->asColumnStrings(table->horizontalHeader()->visualIndex(id_list[k  ].column())))
                 {
-                    Curve2D curve(data_x,data_y,QString("%2=f(%1)").arg(table->getLogicalColName(id_list[0  ].column())).arg(table->getLogicalColName(id_list[k].column())),Curve2D::GRAPH);
+                    Curve2D curve(data_x,data_y,QString("%2=f(%1)").arg(table->getLogicalColName(id_list[0  ].column())).arg(table->getLogicalColName(id_list[k].column())),type);
                     viewer1d->slot_add_data(curve);
                 }
                 else
@@ -1074,6 +1078,7 @@ void MainWindow::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     shortcuts_links.insert(QString("Export")    ,ui->actionExport);
     shortcuts_links.insert(QString("Parameters"),ui->actionParameters);
     shortcuts_links.insert(QString("Filter")    ,ui->actionFilter);
+    shortcuts_links.insert(QString("CloseTab")  ,ui->actionCloseTab);
 
     QMapIterator<QString, QKeySequence> i(shortcuts_map);
     while (i.hasNext())
@@ -1115,6 +1120,11 @@ void MainWindow::saveShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
 void MainWindow::slot_tab_moved(int from,int to)
 {
     std::swap(tables[from],tables[to]);
+}
+
+void MainWindow::closeCurrentTable()
+{
+    closeTable(te_widget->currentIndex());
 }
 
 void MainWindow::closeTable(int index)

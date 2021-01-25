@@ -9,6 +9,7 @@ class CustomViewContainer: public QWidget
     Q_OBJECT
 public:
     CustomViewContainer(QWidget* container);
+    ~CustomViewContainer();
 
     QWidget* getContainer();
     QCPColorScale* getColorScale();

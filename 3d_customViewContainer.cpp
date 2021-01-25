@@ -32,6 +32,11 @@ CustomViewContainer::CustomViewContainer(QWidget* container)
     this->container=container;
 }
 
+CustomViewContainer::~CustomViewContainer()
+{
+    std::cout<<"Delete CustomViewContainer"<<std::endl;
+}
+
 void CustomViewContainer::createColorAxisPlot()
 {
     color_plot=new QCustomPlot(this);

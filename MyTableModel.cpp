@@ -290,8 +290,9 @@ bool MyModel::open(QString filename)
         }
         else
         {
-            error("Open",QString("Empty file."));
-            ok=false;
+            //error("Open",QString("Empty file."));
+            createEmpty(10, 10);
+            ok=true;
         }
         file.close();
 

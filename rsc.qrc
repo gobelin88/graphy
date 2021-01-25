@@ -36,6 +36,8 @@
         <file>eqn/polynome_2var.gif</file>
         <file>eqn/fft.gif</file>
         <file>eqn/invfft.gif</file>
+        <file>eqn/fft_asym.gif</file>
+        <file>eqn/invfft_asym.gif</file>
         <file>eqn/window_blackman.gif</file>
         <file>eqn/window_flattop.gif</file>
         <file>eqn/window_rectangle.gif</file>

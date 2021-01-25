@@ -688,6 +688,7 @@ void MainWindow::slot_plot_fft()
             Eigen::VectorXcd dataOut=MyFFT::getFFT(dataIn,
                                                      dialog->getWindowsType(),
                                                      dialog->isNormalized(),
+                                                     dialog->isSymetrical(),
                                                      //cb_halfspectrum->isChecked(),
                                                      false,
                                                      dialog->isInverse());
@@ -712,7 +713,7 @@ void MainWindow::slot_plot_fft()
     }
     else
     {
-        QMessageBox::information(this,"Information","Please select 1 or 2 columns");
+        QMessageBox::information(this,"Information","Please select 1 columns");
     }
 }
 

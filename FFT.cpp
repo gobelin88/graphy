@@ -7,6 +7,7 @@
 Eigen::VectorXcd MyFFT::getFFT(Eigen::VectorXcd s_in,
                                WindowsType fft_mode,
                                bool normalize_flag,
+                               bool symetrical_convention,
                                bool halfspectrum,
                                bool inverse)
 {
@@ -37,14 +38,17 @@ Eigen::VectorXcd MyFFT::getFFT(Eigen::VectorXcd s_in,
         win.normalizeCoefs();
     }
 
-    //Convention symétrique pour la fft
-    if(inverse)
+    //Convention symétrique pour la fft so that energy is conserved between representations.
+    if(symetrical_convention)
     {
-        win.mul(sqrtN);
-    }
-    else
-    {
-        win.mul(1.0/sqrtN);
+        if(inverse)
+        {
+            win.mul(sqrtN);     //conventionA 1/N ---> 1/sqrt(N)
+        }
+        else
+        {
+            win.mul(1.0/sqrtN); //conventionA 1   ---> 1/sqrt(N)
+        }
     }
 
     //apply windows
@@ -101,13 +105,17 @@ FFTDialog::FFTDialog()
     sb_fe->setSuffix(" [Hz]");
 
     cb_normalize=new QCheckBox("Normalized");
-    cb_normalize->setToolTip("Parseval theorem don't apply if normalized");
+    cb_normalize->setToolTip("Does nothing in case of RECTANGLE windows.");
     cb_normalize->setChecked(false);
     setNormalizedFormula(cb_normalize->isChecked());
 
     //        QCheckBox* cb_halfspectrum=new QCheckBox("Half Spectrum");
     //        cb_halfspectrum->setToolTip("In case of reals entries spectrum is symetrical");
     //        cb_halfspectrum->setChecked(true);
+
+    cb_symetrical=new QCheckBox("Symetrical");
+    cb_symetrical->setToolTip("If non-symetrical convention is choosed energy of representations is not conserved ");
+    cb_symetrical->setChecked(true);
 
     cb_inverse=new QCheckBox("Inverse");
     cb_inverse->setToolTip("Compute inverse FFT");
@@ -135,11 +143,14 @@ FFTDialog::FFTDialog()
     gbox->addWidget(cb_normalize,3,0);
     //gbox->addWidget(cb_halfspectrum,2,1);
     gbox->addWidget(cb_inverse,3,1);
+    gbox->addWidget(cb_symetrical,3,2);
     gbox->addWidget(buttonBox,4,0,1,2);
 
     this->setLayout(gbox);
 
     QObject::connect(cb_inverse, SIGNAL(toggled(bool)), this, SLOT(setFormula(bool)));
+    QObject::connect(cb_symetrical, SIGNAL(toggled(bool)), this, SLOT(setFormula(bool)));
+
     QObject::connect(cb_normalize, SIGNAL(toggled(bool)), this, SLOT(setNormalizedFormula(bool)));
     QObject::connect(cb_windowType, SIGNAL(currentIndexChanged(int)), this, SLOT(setWindowsFormula(int)));
 }
@@ -147,6 +158,11 @@ FFTDialog::FFTDialog()
 MyFFT::WindowsType FFTDialog::getWindowsType()
 {
     return static_cast<MyFFT::WindowsType>(cb_windowType->currentIndex());
+}
+
+bool FFTDialog::isSymetrical()
+{
+    return cb_symetrical->isChecked();
 }
 bool FFTDialog::isNormalized()
 {
@@ -162,15 +178,30 @@ double FFTDialog::getFe()
     return sb_fe->value();
 }
 
-void FFTDialog::setFormula(bool inverse)
+void FFTDialog::setFormula(bool value)
 {
-    if(inverse)
+    Q_UNUSED(value);
+    if(cb_symetrical->isChecked())
     {
-        labelFormula->setPixmap(QPixmap(":/eqn/eqn/invfft.gif"));
+        if(cb_inverse->isChecked())
+        {
+            labelFormula->setPixmap(QPixmap(":/eqn/eqn/invfft.gif"));
+        }
+        else
+        {
+            labelFormula->setPixmap(QPixmap(":/eqn/eqn/fft.gif"));
+        }
     }
     else
     {
-        labelFormula->setPixmap(QPixmap(":/eqn/eqn/fft.gif"));
+        if(cb_inverse->isChecked())
+        {
+            labelFormula->setPixmap(QPixmap(":/eqn/eqn/invfft_asym.gif"));
+        }
+        else
+        {
+            labelFormula->setPixmap(QPixmap(":/eqn/eqn/fft_asym.gif"));
+        }
     }
 }
 

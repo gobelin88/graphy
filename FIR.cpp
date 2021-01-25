@@ -268,11 +268,12 @@ void FIR::normalizeCoefs()
     {
         sum+=coefs[i];
     }
+
     if (sum!=0)
     {
         for (unsigned int i=0; i<coefs.size(); i++)
         {
-            coefs[i]/=sum;
+            coefs[i]*=static_cast<double>(coefs.size())/sum;
         }
     }
 }

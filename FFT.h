@@ -22,6 +22,7 @@ public:
     static Eigen::VectorXcd MyFFT::getFFT(Eigen::VectorXcd s_in,
                                      WindowsType fft_mode,
                                      bool normalize_flag,
+                                     bool symetrical_convention,
                                      bool halfspectrum,
                                      bool inverse);
 };
@@ -36,6 +37,8 @@ public:
     MyFFT::WindowsType getWindowsType();
     bool isNormalized();
     bool isInverse();
+    bool isSymetrical();
+
     double getFe();
 
 public slots:
@@ -47,6 +50,8 @@ public slots:
 public:
     QCheckBox* cb_normalize;
     QCheckBox* cb_inverse;
+    QCheckBox* cb_symetrical;
+
     QDoubleSpinBox* sb_fe;
     QComboBox* cb_windowType;
 

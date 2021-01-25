@@ -48,6 +48,11 @@ Viewer3D::Viewer3D(const QMap<QString, QKeySequence>& shortcuts_map)
     applyShortcuts(shortcuts_map);
 }
 
+Viewer3D::~Viewer3D()
+{
+    std::cout<<"Delete Viewer3D"<<std::endl;
+}
+
 void Viewer3D::init3D()
 {
     grid3D=new Grid3D(rootEntity,10,QColor(255,255,255));

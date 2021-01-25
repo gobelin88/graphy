@@ -149,7 +149,7 @@ public:
     void mul(double gain);
 
     /**
-     * @brief normalizeCoefs
+     * @brief normalizeCoefs sum=N
      */
     void normalizeCoefs();
 protected:

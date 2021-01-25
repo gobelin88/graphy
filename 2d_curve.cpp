@@ -386,6 +386,7 @@ std::complex<double> Curve2D::guessMainFrequencyPhaseModule(double & mainFrequen
 
     Eigen::VectorXcd s_out=MyFFT::getFFT(s_in,
                   MyFFT::WindowsType::BLACKMAN,
+                                         true,
                   true,
                   false,
                   false);

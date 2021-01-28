@@ -191,7 +191,7 @@ void FIR::getBlackmanCoef(unsigned int N)
 
     for (unsigned int i=0; i<N; i++)
     {
-        coefs[i]=(0.42-0.5*cos( (2.0*M_PI*i)/N)+0.08*cos((4.0*M_PI*i)/N));
+        coefs[i]=(0.42-0.5*cos( (2.0*M_PI*i)/(N-1))+0.08*cos((4.0*M_PI*i)/(N-1)));
     }
 
     reset();
@@ -203,7 +203,7 @@ void FIR::getFlatTopCoef(unsigned int N)
 
     for (unsigned int i=0; i<N; i++)
     {
-        coefs[i]=0.21557895-0.41663158*cos( (2.0*M_PI*i)/N)+0.277263158*cos((4.0*M_PI*i)/N)-0.083578947*cos((6.0*M_PI*i)/N)+0.006947368*cos((8.0*M_PI*i)/N);
+        coefs[i]=0.21557895-0.41663158*cos( (2.0*M_PI*i)/(N-1))+0.277263158*cos((4.0*M_PI*i)/(N-1))-0.083578947*cos((6.0*M_PI*i)/(N-1))+0.006947368*cos((8.0*M_PI*i)/(N-1));
     }
 
     reset();
@@ -215,7 +215,7 @@ void FIR::getHannCoef(unsigned int N)
 
     for (unsigned int i=0; i<N; i++)
     {
-        coefs[i]=0.5*(1.0-cos((2.0*M_PI*i)/N));
+        coefs[i]=0.5*(1.0-cos((2.0*M_PI*i)/(N-1)));
     }
 
     reset();

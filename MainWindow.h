@@ -98,13 +98,14 @@ private:
     QString getCurrentFilename();
 
     //Constants
-    const float graphyVersion=6.0f;
+    const float graphyVersion=7.0f;
     //1.0//Basic graphs
     //2.0//Add lots of graph facilities
     //3.0//Add Copy/Paste management between graphs and table
     //4.0//Bigs files support
     //5.0//complex support !
     //6.0//multithread and multifiles tab + console
+    //7.0//
 
     //Helpers
     void plot_xy(Curve2D::CurveType type);

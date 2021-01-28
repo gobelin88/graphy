@@ -3,6 +3,7 @@
 #include <QGridLayout>
 #include <QDialogButtonBox>
 #include "FIR.h"
+#include <QGroupBox>
 
 Eigen::VectorXcd MyFFT::getFFT(Eigen::VectorXcd s_in,
                                WindowsType fft_mode,
@@ -38,21 +39,24 @@ Eigen::VectorXcd MyFFT::getFFT(Eigen::VectorXcd s_in,
         win.normalizeCoefs();
     }
 
+    for(int k=0;k<N;k++)
+    {
+        std::cout<<"win.at(k)="<<win.at(k)<<std::endl;
+    }
+
     //Convention symétrique pour la fft so that energy is conserved between representations.
+    double factor=1.0;
     if(symetrical_convention)
     {
         if(inverse)
         {
-            win.mul(sqrtN);     //conventionA 1/N ---> 1/sqrt(N)
+            factor=sqrtN;     //conventionA 1/N ---> 1/sqrt(N)
         }
         else
         {
-            win.mul(1.0/sqrtN); //conventionA 1   ---> 1/sqrt(N)
+            factor=1.0/sqrtN ; //conventionA 1   ---> 1/sqrt(N)
         }
     }
-
-    //apply windows
-    for (unsigned int i=0; i<N; i++){s_in[i]=s_in[i]*win.at(i);}
 
     Eigen::FFT<double> fft;
     if(halfspectrum)
@@ -62,12 +66,26 @@ Eigen::VectorXcd MyFFT::getFFT(Eigen::VectorXcd s_in,
 
     Eigen::VectorXcd s_out(outN);
 
+    //apply windows
     if(inverse)
     {
+        s_in*=factor;
         fft.inv(s_out,s_in);
+        for (unsigned int i=0; i<N; i++)
+        {
+            if(std::abs(win.at(i))>DBL_EPSILON)
+            {
+                s_out[i]=s_out[i]/win.at(i);
+            }
+            else
+            {
+                s_out[i]=0.0;
+            }
+        }
     }
     else
     {
+        for (unsigned int i=0; i<N; i++){s_in[i]=s_in[i]*factor*win.at(i);}
         fft.fwd(s_out,s_in);
     }
 
@@ -128,23 +146,27 @@ FFTDialog::FFTDialog()
     QObject::connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
     QObject::connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
 
+    //Formulas
     QGridLayout* gboxFormula = new QGridLayout();
-
     gboxFormula->addWidget(labelFormula, 0,0);
-    gboxFormula->addWidget(labelNormalized, 0,1);
-    gboxFormula->addWidget(labelWindowFormula, 1,0,1,2);
+    gboxFormula->addWidget(labelWindowFormula, 1,0);
+    gboxFormula->addWidget(labelNormalized, 2,0);
 
-    gbox->addLayout(gboxFormula, 0,0,1,2);
-    gbox->addWidget(new QLabel("Windows type : "),1,0);
-    gbox->addWidget(cb_windowType,1,1);
+    //Params
+    QGroupBox *gb_fft_parameters=new QGroupBox("Parameters");
+    QGridLayout * layout_parameters=new QGridLayout;
+    layout_parameters->addWidget(new QLabel("Windows type : "),0,0);
+    layout_parameters->addWidget(cb_windowType,0,1,1,2);
+    layout_parameters->addWidget(new QLabel("Sample frequency : "),1,0);
+    layout_parameters->addWidget(sb_fe,1,1,1,2);
+    layout_parameters->addWidget(cb_normalize,2,0);
+    layout_parameters->addWidget(cb_inverse,2,1);
+    layout_parameters->addWidget(cb_symetrical,2,2);
+    gb_fft_parameters->setLayout(layout_parameters);
 
-    gbox->addWidget(new QLabel("Sample frequency : "),2,0);
-    gbox->addWidget(sb_fe,2,1);
-    gbox->addWidget(cb_normalize,3,0);
-    //gbox->addWidget(cb_halfspectrum,2,1);
-    gbox->addWidget(cb_inverse,3,1);
-    gbox->addWidget(cb_symetrical,3,2);
-    gbox->addWidget(buttonBox,4,0,1,2);
+    gbox->addLayout(gboxFormula, 0,0);
+    gbox->addWidget(gb_fft_parameters,1,0);
+    gbox->addWidget(buttonBox,2,0);
 
     this->setLayout(gbox);
 

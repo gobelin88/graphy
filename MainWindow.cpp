@@ -309,7 +309,7 @@ void MainWindow::slot_plot_y()
 
         for (int k=0; k<id_list.size(); k++)
         {
-            Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[k].column()); //getCol(id_list[k].column(),datatable);
+            Eigen::VectorXd data_y=table->getLogicalColDataComplex(id_list[k].column()).real(); //getCol(id_list[k].column(),datatable);
 
             if (data_y.size()>0)
             {

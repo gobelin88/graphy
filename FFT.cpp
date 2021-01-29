@@ -39,11 +39,6 @@ Eigen::VectorXcd MyFFT::getFFT(Eigen::VectorXcd s_in,
         win.normalizeCoefs();
     }
 
-    for(int k=0;k<N;k++)
-    {
-        std::cout<<"win.at(k)="<<win.at(k)<<std::endl;
-    }
-
     //Convention symétrique pour la fft so that energy is conserved between representations.
     double factor=1.0;
     if(symetrical_convention)
@@ -123,16 +118,13 @@ FFTDialog::FFTDialog()
     sb_fe->setSuffix(" [Hz]");
 
     cb_normalize=new QCheckBox("Normalized");
-    cb_normalize->setToolTip("Does nothing in case of RECTANGLE windows.");
+    cb_normalize->setToolTip("Does nothing in case of RECTANGLE windows. Preserve signal dynamics.");
     cb_normalize->setChecked(false);
     setNormalizedFormula(cb_normalize->isChecked());
 
-    //        QCheckBox* cb_halfspectrum=new QCheckBox("Half Spectrum");
-    //        cb_halfspectrum->setToolTip("In case of reals entries spectrum is symetrical");
-    //        cb_halfspectrum->setChecked(true);
-
     cb_symetrical=new QCheckBox("Symetrical");
-    cb_symetrical->setToolTip("If non-symetrical convention is choosed energy of representations is not conserved ");
+    cb_symetrical->setToolTip("If non-symetrical convention is choosed, energy of representations is not conserved.\n"\
+                              "And FFT is not a unitary operator.");
     cb_symetrical->setChecked(true);
 
     cb_inverse=new QCheckBox("Inverse");

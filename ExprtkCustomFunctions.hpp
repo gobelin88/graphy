@@ -106,15 +106,42 @@ struct gammaFunction : public exprtk::ifunction<T>
    inline T operator()(const T& s)
    {
       //Hadamar weierstrass
-      const double euler_mascheroni=0.5772156649015328606;
-      T value= exp(-euler_mascheroni*s)/s;
-      for(int k=1;k<100000;k++)
-      {
-          T s_k=s/double(k);
-          value*=exp(s_k)/(1.0+s_k);
-      }
-      return value;
+//      const double euler_mascheroni=0.5772156649015328606;
+//      T value= exp(-euler_mascheroni*s)/s;
+//      for(int k=1;k<100000;k++)
+//      {
+//          T s_k=s/double(k);
+//          value*=exp(s_k)/(1.0+s_k);
+//      }
+//      return value;
+
+       //Lancoz approx
+       const double p [] = {676.5203681218851
+           ,-1259.1392167224028
+           ,771.32342877765313
+           ,-176.61502916214059
+           ,12.507343278686905
+           ,-0.13857109526572012
+           ,9.9843695780195716e-6
+           ,1.5056327351493116e-7};
+
+       if (s.real() < 0.5)
+       {
+           return M_PI / (sin(M_PI * s) * this->operator()(1.0 - s));// Reflection formula
+       }
+       else
+       {
+           T x = 0.99999999999980993;
+           for(int i=0;i<8;i++)
+           {
+               x =x + p[i] / ( (s-1.0) + double(i) + 1.0);
+           }
+           T t = (s-1.0) + 8.0 - 0.5;
+           return sqrt(2.0 * M_PI) * std::pow(t,(s-1.0) + 0.5) * exp(-t) * x;
+       }
    }
+
+
 };
 
 #endif // EXPRTKCUSTOMFUNCTIONS_HPP

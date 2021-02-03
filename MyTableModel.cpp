@@ -267,6 +267,11 @@ bool MyModel::open(QString filename)
 
                 int dataSize=content.size()-headerSize;
 
+
+                omp_lock_t writelock;
+                omp_init_lock(&writelock);
+
+                std::vector<unsigned int> linesErrors;
                 #pragma omp parallel for
                 for(int i=0;i<dataSize;++i)
                 {
@@ -280,9 +285,18 @@ bool MyModel::open(QString filename)
                     }
                     else
                     {
-                        error("Open",QString("Bad data size at line : %1").arg(i));
+                        omp_set_lock(&writelock);
+                        linesErrors.push_back(i+headerSize);
                         ok=false;
-                        break;
+                        omp_unset_lock(&writelock);
+                    }
+                }
+
+                if(!ok)
+                {
+                    for(int k=0;k<1;k++)
+                    {
+                        error("Open error",QString("Error line %1.\n\nIncorrect content, see below:\n\n%2\n").arg(linesErrors[k]+1).arg(content[linesErrors[k]]));
                     }
                 }
             }

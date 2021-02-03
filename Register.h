@@ -88,6 +88,7 @@ private:
     uniformFunction<VariableType> cf_uniform;
     normalFunction<VariableType> cf_normal;
     gammaFunction<VariableType> cf_gamma;
+    zetaFunction<VariableType> cf_zeta;
     linFunction<VariableType> cf_lin;
 
     //Misc variables

@@ -43,10 +43,12 @@ void MyTableView::wheelEvent(QWheelEvent * event)
     if(event->delta()>0)
     {
         m_model->setRowOffset(m_model->getRowOffset()-1);
+        m_model->verticalScrollBar()->setValue(m_model->getRowOffset()-1);
     }
     else
     {
         m_model->setRowOffset(m_model->getRowOffset()+1);
+        m_model->verticalScrollBar()->setValue(m_model->getRowOffset()+1);
     }
 }
 

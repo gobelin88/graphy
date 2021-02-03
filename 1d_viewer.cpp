@@ -341,6 +341,12 @@ void Viewer1D::createPopup()
     actFilterMedian=new QAction("Median",this);
     actFilterMean=new QAction("Mean",this);
 
+    actDecreasePenWidth=new QAction("Decrease pen width",this);
+    actIncreasePenWidth=new QAction("Increase pen width",this);
+
+    this->addAction(actDecreasePenWidth);
+    this->addAction(actIncreasePenWidth);
+
     this->addAction(actCopy);
     this->addAction(actPaste);
     this->addAction(actSave);
@@ -431,6 +437,9 @@ void Viewer1D::createPopup()
     menuMisc->addAction(actCovariance);
 
 
+
+    connect(actIncreasePenWidth,SIGNAL(triggered()),this,SLOT(slot_increasePenWidth()));
+    connect(actDecreasePenWidth,SIGNAL(triggered()),this,SLOT(slot_decreasePenWidth()));
 
     connect(actGadgetMark,SIGNAL(triggered()),this,SLOT(slot_gadgetMark()));
     connect(actGadgetText,SIGNAL(triggered()),this,SLOT(slot_gadgetText()));
@@ -1474,6 +1483,40 @@ void Viewer1D::slot_setPenWidth(double width)
     replot();
 }
 
+void Viewer1D::slot_increasePenWidth()
+{
+    QList<QCPAbstractPlottable*> plottables=this->plottables();
+
+    for (int i=0; i<plottables.size(); i++)
+    {
+        QPen pen=plottables[i]->pen();
+        pen.setWidthF(pen.widthF()+1.0);
+        plottables[i]->setPen(pen);
+    }
+    replot();
+}
+
+void Viewer1D::slot_decreasePenWidth()
+{
+    QList<QCPAbstractPlottable*> plottables=this->plottables();
+
+    for (int i=0; i<plottables.size(); i++)
+    {
+        QPen pen=plottables[i]->pen();
+        float pW=pen.widthF()-1.0;
+        if(pW>1)
+        {
+            pen.setWidthF(pW);
+        }
+        else
+        {
+            pen.setWidthF(1.0);
+        }
+        plottables[i]->setPen(pen);
+    }
+    replot();
+}
+
 void Viewer1D::slot_setPenAlpha(double alpha)
 {
     QList<QCPAbstractPlottable*> plottables=this->selectedPlottables();
@@ -1880,6 +1923,8 @@ void Viewer1D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     shortcuts_links.insert(QString("Graph-AutoColor4"),actAutoColor4);
     shortcuts_links.insert(QString("Graph-AutoColor5"),actAutoColor5);
     shortcuts_links.insert(QString("Graph-AutoColorClear"),actAutoColorClear);
+    shortcuts_links.insert(QString("Graph-IncreasePenWidth"),actIncreasePenWidth);
+    shortcuts_links.insert(QString("Graph-DecreasePenWidth"),actDecreasePenWidth);
 
     QMapIterator<QString, QKeySequence> i(shortcuts_map);
     while (i.hasNext())

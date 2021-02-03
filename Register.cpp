@@ -82,6 +82,7 @@ void Register::clear()
     symbolsTable.add_function("uniform"  ,  cf_uniform);
     symbolsTable.add_function("normal"  ,  cf_normal);
     symbolsTable.add_function("gamma"  ,  cf_gamma);
+    symbolsTable.add_function("zeta"  ,  cf_zeta);
     symbolsTable.add_function("lin"  ,  cf_lin);
 
     cf_lin.setNumberOfRowsPtr(&numberRows);

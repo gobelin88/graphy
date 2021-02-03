@@ -12,11 +12,13 @@ Graph-AutoColor5;Alt+5
 Graph-AutoColorClear;Alt+0
 Graph-ClearGadgets;Backspace
 Graph-Copy;Ctrl+C
+Graph-DecreasePenWidth;-
 Graph-Delete;Del
 Graph-Fullscreen;Space
 Graph-GadgetArrow;A
 Graph-GadgetMark;M
 Graph-GadgetText;T
+Graph-IncreasePenWidth;=
 Graph-Legend-Left/Right;Alt+Right
 Graph-Legend-Show/Hide;L
 Graph-Legend-Top/Bottom;Alt+Down

@@ -58,6 +58,9 @@ public slots:
     void addLabel(double cx,double cy);
     void addTextLabel(double cx,double cy,QString markstr);
 
+    void slot_increasePenWidth();
+    void slot_decreasePenWidth();
+
     void slot_setAxisXType(int mode);
     void slot_setAxisYType(int mode);
     void slot_setBrushColor(QColor color);
@@ -139,6 +142,9 @@ protected:
     QAction* actAutoColor4;
     QAction* actAutoColor5;
     QAction* actAutoColorClear;
+
+    QAction* actIncreasePenWidth;
+    QAction* actDecreasePenWidth;
 
     QMenu* menuParameters;
     QMenu* menuLegend;

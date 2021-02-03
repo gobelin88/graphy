@@ -70,6 +70,7 @@ private:
     QAction * actNewRowEnd   ;
     QAction * actNewRowsBegin;
     QAction * actNewRowsEnd  ;
+    QAction * actSetNumberOfRows;
     QAction * actCopy;
     QAction * actPaste;
     QAction * actNewColumn;

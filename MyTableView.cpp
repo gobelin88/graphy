@@ -305,6 +305,7 @@ void MyTableView::createPopup()
     actNewRowEnd   = new QAction("Add end"   ,  this);
     actNewRowsBegin= new QAction("Add begin",  this);
     actNewRowsEnd  = new QAction("Add end"  ,  this);
+    actSetNumberOfRows  = new QAction("Set"  ,  this);
 
     actNewRowBelow ->setShortcut(QKeySequence("PgDown"));
     actNewRowAbove ->setShortcut(QKeySequence("PgUp"));
@@ -312,6 +313,7 @@ void MyTableView::createPopup()
     actNewRowEnd   ->setShortcut(QKeySequence("Alt+PgDown"));
     actNewRowsBegin->setShortcut(QKeySequence("Ctrl+Alt+PgUp"));
     actNewRowsEnd  ->setShortcut(QKeySequence("Ctrl+Alt+PgDown"));
+    actSetNumberOfRows  ->setShortcut(QKeySequence("Ctrl+Alt+Space"));
     actCopy ->setShortcut(QKeySequence("Ctrl+C"));
     actPaste->setShortcut(QKeySequence("Ctrl+V"));
 
@@ -327,6 +329,7 @@ void MyTableView::createPopup()
     this->addAction(actNewRowEnd   );
     this->addAction(actNewRowsBegin);
     this->addAction(actNewRowsEnd  );
+    this->addAction(actSetNumberOfRows  );
 
     popup_menu->addAction(actCopy);
     popup_menu->addAction(actPaste);
@@ -342,6 +345,7 @@ void MyTableView::createPopup()
     menuRows->addAction(actNewRowEnd   );
     menuRows->addAction(actNewRowsBegin);
     menuRows->addAction(actNewRowsEnd  );
+    menuRows->addAction(actSetNumberOfRows  );
 
     auto customContainerActions=this->actions();
     for(auto act:customContainerActions)
@@ -353,6 +357,7 @@ void MyTableView::createPopup()
     connect(actNewRowsEnd   ,&QAction::triggered,m_model,&MyModel::slot_newRowsEnd);
     connect(actNewRowBegin  ,&QAction::triggered,m_model,&MyModel::slot_newRowBegin);
     connect(actNewRowsBegin ,&QAction::triggered,m_model,&MyModel::slot_newRowsBegin);
+    connect(actSetNumberOfRows ,&QAction::triggered,m_model,&MyModel::slot_setRows);
 
     connect(actNewRowBelow  ,&QAction::triggered,this   ,&MyTableView::slot_newRowBelow);
     connect(actNewRowAbove  ,&QAction::triggered,this   ,&MyTableView::slot_newRowAbove);

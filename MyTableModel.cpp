@@ -63,6 +63,15 @@ void MyModel::createEmpty(int nbRows, int nbCols)
     emit sig_dataChanged();
 }
 
+void MyModel::setNumberOfRows(unsigned int nbRows)
+{
+    m_data.conservativeResize(nbRows,m_data.cols());
+
+    contentResized();
+    modified=true;
+    emit sig_dataChanged();
+}
+
 QTableView* MyModel::createVariablesTable()
 {
     QTableView* tableVariables=new QTableView();
@@ -540,7 +549,7 @@ void MyModel::applyFilters(const QModelIndexList & selectedColsIndexes)
 
         QComboBox* cb_mode=new QComboBox(dialog);
         cb_mode->addItem("Ascending sort");
-        cb_mode->addItem("Decending sort");
+        cb_mode->addItem("Descending sort");
         cb_mode->addItem("Keep greater than value");
         cb_mode->addItem("Keep lower than value");
         cb_mode->addItem("Keep equal to value");
@@ -599,7 +608,7 @@ void MyModel::applyFilters(const QModelIndexList & selectedColsIndexes)
             }
             else if(cb_mode->currentIndex()==1)
             {
-                dataSortBy(m_data,visualIndex,MyModel::SortMode::DECENDING);
+                dataSortBy(m_data,visualIndex,MyModel::SortMode::DESCENDING);
             }
             else if(cb_mode->currentIndex()==2)
             {
@@ -892,6 +901,18 @@ void MyModel::slot_newRowsBegin()
         contentResized();
     }
 }
+
+void MyModel::slot_setRows()
+{
+    bool ok=false;
+    int N=QInputDialog::getInt(nullptr,"Number of rows","Set the number of rows to ",1,1,10000000,1,&ok);
+
+    if (ok)
+    {
+        this->setNumberOfRows(N);
+    }
+}
+
 
 void MyModel::slot_newRowEnd()
 {
@@ -1216,7 +1237,7 @@ void MyModel::dataSortBy(MatrixXv & matrix, int colId,SortMode mode)
     {
         std::sort(vec.begin(), vec.end(), [&colId](VectorXv const& t1, VectorXv const& t2){ return t1[colId] < t2[colId]; } );
     }
-    else if(mode==DECENDING)
+    else if(mode==DESCENDING)
     {
         std::sort(vec.begin(), vec.end(), [&colId](VectorXv const& t1, VectorXv const& t2){ return t1[colId] > t2[colId]; } );
     }

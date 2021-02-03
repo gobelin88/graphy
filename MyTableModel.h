@@ -21,7 +21,7 @@ public:
     enum SortMode
     {
         ASCENDING,
-        DECENDING
+        DESCENDING
     };
 
     enum ThresholdMode
@@ -40,11 +40,15 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const override;
     QVariant headerData(int logicalIndex, Qt::Orientation orientation, int role) const override;
     int readHeader(QString line,QTextStream & stream);
+
     //I/O
-    void createEmpty(int nbRows, int nbCols);
     bool open(QString filename);
     bool save(QString filename);
     void exportLatex(QString filename);
+    void createEmpty(int nbRows, int nbCols);
+
+    //Resizing
+    void setNumberOfRows(unsigned int nbRows);
 
     //Data
     void colourizeCol(unsigned int visualColIndex, const std::vector<QRgb> &colors);
@@ -121,6 +125,7 @@ public slots:
     void slot_newRowEnd();
     void slot_newRowsEnd();
     void slot_updateColumns();
+    void slot_setRows();
 
     void slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
     void slot_hSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);

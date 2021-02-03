@@ -5,6 +5,7 @@
 
 #include "exprtk/exprtk.hpp"
 #include <qmath.h>
+#include <iomanip>
 
 #ifndef EXPRTKCUSTOMFUNCTIONS_HPP
 #define EXPRTKCUSTOMFUNCTIONS_HPP
@@ -154,6 +155,16 @@ struct zetaFunction : public exprtk::ifunction<T>
         : exprtk::ifunction<T>(1)
     {
         exprtk::disable_has_side_effects(*this);
+
+        dtab=new double[N+1];
+        for(int n=0;n<=N;n++)
+        {
+            dtab[n]=d(n,N);
+            //std::cout<<std::setprecision(10)<<" dtab["<<n<<"]"<<dtab[n]<<std::endl;
+        }
+
+        //std::cout<<std::setprecision(10)<<"zeta( 2)="<<operator()(2 )<<" "<<M_PI*M_PI/6.0<<std::endl;
+        //std::cout<<std::setprecision(10)<<"zeta(-1)="<<operator()(-1)<<" "<<-1.0/12<<std::endl;
     }
 
     inline T operator()(const T& s)
@@ -161,20 +172,34 @@ struct zetaFunction : public exprtk::ifunction<T>
         if(s.real()>0.5)
         {
             ///by eta function
-            T eta=1.0;
-            double precision=1e-3;
+//            T eta=1.0;
+//            double precision=1e-3;
+//            T deta;
+//            unsigned int n=2.0;
+//            do
+//            {
+//               deta=std::pow(n,-s);
+//               eta+=(n%2==0)?-deta:deta;
+//               n++;
+//            }
+//            while(std::norm(deta)>(precision*precision));
+//            return eta/(1.0-std::pow(2.0,1.0-s));
+
+            ///by eta function + acceleration
+            T eta=0.0;
             T deta;
-            unsigned int n=2.0;
+
+            int n=1.0;
             do
             {
-               deta=std::pow(n,-s);
+               deta=std::pow(n,-s)*dtab[n];//d(n,N);
                eta+=(n%2==0)?-deta:deta;
                n++;
             }
-            while(std::norm(deta)>(precision*precision));
-            return eta/(1.0-std::pow(2.0,1.0-s));
+            while(n<=N);
 
-            //----------------
+            return eta/((1.0-std::pow(2.0,1.0-s))*dtab[0]);
+
         }
         else
         {
@@ -182,13 +207,42 @@ struct zetaFunction : public exprtk::ifunction<T>
         }
     }
 
-    void d(double k,unsigned )
+    double d(double k,int n)
     {
+        double sum=0.0;
 
+        for(int j=k;j<=n;j++)
+        {
+            sum=sum+std::pow(4.0,j)*m_gamma(j+n).real()/(m_gamma(2*j+1).real()*m_gamma(-j+n+1).real());
+        }
+
+        return n*sum;
     }
 
     gammaFunction<T> m_gamma;
 
+    const int N=20;
+    double * dtab;
+};
+
+template <typename T>
+struct xsiFunction : public exprtk::ifunction<T>
+{
+    using exprtk::ifunction<T>::operator();
+
+    xsiFunction()
+        : exprtk::ifunction<T>(1)
+    {
+        exprtk::disable_has_side_effects(*this);
+    }
+
+    inline T operator()(const T& s)
+    {
+        return (s-1.0)*std::pow(M_PI,-s/2.0)*m_gamma(s/2.0+1.0)*m_zeta(s);
+    }
+
+    zetaFunction<T> m_zeta;
+    gammaFunction<T> m_gamma;
 };
 
 #endif // EXPRTKCUSTOMFUNCTIONS_HPP

@@ -89,6 +89,7 @@ private:
     normalFunction<VariableType> cf_normal;
     gammaFunction<VariableType> cf_gamma;
     zetaFunction<VariableType> cf_zeta;
+    xsiFunction<VariableType> cf_xsi;
     linFunction<VariableType> cf_lin;
 
     //Misc variables

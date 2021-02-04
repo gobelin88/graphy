@@ -10,6 +10,7 @@
 #include <iostream>
 #include "MyTextEdit.h"
 #include "MyHighLighter.h"
+#include <QStandardItemModel>
 
 Register::Register()
 {    
@@ -83,7 +84,7 @@ void Register::clear()
     symbolsTable.add_variable("Cols",numberCols);
     symbolsTable.add_variable("Row",activeRow);
     symbolsTable.add_variable("Col",activeCol);
-    symbolsTable.add_function("Data",cf_data);
+    symbolsTable.add_function("data",cf_data);
 
     //Noise
     symbolsTable.add_function("uniform"  ,  cf_uniform);
@@ -569,13 +570,150 @@ void custom_scanDir(QDir dir,QStringList filters,QString name,QString& result,in
 //    return false;
 //}
 
+
+
+
+QString getHelp(QString name)
+{
+    //Variables
+    if(name=="Rows"){return QString("<b>Rows</b><p>Return the number of rows.</p>");}
+    else if(name=="Cols"){return QString("<b>Cols</b><p>Return the number of columns.</p>");}
+    else if(name=="Row"){return QString("<b>Row</b><p>Return the current row.</p>");}
+    else if(name=="Col"){return QString("<b>Col</b><p>Return the current column.</p>");}
+    else if(name=="var"){return QString("<b>var</b><p>Define a variable.</p><b>Example:</b><p>var x:=1+i;</p>");}
+
+    //functions
+    else if(name=="data"){return QString("<b>data</b>(a,b)<p>Provide direct acces to data.This return the data stored at row a column b.</p><b>Example:</b><p>data(1,0)</p>");}
+    else if(name=="lin"){return QString("<b>lin</b>(A,B)<p>Generate a linear interpolation between A and B.</p><b>Example:</b><p>lin(0,1)</p>");}
+    else if(name=="uniform"){return QString("<b>uniform</b>(A,B)<p>Generate a random number with uniform distribution on interval [A,B].</p><b>Example:</b><p>uniform(0,1)</p>");}
+    else if(name=="normal"){return QString("<b>normal</b>(A,B)<p>Generate a random number with normal distribution with mean A and standard deviation B.</p><b>Example:</b><p>normal(0,1)</p>");}
+    else if(name=="zeta"){return QString("<b>zeta</b>(s)<p>The Riemann zeta function valid on the entire complex plane.</p>");}
+    else if(name=="xsi"){return QString("<b>xsi</b>(s)<p>The Riemann xsi function valid on the entire complex plane.</p>");}
+    else if(name=="gamma"){return QString("<b>gamma</b>(s)<p>The gamma function valid on the entire complex plane.</p>");}
+    else if(name=="roundn"){return QString("<b>roundn</b>(x,n)<p>Round x to n decimal places.</p><b>Example:</b><p>roundn(1.2345678,4)</p>");}
+    else if(name=="round"){return QString("<b>round</b>(x)<p>Round x to the nearest integer.</p>");}
+    else if(name=="ceil"){return QString("<b>ceil</b>(x)<p>maps x to the least integer greater than or equal to x</p>");}
+    else if(name=="floor"){return QString("<b>floor</b>(x)<p>maps x to the least integer lower than or equal to x</p>");}
+    else if(name=="sinc"){return QString("<b>sinc</b>(s)<p>The sinus cardinal function valid on the entire complex plane.</p>");}
+    else if(name=="root"){return QString("<b>root</b>(s,n)<p>Nth-Root of x. where n is a positive integer.</p>");}
+    else if(name=="sqrt"){return QString("<b>sqrt</b>(s)<p>The square root function valid on the entire complex plane.</p>");}
+    else if(name=="csc"){return QString("<b>csc</b>(s)<p>The cosecant function valid on the entire complex plane.</p>");}
+    else if(name=="sec"){return QString("<b>sec</b>(s)<p>The secant function valid on the entire complex plane.</p>");}
+    else if(name=="cot"){return QString("<b>cot</b>(s)<p>The cotangent function valid on the entire complex plane.</p>");}
+    else if(name=="tan"){return QString("<b>tan</b>(s)<p>The tangent function valid on the entire complex plane.</p>");}
+    else if(name=="cos"){return QString("<b>cos</b>(s)<p>The cosinus function valid on the entire complex plane.</p>");}
+    else if(name=="sin"){return QString("<b>sin</b>(s)<p>The sinus function valid on the entire complex plane.</p>");}
+    else if(name=="tanh"){return QString("<b>tan</b>(s)<p>The hyperbolic tangent function valid on the entire complex plane.</p>");}
+    else if(name=="cosh"){return QString("<b>cosh</b>(s)<p>The hyperbolic cosinus function valid on the entire complex plane.</p>");}
+    else if(name=="sinh"){return QString("<b>sinh</b>(s)<p>The hyperbolic sinus function valid on the entire complex plane.</p>");}
+    else if(name=="atan"){return QString("<b>atan</b>(s)<p>The arc tangent function valid on the entire complex plane.</p>");}
+    else if(name=="acos"){return QString("<b>acos</b>(s)<p>The arc cosinus function valid on the entire complex plane.</p>");}
+    else if(name=="asin"){return QString("<b>asin</b>(s)<p>The arc sinus function valid on the entire complex plane.</p>");}
+    else if(name=="atanh"){return QString("<b>atan</b>(s)<p>The hyperbolic arc tangent function valid on the entire complex plane.</p>");}
+    else if(name=="acosh"){return QString("<b>acosh</b>(s)<p>The hyperbolic arc cosinus function valid on the entire complex plane.</p>");}
+    else if(name=="asinh"){return QString("<b>asinh</b>(s)<p>The hyperbolic arc sinus function valid on the entire complex plane.</p>");}
+    else if(name=="exp"){return QString("<b>exp</b>(s)<p>The exponential function valid on the entire complex plane.</p><b>Example:</b><p>10*exp(i*pi)</p>");}
+    else if(name=="log"){return QString("<b>log</b>(s)<p>Natural logarithm function valid on the entire complex plane.</p>");}
+    else if(name=="log10"){return QString("<b>log10</b>(s)<p>Base 10 logarithm function valid on the entire complex plane.</p>");}
+    else if(name=="log2"){return QString("<b>log2</b>(s)<p>Base 2 logarithm function valid on the entire complex plane.</p>");}
+    else if(name=="logn"){return QString("<b>logn</b>(s,n)<p>Base n logarithm function valid on the entire complex plane.</p>");}
+    else if(name=="log1p"){return QString("<b>log1p</b>(s)<p>Natural logarithm function of 1+s, valid on the entire complex plane.</p>");}
+    else if(name=="pow"){return QString("<b>pow</b>(s,z)<p>Return s power z, valid on the entire complex plane.</p>");}
+    else if(name=="imag"){return QString("<b>imag</b>(s)<p>Return imaginary part of s.</p>");}
+    else if(name=="real"){return QString("<b>real</b>(s)<p>Return real part of s.</p>");}
+    else if(name=="abs"){return QString("<b>abs</b>(s)<p>Return module of s.</p>");}
+    else if(name=="arg"){return QString("<b>arg</b>(s)<p>Return argument of s in interval [-pi,pi].</p>");}
+    else if(name=="erf"){return QString("<b>erf</b>(s)<p>Error function of x.</p>");}
+    else if(name=="erfc"){return QString("<b>erfc</b>(s)<p>Complimentary error function of x.</p>");}
+    else if(name=="max"){return QString("<b>max</b>(a,b)<p>Return a if a is greater than b else return b.</p>");}
+    else if(name=="min"){return QString("<b>min</b>(a,b)<p>Return a if a is lower than b else return b.</p>");}
+    else if(name=="atan2"){return QString("<b>atan2</b>(y,x)<p>Return the single value of theta in [-pi,pi] such that x=cos(theta) and y=sin(theta).</p>");}
+    else if(name=="min"){return QString("<b>min</b>(a,b,c,...)<p>Minimum of all the inputs.</p>");}
+    else if(name=="max"){return QString("<b>max</b>(a,b,c,...)<p>Maximum of all the inputs.</p>");}
+    else if(name=="avg"){return QString("<b>avg</b>(a,b,c,...)<p>Average of all the inputs.</p>");}
+    else if(name=="sum"){return QString("<b>sum</b>(a,b,c,...)<p>Sum of all the inputs.</p>");}
+    else if(name=="mul"){return QString("<b>mul</b>(a,b,c,...)<p>Product of all the inputs.</p>");}
+    else if(name=="sgn"){return QString("<b>sgn</b>(x)<p>Sign of x, -1 where x &lt; 0, +1 where x &gt; 0, else zero.</p>");}
+    else if(name=="ncdf"){return QString("<b>ncdf</b>(x)<p>Normal cumulative distribution function.</p>");}
+    else if(name=="clamp"){return QString("<b>clamp</b>(a,x,b)<p>Clamp x in range between a and b, where a &lt; b.</p><b>Example:</b><p>clamp(0,x,1)</p>");}
+    else if(name=="iclamp"){return QString("<b>clamp</b>(a,x,b)<p>Inverse-clamp x outside of the range a and b. Where a &lt; b. If x is within the range it will snap to the closest bound.</p><b>Example:</b><p>clamp(0,x,1)</p>");}
+
+    //Constants
+    else if(name=="i"){return QString("<b>i</b><p>The unit complex number.</p><b>Example:</b><p>i^2=-1</p>");}
+    else if(name=="pi"){return QString("<b>pi</b><p>The number pi.</p>");}
+    else if(name=="true"){return QString("<b>true</b><p>The true value</p>");}
+    else if(name=="false"){return QString("<b>false</b><p>The false value</p>");}
+
+    //Structural
+    else if(name=="for"){return QString("<b>for</b><p>The for loop structure.</p><b>Example:</b><p>var t:=0;<br>for(var k:=0;k&lt;10;k+=1)<br>{<br>t+=1;<br>}</p>");}
+    else if(name=="if"){return QString("<b>if</b><p>The if/else condition structure.</p><b>Example:</b><p>if(Row%2==0)<br>{<br>1<br>}<br>else<br>{<br>0<br>}</p>");}
+    else if(name=="else"){return QString("<b>else</b><p>The if/else condition structure.</p><b>Example:</b><p>if(Row%2==0)<br>{<br>1<br>}<br>else<br>{<br>0<br>}</p>");}
+
+    //Logic
+    else if(name=="and"){return QString("<b>and</b><p>The and logic operator</p>");}
+    else if(name=="mand"){return QString("<b>mand</b><p>The mand logic operator</p>");}
+    else if(name=="mor"){return QString("<b>mor</b><p>The mor logic operator</p>");}
+    else if(name=="nand"){return QString("<b>nand</b><p>The nand logic operator</p>");}
+    else if(name=="nor"){return QString("<b>nor</b><p>The nor logic operator</p>");}
+    else if(name=="nor"){return QString("<b>nor</b><p>The nor logic operator</p>");}
+    else if(name=="not"){return QString("<b>not</b><p>The not logic operator</p>");}
+    else if(name=="or"){return QString("<b>or</b><p>The or logic operator</p>");}
+    else if(name=="shl"){return QString("<b>shl</b><p>The shl logic operator</p>");}
+    else if(name=="shr"){return QString("<b>shr</b><p>The shr logic operator</p>");}
+    else if(name=="xnor"){return QString("<b>xnor</b><p>The xnor logic operator</p>");}
+    else if(name=="xor"){return QString("<b>xor</b><p>The xor logic operator</p>");}
+
+
+
+    return QString();
+}
+
+void checkHelp(QStringList names)
+{
+    for(int i=0;i<names.size();i++)
+    {
+        if(getHelp(names[i]).isEmpty())
+        {
+            std::cout<<"Missing help for :"<<names[i].toStdString()<<std::endl;
+        }
+    }
+}
+
 int Register::getVarExpDialog(QString currentName, QString currentExpression, QString & newName, QString & newExpression)
 {
     QLineEdit* le_variableName=new QLineEdit(newName);
     MyTextEdit* le_variableExpression=new MyTextEdit(newExpression);
     QScopedPointer<MyHighLighter> highlighter(new MyHighLighter(getVariablesList(),getFunctionsList()+getReservedList(),le_variableExpression->document()) );
 
-    QCompleter * completer= new QCompleter(getVariablesList()+getFunctionsList()+getReservedList(), nullptr);
+    //--------------------------------------------------------
+    QStringList completerList=getVariablesList()+getFunctionsList()+getReservedList();
+    checkHelp(completerList);
+    QStandardItemModel* model = new QStandardItemModel();
+
+    // initialize the model
+    int rows = completerList.count();
+    model->setRowCount(rows);
+    model->setColumnCount(1);
+
+    // load the items
+    int row = 0;
+    for(int i=0;i<completerList.size();i++)
+    {
+        QStandardItem* item = new QStandardItem(completerList[i]);
+
+        if(getVariablesList().contains(completerList[i]))
+        {
+            item->setForeground(Qt::blue);
+        }
+
+        //item->setIcon(QIcon(":/img/icons/points_cloud.png"));
+        item->setToolTip(getHelp(completerList[i]));
+        model->setItem(row, 0, item);
+        row++;
+    }
+    //-----------------------------------------------------------
+
+    QCompleter * completer= new QCompleter(model, nullptr);
     le_variableExpression->setCompleter(completer);
 
     QDialog* dialog=new QDialog;

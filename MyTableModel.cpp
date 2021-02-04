@@ -14,6 +14,8 @@ MyModel::MyModel(int nbRows, int nbCols, int rowSpan, QObject *parent): QAbstrac
 {
    create(nbRows, nbCols,rowSpan) ;
 
+   reg.setDataPtr(&m_data);
+
    dataTest();
 }
 //-----------------------------------------------------------------

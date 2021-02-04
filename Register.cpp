@@ -68,6 +68,8 @@ void Register::dispVariables()
 
 void Register::clear()
 {
+    this->data_ptr=nullptr;
+
     variables_names.clear();
     variables_expressions.clear();
     variables.clear();
@@ -75,17 +77,25 @@ void Register::clear()
 
     symbolsTable.add_constant("i",VariableType(0,1));
     symbolsTable.add_constant("pi",VariableType(M_PI));
+
+    //Table
     symbolsTable.add_variable("Rows",numberRows);
     symbolsTable.add_variable("Cols",numberCols);
     symbolsTable.add_variable("Row",activeRow);
     symbolsTable.add_variable("Col",activeCol);
+    symbolsTable.add_function("Data",cf_data);
+
+    //Noise
     symbolsTable.add_function("uniform"  ,  cf_uniform);
     symbolsTable.add_function("normal"  ,  cf_normal);
+
+    //specials functions
     symbolsTable.add_function("gamma"  ,  cf_gamma);
     symbolsTable.add_function("zeta"  ,  cf_zeta);
     symbolsTable.add_function("xsi"  ,  cf_xsi);
     symbolsTable.add_function("lin"  ,  cf_lin);
 
+    cf_data.setDataPtr(nullptr);
     cf_lin.setNumberOfRowsPtr(&numberRows);
     cf_lin.setCurrentRowPtr(&activeRow);
 }
@@ -318,7 +328,7 @@ bool Register::compileExpression(int id)
 Register * Register::copy()
 {
     Register * copy_reg=new Register;
-
+    copy_reg->setDataPtr(data_ptr);
     for(int i=0;i<variables.size();i++)
     {
         VariableType * p_variable =new VariableType;

@@ -25,6 +25,12 @@ public:
     Register();
     ~Register();
 
+    void setDataPtr(MatrixXv * data_ptr)
+    {
+        this->data_ptr=data_ptr;
+        cf_data.setDataPtr(data_ptr);
+    }
+
     void swapVariables(int ida,int idb);
     void moveVariable(int ida,int idb);
     void dispVariables();
@@ -75,6 +81,9 @@ signals:
     void sig_modified();
 
 private:
+    //Data access
+    MatrixXv * data_ptr;
+
     //Exprtk
     exprtk::parser<VariableType> parser;
     exprtk::expression<VariableType> current_compiled_expression;
@@ -91,6 +100,7 @@ private:
     zetaFunction<VariableType> cf_zeta;
     xsiFunction<VariableType> cf_xsi;
     linFunction<VariableType> cf_lin;
+    dataFunction<VariableType,MatrixXv> cf_data;
 
     //Misc variables
     VariableType activeRow;

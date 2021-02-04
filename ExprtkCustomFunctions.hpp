@@ -93,6 +93,46 @@ struct linFunction : public exprtk::ifunction<T>
     T * current_rows;
 };
 
+template <typename T,typename Tdata>
+struct dataFunction : public exprtk::ifunction<T>
+{
+    using exprtk::ifunction<T>::operator();
+
+    dataFunction()
+        : exprtk::ifunction<T>(2)
+    {
+        //exprtk::disable_has_side_effects(*this);
+        p_data=nullptr;
+    }
+
+    void setDataPtr(const Tdata * data)
+    {
+        this->p_data=data;
+    }
+
+    inline T operator()(const T& i, const T& j)
+    {
+        if(p_data)
+        {
+            if(p_data->rows()>i && p_data->cols()>j)
+            {
+                return (*p_data)(static_cast<unsigned int> (i.real()),
+                                 static_cast<unsigned int> (j.real())).toComplex();
+            }
+            else
+            {
+                return 0.0;
+            }
+        }
+        else
+        {
+            return 0.0;
+        }
+    }
+
+    const Tdata * p_data;
+};
+
 template <typename T>
 struct gammaFunction : public exprtk::ifunction<T>
 {

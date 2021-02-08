@@ -64,6 +64,7 @@ SOURCES += \
         ShapeFit.cpp \
         bode_viewer.cpp \
         complex_hack.cpp \
+        exprtk/Faddeeva.cc \
         main.cpp \
         single_application/singleapplication.cpp \
         single_application/singleapplication_p.cpp
@@ -104,6 +105,7 @@ HEADERS += \
         ShapeFit.h \
         bode_viewer.h \
         complex_hack.h \
+        exprtk/Faddeeva.hh \
         exprtk\exprtk.hpp \
         single_application/singleapplication.h \
         single_application/singleapplication_p.h

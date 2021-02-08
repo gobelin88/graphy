@@ -56,6 +56,7 @@
 #include <vector>
 #include "complex_hack.h"
 #include <random>
+#include "Faddeeva.hh"
 
 namespace exprtk
 {
@@ -1466,10 +1467,10 @@ namespace exprtk
             }
 
             template <typename T>
-            inline T erf_impl(T v, complex_type_tag)
+            inline T erf_impl(T z, complex_type_tag)
             {
                //not implemented
-               return v;
+               return Faddeeva::erf(z,0);
             }
 
             template <typename T>
@@ -1499,10 +1500,9 @@ namespace exprtk
             }
 
             template <typename T>
-            inline T erfc_impl(T v, complex_type_tag)
+            inline T erfc_impl(T z, complex_type_tag)
             {
-               //not implemented
-               return v;
+               return Faddeeva::erfc(z,0);;
             }
 
             template <typename T>
@@ -1663,8 +1663,14 @@ namespace exprtk
             template <typename T>
             inline bool is_integer_impl(const T& v, complex_type_tag)
             {
-               //not implemented;
-               return false;
+               if(is_integer_impl(v.real(),real_type_tag()) && (v.imag()==0) )
+               {
+                    return true;
+               }
+               else
+               {
+                    return false;
+               }
             }
 
             template <typename T>

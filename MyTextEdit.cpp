@@ -86,7 +86,7 @@ void MyTextEdit::keyPressEvent(QKeyEvent *e)
         }
     }
 
-    const bool isShortcut = (e->modifiers().testFlag(Qt::ControlModifier) && e->key() == Qt::Key_E); // CTRL+E
+    const bool isShortcut = (e->modifiers().testFlag(Qt::ControlModifier) && e->key() == Qt::Key_H); // CTRL+E
     if (!c || !isShortcut) // do not process the shortcut when we have a completer
         QTextEdit::keyPressEvent(e);
     const bool ctrlOrShift = e->modifiers().testFlag(Qt::ControlModifier) ||

@@ -16,6 +16,8 @@ Register::Register()
 {    
     clear();
     current_compiled_expression.register_symbol_table(symbolsTable);
+
+    setDataPtr(nullptr);
 }
 
 Register::~Register()
@@ -69,7 +71,6 @@ void Register::dispVariables()
 
 void Register::clear()
 {
-    this->data_ptr=nullptr;
 
     variables_names.clear();
     variables_expressions.clear();
@@ -96,7 +97,6 @@ void Register::clear()
     symbolsTable.add_function("xsi"  ,  cf_xsi);
     symbolsTable.add_function("lin"  ,  cf_lin);
 
-    cf_data.setDataPtr(nullptr);
     cf_lin.setNumberOfRowsPtr(&numberRows);
     cf_lin.setCurrentRowPtr(&activeRow);
 }

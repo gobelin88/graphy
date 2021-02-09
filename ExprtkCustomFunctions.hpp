@@ -121,11 +121,13 @@ struct dataFunction : public exprtk::ifunction<T>
             }
             else
             {
+                //std::cout<<"data out index"<<std::endl;
                 return 0.0;
             }
         }
         else
         {
+            //std::cout<<"nullptr"<<std::endl;
             return 0.0;
         }
     }

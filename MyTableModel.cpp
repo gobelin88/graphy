@@ -13,7 +13,6 @@
 MyModel::MyModel(int nbRows, int nbCols, int rowSpan, QObject *parent): QAbstractTableModel(parent)
 {
    create(nbRows, nbCols,rowSpan) ;
-
    reg.setDataPtr(&m_data);
 
    dataTest();

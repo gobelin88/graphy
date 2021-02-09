@@ -115,6 +115,7 @@ public slots:
 
     void slot_newColumn(QString varName, VectorXv dataCol);
 
+    void slot_createNewColumn();
     void slot_editColumn(int logicalIndex);
 
     void slot_newRowAbove(int j);
@@ -175,7 +176,7 @@ private:
     //Io
     bool modified;
     QString currentFilename;
-
+    bool hasheader;
 };
 
 #endif // MYTABLEMODEL_H

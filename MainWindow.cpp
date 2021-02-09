@@ -198,15 +198,35 @@ void MainWindow::slot_open()
     }
 }
 
+int MainWindow::fileAlreadyOpened(QString filename)
+{
+    for(int i=0;i<tables.size();i++)
+    {
+        if(tables[i]->model()->getCurrentFilename()==filename)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
 void MainWindow::direct_open(QStringList filenames)
 {
     for(int i=0;i<filenames.size();i++)
     {
-        MyTableView * table=new MyTableView(25,this);
-        if(table->model()->open(filenames[i]))
+        int index=fileAlreadyOpened(filenames[i]);
+        if(index<0)
         {
-            table->resizeColumnsToContents();
-            addNewTable(table);
+            MyTableView * table=new MyTableView(25,this);
+            if(table->model()->open(filenames[i]))
+            {
+                table->resizeColumnsToContents();
+                addNewTable(table);
+            }
+        }
+        else
+        {
+            te_widget->setCurrentIndex(index);
         }
     }
 }
@@ -1130,6 +1150,8 @@ void MainWindow::closeCurrentTable()
 
 void MainWindow::closeTable(int index)
 {
+    if(index<0){return;}
+
     if(tables[index]->model()->isModified())
     {
         QMessageBox::StandardButton resBtn =

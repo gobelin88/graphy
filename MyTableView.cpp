@@ -34,8 +34,14 @@ void MyTableView::createNew(int nbRow,int nbCols,int rowsSpan)
     layout->addWidget(this);
     layout->addWidget(m_model->verticalScrollBar());
 
-    setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     setModel(m_model);
+
+    setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+
+    //i tried this without success:
+    //setVerticalScrollBar(m_model->verticalScrollBar());
+    //m_model->verticalScrollBar()->setVisible(true);
+    //setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
 }
 
 void MyTableView::wheelEvent(QWheelEvent * event)
@@ -364,7 +370,7 @@ void MyTableView::createPopup()
     connect(actCopy         ,&QAction::triggered,this   ,&MyTableView::slot_copy);
     connect(actPaste        ,&QAction::triggered,this   ,&MyTableView::slot_paste);
 
-    connect(actNewColumn,&QAction::triggered,m_model,&MyModel::slot_editColumn);
+    connect(actNewColumn,&QAction::triggered,m_model,&MyModel::slot_createNewColumn);
     connect(actDelete,&QAction::triggered,this,&MyTableView::slot_deleteSelected);
     connect(actRemoveColumnsRows,&QAction::triggered,this,&MyTableView::slot_removeSelectedRowsAndCols);
     connect(actUpdateColumns,&QAction::triggered,m_model,&MyModel::slot_updateColumns);

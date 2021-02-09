@@ -46,6 +46,7 @@ void MyModel::create(int nbRows, int nbCols,int rowSpan)
     connect(v_scrollBar,&QScrollBar::valueChanged      ,this,&MyModel::setRowOffset);
 
     modified=true;
+    hasheader=false;
     currentFilename=QString("new.graphy");
 }
 
@@ -217,6 +218,7 @@ bool MyModel::open(QString filename)
 
             if(content[0]==QString("<header>"))
             {
+                hasheader=true;
                 if(content[2]==QString("</header>"))
                 {
                     QVector<QStringRef> variablesNames=content[1].split(";");
@@ -235,15 +237,21 @@ bool MyModel::open(QString filename)
                     {
                         for(int i=0;i<variablesNames.size();i++)
                         {
-                            reg.newVariable(variablesNames[i].toString(),"");
+                            if(!reg.newVariable(variablesNames[i].toString(),""))
+                            {
+                                return false;
+                            }
                         }
 
                         for(int i=0;i<variablesNames.size();i++)
                         {
-                            reg.renameVariable(variablesNames[i].toString(),
+                            if(!reg.renameVariable(variablesNames[i].toString(),
                                                variablesNames[i].toString(),
                                                "",
-                                               Register::getLoadVariableExpression( variablesExpressions[i].toString()));
+                                               Register::getLoadVariableExpression( variablesExpressions[i].toString())))
+                            {
+                                return false;
+                            }
                         }
                     }
                     else
@@ -346,19 +354,30 @@ bool MyModel::save(QString filename)
         //QString textData;
         QTextStream out(&file);
 
-        out<< "<header>\n";
-        for (int j = 0; j < reg.variablesNames().size(); j++)
+        if(!hasheader)
         {
-            out<<reg.variablesNames()[j];
-            if(j!=reg.variablesNames().size()-1){out<< ";";}
+            QMessageBox::StandardButton ret=QMessageBox::question(nullptr,"Save header ?","Do you wish to save the header ?");
+            if(ret==QMessageBox::StandardButton::Yes)
+            {
+                hasheader=true;
+            }
         }
-        out<< "\n";
-        for (int j = 0; j < reg.variablesExpressions().size(); j++)
+        else if(hasheader)
         {
-            out<<reg.getSaveVariablesExpression(j);
-            if(j!=reg.variablesExpressions().size()-1){out<< ";";}
+            out<< "<header>\n";
+            for (int j = 0; j < reg.variablesNames().size(); j++)
+            {
+                out<<reg.variablesNames()[j];
+                if(j!=reg.variablesNames().size()-1){out<< ";";}
+            }
+            out<< "\n";
+            for (int j = 0; j < reg.variablesExpressions().size(); j++)
+            {
+                out<<reg.getSaveVariablesExpression(j);
+                if(j!=reg.variablesExpressions().size()-1){out<< ";";}
+            }
+            out<< "\n</header>\n";
         }
-        out<< "\n</header>\n";
 
         for (int i = 0; i < m_data.rows(); i++)
         {
@@ -845,6 +864,11 @@ QVariant MyModel::headerData(int logicalIndex, Qt::Orientation orientation, int 
     {
         return QVariant();
     }
+}
+
+void MyModel::slot_createNewColumn()
+{
+    slot_editColumn(-1);
 }
 
 void MyModel::slot_editColumn(int logicalIndex)

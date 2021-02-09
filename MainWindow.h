@@ -109,6 +109,9 @@ private:
 
     //Helpers
     void plot_xy(Curve2D::CurveType type);
+
+    //misc
+    int fileAlreadyOpened(QString filename);
 };
 
 #endif // MAINWINDOW_H

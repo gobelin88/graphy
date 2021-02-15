@@ -6,6 +6,8 @@
 #include "exprtk/exprtk.hpp"
 #include <qmath.h>
 #include <iomanip>
+#include <string>
+#include <QStringList>
 
 #ifndef EXPRTKCUSTOMFUNCTIONS_HPP
 #define EXPRTKCUSTOMFUNCTIONS_HPP
@@ -285,6 +287,49 @@ struct xsiFunction : public exprtk::ifunction<T>
 
     zetaFunction<T> m_zeta;
     gammaFunction<T> m_gamma;
+};
+
+template <typename T>
+struct indexFunction : public exprtk::igeneric_function<T>
+{
+ typedef typename exprtk::igeneric_function<T>::parameter_list_t
+                                                parameter_list_t;
+
+ typedef typename generic_type::string_view string_t;
+
+ indexFunction():exprtk::igeneric_function<T>("S")
+ {
+     p_variablesNames=nullptr;
+ }
+
+ inline T operator()(parameter_list_t parameters)
+ {
+    for (std::size_t i = 0; i < parameters.size(); ++i)
+    {
+        if(p_variablesNames!=nullptr)
+        {
+            generic_type& gt = parameters[i];
+
+             if (generic_type::e_string == gt.type)
+             {
+                string_t variableName(gt);
+
+                //std::cout<<to_str(variableName)<<std::endl;
+
+                return T(p_variablesNames->indexOf(QString::fromStdString(to_str(variableName))));
+             }
+        }
+    }
+
+    return T(0);
+ }
+
+ void setVariablesNamesPtr(const QStringList * p_variablesNames)
+ {
+     this->p_variablesNames=p_variablesNames;
+ }
+
+ const QStringList * p_variablesNames;
 };
 
 #endif // EXPRTKCUSTOMFUNCTIONS_HPP

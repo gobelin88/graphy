@@ -101,6 +101,7 @@ private:
     xsiFunction<VariableType> cf_xsi;
     linFunction<VariableType> cf_lin;
     dataFunction<VariableType,MatrixXv> cf_data;
+    indexFunction<VariableType> cf_id;
 
     //Misc variables
     VariableType activeRow;

@@ -86,6 +86,8 @@ void Register::clear()
     symbolsTable.add_variable("Row",activeRow);
     symbolsTable.add_variable("Col",activeCol);
     symbolsTable.add_function("data",cf_data);
+    symbolsTable.add_function("index",cf_id);
+
 
     //Noise
     symbolsTable.add_function("uniform"  ,  cf_uniform);
@@ -97,6 +99,7 @@ void Register::clear()
     symbolsTable.add_function("xsi"  ,  cf_xsi);
     symbolsTable.add_function("lin"  ,  cf_lin);
 
+    cf_id.setVariablesNamesPtr(&variables_names);
     cf_lin.setNumberOfRowsPtr(&numberRows);
     cf_lin.setCurrentRowPtr(&activeRow);
 }
@@ -369,6 +372,7 @@ QStringList Register::getFunctionsList()
     {
         qlist.append(QString::fromStdString(list[i]));
     }
+    qlist.append("index");
 
     return qlist;
 }

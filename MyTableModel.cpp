@@ -275,7 +275,7 @@ bool MyModel::open(QString filename)
                 }
             }
 
-        std::cout<<"Open time (Variables): "<<timer.nsecsElapsed()*1e-9<<std::endl;
+            std::cout<<"Open time (Variables): "<<timer.nsecsElapsed()*1e-9<<std::endl;
             //Parse Data-----------------------------------
             if(ok)
             {
@@ -361,7 +361,8 @@ bool MyModel::save(QString filename)
                 hasheader=true;
             }
         }
-        else if(hasheader)
+
+        if(hasheader)
         {
             out<< "<header>\n";
             for (int j = 0; j < reg.variablesNames().size(); j++)

@@ -33,7 +33,7 @@ public:
     void resetRange();
 
     //Build KdTree in order to interpolate data
-    void interpolate(const Eigen::VectorXd &dataX, const Eigen::VectorXd &dataY, const Eigen::VectorXd &dataZ, const Eigen::Vector2d & box, QCPColorMap* map, size_t knn, InterpolationMode mode);
+    void interpolate(const Eigen::VectorXd &dataX, const Eigen::VectorXd &dataY, const Eigen::VectorXd &dataZ, QCPColorMap* map, size_t knn, InterpolationMode mode);
 
 public slots:
     void slot_setData(const Eigen::VectorXd &dataX, const Eigen::VectorXd &dataY, const Eigen::VectorXd &dataZ, const Eigen::Vector2d &box);
@@ -52,7 +52,6 @@ protected:
     void mousePressEvent(QMouseEvent* event);
 
     QCPMarginGroup* marginGroup;
-    QCPColorScale* colorScale;
     QCPColorMap* colorMap;
 
     QString current_filename;

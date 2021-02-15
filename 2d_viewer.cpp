@@ -9,16 +9,15 @@ Viewer2D::Viewer2D()
     this->axisRect()->setupFullAxesBox(true);
 
     colorMap = new QCPColorMap(this->xAxis, this->yAxis);
-    colorScale = new QCPColorScale(this);
 
-    this->plotLayout()->addElement(0, 1, colorScale);
-    colorScale->setType(QCPAxis::atRight);
-    colorMap->setColorScale(colorScale);
+    colorMap->setColorScale(new QCPColorScale(this));
+    colorMap->colorScale()->setType(QCPAxis::atRight);
+    this->plotLayout()->addElement(0, 1, colorMap->colorScale());
     slot_setGradient(QCPColorGradient::gpPolar);
 
     marginGroup = new QCPMarginGroup(this);
     this->axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
-    colorScale->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
+    colorMap->colorScale()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
 
     this->addGraph();
     QPen pen_model(QColor(255,1,0));
@@ -154,7 +153,7 @@ void Viewer2D::resetRange()
     this->xAxis->setRange(colorMap->data()->keyRange());
     this->yAxis->setRange(colorMap->data()->valueRange());
 
-    colorScale->rescaleDataRange(true);
+    colorMap->colorScale()->rescaleDataRange(true);
     colorMap->rescaleDataRange();
     this->rescaleAxes();
     this->replot();
@@ -175,7 +174,6 @@ void Viewer2D::slot_setData(const Eigen::VectorXd & dataX,
 void Viewer2D::interpolate(const Eigen::VectorXd& dataX,
                  const Eigen::VectorXd& dataY,
                  const Eigen::VectorXd& dataZ,
-                 const Eigen::Vector2d &box,
                  QCPColorMap* map,
                  size_t knn,
                  InterpolationMode mode)
@@ -197,8 +195,8 @@ void Viewer2D::interpolate(const Eigen::VectorXd& dataX,
     kdt::KDTreed::Matrix dists; // basically Eigen::MatrixXd
     kdt::KDTreed::MatrixI idx; // basically Eigen::Matrix<Eigen::Index>
 
-    int nx=int(box[0]);
-    int ny=int(box[1]);
+    uint nx=uint(map->data()->keySize());
+    uint ny=uint(map->data()->valueSize());
 
     //Query points
     kdt::KDTreed::Matrix queryPoints(2,nx*ny);
@@ -261,7 +259,7 @@ void Viewer2D::slot_updateData()
     colorMap->data()->clear();
     colorMap->data()->setSize(box[0],box[1]);
     setRange(QCPRange(dataX.minCoeff(),dataX.maxCoeff()),QCPRange(dataY.minCoeff(),dataY.maxCoeff()));
-    interpolate(dataX,dataY,dataZ,box,colorMap,knn,mode);
+    interpolate(dataX,dataY,dataZ,colorMap,knn,mode);
     resetRange();
 }
 

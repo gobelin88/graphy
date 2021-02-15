@@ -28974,6 +28974,16 @@ bool QCPColorMapData::createAlpha(bool initializeOpaque)
   \a keyAxis. This QCustomPlot instance takes ownership of the QCPColorMap, so do not delete it
   manually but use QCustomPlot::removePlottable() instead.
 */
+QCPColorMap::QCPColorMap(QCustomPlot * plot):
+    QCPAbstractPlottable(plot->xAxis, plot->yAxis),
+    mDataScaleType(QCPAxis::stLinear),
+    mMapData(new QCPColorMapData(10, 10, QCPRange(0, 5), QCPRange(0, 5))),
+    mGradient(QCPColorGradient::gpCold),
+    mInterpolate(true),
+    mTightBoundary(false),
+    mMapImageInvalidated(true)
+{
+}
 QCPColorMap::QCPColorMap(QCPAxis* keyAxis, QCPAxis* valueAxis) :
     QCPAbstractPlottable(keyAxis, valueAxis),
     mDataScaleType(QCPAxis::stLinear),

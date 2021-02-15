@@ -7057,6 +7057,7 @@ class QCP_LIB_DECL QCPColorMap : public QCPAbstractPlottable
     Q_PROPERTY(QCPColorScale* colorScale READ colorScale WRITE setColorScale)
     /// \endcond
 public:
+    explicit QCPColorMap(QCustomPlot * plot);
     explicit QCPColorMap(QCPAxis* keyAxis, QCPAxis* valueAxis);
     virtual ~QCPColorMap();
 
@@ -7089,6 +7090,8 @@ public:
     {
         return mColorScale.data();
     }
+
+
 
     // setters:
     void setData(QCPColorMapData* data, bool copy=false);

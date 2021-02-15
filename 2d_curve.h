@@ -13,6 +13,41 @@
 class Curve2D
 {
 public:
+    //-------------------------------------------------------
+    struct MapParams
+    {
+        enum InterpolationMode
+        {
+            MODE_NEAREST,
+            MODE_WEIGHTED
+        };
+
+        uint resolutionX;
+        uint resolutionY;
+        uint knn;
+        InterpolationMode mode;
+
+        MapParams()
+        {
+            this->resolutionX=512;
+            this->resolutionY=512;
+            this->knn=5;
+            this->mode=MODE_NEAREST;
+        }
+
+        MapParams(uint resolutionX,
+                  uint resolutionY,
+                  uint knn,
+                  InterpolationMode mode)
+        {
+            this->resolutionX=resolutionX;
+            this->resolutionY=resolutionY;
+            this->knn=knn;
+            this->mode=mode;
+        }
+    };
+
+    //-------------------------------------------------------
     struct Style
     {
         Style()
@@ -52,17 +87,16 @@ public:
             ds>>pen;
             ds>>brush;
         }
-
     };
 
     enum CurveType
     {
         GRAPH=0,
-        CURVE=1
+        CURVE=1,
+        MAP=2
     };
 
-
-
+    //-------------------------------------------------------
     Curve2D();
 
     Curve2D(const Eigen::VectorXd& y,
@@ -188,40 +222,86 @@ public:
         }
     }
 
+    //T = QCPColorMap
+    template<typename T>
+    T* toQCPMap(QCustomPlot* plot)const
+    {
+        T* pqcp = nullptr;
+
+        if(std::is_same<QCPColorMap, T>::value == true)
+        {
+            if((getX().rows()==getY().rows()) &&
+               (getX().rows()==getScalarField().rows()))
+            {
+                pqcp = new T(plot);
+
+                pqcp->setColorScale(new QCPColorScale(plot));
+                pqcp->colorScale()->setType(QCPAxis::atRight);
+                plot->plotLayout()->addElement(0, 1, pqcp->colorScale());
+                pqcp->setGradient(static_cast<QCPColorGradient::GradientPreset>(style.gradientType));
+
+                pqcp->data()->clear();
+                pqcp->data()->setSize(mapParams.resolutionX,mapParams.resolutionY);
+
+                QCPRange rx(getX().minCoeff(),getX().maxCoeff());
+                QCPRange ry(getY().minCoeff(),getY().maxCoeff());
+                pqcp->data()->setRange(rx,ry);
+
+                interpolate(getX(),getY(),getScalarField(),pqcp,mapParams.knn,mapParams.mode);
+
+                plot->xAxis->setRange(pqcp->data()->keyRange());
+                plot->yAxis->setRange(pqcp->data()->valueRange());
+                pqcp->colorScale()->rescaleDataRange(true);
+
+                pqcp->setName(getLegend());
+            }
+            else
+            {
+                std::cout<<"Error :"<<getX().rows()<<" "<<getY().rows()<<" "<<getScalarField().rows()<<std::endl;
+            }
+        }
+
+        return pqcp;
+    }
+
     //T = QCPCurve or QCPGraph
     template<typename T>
     T* toQCP(QCustomPlot* plot)const
     {
-        T* pqcp = new T(plot);
+        T* pqcp = nullptr;
 
-        pqcp->setAlphaField(getQAlphaField());
-        pqcp->setScalarField(getQScalarField());
-        pqcp->setLabelField(getLabelsField());
-        pqcp->setScalarFieldGradientType(style.gradientType);
-
-        pqcp->setLineStyle(static_cast<T::LineStyle>(style.mLineStyle));
-
-        pqcp->setScatterStyle(QCPScatterStyle(static_cast<QCPScatterStyle::ScatterShape>(style.mScatterShape), style.mScatterSize));
-        pqcp->setSelectable(QCP::stWhole);
-        pqcp->setSelectionDecorator(nullptr);
-        pqcp->setName(getLegend());
-        pqcp->setData(getQX(),getQY());
-        pqcp->setPen(style.pen);
-        pqcp->setBrush(style.brush);
-
-        if (getLabelsField().size()>0)
+        if(std::is_same<QCPCurve, T>::value || std::is_same<QCPGraph, T>::value)
         {
-            buildX(getY().size());
-            QSharedPointer<QCPAxisTickerText> textTicker(new QCPAxisTickerText);
-            textTicker->addTicks(getQX(), getLabelsField() );
-            plot->xAxis->setTicker(textTicker);
-            plot->xAxis->setTickLabelColor(Qt::black);
-            plot->xAxis->setLabelColor(Qt::black);
-        }
+            pqcp = new T(plot);
+            pqcp->setAlphaField(getQAlphaField());
+            pqcp->setScalarField(getQScalarField());
+            pqcp->setLabelField(getLabelsField());
+            pqcp->setScalarFieldGradientType(style.gradientType);
 
-        if (getScalarField().size()>0)
-        {
-            plot->plotLayout()->addElement(0, plot->plotLayout()->columnCount(), pqcp->getColorScale());
+            pqcp->setLineStyle(static_cast<T::LineStyle>(style.mLineStyle));
+
+            pqcp->setScatterStyle(QCPScatterStyle(static_cast<QCPScatterStyle::ScatterShape>(style.mScatterShape), style.mScatterSize));
+            pqcp->setSelectable(QCP::stWhole);
+            pqcp->setSelectionDecorator(nullptr);
+            pqcp->setName(getLegend());
+            pqcp->setData(getQX(),getQY());
+            pqcp->setPen(style.pen);
+            pqcp->setBrush(style.brush);
+
+            if (getLabelsField().size()>0)
+            {
+                buildX(getY().size());
+                QSharedPointer<QCPAxisTickerText> textTicker(new QCPAxisTickerText);
+                textTicker->addTicks(getQX(), getLabelsField() );
+                plot->xAxis->setTicker(textTicker);
+                plot->xAxis->setTickLabelColor(Qt::black);
+                plot->xAxis->setLabelColor(Qt::black);
+            }
+
+            if (getScalarField().size()>0)
+            {
+                plot->plotLayout()->addElement(0, plot->plotLayout()->columnCount(), pqcp->getColorScale());
+            }
         }
 
         return pqcp;
@@ -282,6 +362,17 @@ private:
     QCPCurve * ptrCurve;
 
     Style style;
+    MapParams mapParams;
+
+    //Map
+    static void interpolate(const Eigen::VectorXd& dataX,
+                     const Eigen::VectorXd& dataY,
+                     const Eigen::VectorXd& dataZ,
+                     QCPColorMap* map,
+                     size_t knn,
+                     MapParams::InterpolationMode mode);
+
+
 };
 
 #endif // CURVE2D_H

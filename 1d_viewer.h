@@ -15,6 +15,8 @@ class Viewer1D:public QCustomPlot
 {
     Q_OBJECT
 public:
+
+
     Viewer1D(const QMap<QString, QKeySequence>& shortcuts_map, QWidget* parent);
     ~Viewer1D();
 
@@ -108,9 +110,25 @@ signals:
     void sig_newColumn(QString varName,Eigen::VectorXd data);
 
 protected:
-    QList<QCPCurve*> getQCPCurves();
-    QList<QCPCurve*> getSelectedQCPCurves();
+
+    template <typename T>
+    QList<T*> getQCPListOf(bool selected)
+    {
+        QList<QCPAbstractPlottable*> plottableslist=(selected)?this->selectedPlottables():this->plottables();
+        QList<T*> list;
+        for (int i=0; i<plottableslist.size(); i++)
+        {
+            T* current=dynamic_cast<T*>(plottableslist[i]);
+            if (current)
+            {
+                list.push_back(current);
+            }
+        }
+        return list;
+    }
+
     QList<Curve2D> getSelectedCurves();
+
     QList<QCPAbstractPlottable*> getSelectedCurvesOrGraphs();
     QList<QColor> colors;
 

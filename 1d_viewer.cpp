@@ -1,4 +1,5 @@
 #include "1d_viewer.h"
+#include "kdtree_eigen.h"
 
 Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* parent):QCustomPlot(parent)
 {
@@ -98,11 +99,16 @@ void Viewer1D::slot_add_data(const Curve2D& datacurve)
         std::cout<<"graph"<<std::endl;
         datacurve.toQCP<QCPGraph>(this);
     }
-    else
+    else if (datacurve.getType()==Curve2D::CURVE)
     {
         std::cout<<"curve"<<std::endl;
         datacurve.toQCP<QCPCurve>(this);
         axisRect()->setupFullAxesBox();
+    }
+    else if (datacurve.getType()==Curve2D::MAP)
+    {
+        std::cout<<"map"<<std::endl;
+        datacurve.toQCPMap<QCPColorMap>(this);
     }
 
     rescaleAxes();
@@ -708,7 +714,7 @@ void Viewer1D::slot_auto_clear()
 void Viewer1D::slot_setStyle(int style)
 {
     QList<QCPGraph*> graphslist=this->selectedGraphs();
-    QList<QCPCurve*> curveslist=this->getSelectedQCPCurves();
+    QList<QCPCurve*> curveslist=getQCPListOf<QCPCurve>(true);
 
     for (int i=0; i<graphslist.size(); i++)
     {
@@ -725,7 +731,7 @@ void Viewer1D::slot_setStyle(int style)
 void Viewer1D::slot_setScatterShape(int scatter_shape)
 {
     QList<QCPGraph*> graphslist=this->selectedGraphs();
-    QList<QCPCurve*> curveslist=this->getSelectedQCPCurves();
+    QList<QCPCurve*> curveslist=getQCPListOf<QCPCurve>(true);
 
     for (int i=0; i<graphslist.size(); i++)
     {
@@ -741,7 +747,7 @@ void Viewer1D::slot_setScatterShape(int scatter_shape)
 void Viewer1D::slot_setScatterSize(double scatter_size)
 {
     QList<QCPGraph*> graphslist=this->selectedGraphs();
-    QList<QCPCurve*> curveslist=this->getSelectedQCPCurves();
+    QList<QCPCurve*> curveslist=getQCPListOf<QCPCurve>(true);
 
     for (int i=0; i<graphslist.size(); i++)
     {
@@ -1616,36 +1622,6 @@ void Viewer1D::slot_delete()
     this->replot();
 }
 
-QList<QCPCurve*> Viewer1D::getSelectedQCPCurves()
-{
-    QList<QCPAbstractPlottable*> plottableslist=this->selectedPlottables();
-    QList<QCPCurve*> listcurves;
-    for (int i=0; i<plottableslist.size(); i++)
-    {
-        QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(plottableslist[i]);
-        if (currentcurve)
-        {
-            listcurves.push_back(currentcurve);
-        }
-    }
-    return listcurves;
-}
-
-QList<QCPCurve*> Viewer1D::getQCPCurves()
-{
-    QList<QCPAbstractPlottable*> plottableslist=this->plottables();
-    QList<QCPCurve*> listcurves;
-    for (int i=0; i<plottableslist.size(); i++)
-    {
-        QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(plottableslist[i]);
-        if (currentcurve)
-        {
-            listcurves.push_back(currentcurve);
-        }
-    }
-    return listcurves;
-}
-
 QList<QCPAbstractPlottable*> Viewer1D::getSelectedCurvesOrGraphs()
 {
     QList<QCPAbstractPlottable*> plottableslist=this->selectedPlottables();
@@ -1743,12 +1719,24 @@ void Viewer1D::slot_save_image()
 
 void Viewer1D::slot_rescale()
 {
-    QList<QCPCurve*> listcurves=getQCPCurves();
+    QList<QCPCurve*> listcurves=getQCPListOf<QCPCurve>(false);
     for (int i=0; i<listcurves.size(); i++)
     {
         if (listcurves[i]->getColorScale())
         {
             listcurves[i]->getColorScale()->setDataRange(listcurves[0]->getScalarFieldRange());
+        }
+    }
+
+    QList<QCPColorMap*> listmaps=getQCPListOf<QCPColorMap>(false);
+    std::cout<<"listmaps.size()="<<listmaps.size()<<std::endl;
+    for (int i=0; i<listmaps.size(); i++)
+    {
+        if (listmaps[i]->colorScale())
+        {
+            std::cout<<"range="<<listmaps[i]->dataRange().lower<<" "<<listmaps[i]->dataRange().upper<<std::endl;
+            //listmaps[i]->colorScale()->setDataRange( listmaps[i]->dataRange() );
+            listmaps[i]->colorScale()->rescaleDataRange(true);
         }
     }
 
@@ -1974,7 +1962,7 @@ void Viewer1D::slot_setAxisYType(int mode)
 void Viewer1D::slot_setScalarFieldGradientType(int type)
 {
     QList<QCPGraph*> graphslist=this->selectedGraphs();
-    QList<QCPCurve*> curveslist=this->getSelectedQCPCurves();
+    QList<QCPCurve*> curveslist=this->getQCPListOf<QCPCurve>(true);
 
     for (int i=0; i<graphslist.size(); i++)
     {

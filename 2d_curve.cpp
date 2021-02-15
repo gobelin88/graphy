@@ -25,11 +25,11 @@ Curve2D::Curve2D(const Eigen::VectorXd& x,
                  QString legendname,
                  CurveType type)
 {
+    clear();
     this->x=x;
     this->y=y;
     this->legendname=legendname;
     this->type=type;
-    clear();
 }
 
 Curve2D::Curve2D(const Eigen::VectorXd& x,
@@ -38,12 +38,12 @@ Curve2D::Curve2D(const Eigen::VectorXd& x,
                  QString legendname,
                  CurveType type)
 {
+    clear();
     this->x=x;
     this->y=y;
     this->s=s;
     this->legendname=legendname;
     this->type=type;
-    clear();
 }
 
 void Curve2D::clear()
@@ -487,6 +487,7 @@ void Curve2D::operator=(const Curve2D& other)
     this->legendname=other.legendname;
     this->type=other.type;
     this->style=other.style;
+    this->mapParams=other.mapParams;
 
     this->ptrGraph=other.ptrGraph;
     this->ptrCurve=other.ptrCurve;
@@ -545,4 +546,92 @@ void Curve2D::setLegend(QString legendname)
 Curve2D::CurveType Curve2D::getType()const
 {
     return type;
+}
+
+void Curve2D::interpolate(const Eigen::VectorXd& dataX,
+                 const Eigen::VectorXd& dataY,
+                 const Eigen::VectorXd& dataZ,
+                 QCPColorMap* map,
+                 size_t knn,
+                 MapParams::InterpolationMode mode)
+{
+    std::cout<<"interpolate A"<<std::endl;
+    Eigen::MatrixXd datapoints(2,dataX.size());
+
+    for (int i=0; i<datapoints.cols(); i++)
+    {
+        datapoints(0,i)=dataX[i];
+        datapoints(1,i)=dataY[i];
+    }
+
+    //std::cout<<"data[box.idX].size()="<<datapoints.cols()<<std::endl;
+    //std::cout<<datapoints.transpose()<<std::endl;
+
+    std::cout<<"interpolate B"<<std::endl;
+    kdt::KDTreed kdtree(datapoints);
+    kdtree.build();
+
+    kdt::KDTreed::Matrix dists; // basically Eigen::MatrixXd
+    kdt::KDTreed::MatrixI idx; // basically Eigen::Matrix<Eigen::Index>
+
+    uint nx=uint(map->data()->keySize());
+    uint ny=uint(map->data()->valueSize());
+
+    std::cout<<"interpolate C"<<std::endl;
+    //Query points
+    kdt::KDTreed::Matrix queryPoints(2,nx*ny);
+    int id=0;
+    for (uint i=0; i<nx; i++)
+    {
+        for (uint j=0; j<ny; j++)
+        {
+            map->data()->cellToCoord(int(i),int(j),&queryPoints(0,id),&queryPoints(1,id));
+            id++;
+        }
+    }
+
+    std::cout<<"interpolate D"<<std::endl;
+    //Do the job
+    if (mode==MapParams::MODE_WEIGHTED)
+    {
+        kdtree.query(queryPoints, knn, idx, dists);
+    }
+    else if (mode==MapParams::MODE_NEAREST)
+    {
+        kdtree.query(queryPoints, 1, idx, dists);
+    }
+
+    std::cout<<"interpolate E"<<std::endl;
+    //Results
+    id=0;
+    for (uint i=0; i<nx; i++)
+    {
+        for (uint j=0; j<ny; j++)
+        {
+            double value=0;
+            if (mode==MapParams::MODE_WEIGHTED)
+            {
+                double weight_sum=0;
+                for (int k=0; k<knn; k++)
+                {
+                    if (idx(k,id)>=0 && idx(0,id)<dataZ.rows())
+                    {
+                        value+=(1.0/dists(k,id))* dataZ[idx(k,id)];
+                        weight_sum+=(1.0/dists(k,id));
+                    }
+                }
+                value/=weight_sum;
+            }
+            else if (mode==MapParams::MODE_NEAREST)
+            {
+                if (idx(0,id)>=0 && idx(0,id)<dataZ.rows())
+                {
+                    value=dataZ[idx(0,id)];
+                }
+            }
+
+            map->data()->setCell(i,j,value);
+            id++;
+        }
+    }
 }

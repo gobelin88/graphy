@@ -669,15 +669,25 @@ void MainWindow::slot_plot_map_2D()
 
         if(ok)
         {
-            Viewer2D* viewer2d=new Viewer2D();
-            viewer2d->slot_setGradient(gradientType);
-            viewer2d->setMinimumSize(512+54,512);
-            QMdiSubWindow* subWindow = new QMdiSubWindow;
-            subWindow->setWidget(viewer2d);
-            subWindow->setAttribute(Qt::WA_DeleteOnClose);
-            mdiArea->addSubWindow(subWindow,Qt::WindowStaysOnTopHint);
-            viewer2d->show();
-            viewer2d->slot_setData(data_x,data_y,data_z,resolution);
+//            Viewer2D* viewer2d=new Viewer2D();
+//            viewer2d->slot_setGradient(gradientType);
+//            viewer2d->setMinimumSize(512+54,512);
+//            QMdiSubWindow* subWindow = new QMdiSubWindow;
+//            subWindow->setWidget(viewer2d);
+//            subWindow->setAttribute(Qt::WA_DeleteOnClose);
+//            mdiArea->addSubWindow(subWindow,Qt::WindowStaysOnTopHint);
+//            viewer2d->show();
+//            viewer2d->slot_setData(data_x,data_y,data_z,resolution);
+
+            Viewer1D * viewer1d=createViewer1D(512+54,512);
+
+            Curve2D curve(data_x,data_y,data_z,"Map",Curve2D::MAP);
+            curve.getStyle().gradientType=gradientType;
+
+            std::cout<<data_z.rows()<<std::endl;
+            std::cout<<curve.getScalarField().rows()<<std::endl;
+
+            viewer1d->slot_add_data(curve);
         }
     }
 }

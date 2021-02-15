@@ -599,19 +599,34 @@ void MainWindow::slot_plot_map_2D()
     sb_resY->setRange(4,4096*2);
     sb_resY->setValue(512);
 
+    QComboBox* cb_mode=new QComboBox(dialog);
+    cb_mode->addItem("NEAREST");
+    cb_mode->addItem("WEIGHTED");
+    cb_mode->setCurrentIndex(0);
+    cb_mode->setToolTip("NEAREST : Look for the nearest neighbour and get his value.\n"\
+                        "WEIGHTED : Look for the knn nearest neighbours and get a weighted average value.");
+
+    QSpinBox* sb_knn=new QSpinBox(dialog);
+    sb_knn->setRange(1,10000);
+    sb_knn->setValue(5);
+    sb_knn->setPrefix("Knn=");
+    sb_knn->setToolTip("Number of nearest neighbour to search for");
+
     QGridLayout* gbox = new QGridLayout();
     gbox->addWidget(cb_type,0,0,1,3);
     gbox->addWidget(new QLabel("Resolution :"),1,0);
     gbox->addWidget(sb_resX,1,1);
     gbox->addWidget(sb_resY,1,2);
-    gbox->addWidget(buttonBox,2,0,1,3);
+    gbox->addWidget(new QLabel("Interpolation :"),2,0);
+    gbox->addWidget(cb_mode,2,1);
+    gbox->addWidget(sb_knn,2,2);
+    gbox->addWidget(buttonBox,3,0,1,3);
 
     dialog->setLayout(gbox);
 
     int result=dialog->exec();
     if(result==QDialog::Accepted)
     {
-        Eigen::Vector2d resolution(sb_resX->value(),sb_resY->value());
         Eigen::VectorXd data_x,data_y,data_z;
         QCPColorGradient::GradientPreset gradientType;
         bool ok=false;
@@ -682,6 +697,10 @@ void MainWindow::slot_plot_map_2D()
             Viewer1D * viewer1d=createViewer1D(512+54,512);
 
             Curve2D curve(data_x,data_y,data_z,"Map",Curve2D::MAP);
+            curve.getMapParams().resolutionX= sb_resX->value();
+            curve.getMapParams().resolutionY= sb_resY->value();
+            curve.getMapParams().knn= sb_knn->value();
+            curve.getMapParams().mode=static_cast<QCPColorMap::MapParams::InterpolationMode>(cb_mode->currentIndex());
             curve.getStyle().gradientType=gradientType;
 
             std::cout<<data_z.rows()<<std::endl;

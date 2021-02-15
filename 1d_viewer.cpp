@@ -74,6 +74,12 @@ void Viewer1D::selectionChanged()
             {
                 ptr_curve->setSelection(QCPDataSelection(ptr_curve->data()->dataRange()));
             }
+
+            QCPColorMap* ptr_map=dynamic_cast<QCPColorMap*>(ptr_plottable);
+            if (ptr_map)
+            {
+                ptr_map->setSelection(QCPDataSelection(QCPDataRange(0,ptr_map->data()->keySize())));
+            }
         }
     }
 }
@@ -108,7 +114,7 @@ void Viewer1D::slot_add_data(const Curve2D& datacurve)
     else if (datacurve.getType()==Curve2D::MAP)
     {
         std::cout<<"map"<<std::endl;
-        datacurve.toQCPMap<QCPColorMap>(this);
+        datacurve.toQCPMap(this);
     }
 
     rescaleAxes();
@@ -119,12 +125,19 @@ void Viewer1D::configurePopup()
 {
     QList<QCPAbstractPlottable*> plottables=selectedPlottables();
 
+    cb_gradient->hide();
+
     if (plottables.size()>0)
     {
         QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(plottables[0]);
         QCPGraph* currentgraph=dynamic_cast<QCPGraph*>(plottables[0]);
-
-        if (currentcurve)
+        QCPColorMap* currentmap=dynamic_cast<QCPColorMap*>(plottables[0]);
+        if (currentmap)
+        {
+            cb_gradient->setCurrentIndex(currentmap->colorScale()->gradient().getPreset());
+            cb_gradient->show();
+        }
+        else if (currentcurve)
         {
             cb_itemLineStyleList->setCurrentIndex(currentcurve->lineStyle());
             cb_ScatterShapes->setCurrentIndex(static_cast<int>(currentcurve->scatterStyle().shape()));
@@ -133,10 +146,6 @@ void Viewer1D::configurePopup()
             {
                 cb_gradient->setCurrentIndex(currentcurve->getScalarFieldGradientType());
                 cb_gradient->show();
-            }
-            else
-            {
-                cb_gradient->hide();
             }
         }
         else if (currentgraph)
@@ -148,10 +157,6 @@ void Viewer1D::configurePopup()
             {
                 cb_gradient->setCurrentIndex(currentgraph->getScalarFieldGradientType());
                 cb_gradient->show();
-            }
-            else
-            {
-                cb_gradient->hide();
             }
         }
 
@@ -1648,7 +1653,7 @@ QList<Curve2D> Viewer1D::getSelectedCurves()
     QList<Curve2D> curvelist;
     QList<QCPAbstractPlottable*> plottableslist=this->selectedPlottables();
 
-    for (int i=0,id=0; i<plottableslist.size(); i++)
+    for (int i=0; i<plottableslist.size(); i++)
     {
         QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(plottableslist[i]);
         if (currentcurve)
@@ -1656,7 +1661,6 @@ QList<Curve2D> Viewer1D::getSelectedCurves()
             Curve2D curve;
             curve.fromQCP(currentcurve);
             curvelist.push_back(curve);
-            id++;
         }
 
         QCPGraph* currentgraph=dynamic_cast<QCPGraph*>(plottableslist[i]);
@@ -1665,7 +1669,14 @@ QList<Curve2D> Viewer1D::getSelectedCurves()
             Curve2D curve;
             curve.fromQCP(currentgraph);
             curvelist.push_back(curve);
-            id++;
+        }
+
+        QCPColorMap* currentmap=dynamic_cast<QCPColorMap*>(plottableslist[i]);
+        if (currentmap)
+        {
+            Curve2D curve;
+            curve.fromQCPMap(currentmap);
+            curvelist.push_back(curve);
         }
 
     }
@@ -1746,7 +1757,11 @@ void Viewer1D::slot_rescale()
 
 void Viewer1D::slot_copy()
 {
+    std::cout<<"slot_copy"<<std::endl;
+
     QList<Curve2D> list=getSelectedCurves();
+
+    std::cout<<"slot_copy "<<list.size()<<std::endl;
 
     if (list.size()>0)
     {
@@ -1963,6 +1978,7 @@ void Viewer1D::slot_setScalarFieldGradientType(int type)
 {
     QList<QCPGraph*> graphslist=this->selectedGraphs();
     QList<QCPCurve*> curveslist=this->getQCPListOf<QCPCurve>(true);
+    QList<QCPColorMap*> mapslist=this->getQCPListOf<QCPColorMap>(true);
 
     for (int i=0; i<graphslist.size(); i++)
     {
@@ -1971,6 +1987,10 @@ void Viewer1D::slot_setScalarFieldGradientType(int type)
     for (int i=0; i<curveslist.size(); i++)
     {
         curveslist[0]->setScalarFieldGradientType(type);
+    }
+    for (int i=0; i<mapslist.size(); i++)
+    {
+        mapslist[0]->colorScale()->setGradient(static_cast<QCPColorGradient::GradientPreset>(type));
     }
     replot();
 }

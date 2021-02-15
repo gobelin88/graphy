@@ -29,6 +29,9 @@
 #define QCUSTOMPLOT_H
 
 #include <QtCore/qglobal.h>
+#include <Eigen/Dense>
+#include "kdtree_eigen.h"
+#include "DataConvert.h"
 
 // some Qt version/configuration dependent macros to include or exclude certain code paths:
 #ifdef QCUSTOMPLOT_USE_OPENGL
@@ -5316,6 +5319,7 @@ public:
     void colorize(const double* data, const unsigned char* alpha, const QCPRange& range, QRgb* scanLine, int n, int dataIndexFactor=1, bool logarithmic=false);
     QRgb color(double position, const QCPRange& range, bool logarithmic=false);
     void loadPreset(GradientPreset preset);
+    GradientPreset getPreset(){return preset;}
     void clearColorStops();
     QCPColorGradient inverted() const;
 
@@ -5333,6 +5337,9 @@ protected:
     // non-virtual methods:
     bool stopsUseAlpha() const;
     void updateColorBuffer();
+
+    //
+    GradientPreset preset;
 };
 Q_DECLARE_METATYPE(QCPColorGradient::ColorInterpolation)
 Q_DECLARE_METATYPE(QCPColorGradient::GradientPreset)
@@ -7057,6 +7064,166 @@ class QCP_LIB_DECL QCPColorMap : public QCPAbstractPlottable
     Q_PROPERTY(QCPColorScale* colorScale READ colorScale WRITE setColorScale)
     /// \endcond
 public:
+    struct MapParams
+    {
+        enum InterpolationMode
+        {
+            MODE_NEAREST,
+            MODE_WEIGHTED
+        };
+
+        uint resolutionX;
+        uint resolutionY;
+        uint knn;
+        InterpolationMode mode;
+        Eigen::VectorXd dataX;
+        Eigen::VectorXd dataY;
+        Eigen::VectorXd dataZ;
+
+        MapParams()
+        {
+            this->resolutionX=512;
+            this->resolutionY=512;
+            this->knn=5;
+            this->mode=MODE_NEAREST;
+        }
+
+        MapParams(uint resolutionX,
+                  uint resolutionY,
+                  uint knn,
+                  InterpolationMode mode)
+        {
+            this->resolutionX=resolutionX;
+            this->resolutionY=resolutionY;
+            this->knn=knn;
+            this->mode=mode;
+        }
+
+        void write(QDataStream & ds)
+        {
+            ds<<resolutionX;
+            ds<<resolutionY;
+            ds<<knn;
+            ds<<static_cast<int>(mode);
+
+            ds<<dataX;
+            ds<<dataY;
+            ds<<dataZ;
+        }
+
+        void read(QDataStream & ds)
+        {
+            ds>>resolutionX;
+            ds>>resolutionY;
+            ds>>knn;
+            int modei;
+            ds>>modei;
+            mode=static_cast<InterpolationMode>(modei);
+
+
+            ds>>dataX;
+            ds>>dataY;
+            ds>>dataZ;
+        }
+
+        void interpolate(QCPColorMap* map)
+        {
+            std::cout<<"interpolate A"<<std::endl;
+            Eigen::MatrixXd datapoints(2,dataX.size());
+
+            for (int i=0; i<datapoints.cols(); i++)
+            {
+                datapoints(0,i)=dataX[i];
+                datapoints(1,i)=dataY[i];
+            }
+
+            //std::cout<<"data[box.idX].size()="<<datapoints.cols()<<std::endl;
+            //std::cout<<datapoints.transpose()<<std::endl;
+
+            std::cout<<"interpolate B"<<std::endl;
+            kdt::KDTreed kdtree(datapoints);
+            kdtree.build();
+
+            kdt::KDTreed::Matrix dists; // basically Eigen::MatrixXd
+            kdt::KDTreed::MatrixI idx; // basically Eigen::Matrix<Eigen::Index>
+
+            uint nx=uint(map->data()->keySize());
+            uint ny=uint(map->data()->valueSize());
+
+            std::cout<<"interpolate C"<<std::endl;
+            //Query points
+            kdt::KDTreed::Matrix queryPoints(2,nx*ny);
+            int id=0;
+            for (uint i=0; i<nx; i++)
+            {
+                for (uint j=0; j<ny; j++)
+                {
+                    map->data()->cellToCoord(int(i),int(j),&queryPoints(0,id),&queryPoints(1,id));
+                    id++;
+                }
+            }
+
+            std::cout<<"interpolate D"<<std::endl;
+            //Do the job
+            if (mode==QCPColorMap::MapParams::MODE_WEIGHTED)
+            {
+                kdtree.query(queryPoints, knn, idx, dists);
+            }
+            else if (mode==QCPColorMap::MapParams::MODE_NEAREST)
+            {
+                kdtree.query(queryPoints, 1, idx, dists);
+            }
+
+            std::cout<<"interpolate E"<<std::endl;
+            //Results
+            id=0;
+            for (uint i=0; i<nx; i++)
+            {
+                for (uint j=0; j<ny; j++)
+                {
+                    double value=0;
+                    if (mode==QCPColorMap::MapParams::MODE_WEIGHTED)
+                    {
+                        double weight_sum=0;
+                        for (uint k=0; k<knn; k++)
+                        {
+                            if (idx(k,id)>=0 && idx(0,id)<dataZ.rows())
+                            {
+                                value+=(1.0/dists(k,id))* dataZ[idx(k,id)];
+                                weight_sum+=(1.0/dists(k,id));
+                            }
+                        }
+                        value/=weight_sum;
+                    }
+                    else if (mode==QCPColorMap::MapParams::MODE_NEAREST)
+                    {
+                        if (idx(0,id)>=0 && idx(0,id)<dataZ.rows())
+                        {
+                            value=dataZ[idx(0,id)];
+                        }
+                    }
+
+                    map->data()->setCell(i,j,value);
+                    id++;
+                }
+            }
+        }
+
+        void operator=(const MapParams & other)
+        {
+            this->resolutionX=other.resolutionX;
+            this->resolutionY=other.resolutionY;
+            this->knn=other.knn;
+            this->mode=other.mode;
+
+            dataX=other.dataX;
+            dataY=other.dataY;
+            dataZ=other.dataZ;
+        }
+    };
+
+    MapParams mapParams;
+
     explicit QCPColorMap(QCustomPlot * plot);
     explicit QCPColorMap(QCPAxis* keyAxis, QCPAxis* valueAxis);
     virtual ~QCPColorMap();

@@ -17884,6 +17884,7 @@ QRgb QCPColorGradient::color(double position, const QCPRange& range, bool logari
 */
 void QCPColorGradient::loadPreset(GradientPreset preset)
 {
+    this->preset=preset;
     clearColorStops();
     switch (preset)
     {
@@ -28998,6 +28999,7 @@ QCPColorMap::QCPColorMap(QCPAxis* keyAxis, QCPAxis* valueAxis) :
 QCPColorMap::~QCPColorMap()
 {
     delete mMapData;
+    delete mColorScale;
 }
 
 /*!

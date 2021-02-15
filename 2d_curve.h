@@ -14,38 +14,7 @@ class Curve2D
 {
 public:
     //-------------------------------------------------------
-    struct MapParams
-    {
-        enum InterpolationMode
-        {
-            MODE_NEAREST,
-            MODE_WEIGHTED
-        };
 
-        uint resolutionX;
-        uint resolutionY;
-        uint knn;
-        InterpolationMode mode;
-
-        MapParams()
-        {
-            this->resolutionX=512;
-            this->resolutionY=512;
-            this->knn=5;
-            this->mode=MODE_NEAREST;
-        }
-
-        MapParams(uint resolutionX,
-                  uint resolutionY,
-                  uint knn,
-                  InterpolationMode mode)
-        {
-            this->resolutionX=resolutionX;
-            this->resolutionY=resolutionY;
-            this->knn=knn;
-            this->mode=mode;
-        }
-    };
 
     //-------------------------------------------------------
     struct Style
@@ -73,9 +42,9 @@ public:
             ds<<mLineStyle;
             ds<<mScatterShape;
             ds<<mScatterSize;
-            ds<<mScatterSize;
             ds<<pen;
             ds<<brush;
+            ds<<gradientType;
         }
 
         void read(QDataStream & ds)
@@ -83,9 +52,9 @@ public:
             ds>>mLineStyle;
             ds>>mScatterShape;
             ds>>mScatterSize;
-            ds>>mScatterSize;
             ds>>pen;
             ds>>brush;
+            ds>>gradientType;
         }
     };
 
@@ -222,43 +191,59 @@ public:
         }
     }
 
-    //T = QCPColorMap
-    template<typename T>
-    T* toQCPMap(QCustomPlot* plot)const
+    void fromQCPMap(QCPColorMap * other)
     {
-        T* pqcp = nullptr;
+        //work on
+        this->mapParams=other->mapParams;
+        this->x=this->mapParams.dataX;
+        this->y=this->mapParams.dataY;
+        this->s=this->mapParams.dataZ;
+        this->type=Curve2D::MAP;
+        this->legendname=other->name();
+        this->style.gradientType=other->colorScale()->gradient().getPreset();
+    }
 
-        if(std::is_same<QCPColorMap, T>::value == true)
+    QCPColorMap* toQCPMap(QCustomPlot* plot)const
+    {
+        //work on
+
+        QCPColorMap * pqcp = nullptr;
+
+        if((getX().rows()==getY().rows()) &&
+                (getX().rows()==getScalarField().rows()))
         {
-            if((getX().rows()==getY().rows()) &&
-               (getX().rows()==getScalarField().rows()))
-            {
-                pqcp = new T(plot);
+            pqcp = new QCPColorMap(plot);
+            pqcp->mapParams=mapParams;
+            pqcp->mapParams.dataX=getX();
+            pqcp->mapParams.dataY=getY();
+            pqcp->mapParams.dataZ=getScalarField();
 
-                pqcp->setColorScale(new QCPColorScale(plot));
-                pqcp->colorScale()->setType(QCPAxis::atRight);
-                plot->plotLayout()->addElement(0, 1, pqcp->colorScale());
-                pqcp->setGradient(static_cast<QCPColorGradient::GradientPreset>(style.gradientType));
+            pqcp->setSelectable(QCP::stWhole);
+            pqcp->setSelectionDecorator(nullptr);
 
-                pqcp->data()->clear();
-                pqcp->data()->setSize(mapParams.resolutionX,mapParams.resolutionY);
+            pqcp->setColorScale(new QCPColorScale(plot));
+            pqcp->colorScale()->setType(QCPAxis::atRight);
+            plot->plotLayout()->addElement(0, 1, pqcp->colorScale());
+            pqcp->setGradient(static_cast<QCPColorGradient::GradientPreset>(style.gradientType));
 
-                QCPRange rx(getX().minCoeff(),getX().maxCoeff());
-                QCPRange ry(getY().minCoeff(),getY().maxCoeff());
-                pqcp->data()->setRange(rx,ry);
+            pqcp->data()->clear();
+            pqcp->data()->setSize(mapParams.resolutionX,mapParams.resolutionY);
 
-                interpolate(getX(),getY(),getScalarField(),pqcp,mapParams.knn,mapParams.mode);
+            QCPRange rx(getX().minCoeff(),getX().maxCoeff());
+            QCPRange ry(getY().minCoeff(),getY().maxCoeff());
+            pqcp->data()->setRange(rx,ry);
 
-                plot->xAxis->setRange(pqcp->data()->keyRange());
-                plot->yAxis->setRange(pqcp->data()->valueRange());
-                pqcp->colorScale()->rescaleDataRange(true);
+            pqcp->mapParams.interpolate(pqcp);
 
-                pqcp->setName(getLegend());
-            }
-            else
-            {
-                std::cout<<"Error :"<<getX().rows()<<" "<<getY().rows()<<" "<<getScalarField().rows()<<std::endl;
-            }
+            plot->xAxis->setRange(pqcp->data()->keyRange());
+            plot->yAxis->setRange(pqcp->data()->valueRange());
+            pqcp->colorScale()->rescaleDataRange(true);
+
+            pqcp->setName(getLegend());
+        }
+        else
+        {
+            std::cout<<"Error :"<<getX().rows()<<" "<<getY().rows()<<" "<<getScalarField().rows()<<std::endl;
         }
 
         return pqcp;
@@ -312,6 +297,11 @@ public:
         return style;
     }
 
+    QCPColorMap::MapParams& getMapParams()
+    {
+        return mapParams;
+    }
+
     double getMeanXWeightedByY()
     {
         double sumx=0.0,sumy=0.0;
@@ -362,17 +352,7 @@ private:
     QCPCurve * ptrCurve;
 
     Style style;
-    MapParams mapParams;
-
-    //Map
-    static void interpolate(const Eigen::VectorXd& dataX,
-                     const Eigen::VectorXd& dataY,
-                     const Eigen::VectorXd& dataZ,
-                     QCPColorMap* map,
-                     size_t knn,
-                     MapParams::InterpolationMode mode);
-
-
+    QCPColorMap::MapParams mapParams;
 };
 
 #endif // CURVE2D_H

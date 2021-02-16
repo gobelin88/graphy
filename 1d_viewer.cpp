@@ -1002,10 +1002,8 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
 
         QDialog* dialog=new QDialog;
 
-        QCPAxis::ScaleType currentScaleType=axis->scaleType();
         QCPRange currentRange=axis->range();
-        QString currentFormat=axis->numberFormat();
-        int currentPrecision=axis->numberPrecision();
+        QCPAxis::ScaleType currentScaleType=axis->scaleType();
 
         QComboBox* cb_scale_mode=new QComboBox(dialog);
         cb_scale_mode->addItem("Linear");
@@ -1019,13 +1017,17 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
         sb_axis_max->setPrefix("max=");
         sb_axis_max->setRange(currentRange.lower,1e100);
         sb_axis_max->setValue(currentRange.upper);
-        QLineEdit * le_format=new QLineEdit(currentFormat,dialog);
+        QLineEdit * le_format=new QLineEdit(axis->numberFormat(),dialog);
         le_format->setToolTip("gb : If number is small, fixed format is used, if number is large, scientific format is used with beautifully typeset decimal powers and a dot as multiplication sign\n"\
                               "ebc : All numbers are in scientific format with beautifully typeset decimal power and a cross multiplication sign\n"\
                               "g : normal format code behaviour. If number is small, fixed format is used, if number is large, normal scientific format is used\n"\
                               "f : floating point");
         QSpinBox * sb_precision=new QSpinBox(dialog);
-        sb_precision->setValue(currentPrecision);
+        sb_precision->setValue(axis->numberPrecision());
+
+        QDoubleSpinBox * sb_rotation=new QDoubleSpinBox(dialog);
+        sb_rotation->setValue(axis->tickLabelRotation());
+        sb_rotation->setRange(-90,90);
 
         QObject::connect(sb_axis_min,  SIGNAL(valueChanged(double)), axis, SLOT(setRangeLower(double)));
         QObject::connect(sb_axis_max,  SIGNAL(valueChanged(double)), axis, SLOT(setRangeUpper(double)));
@@ -1064,7 +1066,10 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
         gbox->addWidget(new QLabel("Precision :"),4,0);
         gbox->addWidget(sb_precision,4,1,1,2);
 
-        gbox->addWidget(buttonBox,5,0,1,3);
+        gbox->addWidget(new QLabel("Label rotation :"),5,0);
+        gbox->addWidget(sb_rotation,5,1,1,2);
+
+        gbox->addWidget(buttonBox,6,0,1,3);
 
         dialog->setLayout(gbox);
 
@@ -1074,6 +1079,7 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
             axis->setLabel(le_legend->text());
             axis->setNumberFormat(le_format->text());
             axis->setNumberPrecision(sb_precision->value());
+            axis->setTickLabelRotation(sb_rotation->value());
             replot();
         }
         else

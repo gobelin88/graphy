@@ -1080,6 +1080,9 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
             axis->setNumberFormat(le_format->text());
             axis->setNumberPrecision(sb_precision->value());
             axis->setTickLabelRotation(sb_rotation->value());
+
+
+
             replot();
         }
         else

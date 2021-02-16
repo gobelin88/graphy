@@ -8479,6 +8479,18 @@ void QCPAxis::setScaleType(QCPAxis::ScaleType type)
 {
     if (mScaleType != type)
     {
+        if(type==QCPAxis::ScaleType::stLogarithmic)
+        {
+            QSharedPointer<QCPAxisTickerLog> tickersLog(new QCPAxisTickerLog);
+            tickersLog->setSubTickCount(5);
+            setTicker(tickersLog);
+        }
+        else
+        {
+            QSharedPointer<QCPAxisTicker> tickers(new QCPAxisTicker);
+            setTicker(tickers);
+        }
+
         mScaleType = type;
         if (mScaleType == stLogarithmic)
         {
@@ -8491,16 +8503,7 @@ void QCPAxis::setScaleType(QCPAxis::ScaleType type)
 
 void QCPAxis::setScaleType(int type)
 {
-    if (mScaleType != static_cast<QCPAxis::ScaleType>(type))
-    {
-        mScaleType = static_cast<QCPAxis::ScaleType>(type);
-        if (mScaleType == stLogarithmic)
-        {
-            setRange(mRange.sanitizedForLogScale());
-        }
-        mCachedMarginValid = false;
-        emit scaleTypeChanged(mScaleType);
-    }
+    setScaleType(static_cast<QCPAxis::ScaleType>(type));
 }
 
 /*!

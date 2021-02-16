@@ -35,7 +35,6 @@ SOURCES += \
         1d_viewer.cpp \
         2d_curve.cpp \
         2d_curveComplex.cpp \
-        2d_viewer.cpp \
         3d_cameraParams.cpp \
         3d_cloud.cpp \
         3d_customViewContainer.cpp \
@@ -73,7 +72,6 @@ HEADERS += \
         1d_viewer.h \
         2d_curve.h \
         2d_curveComplex.h \
-        2d_viewer.h \
         3d_base.h \
         3d_cameraParams.h \
         3d_cloud.h \

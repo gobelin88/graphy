@@ -1004,6 +1004,8 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
 
         QCPAxis::ScaleType currentScaleType=axis->scaleType();
         QCPRange currentRange=axis->range();
+        QString currentFormat=axis->numberFormat();
+        int currentPrecision=axis->numberPrecision();
 
         QComboBox* cb_scale_mode=new QComboBox(dialog);
         cb_scale_mode->addItem("Linear");
@@ -1017,14 +1019,19 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
         sb_axis_max->setPrefix("max=");
         sb_axis_max->setRange(currentRange.lower,1e100);
         sb_axis_max->setValue(currentRange.upper);
+        QLineEdit * le_format=new QLineEdit(currentFormat,dialog);
+        le_format->setToolTip("gb : If number is small, fixed format is used, if number is large, scientific format is used with beautifully typeset decimal powers and a dot as multiplication sign\n"\
+                              "ebc : All numbers are in scientific format with beautifully typeset decimal power and a cross multiplication sign\n"\
+                              "g : normal format code behaviour. If number is small, fixed format is used, if number is large, normal scientific format is used\n"\
+                              "f : floating point");
+        QSpinBox * sb_precision=new QSpinBox(dialog);
+        sb_precision->setValue(currentPrecision);
 
         QObject::connect(sb_axis_min,  SIGNAL(valueChanged(double)), axis, SLOT(setRangeLower(double)));
         QObject::connect(sb_axis_max,  SIGNAL(valueChanged(double)), axis, SLOT(setRangeUpper(double)));
         QObject::connect(sb_axis_min,  SIGNAL(valueChanged(double)), this, SLOT(slot_SetSbAxisMax_Min(double)));
         QObject::connect(sb_axis_max,  SIGNAL(valueChanged(double)), this, SLOT(slot_SetSbAxisMin_Max(double)));
-
         QObject::connect(cb_scale_mode,SIGNAL(currentIndexChanged(int)), axis, SLOT(setScaleType(int)));
-
         QObject::connect(sb_axis_min,  SIGNAL(valueChanged(double)), this, SLOT(replot()));
         QObject::connect(sb_axis_max,  SIGNAL(valueChanged(double)), this, SLOT(replot()));
         QObject::connect(cb_scale_mode,SIGNAL(currentIndexChanged(int)), this, SLOT(replot()));
@@ -1051,7 +1058,13 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
         gbox->addWidget(new QLabel("Scale type :"),2,0);
         gbox->addWidget(cb_scale_mode,2,1,1,2);
 
-        gbox->addWidget(buttonBox,3,0,1,3);
+        gbox->addWidget(new QLabel("Format :"),3,0);
+        gbox->addWidget(le_format,3,1,1,2);
+
+        gbox->addWidget(new QLabel("Precision :"),4,0);
+        gbox->addWidget(sb_precision,4,1,1,2);
+
+        gbox->addWidget(buttonBox,5,0,1,3);
 
         dialog->setLayout(gbox);
 
@@ -1059,6 +1072,8 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
         if (result == QDialog::Accepted)
         {
             axis->setLabel(le_legend->text());
+            axis->setNumberFormat(le_format->text());
+            axis->setNumberPrecision(sb_precision->value());
             replot();
         }
         else

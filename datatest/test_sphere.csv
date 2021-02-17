@@ -1,6 +1,6 @@
 <header>
-ra;rb;alpha;beta;X1;Y1;Z1;X2;Y2;Z2;
-$uniform;$uniform;(ra-0.5)*2*pi;(rb-0.5)*pi;cos(alpha)*cos(beta);sin(alpha)*cos(beta);sin(beta);X1+1;Y1+1;Z1+1;
+ra;rb;alpha;beta;X1;Y1;Z1;X2;Y2;Z2
+$uniform;$uniform;(ra-0.5)*2*pi;(rb-0.5)*pi;cos(alpha)*cos(beta);sin(alpha)*cos(beta);sin(beta);X1+1;Y1+1;Z1+1
 </header>
 0.135477;0.993092;-2.29037;1.54909;-0.0143023;-0.0163211;0.999765;0.985698;0.983679;1.99976;
 0.835009;0.2602;2.10492;-0.753355;-0.371327;0.627803;-0.68409;0.628673;1.6278;0.31591;

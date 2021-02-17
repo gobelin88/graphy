@@ -69,7 +69,9 @@ public slots:
     void slot_setPenColor(QColor color);
     void slot_setPenWidth(double width);
     void slot_setStyle(int style);
+    void slot_setScattersShape(int scatter_shape);
     void slot_setScatterShape(int scatter_shape);
+    void slot_setScattersSize(int scatter_shape);
     void slot_setScatterSize(double scatter_size);
     void slot_setPenStyle(int style);
     void slot_setBrushStyle(int style);
@@ -93,6 +95,7 @@ public slots:
     void slot_auto_color4();
     void slot_auto_color5();
     void slot_auto_clear();
+    void slot_setScatters();
 
     //void slot_addXaxisLabel();
 
@@ -110,6 +113,10 @@ signals:
     void sig_newColumn(QString varName,Eigen::VectorXd data);
 
 protected:
+    QVector<int> getScattersList();
+    void setScattersList(QVector<int> scattersList);
+    QVector<int> getScattersSizeList();
+    void setScattersSizeList(QVector<int> scattersSizeList);
 
     template <typename T>
     QList<T*> getQCPListOf(bool selected)
@@ -128,9 +135,7 @@ protected:
     }
 
     QList<Curve2D> getSelectedCurves();
-
-    QList<QCPAbstractPlottable*> getSelectedCurvesOrGraphs();
-    QList<QColor> colors;
+    QList<QCPAbstractPlottable*> getCurvesOrGraphs(bool selected);
 
     QString current_filename;
     unsigned int getId();
@@ -163,6 +168,7 @@ protected:
 
     QAction* actIncreasePenWidth;
     QAction* actDecreasePenWidth;
+    QAction* actSetScatters;
 
     QMenu* menuParameters;
     QMenu* menuLegend;
@@ -215,6 +221,10 @@ protected:
 
     QDoubleSpinBox * sb_axis_min;
     QDoubleSpinBox * sb_axis_max;
+
+    QVector<QColor> colors;
+
+    QComboBox * createScatterComboBox();
 };
 
 #endif // VIEWER1D_H

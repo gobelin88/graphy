@@ -26,6 +26,7 @@ Graph-Paste;Ctrl+V
 Graph-Rescale;R
 Graph-RescaleSelected;Alt+R
 Graph-Save;Ctrl+S
+Graph-SetScatters;*
 Graph-Style;!
 New;Ctrl+N
 New-row;PgDown

@@ -2543,10 +2543,10 @@ public:
     void setTickLabelPadding(int padding);
     void setTickLabelFont(const QFont& font);
     void setTickLabelColor(const QColor& color);
-    void setTickLabelRotation(double degrees);
+    Q_SLOT void setTickLabelRotation(double degrees);
     void setTickLabelSide(LabelSide side);
-    void setNumberFormat(const QString& formatCode);
-    void setNumberPrecision(int precision);
+    Q_SLOT void setNumberFormat(const QString& formatCode);
+    Q_SLOT void setNumberPrecision(int precision);
     void setTickLength(int inside, int outside=0);
     void setTickLengthIn(int inside);
     void setTickLengthOut(int outside);
@@ -2559,7 +2559,7 @@ public:
     void setSubTickPen(const QPen& pen);
     void setLabelFont(const QFont& font);
     void setLabelColor(const QColor& color);
-    void setLabel(const QString& str);
+    Q_SLOT void setLabel(const QString& str);
     void setLabelPadding(int padding);
     void setPadding(int padding);
     void setOffset(int offset);

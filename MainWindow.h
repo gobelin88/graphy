@@ -7,7 +7,6 @@
 #include <QMdiArea>
 
 #include "1d_viewer.h"
-#include "2d_viewer.h"
 #include "3d_viewer.h"
 #include "bode_viewer.h"
 #include "MyGradientComboBox.h"

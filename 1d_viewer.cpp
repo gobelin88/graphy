@@ -3,16 +3,27 @@
 
 Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* parent):QCustomPlot(parent)
 {
-    colors.append(QColor(255,0,0));
-    colors.append(QColor(0,128,0));
-    colors.append(QColor(0,0,255));
-    colors.append(QColor(255,128,0));
-    colors.append(QColor(0,128,255));
-    colors.append(QColor(255,0,255));
-    colors.append(QColor(128,255,0));
-    colors.append(QColor(0,255,128));
-    colors.append(QColor(128,0,255));
-    colors.append(QColor(255,0,128));
+//    colors.append(QColor(255,0,0));
+//    colors.append(QColor(0,128,0));
+//    colors.append(QColor(0,0,255));
+//    colors.append(QColor(255,128,0));
+//    colors.append(QColor(0,128,255));
+//    colors.append(QColor(255,0,255));
+//    colors.append(QColor(128,255,0));
+//    colors.append(QColor(0,255,128));
+//    colors.append(QColor(128,0,255));
+//    colors.append(QColor(255,0,128));
+
+    colors<<QColor(160,0,0);
+    colors<<QColor(0,160,0);
+    colors<<QColor(0,0,160);
+    colors<<QColor(255,160,0);
+    colors<<QColor(255,0,255);
+    colors<<QColor(0,160,128);
+    colors<<QColor(128,255,0);
+    colors<<QColor(128,0,255);
+    colors<<QColor(0,128,255);
+    colors<<QColor(0,0,0);
 
     createPopup();
 
@@ -172,6 +183,29 @@ void Viewer1D::configurePopup()
     }
 }
 
+QComboBox * Viewer1D::createScatterComboBox()
+{
+    QComboBox * comboBox=new QComboBox;
+    comboBox->addItem(QStringLiteral("ssNone"),             int(QCPScatterStyle::ScatterShape::ssNone));
+    comboBox->addItem(QStringLiteral("ssDot"),              int(QCPScatterStyle::ScatterShape::ssDot));
+    comboBox->addItem(QStringLiteral("ssCross"),            int(QCPScatterStyle::ScatterShape::ssCross));
+    comboBox->addItem(QStringLiteral("ssPlus"),             int(QCPScatterStyle::ScatterShape::ssPlus));
+    comboBox->addItem(QStringLiteral("ssCircle"),           int(QCPScatterStyle::ScatterShape::ssCircle));
+    comboBox->addItem(QStringLiteral("ssDisc"),             int(QCPScatterStyle::ScatterShape::ssDisc));
+    comboBox->addItem(QStringLiteral("ssSquare"),           int(QCPScatterStyle::ScatterShape::ssSquare));
+    comboBox->addItem(QStringLiteral("ssDiamond"),          int(QCPScatterStyle::ScatterShape::ssDiamond));
+    comboBox->addItem(QStringLiteral("ssStar"),             int(QCPScatterStyle::ScatterShape::ssStar));
+    comboBox->addItem(QStringLiteral("ssTriangle"),         int(QCPScatterStyle::ScatterShape::ssTriangle));
+    comboBox->addItem(QStringLiteral("ssTriangleInverted"), int(QCPScatterStyle::ScatterShape::ssTriangleInverted));
+    comboBox->addItem(QStringLiteral("ssCrossSquare"),      int(QCPScatterStyle::ScatterShape::ssCrossSquare));
+    comboBox->addItem(QStringLiteral("ssPlusSquare"),       int(QCPScatterStyle::ScatterShape::ssPlusSquare));
+    comboBox->addItem(QStringLiteral("ssCrossCircle"),      int(QCPScatterStyle::ScatterShape::ssCrossCircle));
+    comboBox->addItem(QStringLiteral("ssPlusCircle"),       int(QCPScatterStyle::ScatterShape::ssPlusCircle));
+    comboBox->addItem(QStringLiteral("ssPeace"),            int(QCPScatterStyle::ScatterShape::ssPeace));
+    comboBox->addItem(QStringLiteral("ssArrow"),            int(QCPScatterStyle::ScatterShape::ssArrow));
+    return comboBox;
+}
+
 QWidgetAction* Viewer1D::createParametersWidget()
 {
     QWidgetAction* actWidget=new QWidgetAction(popup_menu);
@@ -188,25 +222,7 @@ QWidgetAction* Viewer1D::createParametersWidget()
     cb_itemLineStyleList->addItem(QStringLiteral("lsStepCenter"),  int(QCPGraph::LineStyle::lsStepCenter));
     cb_itemLineStyleList->addItem(QStringLiteral("lsImpulse"),     int(QCPGraph::LineStyle::lsImpulse));
 
-    cb_ScatterShapes = new QComboBox;
-    cb_ScatterShapes->addItem(QStringLiteral("ssNone"),             int(QCPScatterStyle::ScatterShape::ssNone));
-    cb_ScatterShapes->addItem(QStringLiteral("ssDot"),              int(QCPScatterStyle::ScatterShape::ssDot));
-    cb_ScatterShapes->addItem(QStringLiteral("ssCross"),            int(QCPScatterStyle::ScatterShape::ssCross));
-    cb_ScatterShapes->addItem(QStringLiteral("ssPlus"),             int(QCPScatterStyle::ScatterShape::ssPlus));
-    cb_ScatterShapes->addItem(QStringLiteral("ssCircle"),           int(QCPScatterStyle::ScatterShape::ssCircle));
-    cb_ScatterShapes->addItem(QStringLiteral("ssDisc"),             int(QCPScatterStyle::ScatterShape::ssDisc));
-    cb_ScatterShapes->addItem(QStringLiteral("ssSquare"),           int(QCPScatterStyle::ScatterShape::ssSquare));
-    cb_ScatterShapes->addItem(QStringLiteral("ssDiamond"),          int(QCPScatterStyle::ScatterShape::ssDiamond));
-    cb_ScatterShapes->addItem(QStringLiteral("ssStar"),             int(QCPScatterStyle::ScatterShape::ssStar));
-    cb_ScatterShapes->addItem(QStringLiteral("ssTriangle"),         int(QCPScatterStyle::ScatterShape::ssTriangle));
-    cb_ScatterShapes->addItem(QStringLiteral("ssTriangleInverted"), int(QCPScatterStyle::ScatterShape::ssTriangleInverted));
-    cb_ScatterShapes->addItem(QStringLiteral("ssCrossSquare"),      int(QCPScatterStyle::ScatterShape::ssCrossSquare));
-    cb_ScatterShapes->addItem(QStringLiteral("ssPlusSquare"),       int(QCPScatterStyle::ScatterShape::ssPlusSquare));
-    cb_ScatterShapes->addItem(QStringLiteral("ssCrossCircle"),      int(QCPScatterStyle::ScatterShape::ssCrossCircle));
-    cb_ScatterShapes->addItem(QStringLiteral("ssPlusCircle"),       int(QCPScatterStyle::ScatterShape::ssPlusCircle));
-    cb_ScatterShapes->addItem(QStringLiteral("ssPeace"),            int(QCPScatterStyle::ScatterShape::ssPeace));
-    cb_ScatterShapes->addItem(QStringLiteral("ssArrow"),            int(QCPScatterStyle::ScatterShape::ssArrow));
-
+    cb_ScatterShapes = createScatterComboBox();
     sb_ScatterSize=new QDoubleSpinBox;
     sb_ScatterSize->setRange(1,100);
 
@@ -342,11 +358,11 @@ void Viewer1D::createPopup()
     actDistance= new QAction("K-nearest neighbors distances",  this);
 
 
-    actAutoColor1= new QAction("Theme 1",  this);
-    actAutoColor2= new QAction("Theme 2",  this);
-    actAutoColor3= new QAction("Theme 3",  this);
-    actAutoColor4= new QAction("Theme 4",  this);
-    actAutoColor5= new QAction("Theme 5",  this);
+    actAutoColor1= new QAction("Theme 1 : Differents colors"                 ,  this);
+    actAutoColor2= new QAction("Theme 2 : Differents colors pairs "          ,  this);
+    actAutoColor3= new QAction("Theme 3 : Differents colors with plain brush",  this);
+    actAutoColor4= new QAction("Theme 4 : Differents colors with plain brush",  this);
+    actAutoColor5= new QAction("Theme 5 : Differents colors with plain brush",  this);
     actAutoColorClear= new QAction("Clear",  this);
 
     actFilterMedian=new QAction("Median",this);
@@ -354,9 +370,11 @@ void Viewer1D::createPopup()
 
     actDecreasePenWidth=new QAction("Decrease pen width",this);
     actIncreasePenWidth=new QAction("Increase pen width",this);
+    actSetScatters=new QAction("Set scatters",this);
 
     this->addAction(actDecreasePenWidth);
     this->addAction(actIncreasePenWidth);
+    this->addAction(actSetScatters);
 
     this->addAction(actCopy);
     this->addAction(actPaste);
@@ -435,6 +453,12 @@ void Viewer1D::createPopup()
     menuAutoColor->addAction(actAutoColor4);
     menuAutoColor->addAction(actAutoColor5);
     menuAutoColor->addAction(actAutoColorClear);
+    menuAutoColor->addSeparator();
+    menuAutoColor->addAction(actIncreasePenWidth);
+    menuAutoColor->addAction(actDecreasePenWidth);
+    menuAutoColor->addSeparator();
+    menuAutoColor->addAction(actSetScatters);
+
 
     menuParameters->addMenu(menuLegend);
     menuParameters->addAction(createParametersWidget());
@@ -484,6 +508,7 @@ void Viewer1D::createPopup()
     connect(actAutoColor4,SIGNAL(triggered()),this,SLOT(slot_auto_color4()));
     connect(actAutoColor5,SIGNAL(triggered()),this,SLOT(slot_auto_color5()));
     connect(actAutoColorClear,SIGNAL(triggered()),this,SLOT(slot_auto_clear()));
+    connect(actSetScatters,SIGNAL(triggered()),this,SLOT(slot_setScatters()));
 
     connect(actFilterMean,SIGNAL(triggered()),this,SLOT(slot_meanFilter()));
     connect(actFilterMedian,SIGNAL(triggered()),this,SLOT(slot_medianFilter()));
@@ -491,31 +516,19 @@ void Viewer1D::createPopup()
 
 }
 
-void Viewer1D::slot_auto_color1()
+void Viewer1D::slot_auto_color1()//Diff colors
 {
-    QVector<QColor> color;
-    color<<QColor(160,0,0);
-    color<<QColor(0,160,0);
-    color<<QColor(0,0,160);
-    color<<QColor(255,160,0);
-    color<<QColor(255,0,255);
-    color<<QColor(0,160,128);
-    color<<QColor(128,255,0);
-    color<<QColor(128,0,255);
-    color<<QColor(0,128,255);
-    color<<QColor(0,0,0);
-
     QList<QCPAbstractPlottable*> plottables=this->plottables();
 
     for (int i=0; i<plottables.size(); i++)
     {
-        int index=i%color.size();
+        int index=i%colors.size();
 
         //Pen
         QPen pen=plottables[i]->pen();
         pen.setStyle(Qt::SolidLine);
-        color[index].setAlphaF(1.0);
-        pen.setColor(color[index]);
+        colors[index].setAlphaF(1.0);
+        pen.setColor(colors[index]);
 
         //Brush
         QBrush brush;
@@ -528,68 +541,18 @@ void Viewer1D::slot_auto_color1()
     replot();
 }
 
-void Viewer1D::slot_auto_color2()
+void Viewer1D::slot_auto_color2()//diff color pair
 {
-    QVector<QColor> color;
-    color<<QColor(160,0,0);
-    color<<QColor(0,160,0);
-    color<<QColor(0,0,160);
-    color<<QColor(255,160,0);
-    color<<QColor(255,0,255);
-    color<<QColor(0,160,128);
-    color<<QColor(128,255,0);
-    color<<QColor(128,0,255);
-    color<<QColor(0,128,255);
-    color<<QColor(0,0,0);
-
     QList<QCPAbstractPlottable*> plottables=this->plottables();
 
     for (int i=0; i<plottables.size(); i++)
     {
-        int index=i%color.size();
+        int index=(i/2)%colors.size();
 
         //Pen
         QPen pen=plottables[i]->pen();
-        pen.setStyle(Qt::SolidLine);
-        pen.setColor(Qt::black);
-
-        //Brush
-        QBrush brush=plottables[i]->brush();
-        brush.setStyle(Qt::SolidPattern);
-        color[index].setAlphaF(0.5);
-        brush.setColor(color[index]);
-
-        plottables[i]->setPen(pen);
-        plottables[i]->setBrush(brush);
-    }
-
-    replot();
-}
-
-void Viewer1D::slot_auto_color3()
-{
-    QVector<QColor> color;
-    color<<QColor(160,0,0);
-    color<<QColor(0,160,0);
-    color<<QColor(0,0,160);
-    color<<QColor(255,160,0);
-    color<<QColor(255,0,255);
-    color<<QColor(0,160,128);
-    color<<QColor(128,255,0);
-    color<<QColor(128,0,255);
-    color<<QColor(0,128,255);
-    color<<QColor(0,0,0);
-
-    QList<QCPAbstractPlottable*> plottables=this->plottables();
-
-    for (int i=0; i<plottables.size(); i++)
-    {
-        int index=(i/2)%color.size();
-
-        //Pen
-        QPen pen=plottables[i]->pen();
-        color[index].setAlphaF(1.0);
-        pen.setColor(color[index]);
+        colors[index].setAlphaF(1.0);
+        pen.setColor(colors[index]);
         if(i%2==1){pen.setStyle(Qt::DotLine);}else{pen.setStyle(Qt::SolidLine);}
 
         //Brush
@@ -603,36 +566,50 @@ void Viewer1D::slot_auto_color3()
     replot();
 }
 
-void Viewer1D::slot_auto_color4()
+void Viewer1D::slot_auto_color3()//brush diag
 {
-    QVector<QColor> color;
-    color<<QColor(160,0,0);
-    color<<QColor(0,160,0);
-    color<<QColor(0,0,160);
-    color<<QColor(255,160,0);
-    color<<QColor(255,0,255);
-    color<<QColor(0,160,128);
-    color<<QColor(128,255,0);
-    color<<QColor(128,0,255);
-    color<<QColor(0,128,255);
-    color<<QColor(0,0,0);
-
     QList<QCPAbstractPlottable*> plottables=this->plottables();
 
     for (int i=0; i<plottables.size(); i++)
     {
-        int index=i%color.size();
+        int index=i%colors.size();
 
         //Pen
         QPen pen=plottables[i]->pen();
         pen.setStyle(Qt::SolidLine);
-        pen.setColor(color[index]);
+        pen.setColor(colors[index]);
 
         //Brush
         QBrush brush=plottables[i]->brush();
         brush.setStyle(Qt::BDiagPattern);
-        color[index].setAlphaF(0.5);
-        brush.setColor(color[index]);
+        colors[index].setAlphaF(0.5);
+        brush.setColor(colors[index]);
+
+        plottables[i]->setPen(pen);
+        plottables[i]->setBrush(brush);
+    }
+
+    replot();
+}
+
+void Viewer1D::slot_auto_color4()//brush solid
+{
+    QList<QCPAbstractPlottable*> plottables=this->plottables();
+
+    for (int i=0; i<plottables.size(); i++)
+    {
+        int index=i%colors.size();
+
+        //Pen
+        QPen pen=plottables[i]->pen();
+        pen.setStyle(Qt::SolidLine);
+        pen.setColor(Qt::black);
+
+        //Brush
+        QBrush brush=plottables[i]->brush();
+        brush.setStyle(Qt::SolidPattern);
+        colors[index].setAlphaF(0.5);
+        brush.setColor(colors[index]);
 
         plottables[i]->setPen(pen);
         plottables[i]->setBrush(brush);
@@ -643,33 +620,21 @@ void Viewer1D::slot_auto_color4()
 
 void Viewer1D::slot_auto_color5()
 {
-    QVector<QColor> color;
-    color<<QColor(160,0,0);
-    color<<QColor(0,160,0);
-    color<<QColor(0,0,160);
-    color<<QColor(255,160,0);
-    color<<QColor(255,0,255);
-    color<<QColor(0,160,128);
-    color<<QColor(128,255,0);
-    color<<QColor(128,0,255);
-    color<<QColor(0,128,255);
-    color<<QColor(0,0,0);
-
     QList<QCPAbstractPlottable*> plottables=this->plottables();
 
     for (int i=0; i<plottables.size(); i++)
     {
-        int index=i%color.size();
+        int index=i%colors.size();
 
         //Pen
         QPen pen=plottables[i]->pen();
         pen.setStyle(Qt::DashLine);
-        pen.setColor(color[index]);
+        pen.setColor(colors[index]);
 
         //Brush
         QBrush brush=plottables[i]->brush();
         brush.setStyle(Qt::NoBrush);
-        brush.setColor(color[index]);
+        brush.setColor(colors[index]);
 
         plottables[i]->setPen(pen);
         plottables[i]->setBrush(brush);
@@ -678,26 +643,50 @@ void Viewer1D::slot_auto_color5()
     replot();
 }
 
+void Viewer1D::slot_setScatters()
+{
+    QVector<int> scattersList=getScattersList();
+    QVector<int> scattersSizeList=getScattersSizeList();
+
+    if(scattersList.size()>0 && scattersSizeList.size()>0)
+    {
+        QDialog* dialog=new QDialog;
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+        QComboBox * cb_scattersShape=createScatterComboBox();
+        cb_scattersShape->setCurrentIndex(scattersList[0]);
+        QObject::connect(cb_scattersShape, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setScattersShape(int)));
+
+        QSpinBox * sb_scattersSize=new QSpinBox();
+        sb_scattersSize->setValue(scattersSizeList[0]);
+        QObject::connect(sb_scattersSize, SIGNAL(valueChanged(int)), this, SLOT(slot_setScattersSize(int)));
+
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("Set scatters");
+        QGridLayout* gbox = new QGridLayout();
+        gbox->addWidget(cb_scattersShape,0,0);
+        gbox->addWidget(sb_scattersSize,0,1);
+        gbox->addWidget(buttonBox,1,0);
+        dialog->setLayout(gbox);
+
+        int result=dialog->exec();
+        if (result != QDialog::Accepted)
+        {
+            setScattersList(scattersList);
+            setScattersSizeList(scattersSizeList);
+            replot();
+        }
+    }
+}
+
 void Viewer1D::slot_auto_clear()
 {
-    QVector<QColor> color;
-    color<<QColor(160,0,0);
-    color<<QColor(0,160,0);
-    color<<QColor(0,0,160);
-    color<<QColor(255,160,0);
-    color<<QColor(255,0,255);
-    color<<QColor(0,160,128);
-    color<<QColor(128,255,0);
-    color<<QColor(128,0,255);
-    color<<QColor(0,128,255);
-    color<<QColor(0,0,0);
-
     QList<QCPAbstractPlottable*> plottables=this->plottables();
 
     for (int i=0; i<plottables.size(); i++)
     {
-        int index=i%color.size();
-
         //Pen
         QPen pen=plottables[i]->pen();
         pen.setStyle(Qt::SolidLine);
@@ -732,6 +721,137 @@ void Viewer1D::slot_setStyle(int style)
     replot();
 }
 
+QVector<int> Viewer1D::getScattersList()
+{
+    QList<QCPAbstractPlottable*> list=this->getCurvesOrGraphs(false);
+    QVector<int> scattersList(list.size());
+    for (int i=0; i<list.size(); i++)
+    {
+        QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(list[i]);
+        QCPGraph* currentgraph=dynamic_cast<QCPGraph*>(list[i]);
+
+        if(currentcurve)
+        {
+            scattersList[i]=currentcurve->scatterStyle().shape();
+        }
+        else if(currentgraph)
+        {
+            scattersList[i]=currentgraph->scatterStyle().shape();
+        }
+    }
+    return scattersList;
+}
+
+void Viewer1D::setScattersList(QVector<int> scattersList)
+{
+    QList<QCPAbstractPlottable*> list=this->getCurvesOrGraphs(false);
+
+    if(scattersList.size()==list.size())
+    {
+        for (int i=0; i<list.size(); i++)
+        {
+            QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(list[i]);
+            QCPGraph* currentgraph=dynamic_cast<QCPGraph*>(list[i]);
+
+            QCPScatterStyle::ScatterShape scatter_shape=QCPScatterStyle::ScatterShape(scattersList[i]);
+
+            if(currentcurve)
+            {
+                currentcurve->setScatterStyle( QCPScatterStyle(scatter_shape,currentcurve->scatterStyle().size()) );
+            }
+            else if(currentgraph)
+            {
+                currentgraph->setScatterStyle( QCPScatterStyle(scatter_shape,currentgraph->scatterStyle().size()) );
+            }
+        }
+    }
+}
+
+QVector<int> Viewer1D::getScattersSizeList()
+{
+    QList<QCPAbstractPlottable*> list=this->getCurvesOrGraphs(false);
+    QVector<int> scattersSizeList(list.size());
+    for (int i=0; i<list.size(); i++)
+    {
+        QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(list[i]);
+        QCPGraph* currentgraph=dynamic_cast<QCPGraph*>(list[i]);
+
+        if(currentcurve)
+        {
+            scattersSizeList[i]=currentcurve->scatterStyle().size();
+        }
+        else if(currentgraph)
+        {
+            scattersSizeList[i]=currentgraph->scatterStyle().size();
+        }
+    }
+    return scattersSizeList;
+}
+
+void Viewer1D::setScattersSizeList(QVector<int> scattersSizeList)
+{
+    QList<QCPAbstractPlottable*> list=this->getCurvesOrGraphs(false);
+
+    if(scattersSizeList.size()==list.size())
+    {
+        for (int i=0; i<list.size(); i++)
+        {
+            QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(list[i]);
+            QCPGraph* currentgraph=dynamic_cast<QCPGraph*>(list[i]);
+
+
+            if(currentcurve)
+            {
+                currentcurve->setScatterStyle( QCPScatterStyle(currentcurve->scatterStyle().shape(),scattersSizeList[i]) );
+            }
+            else if(currentgraph)
+            {
+                currentgraph->setScatterStyle( QCPScatterStyle(currentgraph->scatterStyle().shape(),scattersSizeList[i]) );
+            }
+        }
+    }
+}
+
+void Viewer1D::slot_setScattersShape(int scatter_shapei)
+{
+    QList<QCPAbstractPlottable*> list=this->getCurvesOrGraphs(false);
+    QCPScatterStyle::ScatterShape scatter_shape=QCPScatterStyle::ScatterShape(scatter_shapei);
+    for (int i=0; i<list.size(); i++)
+    {
+        QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(list[i]);
+        QCPGraph* currentgraph=dynamic_cast<QCPGraph*>(list[i]);
+
+        if(currentcurve)
+        {
+            currentcurve->setScatterStyle( QCPScatterStyle(scatter_shape,currentcurve->scatterStyle().size()) );
+        }
+        else if(currentgraph)
+        {
+            currentgraph->setScatterStyle( QCPScatterStyle(scatter_shape,currentgraph->scatterStyle().size()) );
+        }
+    }
+    replot();
+}
+
+void Viewer1D::slot_setScattersSize(int scatter_size)
+{
+    QList<QCPAbstractPlottable*> list=this->getCurvesOrGraphs(false);
+    for (int i=0; i<list.size(); i++)
+    {
+        QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(list[i]);
+        QCPGraph* currentgraph=dynamic_cast<QCPGraph*>(list[i]);
+
+        if(currentcurve)
+        {
+            currentcurve->setScatterStyle( QCPScatterStyle(currentcurve->scatterStyle().shape(),scatter_size) );
+        }
+        else if(currentgraph)
+        {
+            currentgraph->setScatterStyle( QCPScatterStyle(currentgraph->scatterStyle().shape(),scatter_size) );
+        }
+    }
+    replot();
+}
 
 void Viewer1D::slot_setScatterShape(int scatter_shape)
 {
@@ -1004,6 +1124,10 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
 
         QCPRange currentRange=axis->range();
         QCPAxis::ScaleType currentScaleType=axis->scaleType();
+        QString currentLabel=axis->label();
+        uint currentPrecision=axis->numberPrecision();
+        QString currentNumberFormat=axis->numberFormat();
+        double currentLabelRotation=axis->tickLabelRotation();
 
         QComboBox* cb_scale_mode=new QComboBox(dialog);
         cb_scale_mode->addItem("Linear");
@@ -1017,18 +1141,26 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
         sb_axis_max->setPrefix("max=");
         sb_axis_max->setRange(currentRange.lower,1e100);
         sb_axis_max->setValue(currentRange.upper);
-        QLineEdit * le_format=new QLineEdit(axis->numberFormat(),dialog);
+        QLineEdit * le_format=new QLineEdit(currentNumberFormat,dialog);
         le_format->setToolTip("gb : If number is small, fixed format is used, if number is large, scientific format is used with beautifully typeset decimal powers and a dot as multiplication sign\n"\
                               "ebc : All numbers are in scientific format with beautifully typeset decimal power and a cross multiplication sign\n"\
                               "g : normal format code behaviour. If number is small, fixed format is used, if number is large, normal scientific format is used\n"\
                               "f : floating point");
+
+        QObject::connect(le_format,  SIGNAL(textChanged(QString)), axis, SLOT(setNumberFormat(QString)));
+        QObject::connect(le_format,  SIGNAL(textChanged(QString)), this, SLOT(replot()));
+
         QSpinBox * sb_precision=new QSpinBox(dialog);
-        sb_precision->setValue(axis->numberPrecision());
+        sb_precision->setValue(currentPrecision);
 
         QDoubleSpinBox * sb_rotation=new QDoubleSpinBox(dialog);
-        sb_rotation->setValue(axis->tickLabelRotation());
+        sb_rotation->setValue(currentLabelRotation);
         sb_rotation->setRange(-90,90);
 
+        QObject::connect(sb_rotation,  SIGNAL(valueChanged(double)), axis, SLOT(setTickLabelRotation(double)));
+        QObject::connect(sb_rotation,  SIGNAL(valueChanged(double)), this, SLOT(replot()));
+        QObject::connect(sb_precision,  SIGNAL(valueChanged(int)), axis, SLOT(setNumberPrecision(int)));
+        QObject::connect(sb_precision,  SIGNAL(valueChanged(int)), this, SLOT(replot()));
         QObject::connect(sb_axis_min,  SIGNAL(valueChanged(double)), axis, SLOT(setRangeLower(double)));
         QObject::connect(sb_axis_max,  SIGNAL(valueChanged(double)), axis, SLOT(setRangeUpper(double)));
         QObject::connect(sb_axis_min,  SIGNAL(valueChanged(double)), this, SLOT(slot_SetSbAxisMax_Min(double)));
@@ -1042,7 +1174,9 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
         dialog->setWindowTitle("Axis");
         QGridLayout* gbox = new QGridLayout();
 
-        QLineEdit * le_legend=new QLineEdit(axis->label(),dialog);
+        QLineEdit * le_legend=new QLineEdit(currentLabel,dialog);
+        QObject::connect(le_legend,  SIGNAL(textChanged(QString)), axis, SLOT(setLabel(QString)));
+        QObject::connect(le_legend,  SIGNAL(textChanged(QString)), this, SLOT(replot()));
 
         QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
                                                            | QDialogButtonBox::Cancel);
@@ -1076,17 +1210,14 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
         int result=dialog->exec();
         if (result == QDialog::Accepted)
         {
-            axis->setLabel(le_legend->text());
-            axis->setNumberFormat(le_format->text());
-            axis->setNumberPrecision(sb_precision->value());
-            axis->setTickLabelRotation(sb_rotation->value());
-
-
-
             replot();
         }
         else
         {
+            axis->setTickLabelRotation(currentLabelRotation);
+            axis->setNumberFormat(currentNumberFormat);
+            sb_precision->setValue(currentPrecision);
+            axis->setLabel(currentLabel);
             axis->setScaleType(currentScaleType);
             axis->setRange(currentRange);
             replot();
@@ -1651,9 +1782,9 @@ void Viewer1D::slot_delete()
     this->replot();
 }
 
-QList<QCPAbstractPlottable*> Viewer1D::getSelectedCurvesOrGraphs()
+QList<QCPAbstractPlottable*> Viewer1D::getCurvesOrGraphs(bool selected)
 {
-    QList<QCPAbstractPlottable*> plottableslist=this->selectedPlottables();
+    QList<QCPAbstractPlottable*> plottableslist=(selected)?this->selectedPlottables():this->plottables();
     QList<QCPAbstractPlottable*> list;
     for (int i=0; i<plottableslist.size(); i++)
     {
@@ -1952,6 +2083,7 @@ void Viewer1D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     shortcuts_links.insert(QString("Graph-AutoColorClear"),actAutoColorClear);
     shortcuts_links.insert(QString("Graph-IncreasePenWidth"),actIncreasePenWidth);
     shortcuts_links.insert(QString("Graph-DecreasePenWidth"),actDecreasePenWidth);
+    shortcuts_links.insert(QString("Graph-SetScatters"),actSetScatters);
 
     QMapIterator<QString, QKeySequence> i(shortcuts_map);
     while (i.hasNext())

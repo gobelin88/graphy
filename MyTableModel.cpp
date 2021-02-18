@@ -220,24 +220,29 @@ bool MyModel::open(QString filename)
                 hasheader=true;
                 if(content[2]==QString("</header>"))
                 {
-                    QVector<QStringRef> variablesNames=content[1].split(";");
+                    QVector<QStringRef> variablesNames=content[1].split(";",QString::SkipEmptyParts);
                     for(int i=0;i<variablesNames.size();i++)
                     {
-                        reg.newVariable(variablesNames[i].toString(),"");
+                        if(!reg.newVariable(variablesNames[i].toString(),""))
+                        {
+                            error("Open error",QString("Variable name :")+variablesNames[i]);
+                            return false;
+                        }
                     }
                     headerSize=3;
                 }
                 else if(content[3]==QString("</header>"))
                 {
-                    QVector<QStringRef> variablesNames=content[1].split(";");
+                    QVector<QStringRef> variablesNames=content[1].split(";",QString::SkipEmptyParts);
                     QVector<QStringRef> variablesExpressions=content[2].split(";");
 
-                    if(variablesNames.size()==variablesExpressions.size())
+                    if(variablesNames.size()<=variablesExpressions.size())
                     {
                         for(int i=0;i<variablesNames.size();i++)
                         {
                             if(!reg.newVariable(variablesNames[i].toString(),""))
                             {
+                                error("Open error",QString("Variable name :")+variablesNames[i]);
                                 return false;
                             }
                         }
@@ -249,13 +254,14 @@ bool MyModel::open(QString filename)
                                                "",
                                                Register::getLoadVariableExpression( variablesExpressions[i].toString())))
                             {
+                                error("Open error",QString("Variable name :")+variablesNames[i]);
                                 return false;
                             }
                         }
                     }
                     else
                     {
-                        error("Open",QString("Number of expressions (%1) and number of variables (%2) are different.").arg(variablesExpressions.size()).arg(variablesNames.size()));
+                        error("Open",QString("Number of expressions (%1) is inferior of the number of variables (%2).").arg(variablesExpressions.size()).arg(variablesNames.size()));
                         ok=false;
                     }
                     headerSize=4;

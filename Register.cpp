@@ -14,25 +14,40 @@
 
 Register::Register()
 {    
+    parser=new exprtk::parser<VariableType>;
+    current_compiled_expression=new exprtk::expression<VariableType>;
+    symbolsTable=new exprtk::symbol_table<VariableType>;
+
     clear();
-    current_compiled_expression.register_symbol_table(symbolsTable);
+    current_compiled_expression->register_symbol_table(*symbolsTable);
 
     setDataPtr(nullptr);
 }
 
 Register::~Register()
 {
-    std::cout<<"Delete register3"<<std::endl;
+    //std::cout<<"Delete register3"<<std::endl;
     variables_names.clear();
 
-    std::cout<<"Delete register4"<<std::endl;
+    //std::cout<<"Delete register4"<<std::endl;
     variables_expressions.clear();
 
-    std::cout<<"Delete register5"<<std::endl;
+    //std::cout<<"Delete register5"<<std::endl;
     variables.clear();
 
-    std::cout<<"Delete register6"<<std::endl;
-    symbolsTable.clear();
+    //std::cout<<"Delete register6"<<std::endl;
+    symbolsTable->clear();
+
+    //std::cout<<"Delete register7"<<std::endl;
+    delete parser;
+
+    //std::cout<<"Delete register8"<<std::endl;
+    delete current_compiled_expression;
+
+    //std::cout<<"Delete register9"<<std::endl;
+    delete symbolsTable;
+
+    //std::cout<<"Delete register done"<<std::endl;
 }
 
 void Register::swapVariables(int ida,int idb)
@@ -75,33 +90,37 @@ void Register::clear()
     variables_names.clear();
     variables_expressions.clear();
     variables.clear();
-    symbolsTable.clear();
+    symbolsTable->clear();
 
-    symbolsTable.add_constant("i",VariableType(0,1));
-    symbolsTable.add_constant("pi",VariableType(M_PI));
+    symbolsTable->add_constant("i",VariableType(0,1));
+    symbolsTable->add_constant("pi",VariableType(M_PI));
 
     //Table
-    symbolsTable.add_variable("Rows",numberRows);
-    symbolsTable.add_variable("Cols",numberCols);
-    symbolsTable.add_variable("Row",activeRow);
-    symbolsTable.add_variable("Col",activeCol);
-    symbolsTable.add_function("data",cf_data);
-    symbolsTable.add_function("index",cf_id);
+    symbolsTable->add_variable("Rows",numberRows);
+    symbolsTable->add_variable("Cols",numberCols);
+    symbolsTable->add_variable("Row",activeRow);
+    symbolsTable->add_variable("Col",activeCol);
+    symbolsTable->add_function("data",cf_data);
+    symbolsTable->add_function("index",cf_id);
 
 
     //Noise
-    symbolsTable.add_function("uniform"  ,  cf_uniform);
-    symbolsTable.add_function("normal"  ,  cf_normal);
+    symbolsTable->add_function("uniform"  ,  cf_uniform);
+    symbolsTable->add_function("normal"  ,  cf_normal);
 
     //specials functions
-    symbolsTable.add_function("gamma"  ,  cf_gamma);
-    symbolsTable.add_function("zeta"  ,  cf_zeta);
-    symbolsTable.add_function("xsi"  ,  cf_xsi);
-    symbolsTable.add_function("lin"  ,  cf_lin);
+    symbolsTable->add_function("gamma"  ,  cf_gamma);
+    symbolsTable->add_function("zeta"  ,  cf_zeta);
+    symbolsTable->add_function("xsi"  ,  cf_xsi);
+    symbolsTable->add_function("lin"  ,  cf_lin);
+    symbolsTable->add_function("clin"  ,  cf_clin);
 
     cf_id.setVariablesNamesPtr(&variables_names);
     cf_lin.setNumberOfRowsPtr(&numberRows);
     cf_lin.setCurrentRowPtr(&activeRow);
+
+    cf_clin.setNumberOfRowsPtr(&numberRows);
+    cf_clin.setCurrentRowPtr(&activeRow);
 }
 
 bool Register::newVariable(QString varname,QString varexpr)
@@ -118,7 +137,7 @@ bool Register::newVariable(QString varname,QString varexpr)
 
     VariableType * p_variable=new VariableType(0.0);
     variables.push_back(p_variable);
-    symbolsTable.add_variable(varname.toStdString(),*p_variable);
+    symbolsTable->add_variable(varname.toStdString(),*p_variable);
 
     variables_names.push_back(varname);
     variables_expressions.push_back(varexpr);
@@ -132,7 +151,7 @@ void Register::delVariable(QString varname)
     variables_names.removeAt(index);
     variables_expressions.removeAt(index);
     variables.erase(variables.begin()+index);
-    symbolsTable.remove_variable(varname.toStdString());
+    symbolsTable->remove_variable(varname.toStdString());
 }
 
 bool Register::renameVariable(QString old_varname,QString new_varname,QString oldExpression,QString newExpression)
@@ -156,8 +175,8 @@ bool Register::renameVariable(QString old_varname,QString new_varname,QString ol
         if(isValidVariable(new_varname))
         {
             variables_names[index]=new_varname;
-            symbolsTable.add_variable(new_varname.toStdString(),symbolsTable.variable_ref(old_varname.toStdString()));
-            symbolsTable.remove_variable(old_varname.toStdString());
+            symbolsTable->add_variable(new_varname.toStdString(),symbolsTable->variable_ref(old_varname.toStdString()));
+            symbolsTable->remove_variable(old_varname.toStdString());
         }
         else
         {
@@ -182,12 +201,12 @@ bool Register::isValidExpression(QString variableExpression)
     else
     {
         exprtk::expression<VariableType> current_expression;
-        current_expression.register_symbol_table(symbolsTable);
-        bool ok=parser.compile(variableExpression.toStdString(),current_expression);
+        current_expression.register_symbol_table(*symbolsTable);
+        bool ok=parser->compile(variableExpression.toStdString(),current_expression);
 
         if (!ok)
         {
-            error("Invalid formula",variableExpression+QString("\nError : ")+QString::fromStdString(parser.error()));
+            error("Invalid formula",variableExpression+QString("\nError : ")+QString::fromStdString(parser->error()));
         }
 
         return ok;
@@ -209,7 +228,7 @@ int Register::countVariable(QString variableName)
 
 bool Register::existVariable(QString variableName)
 {
-    if (symbolsTable.symbol_exists(variableName.toStdString()))
+    if (symbolsTable->symbol_exists(variableName.toStdString()))
     {
         return true;
     }
@@ -236,13 +255,13 @@ bool Register::isValidVariable(QString variableName)
         return false;
     }
 
-    if (!symbolsTable.valid_symbol(variableName.toStdString()))
+    if (!symbolsTable->valid_symbol(variableName.toStdString()))
     {
         error("Variable",QString("%1 : Invalid variable name.\nVariables names can't have any of these characters :\n+ - / * ^ > < | & ...etc").arg(variableName));
         return false;
     }
 
-    if (symbolsTable.symbol_exists(variableName.toStdString()))
+    if (symbolsTable->symbol_exists(variableName.toStdString()))
     {
         error("Variable",QString("%1 : This variable name is already used").arg(variableName));
         return false;
@@ -289,7 +308,7 @@ int Register::size()
 
 exprtk::symbol_table<Register::VariableType> &Register::symbols()
 {
-    return symbolsTable;
+    return *symbolsTable;
 }
 
 void Register::setVariable(int i,Register::VariableType value)
@@ -312,21 +331,21 @@ bool Register::compileExpression(int id)
 //            exprtk::parser<double>::settings_store::settings_compilation_options::e_sequence_check    +
 //            exprtk::parser<double>::settings_store::settings_compilation_options::e_commutative_check +
 //            exprtk::parser<double>::settings_store::settings_compilation_options::e_strength_reduction;
-//    parser.settings().load_compile_options(compile_options);
-//    std::cout<<"replacer_enabled="<<parser.settings().replacer_enabled()<<std::endl;
-//    std::cout<<"commutative_check_enabled="<<parser.settings().commutative_check_enabled()<<std::endl;
-//    std::cout<<"joiner_enabled="<<parser.settings().joiner_enabled()<<std::endl;
-//    std::cout<<"numeric_check_enabled="<<parser.settings().numeric_check_enabled()<<std::endl;
-//    std::cout<<"bracket_check_enabled="<<parser.settings().bracket_check_enabled()<<std::endl;
-//    std::cout<<"sequence_check_enabled="<<parser.settings().sequence_check_enabled()<<std::endl;
-//    std::cout<<"collect_variables_enabled="<<parser.settings().collect_variables_enabled()<<std::endl;
-//    std::cout<<"collect_functions_enabled="<<parser.settings().collect_functions_enabled()<<std::endl;
-//    std::cout<<"collect_assignments_enabled="<<parser.settings().collect_assignments_enabled()<<std::endl;
+//    parser->settings().load_compile_options(compile_options);
+//    std::cout<<"replacer_enabled="<<parser->settings().replacer_enabled()<<std::endl;
+//    std::cout<<"commutative_check_enabled="<<parser->settings().commutative_check_enabled()<<std::endl;
+//    std::cout<<"joiner_enabled="<<parser->settings().joiner_enabled()<<std::endl;
+//    std::cout<<"numeric_check_enabled="<<parser->settings().numeric_check_enabled()<<std::endl;
+//    std::cout<<"bracket_check_enabled="<<parser->settings().bracket_check_enabled()<<std::endl;
+//    std::cout<<"sequence_check_enabled="<<parser->settings().sequence_check_enabled()<<std::endl;
+//    std::cout<<"collect_variables_enabled="<<parser->settings().collect_variables_enabled()<<std::endl;
+//    std::cout<<"collect_functions_enabled="<<parser->settings().collect_functions_enabled()<<std::endl;
+//    std::cout<<"collect_assignments_enabled="<<parser->settings().collect_assignments_enabled()<<std::endl;
 
 
 
 
-    return parser.compile(variables_expressions[id].toStdString(),current_compiled_expression);
+    return parser->compile(variables_expressions[id].toStdString(),*current_compiled_expression);
 }
 
 Register * Register::copy()
@@ -337,7 +356,7 @@ Register * Register::copy()
     {
         VariableType * p_variable =new VariableType;
         copy_reg->variables.push_back(p_variable);
-        copy_reg->symbolsTable.add_variable(variables_names[i].toStdString(),*p_variable);
+        copy_reg->symbolsTable->add_variable(variables_names[i].toStdString(),*p_variable);
     }
     copy_reg->variables_names=variables_names;
     copy_reg->variables_expressions=variables_expressions;
@@ -347,14 +366,14 @@ Register * Register::copy()
 
 void Register::currentCompiledExpressionValue(MyVariant & variant)const
 {
-    variant=current_compiled_expression.value();
+    variant=current_compiled_expression->value();
 }
 
 QStringList Register::getVariablesList()
 {
     QStringList qlist;
     std::vector<std::string> list;
-    symbolsTable.get_variable_list(list);
+    symbolsTable->get_variable_list(list);
     for(int i=0;i<list.size();i++)
     {
         qlist.append(QString::fromStdString(list[i]));
@@ -367,7 +386,7 @@ QStringList Register::getFunctionsList()
 {
     QStringList qlist;
     std::vector<std::string> list;
-    symbolsTable.get_function_list(list);
+    symbolsTable->get_function_list(list);
     for(int i=0;i<list.size();i++)
     {
         qlist.append(QString::fromStdString(list[i]));

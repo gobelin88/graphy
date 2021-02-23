@@ -33,7 +33,18 @@ void MyModel::create(int nbRows, int nbCols,int rowSpan)
     h_header->setVisible(true);
     v_header->setVisible(true);
 
+//    QFont font;
+//    font.setPixelSize(14);
+//    v_header->setFont(font);
+//    h_header->setFont(font);
+
     createEmpty(nbRows,nbCols);
+
+
+
+    //v_header->setFixedWidth(100);
+    //v_header->adjustSize();
+    //v_header->setSizeAdjustPolicy(QHeaderView::AdjustToContents);
 
     setRowSpan(rowSpan);
     setRowOffset(0);
@@ -353,6 +364,9 @@ bool MyModel::open(QString filename)
 
 bool MyModel::save(QString filename)
 {
+    QElapsedTimer timer;
+    timer.start();
+
     QFile file(filename);
     if (file.open(QIODevice::WriteOnly | QIODevice::Text))
     {
@@ -370,30 +384,39 @@ bool MyModel::save(QString filename)
 
         if(hasheader)
         {
-            out<< "<header>\n";
+            file.write(QByteArray("<header>\n"));
             for (int j = 0; j < reg.variablesNames().size(); j++)
             {
-                out<<reg.variablesNames()[j];
-                if(j!=reg.variablesNames().size()-1){out<< ";";}
+                file.write(reg.variablesNames()[j].toUtf8());
+                if(j!=reg.variablesNames().size()-1){file.write(QByteArray(";"));}
             }
-            out<< "\n";
+            file.write(QByteArray("\n"));
             for (int j = 0; j < reg.variablesExpressions().size(); j++)
             {
-                out<<reg.getSaveVariablesExpression(j);
-                if(j!=reg.variablesExpressions().size()-1){out<< ";";}
+                file.write(reg.getSaveVariablesExpression(j).toUtf8());
+                if(j!=reg.variablesExpressions().size()-1){file.write(QByteArray(";"));}
             }
-            out<< "\n</header>\n";
+            file.write(QByteArray("\n</header>\n"));
         }
 
+        QVector<QByteArray> packLines(m_data.rows());
+
+        #pragma omp parallel for
         for (int i = 0; i < m_data.rows(); i++)
         {
+            QString line;
             for (int j = 0; j < m_data.cols(); j++)
             {
-
-                out<< m_data(i,j).saveToString();
-                if(j!=m_data.cols()-1){out<< ";";}
+                line+=(j!=m_data.cols()-1)? m_data(i,j).saveToString()+";":
+                                            m_data(i,j).saveToString()+"\n";
             }
-            out<< "\n";             // (optional: for new line segmentation)
+            packLines[i]=line.toUtf8();
+        }
+
+        std::cout<<"Save parsing time : "<<timer.nsecsElapsed()*1e-9<<std::endl;
+        for (const QByteArray & line: packLines)
+        {
+            file.write(line);
         }
 
         file.close();
@@ -401,6 +424,7 @@ bool MyModel::save(QString filename)
         currentFilename=filename;
         modified=false;
 
+        std::cout<<"Save time : "<<timer.nsecsElapsed()*1e-9<<std::endl;
         return true;
     }
     else
@@ -408,6 +432,8 @@ bool MyModel::save(QString filename)
         error("Save",QString("Unable to save the file : ")+filename);
         return false;
     }
+
+
 }
 
 const MatrixXv & MyModel::tableData()
@@ -666,6 +692,8 @@ void MyModel::applyFilters(const QModelIndexList & selectedColsIndexes)
 void MyModel::contentResized()
 {
     v_scrollBar->setRange(0,getRowOffsetMax());
+    QFontMetricsF fm(v_header->font());
+    v_header->setFixedWidth(fm.horizontalAdvance(QString("  R%1  ").arg(m_data.rows())));
     emit layoutChanged();
 }
 
@@ -809,10 +837,11 @@ void MyModel::evalColumn(int visualIndex)
     }
     else
     {
-        //#pragma omp parallel for default(none) num_threads(numthreads)
-        //int tid = omp_get_thread_num();
 
-        int numthreads=1;
+        int numthreads=8;
+        //int tid = omp_get_thread_num();
+        //#pragma omp parallel for default(none) num_threads(numthreads)
+
         if (reg.compileExpression(visualIndex))
         {
             std::vector<Register *> regt(numthreads,nullptr);
@@ -837,6 +866,7 @@ void MyModel::evalColumn(int visualIndex)
 
             for(int i=1;i<numthreads;i++)
             {
+                //std::cout<<"Delete register number "<<i<<std::endl;
                 delete regt[i];
             }
         }
@@ -845,8 +875,25 @@ void MyModel::evalColumn(int visualIndex)
 
 QVariant MyModel::headerData(int logicalIndex, Qt::Orientation orientation, int role) const
 {
+//    if (role == Qt::SizeHintRole)
+//    {
+//        if (orientation == Qt::Vertical)
+//        {
+//            int n=log10(logicalIndex+1+m_rowOffset);
+//            std::cout<<n<<std::endl;
+//            return QSize((n+1)*32,32);
+//        }
+//        else
+//        {
+//            return QVariant();
+//        }
+//    }
+//    else
+
     if (role != Qt::DisplayRole)
+    {
              return QVariant();
+    }
 
     if (orientation == Qt::Horizontal)
     {
@@ -866,6 +913,7 @@ QVariant MyModel::headerData(int logicalIndex, Qt::Orientation orientation, int 
         //Les numéro des lignes sont toujours dans l'ordre.
         return QString("R%1").arg(v_header->visualIndex(logicalIndex)+1+m_rowOffset);
     }
+
     else
     {
         return QVariant();
@@ -1039,6 +1087,7 @@ int MyModel::rowCount(const QModelIndex & /*parent*/) const
     {
         return rowRemainder;
     }
+
 }
 //-----------------------------------------------------------------
 int MyModel::columnCount(const QModelIndex & /*parent*/) const
@@ -1072,7 +1121,6 @@ QVariant MyModel::data(const QModelIndex &index_logical, int role) const
             return QBrush(QColor(Qt::white));
         }
     }
-
     return QVariant();
 }
 

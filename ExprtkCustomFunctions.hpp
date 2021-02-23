@@ -95,6 +95,52 @@ struct linFunction : public exprtk::ifunction<T>
     T * current_rows;
 };
 
+template <typename T>
+struct clinFunction : public exprtk::ifunction<T>
+{
+    using exprtk::ifunction<T>::operator();
+
+    clinFunction()
+        : exprtk::ifunction<T>(2)
+    {
+        //exprtk::disable_has_side_effects(*this);
+        rows=nullptr;
+        current_rows=nullptr;
+    }
+
+    void setNumberOfRowsPtr(T * rows)
+    {
+        this->rows=rows;
+    }
+    void setCurrentRowPtr(T * current_rows)
+    {
+        this->current_rows=current_rows;
+    }
+
+    inline T operator()(const T& a, const T& b)
+    {
+        if(current_rows && rows)
+        {
+            int N=sqrt( (*rows).real() );
+            int N_current=(*current_rows).real();
+
+            double Xa=a.real();
+            double Ya=a.imag();
+            double Xb=b.real();
+            double Yb=b.imag();
+
+            return std::complex<double>( ((N_current)%N)*(Xb-Xa)/(N-1)+Xa,( (N_current/N)*(Yb-Ya)/(N-1)+Ya) );
+        }
+        else
+        {
+            return 0.0;
+        }
+    }
+
+    T * rows;
+    T * current_rows;
+};
+
 template <typename T,typename Tdata>
 struct dataFunction : public exprtk::ifunction<T>
 {

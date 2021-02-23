@@ -85,10 +85,10 @@ private:
     MatrixXv * data_ptr;
 
     //Exprtk
-    exprtk::parser<VariableType> parser;
-    exprtk::expression<VariableType> current_compiled_expression;
+    exprtk::parser<VariableType> * parser;
+    exprtk::expression<VariableType> * current_compiled_expression;
+    exprtk::symbol_table<VariableType> * symbolsTable;
 
-    exprtk::symbol_table<VariableType> symbolsTable;
     QVector<VariableType*> variables;
     QStringList variables_names;
     QStringList variables_expressions;
@@ -100,6 +100,7 @@ private:
     zetaFunction<VariableType> cf_zeta;
     xsiFunction<VariableType> cf_xsi;
     linFunction<VariableType> cf_lin;
+    clinFunction<VariableType> cf_clin;
     dataFunction<VariableType,MatrixXv> cf_data;
     indexFunction<VariableType> cf_id;
 
@@ -111,8 +112,6 @@ private:
 
     //Error message
     void error(QString title,QString msg);
-
-
 
     //Misc
     int getVarExpDialog(QString currentName, QString currentExpression, QString & newName, QString & newExpression);

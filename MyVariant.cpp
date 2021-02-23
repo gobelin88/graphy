@@ -147,7 +147,8 @@ QString MyVariant::complexToString(std::complex<double> value)const
     }
     else
     {
-        return doubleToString( value.real())+QString(",")+doubleToString( value.imag());
+        //return doubleToString( value.real())+QString(",")+doubleToString( value.imag());
+        return QString("%1,%2").arg(value.real()).arg(value.imag());
     }
 }
 

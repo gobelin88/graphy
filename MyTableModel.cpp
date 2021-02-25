@@ -23,6 +23,7 @@ void MyModel::create(int nbRows, int nbCols,int rowSpan)
     v_scrollBar=new QScrollBar();
     h_header=new QHeaderView(Qt::Horizontal);
     v_header=new QHeaderView(Qt::Vertical);
+
     h_header->setAccessibleName("Variables");
     h_header->setSectionsMovable(true);
     v_header->setSectionsMovable(true);
@@ -30,17 +31,8 @@ void MyModel::create(int nbRows, int nbCols,int rowSpan)
     v_header->setHighlightSections(true);
     v_header->setSectionsClickable(true);
     h_header->setSectionsClickable(true);
-    h_header->setVisible(true);
-    v_header->setVisible(true);
-
-//    QFont font;
-//    font.setPixelSize(14);
-//    v_header->setFont(font);
-//    h_header->setFont(font);
 
     createEmpty(nbRows,nbCols);
-
-
 
     //v_header->setFixedWidth(100);
     //v_header->adjustSize();
@@ -58,6 +50,7 @@ void MyModel::create(int nbRows, int nbCols,int rowSpan)
     modified=true;
     hasheader=false;
     currentFilename=QString("new.graphy");
+
 }
 
 void MyModel::createEmpty(int nbRows, int nbCols)
@@ -692,8 +685,11 @@ void MyModel::applyFilters(const QModelIndexList & selectedColsIndexes)
 void MyModel::contentResized()
 {
     v_scrollBar->setRange(0,getRowOffsetMax());
-    QFontMetricsF fm(v_header->font());
-    v_header->setFixedWidth(fm.horizontalAdvance(QString("  R%1  ").arg(m_data.rows())));
+    QFontMetricsF fm(v_header->font(),nullptr);
+    //std::cout<<"contentResized 2"<<std::endl;
+    int vHeaderWidth=fm.horizontalAdvance(QString("  R%1  ").arg(m_data.rows()));
+    //std::cout<<"vHeaderWidth="<<vHeaderWidth<<std::endl;
+    v_header->setFixedWidth(vHeaderWidth);
     emit layoutChanged();
 }
 

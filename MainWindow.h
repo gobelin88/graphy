@@ -97,7 +97,7 @@ private:
     QString getCurrentFilename();
 
     //Constants
-    const float graphyVersion=8.0f;
+    const float graphyVersion=8.1f;
     //1.0//Basic graphs
     //2.0//Add lots of graph facilities
     //3.0//Add Copy/Paste management between graphs and table

@@ -93,7 +93,7 @@ public:
     }
 
     //Shape3d interface
-    Vector3d delta(const Vector3d& params)const;
+    Vector3d delta(const Vector3d& params);
     int nb_params();
     void setParams(const Eigen::VectorXd& params);
     const Eigen::VectorXd& getParams();

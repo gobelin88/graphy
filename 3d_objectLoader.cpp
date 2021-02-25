@@ -806,7 +806,7 @@ const Eigen::VectorXd& Object::getParams()
     return params;
 }
 
-Vector3d Object::delta(const Vector3d& p) const
+Vector3d Object::delta(const Vector3d& p)
 {
     double dmin=DBL_MAX;
     Vector3d nDelta,delta;

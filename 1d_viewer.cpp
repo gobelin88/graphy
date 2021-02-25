@@ -354,6 +354,8 @@ void Viewer1D::createPopup()
     actFitSinusoide= new QAction("Sinusoide",  this);
     actFitCircle= new QAction("Circle",  this);
     actFitEllipse= new QAction("Ellipse",  this);
+    actFitCustomExp= new QAction("Custom Expression",  this);
+
     actFitPolynomial2V= new QAction("Polynomial in two variables",  this);
     actDistance= new QAction("K-nearest neighbors distances",  this);
 
@@ -437,6 +439,9 @@ void Viewer1D::createPopup()
     menuFit->addAction(actFitSinusoide);
     menuFit->addAction(actFitCircle);
     menuFit->addAction(actFitEllipse);
+    menuFit->addSeparator();
+    menuFit->addAction(actFitCustomExp);
+
 
     menuLegend->addAction(actLegendShowHide);
     menuLegend->addAction(actLegendTopBottom);
@@ -495,6 +500,7 @@ void Viewer1D::createPopup()
     connect(actFitSigmoid,SIGNAL(triggered()),this,SLOT(slot_fit_sigmoid()));
     connect(actFitCircle,SIGNAL(triggered()),this,SLOT(slot_fit_circle()));
     connect(actFitEllipse,SIGNAL(triggered()),this,SLOT(slot_fit_ellipse()));
+    connect(actFitCustomExp,SIGNAL(triggered()),this,SLOT(slot_fit_custom()));
 
     connect(actCopy,SIGNAL(triggered()),this,SLOT(slot_copy()));
     connect(actPaste,SIGNAL(triggered()),this,SLOT(slot_paste()));
@@ -1312,6 +1318,54 @@ void Viewer1D::slot_fit_circle()
             emit sig_displayResults(QString("Fit Circle :\n%1\nRms=%3").arg(result_str).arg(circle.getRMS()));
             emit sig_newColumn(QString("Err_Circle"),circle.getErrNorm());
         }
+    }
+}
+
+void Viewer1D::slot_fit_custom()
+{
+    std::cout<<"Custom fit"<<std::endl;
+
+    QList<Curve2D> curves=getSelectedCurves();
+
+    for (int i=0; i<curves.size(); i++)
+    {
+        CustomExpDialog dialog;
+
+        int result=dialog.exec();
+
+        if (result == QDialog::Accepted)
+        {
+            if(dialog.isValid())
+            {
+                //init
+                CustomRealExp * p_exp=dialog.getCustomRealExpression();
+
+                p_exp->setParams(dialog.getP0());
+
+                //Minimize
+                curves[i].fit(p_exp);
+
+                //Results
+                QString result_str;
+                VectorXd p=p_exp->getParams();
+                for(int i=0;i<p_exp->getParamsNames().size();i++)
+                {
+                    result_str.append(QString("%1=%2 ").arg(p_exp->getParamsNames()[i]).arg(p[i]));
+                }
+
+                Eigen::VectorXd X=curves[0].getLinX(1000);
+                Eigen::VectorXd Y=p_exp->at(X);
+
+                Curve2D fit_curve(X,Y,QString("Fit Custom : %1").arg(result_str),Curve2D::CURVE);
+
+                slot_add_data(fit_curve);
+
+                emit sig_displayResults(QString("Fit Custom real expression :%1\n%2\nRms=%3").arg(p_exp->getExpression()).arg(result_str).arg(p_exp->getRMS()));
+                emit sig_newColumn(QString("Err_Custom"),p_exp->getErrNorm());
+
+            }
+        }
+
     }
 }
 

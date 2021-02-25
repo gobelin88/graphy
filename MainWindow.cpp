@@ -1187,7 +1187,7 @@ void MainWindow::closeTable(int index)
                 QMessageBox::question( this, "Confirm close" ,
                                        QString("Some changes have not been saved :\n\n")+tables[index]->model()->getTabTitle()+QString("\n\nDiscard changes and exit ?\n"),
                                        QMessageBox::No | QMessageBox::Yes,
-                                       QMessageBox::Yes);
+                                       QMessageBox::No);
 
         if (resBtn != QMessageBox::Yes)
         {
@@ -1314,7 +1314,7 @@ void MainWindow::closeEvent (QCloseEvent *event)
         QMessageBox::StandardButton resBtn =
                 QMessageBox::question( this, "Confirm quit" ,QString("Some changes have not been saved :\n\n")+filesNotSaved+QString("\nDiscard changes and exit ?\n"),
                                        QMessageBox::No | QMessageBox::Yes,
-                                       QMessageBox::Yes);
+                                       QMessageBox::No);
         if (resBtn != QMessageBox::Yes)
         {
             event->ignore();

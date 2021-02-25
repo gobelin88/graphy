@@ -607,6 +607,7 @@ QString getHelp(QString name)
 
     //functions
     else if(name=="data"){return QString("<b>data</b>(a,b)<p>Provide direct acces to data.This return the data stored at row a column b.</p><b>Example:</b><p>data(1,0)</p>");}
+    else if(name=="clin"){return QString("<b>clin</b>(A,B)<p>Generate a linear regular grid interpolation between A and B where A and B represent the complexes numbers at the bottom-left corner and B at the top-left corner. The grid is composed of exactly Rows points, that is, sqrt(Rows)xsqrt(Rows).</p><b>Example:</b><p>lin(0,1)</p>");}
     else if(name=="lin"){return QString("<b>lin</b>(A,B)<p>Generate a linear interpolation between A and B.</p><b>Example:</b><p>lin(0,1)</p>");}
     else if(name=="uniform"){return QString("<b>uniform</b>(A,B)<p>Generate a random number with uniform distribution on interval [A,B].</p><b>Example:</b><p>uniform(0,1)</p>");}
     else if(name=="normal"){return QString("<b>normal</b>(A,B)<p>Generate a random number with normal distribution with mean A and standard deviation B.</p><b>Example:</b><p>normal(0,1)</p>");}

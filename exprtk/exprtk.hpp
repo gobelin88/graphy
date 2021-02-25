@@ -1198,8 +1198,7 @@ namespace exprtk
             template <typename T>
             inline T atan2_impl(const T v0, const T v1, complex_type_tag)
             {
-               //not implemented
-               return v0;
+               return std::atan2(v0.real(),v1.real());
             }
 
             template <typename T>

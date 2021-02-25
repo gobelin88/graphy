@@ -40,6 +40,7 @@ public slots:
     void slot_fit_sigmoid();
     void slot_fit_circle();
     void slot_fit_ellipse();
+    void slot_fit_custom();
 
     void slot_fit_2var_polynomial();
 
@@ -192,6 +193,7 @@ protected:
     QAction* actFitSinusoide;
     QAction* actFitCircle;
     QAction* actFitEllipse;
+    QAction* actFitCustomExp;
 
 
     QAction* actStatistiques;

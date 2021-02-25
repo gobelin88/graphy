@@ -7,7 +7,10 @@
 #include <QDoubleSpinBox>
 #include <QGridLayout>
 #include <QDialogButtonBox>
+#include <QLineEdit>
 #include <QLabel>
+
+#include "exprtk/exprtk.hpp"
 
 #ifndef M_PI
 #define M_PI 3.14159265359
@@ -29,7 +32,7 @@ class Shape:public Functor<double>
 {
 public:
 
-    virtual T delta(const T& p)const=0;
+    virtual T delta(const T& p)=0;
     virtual int nb_params()=0;
 
     virtual void setParams(const Eigen::VectorXd& p)=0;
@@ -42,14 +45,29 @@ public:
         T dn;
         int n=dn.rows();
 
-        #pragma omp parallel for
-        for (int i=0; i<points.size(); i++)
+        if(threaded)
         {
-            T d=delta(points[i]);
-
-            for (int k=0; k<n; k++)
+            #pragma omp parallel for
+            for (int i=0; i<points.size(); i++)
             {
-                h[n*i+k]=d[k];
+                T d=delta(points[i]);
+
+                for (int k=0; k<n; k++)
+                {
+                    h[n*i+k]=d[k];
+                }
+            }
+        }
+        else
+        {
+            for (int i=0; i<points.size(); i++)
+            {
+                T d=delta(points[i]);
+
+                for (int k=0; k<n; k++)
+                {
+                    h[n*i+k]=d[k];
+                }
             }
         }
 
@@ -129,8 +147,11 @@ public:
         return err_dist;
     }
 
+
+
 private:
     std::vector<T> points;
+
 };
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -154,7 +175,7 @@ public:
         return p[3];
     }
 
-    Eigen::Vector3d delta(const Eigen::Vector3d& pt)const;
+    Eigen::Vector3d delta(const Eigen::Vector3d& pt);
     int nb_params();
     void setParams(const Eigen::VectorXd& p);
     const Eigen::VectorXd& getParams();
@@ -205,7 +226,7 @@ public:
 
     Eigen::Vector3d proj(const Eigen::Vector3d& P,const Eigen::Vector3d& V)const;
 
-    Eigen::Vector3d delta(const Eigen::Vector3d& pt)const;
+    Eigen::Vector3d delta(const Eigen::Vector3d& pt);
     int nb_params();
     void setParams(const Eigen::VectorXd& p);
     const Eigen::VectorXd& getParams();
@@ -242,7 +263,7 @@ public:
         return p[5];
     }
 
-    Eigen::Vector3d delta(const Eigen::Vector3d& pt)const;
+    Eigen::Vector3d delta(const Eigen::Vector3d& pt);
     int nb_params();
     void setParams(const Eigen::VectorXd& p);
     const Eigen::VectorXd& getParams();
@@ -328,7 +349,7 @@ public:
         return p[2];
     }
 
-    Eigen::Vector2d delta(const Eigen::Vector2d& P)const;
+    Eigen::Vector2d delta(const Eigen::Vector2d& P);
     int nb_params();
     void setParams(const Eigen::VectorXd& p);
     const Eigen::VectorXd& getParams();
@@ -463,7 +484,7 @@ public:
         return getRa()*getRb()/sqrt(ct*ct+st*st);
     }
 
-    Eigen::Vector2d delta(const Eigen::Vector2d& P)const
+    Eigen::Vector2d delta(const Eigen::Vector2d& P)
     {
         Eigen::Vector2d CP=P-getCenter();
         double t=atan2(CP[1],CP[0]);
@@ -538,7 +559,7 @@ public:
         return dialog;
     }
 
-    Eigen::Vector2d delta(const Eigen::Vector2d& pt)const
+    Eigen::Vector2d delta(const Eigen::Vector2d& pt)
     {
         return Eigen::Vector2d (pt[1]-at(pt[0]),0);
     }
@@ -696,7 +717,7 @@ public:
         return dialog;
     }
 
-    Eigen::Vector2d delta(const Eigen::Vector2d& pt)const
+    Eigen::Vector2d delta(const Eigen::Vector2d& pt)
     {
         return Eigen::Vector2d (pt[1]-at(pt[0]),0);
     }
@@ -831,7 +852,7 @@ public:
         return dialog;
     }
 
-    Eigen::Vector2d delta(const Eigen::Vector2d& pt)const
+    Eigen::Vector2d delta(const Eigen::Vector2d& pt)
     {
         return Eigen::Vector2d (pt[1]-at(pt[0]),pt[1]-at(pt[0]));
     }
@@ -985,7 +1006,7 @@ public:
         return 1.0/(2*M_PI*std::sqrt(getL()*getC()*1e-12));
     }
 
-    Eigen::Vector3d delta(const Eigen::Vector3d& pt)const
+    Eigen::Vector3d delta(const Eigen::Vector3d& pt)
     {
         Eigen::Vector2d res=at(pt[0]);
 
@@ -1192,7 +1213,7 @@ public:
         return dialog;
     }
 
-    Eigen::Vector3d delta(const Eigen::Vector3d& pt)const
+    Eigen::Vector3d delta(const Eigen::Vector3d& pt)
     {
         Eigen::Vector2d res=at(pt[0]);
 
@@ -1411,7 +1432,7 @@ public:
         return dialog;
     }
 
-    Eigen::Vector3d delta(const Eigen::Vector3d& pt)const
+    Eigen::Vector3d delta(const Eigen::Vector3d& pt)
     {
         Eigen::Vector2d res=at(pt[0]);
 
@@ -1600,7 +1621,7 @@ public:
         return dialog;
     }
 
-    Eigen::Vector3d delta(const Eigen::Vector3d& pt)const
+    Eigen::Vector3d delta(const Eigen::Vector3d& pt)
     {
         Eigen::Vector2d res=at(pt[0]);
 
@@ -1774,7 +1795,7 @@ public:
         return 1.0/(2*M_PI*std::sqrt(getL()*getC()*1e-12));
     }
 
-    Eigen::Vector3d delta(const Eigen::Vector3d& pt)const
+    Eigen::Vector3d delta(const Eigen::Vector3d& pt)
     {
         Eigen::Vector2d res=at(pt[0]);
 
@@ -1879,6 +1900,147 @@ private:
     double fixedvalue[3];
 
     int idr,idl,idc;
+};
+
+
+
+
+class CustomRealExp: public Shape<Eigen::Vector2d>
+{
+public:
+
+    CustomRealExp()
+    {
+        parser=new exprtk::parser<double>;
+        current_compiled_expression=new exprtk::expression<double>;
+        symbolsTable=new exprtk::symbol_table<double>;
+        current_compiled_expression->register_symbol_table(*symbolsTable);
+
+
+    }
+
+    bool setExpression(QString exp)
+    {
+        this->exp=exp;
+        registerParams(exp);
+        bool ok=parser->compile(exp.toStdString(),*current_compiled_expression);
+        return ok;
+    }
+
+    QString getExpression()
+    {
+        return exp;
+    }
+
+    void registerParams(QString exp)
+    {
+        if(current_compiled_expression)
+        {
+            delete current_compiled_expression;
+            current_compiled_expression=new exprtk::expression<double>;
+        }
+
+        symbolsTable->clear();
+        symbolsTable->add_variable("x",x);
+
+        QStringList paramsList;
+        paramsList<<"A"<<"B"<<"C"<<"D"<<"E"<<"F"<<"G"<<"H";
+        int id=0;
+        paramsNames.clear();
+
+        for(int i=0;i<paramsList.size();i++)
+        {
+            if(exp.contains(QRegExp(QString("(^|[^A-Za-z0-9])%1(?=\$|[^A-Za-z0-9])").arg(paramsList[i]))))
+            {
+                paramsNames.append(paramsList[i]);
+                id++;
+            }
+        }
+        p.resize(id);
+        p.setZero();
+
+        for(int i=0;i<paramsNames.size();i++)
+        {
+            symbolsTable->add_variable(paramsNames[i].toStdString(),p[i]);
+        }
+
+        current_compiled_expression->register_symbol_table(*symbolsTable);
+    }
+
+    QString getError()
+    {
+        return QString::fromStdString(parser->error());
+    }
+
+    double at(double x)
+    {
+        this->x=x;
+        return current_compiled_expression->value();
+    }
+
+    Eigen::VectorXd at(Eigen::VectorXd v)
+    {
+        Eigen::VectorXd y(v.size());
+
+        for (int i=0; i<v.size(); i++)
+        {
+            y[i]=at(v[i]);
+        }
+        return y;
+    }
+
+    Eigen::Vector2d delta(const Eigen::Vector2d& P)
+    {
+        return Eigen::Vector2d(0,P[1]-at(P[0]));
+    }
+
+    int nb_params(){return p.rows();}
+    void setParams(const Eigen::VectorXd& _p)
+    {
+        this->p=_p;
+    }
+    const Eigen::VectorXd& getParams(){return p;}
+
+    const QStringList & getParamsNames()
+    {
+        return paramsNames;
+    }
+
+private:
+    Eigen::VectorXd p;
+    double x;
+
+    QStringList paramsNames;
+
+    QString exp;
+
+    exprtk::parser<double> * parser;
+    exprtk::expression<double> * current_compiled_expression;
+    exprtk::symbol_table<double> * symbolsTable;
+};
+
+class CustomExpDialog:public QDialog
+{
+    Q_OBJECT
+public:
+    CustomExpDialog();
+
+    const QVector<QDoubleSpinBox*> & getSpinBoxParams();
+    bool isValid();
+    CustomRealExp * getCustomRealExpression(){return &customRealExp;}
+    VectorXd getP0();
+
+public slots:
+    void slot_setExp(QString expStr);
+    void slot_p0Changed();
+
+private:
+    CustomRealExp customRealExp;
+    QLineEdit * le_expr;
+    QVector<QDoubleSpinBox*> sp_params;
+    QVBoxLayout* vbox;
+    QLabel * l_error;
+    bool valid;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////

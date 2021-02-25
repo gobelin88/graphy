@@ -24,14 +24,14 @@ struct Functor
     /**
    * @brief Functor
    */
-  Functor() : m_inputs(0), m_values(0) {}
+  Functor() : m_inputs(0), m_values(0) {threaded=false;}
 
   /**
    * @brief Functor
    * @param inputs
    * @param values
    */
-  Functor(int inputs, int values) : m_inputs(inputs), m_values(values) {}
+  Functor(int inputs, int values) : m_inputs(inputs), m_values(values) {threaded=false;}
 
   int inputs() const { return m_inputs; }
   int values() const { return m_values; }
@@ -39,8 +39,10 @@ struct Functor
   void setInputs(int value){this->m_inputs=value;}
   void setValues(int value){this->m_values=value;}
 
-  int m_inputs, m_values;
+  void setThreaded(bool threaded){this->threaded=threaded;}
 
+  int m_inputs, m_values;
+  bool threaded;
   // you should define that in the subclass :
 //  void operator() (const InputType& x, ValueType* v, JacobianType* _j=0) const;
 };

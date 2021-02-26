@@ -327,11 +327,11 @@ void Viewer1D::createPopup()
     menuLegend=new QMenu("Legend",this);
     menuScalarField=new QMenu("Scalar Field",this);
     menuScalarFieldFit=new QMenu("Fit",this);
-    menuParameters=new QMenu("Parameters",this);
+    menuAppearance=new QMenu("Appearance",this);
     menuAnalyse=new QMenu("Analyse",this);
-    menuFilters=new QMenu("Filter",this);
+    menuFilters=new QMenu("Filters",this);
     menuMisc=new QMenu("Miscellaneous",this);
-    menuAutoColor=new QMenu("Auto color",this);
+    menuThemes=new QMenu("Themes",this);
 
     actCopy   = new QAction("Copy",  this);
     actPaste   = new QAction("Paste",  this);
@@ -360,11 +360,11 @@ void Viewer1D::createPopup()
     actDistance= new QAction("K-nearest neighbors distances",  this);
 
 
-    actAutoColor1= new QAction("Theme 1 : Differents colors"                 ,  this);
-    actAutoColor2= new QAction("Theme 2 : Differents colors pairs "          ,  this);
-    actAutoColor3= new QAction("Theme 3 : Differents colors with plain brush",  this);
-    actAutoColor4= new QAction("Theme 4 : Differents colors with plain brush",  this);
-    actAutoColor5= new QAction("Theme 5 : Differents colors with plain brush",  this);
+    actAutoColor1= new QAction("Theme 1 : Colors"                 ,  this);
+    actAutoColor2= new QAction("Theme 2 : Colors pairs "          ,  this);
+    actAutoColor3= new QAction("Theme 3",  this);
+    actAutoColor4= new QAction("Theme 4",  this);
+    actAutoColor5= new QAction("Theme 5",  this);
     actAutoColorClear= new QAction("Clear",  this);
 
     actFilterMedian=new QAction("Median",this);
@@ -411,7 +411,7 @@ void Viewer1D::createPopup()
     actLegendLeftRight->setCheckable(true);
     actLegendLeftRight->setChecked(true);
 
-    popup_menu->addMenu(menuParameters);
+    popup_menu->addMenu(menuAppearance);
     popup_menu->addSeparator();
     popup_menu->addAction(actSave);
     popup_menu->addAction(actCopy);
@@ -451,22 +451,22 @@ void Viewer1D::createPopup()
     menuScalarField->addAction(actDistance);
     menuScalarFieldFit->addAction(actFitPolynomial2V);
 
-    menuParameters->addMenu(menuAutoColor);
-    menuAutoColor->addAction(actAutoColor1);
-    menuAutoColor->addAction(actAutoColor2);
-    menuAutoColor->addAction(actAutoColor3);
-    menuAutoColor->addAction(actAutoColor4);
-    menuAutoColor->addAction(actAutoColor5);
-    menuAutoColor->addAction(actAutoColorClear);
-    menuAutoColor->addSeparator();
-    menuAutoColor->addAction(actIncreasePenWidth);
-    menuAutoColor->addAction(actDecreasePenWidth);
-    menuAutoColor->addSeparator();
-    menuAutoColor->addAction(actSetScatters);
+    menuAppearance->addMenu(menuThemes);
+    menuThemes->addAction(actAutoColor1);
+    menuThemes->addAction(actAutoColor2);
+    menuThemes->addAction(actAutoColor3);
+    menuThemes->addAction(actAutoColor4);
+    menuThemes->addAction(actAutoColor5);
+    menuThemes->addAction(actAutoColorClear);
+    menuThemes->addSeparator();
+    menuThemes->addAction(actIncreasePenWidth);
+    menuThemes->addAction(actDecreasePenWidth);
+    menuThemes->addSeparator();
+    menuThemes->addAction(actSetScatters);
 
 
-    menuParameters->addMenu(menuLegend);
-    menuParameters->addAction(createParametersWidget());
+    menuAppearance->addMenu(menuLegend);
+    menuAppearance->addAction(createParametersWidget());
 
     menuAnalyse->addMenu(menuFit);
     menuAnalyse->addMenu(menuScalarField);

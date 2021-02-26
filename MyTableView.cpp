@@ -256,11 +256,24 @@ void MyTableView::setSelectionPattern(QString pattern)
                 if(args.size()==2){dec=args[1].toInt(&ok2);}else{ok2=true;}
                 if(ok && modulo>0 && ok2)
                 {
-                    for(int index=0;index<model()->getRowSpan();index++)
+                    if(isRow)
                     {
-                        if((index+dec)%modulo==0)
+                        for(int index=0;index<model()->rowCount();index++)
                         {
-                            if(isRow){selectRow(index-1);}else{selectColumn(index-1);}
+                            if((index+dec)%modulo==0)
+                            {
+                                selectRow(index);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for(int index=0;index<model()->columnCount();index++)
+                        {
+                            if((index+dec)%modulo==0)
+                            {
+                                selectColumn(index);
+                            }
                         }
                     }
                 }

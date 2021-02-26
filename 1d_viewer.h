@@ -171,7 +171,7 @@ protected:
     QAction* actDecreasePenWidth;
     QAction* actSetScatters;
 
-    QMenu* menuParameters;
+    QMenu* menuAppearance;
     QMenu* menuLegend;
     QMenu* menuFit;
     QMenu* menuScalarField;
@@ -179,7 +179,7 @@ protected:
     QMenu* menuAnalyse;
     QMenu* menuFilters;
     QMenu* menuMisc;
-    QMenu* menuAutoColor;
+    QMenu* menuThemes;
 
     QAction* actFilterMedian;
     QAction* actFilterMean;

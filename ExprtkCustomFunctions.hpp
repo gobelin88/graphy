@@ -387,7 +387,7 @@ struct solveNewtonFunction : public exprtk::igeneric_function<T>
  typedef typename generic_type::string_view string_t;
  typedef typename generic_type::scalar_view scalar_t;
 
- solveNewtonFunction():exprtk::igeneric_function<T>("SST")
+ solveNewtonFunction():exprtk::igeneric_function<T>("SST|SSTT")
  {
      symbolsTable.add_variable("z",z);
      f_exp.register_symbol_table(symbolsTable);
@@ -395,10 +395,14 @@ struct solveNewtonFunction : public exprtk::igeneric_function<T>
 
      ok_f =false;
      ok_fp=false;
+     a=1.0;
  }
 
- inline T operator()(parameter_list_t parameters)
+ inline T operator()(const std::size_t& ps_index,parameter_list_t parameters)
  {
+    //if (ps_index > 1) return T(ps_index);
+    Q_UNUSED(ps_index)
+
     for (std::size_t i = 0; i < parameters.size(); ++i)
     {
         generic_type& gt = parameters[i];
@@ -440,8 +444,17 @@ struct solveNewtonFunction : public exprtk::igeneric_function<T>
          }
          else if (generic_type::e_scalar == gt.type)
          {
-            scalar_t variableName(gt);
-            z0=variableName();
+            if(i==2)
+            {
+                scalar_t variableName(gt);
+                z0=variableName();
+                a=1;
+            }
+            else if(i==3)
+            {
+                scalar_t variableName(gt);
+                a=variableName();
+            }
          }
     }
 
@@ -460,7 +473,7 @@ struct solveNewtonFunction : public exprtk::igeneric_function<T>
 
         do
         {
-            dz=-f_exp.value()/fp_exp.value();
+            dz=-a*f_exp.value()/fp_exp.value();
             z+=dz;
         }
         while(std::abs(dz)>p);
@@ -485,7 +498,7 @@ struct solveNewtonFunction : public exprtk::igeneric_function<T>
  bool ok_f,ok_fp;
  std::string f_Str;
  std::string fp_Str;
- T z0,z;
+ T z0,z,a;
  //
  exprtk::parser<T> parser;
  exprtk::symbol_table<T> symbolsTable;

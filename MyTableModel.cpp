@@ -834,7 +834,7 @@ void MyModel::evalColumn(int visualIndex)
     else
     {
 
-        int numthreads=8;
+        int numthreads=1;
         //int tid = omp_get_thread_num();
         //#pragma omp parallel for default(none) num_threads(numthreads)
 

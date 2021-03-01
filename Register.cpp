@@ -114,6 +114,7 @@ void Register::clear()
     symbolsTable->add_function("xsi"  ,  cf_xsi);
     symbolsTable->add_function("lin"  ,  cf_lin);
     symbolsTable->add_function("clin"  ,  cf_clin);
+    symbolsTable->add_function("solveNewton"  ,  cf_solveNewton);
 
     cf_id.setVariablesNamesPtr(&variables_names);
     cf_lin.setNumberOfRowsPtr(&numberRows);

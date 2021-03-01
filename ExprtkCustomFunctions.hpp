@@ -378,4 +378,120 @@ struct indexFunction : public exprtk::igeneric_function<T>
  const QStringList * p_variablesNames;
 };
 
+template <typename T>
+struct solveNewtonFunction : public exprtk::igeneric_function<T>
+{
+ typedef typename exprtk::igeneric_function<T>::parameter_list_t
+                                                parameter_list_t;
+
+ typedef typename generic_type::string_view string_t;
+ typedef typename generic_type::scalar_view scalar_t;
+
+ solveNewtonFunction():exprtk::igeneric_function<T>("SST")
+ {
+     symbolsTable.add_variable("z",z);
+     f_exp.register_symbol_table(symbolsTable);
+     fp_exp.register_symbol_table(symbolsTable);
+
+     ok_f =false;
+     ok_fp=false;
+ }
+
+ inline T operator()(parameter_list_t parameters)
+ {
+    for (std::size_t i = 0; i < parameters.size(); ++i)
+    {
+        generic_type& gt = parameters[i];
+
+         if (generic_type::e_string == gt.type)
+         {
+            string_t variableName(gt);
+
+            if(i==0)
+            {
+                std::string f_Str_n=to_str(variableName);
+                if(f_Str_n!=f_Str)
+                {
+                    //compile
+                    f_Str=f_Str_n;
+                    ok_f=parser.compile(f_Str,f_exp);
+                    if(!ok_f)
+                    {
+                        std::cout<<parser.error()<<std::endl;
+                    }
+                }
+            }
+            else if(i==1)
+            {
+
+                std::string fp_Str_n=to_str(variableName);
+                if(fp_Str_n!=fp_Str)
+                {
+                    //compile
+                    fp_Str=fp_Str_n;
+                    ok_fp=parser.compile(fp_Str,fp_exp);
+                    if(!ok_fp)
+                    {
+                        std::cout<<parser.error()<<std::endl;
+                    }
+                }
+            }
+
+         }
+         else if (generic_type::e_scalar == gt.type)
+         {
+            scalar_t variableName(gt);
+            z0=variableName();
+         }
+    }
+
+    ////////////////////////////////////
+    //Perform newton iterations
+    ////////////////////////////////////
+    if(ok_f && ok_fp)
+    {
+        z=z0;
+//        std::cout<<"-----------"<<std::endl;
+//        std::cout<<"z0="<<z0.real()<<" "<<z0.imag()<<std::endl;
+//        std::cout<<"f.value()="<<f_exp.value()<<" fp="<<fp_exp.value()<<std::endl;
+
+        T dz=0.0;
+        double p=1e-7;
+
+        do
+        {
+            dz=-f_exp.value()/fp_exp.value();
+            z+=dz;
+        }
+        while(std::abs(dz)>p);
+
+//        std::cout<<"z="<<z.real()<<" "<<z.imag()<<std::endl;
+
+        return z;
+    }
+    else
+    {
+        return -1;
+    }
+
+    return T(0);
+ }
+
+ void setVariablesNamesPtr(const QStringList * p_variablesNames)
+ {
+     this->p_variablesNames=p_variablesNames;
+ }
+
+ bool ok_f,ok_fp;
+ std::string f_Str;
+ std::string fp_Str;
+ T z0,z;
+ //
+ exprtk::parser<T> parser;
+ exprtk::symbol_table<T> symbolsTable;
+ exprtk::expression<T> f_exp;
+ exprtk::expression<T> fp_exp;
+
+};
+
 #endif // EXPRTKCUSTOMFUNCTIONS_HPP

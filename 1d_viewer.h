@@ -44,6 +44,7 @@ public slots:
 
     void slot_fit_2var_polynomial();
 
+    void slot_save_image_current_map();
     void slot_save_image();
     void slot_rescale();
     void slot_delete();
@@ -57,8 +58,8 @@ public slots:
     void slot_svd();
     void slot_covariance();
 
-
-    void addLabel(double cx,double cy);
+    QCPItemTracer * createTracer(double cx,QCPGraph * graph);
+    void addLabel(double cx, double cy);
     void addTextLabel(double cx,double cy,QString markstr);
 
     void slot_increasePenWidth();
@@ -84,6 +85,7 @@ public slots:
     void selectionChanged();
 
     void slot_clear_marks();
+    void slot_gadgetTracer();
     void slot_gadgetMark();
     void slot_gadgetText();
     void slot_gadgetArrow();
@@ -145,13 +147,17 @@ protected:
     Qt::AlignmentFlag left_right;
     Qt::AlignmentFlag top_bottom;
     Qt::KeyboardModifiers modifiers;
-    QString state_label,state_arrow,state_mark;
+    QString state_label,state_arrow,state_mark,state_tracer;
     QCPItemCurve* arrowItem;
+    QCPItemTracer* tracerItem;
 
     //Popup
     void createPopup();
     void configurePopup();
     QMenu* popup_menu;
+
+    QAction* actSaveMap;
+
     QAction* actSave;
     QAction* actRescale;
     QAction* actDelete;
@@ -204,6 +210,7 @@ protected:
     QAction* actGadgetArrow;
     QAction* actGadgetText;
     QAction* actGadgetMark;
+    QAction* actGadgetTracer;
     QWidgetAction* createParametersWidget();
 
     MyGradientComboBox * cb_gradient;

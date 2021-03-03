@@ -43,7 +43,10 @@ Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* par
     state_label.clear();
     state_arrow.clear();
     state_mark.clear();
+    state_tracer.clear();
+
     arrowItem=nullptr;
+    tracerItem=nullptr;
 
     legend->setVisible(true);
 
@@ -138,13 +141,19 @@ void Viewer1D::configurePopup()
 
     cb_gradient->hide();
 
+    actSaveMap->setVisible(false);
+    menuAppearance->setEnabled(false);
+
     if (plottables.size()>0)
     {
+        menuAppearance->setEnabled(true);
+
         QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(plottables[0]);
         QCPGraph* currentgraph=dynamic_cast<QCPGraph*>(plottables[0]);
         QCPColorMap* currentmap=dynamic_cast<QCPColorMap*>(plottables[0]);
         if (currentmap)
         {
+            actSaveMap->setVisible(true);
             cb_gradient->setCurrentIndex(currentmap->colorScale()->gradient().getPreset());
             cb_gradient->show();
         }
@@ -336,12 +345,14 @@ void Viewer1D::createPopup()
     actCopy   = new QAction("Copy",  this);
     actPaste   = new QAction("Paste",  this);
     actSave   = new QAction("Save",  this);
+    actSaveMap= new QAction("Save Map",  this);
     actRescale= new QAction("Rescale",  this);
     actDelete= new QAction("Delete",  this);
     actClearGadgets   = new QAction("Clear gadgets",  this);
     actGadgetArrow= new QAction("Arrow",  this);
     actGadgetText= new QAction("Text",  this);
     actGadgetMark= new QAction("Mark",  this);
+    actGadgetTracer= new QAction("Tracer",  this);
     actLegendShowHide= new QAction("Hide",  this);
     actLegendTopBottom= new QAction("Move bottom",  this);
     actLegendLeftRight= new QAction("Move left",  this);
@@ -380,6 +391,7 @@ void Viewer1D::createPopup()
 
     this->addAction(actCopy);
     this->addAction(actPaste);
+    this->addAction(actSaveMap);
     this->addAction(actSave);
     this->addAction(actRescale);
     this->addAction(actDelete);
@@ -387,6 +399,7 @@ void Viewer1D::createPopup()
     this->addAction(actGadgetArrow);
     this->addAction(actGadgetText);
     this->addAction(actGadgetMark);
+    this->addAction(actGadgetTracer);
     this->addAction(actLegendShowHide);
     this->addAction(actLegendTopBottom);
     this->addAction(actLegendLeftRight);
@@ -414,6 +427,7 @@ void Viewer1D::createPopup()
     popup_menu->addMenu(menuAppearance);
     popup_menu->addSeparator();
     popup_menu->addAction(actSave);
+    popup_menu->addAction(actSaveMap);
     popup_menu->addAction(actCopy);
     popup_menu->addAction(actPaste);
     popup_menu->addAction(actDelete);
@@ -428,6 +442,7 @@ void Viewer1D::createPopup()
     menuFilters->addAction(actFilterMean);
 
     menuGadgets->addAction(actGadgetMark);
+    menuGadgets->addAction(actGadgetTracer);
     menuGadgets->addAction(actGadgetText);
     menuGadgets->addAction(actGadgetArrow);
     menuGadgets->addSeparator();
@@ -481,6 +496,7 @@ void Viewer1D::createPopup()
     connect(actIncreasePenWidth,SIGNAL(triggered()),this,SLOT(slot_increasePenWidth()));
     connect(actDecreasePenWidth,SIGNAL(triggered()),this,SLOT(slot_decreasePenWidth()));
 
+    connect(actGadgetTracer,SIGNAL(triggered()),this,SLOT(slot_gadgetTracer()));
     connect(actGadgetMark,SIGNAL(triggered()),this,SLOT(slot_gadgetMark()));
     connect(actGadgetText,SIGNAL(triggered()),this,SLOT(slot_gadgetText()));
     connect(actGadgetArrow,SIGNAL(triggered()),this,SLOT(slot_gadgetArrow()));
@@ -491,6 +507,7 @@ void Viewer1D::createPopup()
 
     connect(actDistance,SIGNAL(triggered()),this,SLOT(slot_Distance()));
 
+    connect(actSaveMap,SIGNAL(triggered()),this,SLOT(slot_save_image_current_map()));
     connect(actSave,SIGNAL(triggered()),this,SLOT(slot_save_image()));
     connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_rescale()));
     connect(actFitPolynomial,SIGNAL(triggered()),this,SLOT(slot_fit_polynomial()));
@@ -905,6 +922,18 @@ void Viewer1D::slot_gadgetMark()
     this->setCursor(Qt::PointingHandCursor);
 }
 
+void Viewer1D::slot_gadgetTracer()
+{
+    QList<QCPGraph*> list=getQCPListOf<QCPGraph>(true);
+
+    if(list.size()>0)
+    {
+        tracerItem=createTracer(0.0,list[0]);
+        state_tracer = QString("first");
+        this->setCursor(Qt::PointingHandCursor);
+    }
+}
+
 void Viewer1D::slot_gadgetText()
 {
     state_label = QInputDialog::getText(this, "New label", "New label :", QLineEdit::Normal,"");
@@ -927,6 +956,21 @@ void Viewer1D::slot_gadgetAddArrow(Eigen::Vector2d A,Eigen::Vector2d B)
     arrowItem->setHead(QCPLineEnding::esSpikeArrow);
     arrowItem=nullptr;
 }
+
+QCPItemTracer * Viewer1D::createTracer(double cx,QCPGraph * graph)
+{
+    QCPItemTracer *groupTracer = new QCPItemTracer(this);
+    groupTracer->setGraph(graph);
+    groupTracer->setGraphKey(cx);
+    groupTracer->setInterpolating(true);
+    groupTracer->setStyle(QCPItemTracer::tsCircle);
+    groupTracer->setPen(QPen(Qt::black));
+    groupTracer->setBrush(Qt::black);
+    groupTracer->setSize(5);
+
+    return groupTracer;
+}
+
 void Viewer1D::addLabel(double cx, double cy)
 {
     double mx=this->xAxis->range().lower;
@@ -1041,6 +1085,12 @@ void Viewer1D::mouseMoveEvent(QMouseEvent* event)
         }
         replot();
     }
+
+    if(tracerItem)
+    {
+        tracerItem->setGraphKey(cx);
+        replot();
+    }
 }
 
 void Viewer1D::mousePressEvent(QMouseEvent* event)
@@ -1055,9 +1105,19 @@ void Viewer1D::mousePressEvent(QMouseEvent* event)
     double cx=this->xAxis->pixelToCoord(event->x());
     double cy=this->yAxis->pixelToCoord(event->y());
 
+    if (!state_tracer.isEmpty() && event->button() == Qt::LeftButton)
+    {
+        tracerItem->setGraphKey(cx);
+        state_tracer.clear();
+        tracerItem=nullptr;
+        this->setCursor(Qt::ArrowCursor);
+        replot();
+    }
+
     if (!state_mark.isEmpty() && event->button() == Qt::LeftButton)
     {
         addLabel(cx,cy);
+
         state_mark.clear();
         this->setCursor(Qt::ArrowCursor);
         replot();
@@ -1893,6 +1953,23 @@ QList<Curve2D> Viewer1D::getSelectedCurves()
     return curvelist;
 }
 
+void Viewer1D::slot_save_image_current_map()
+{
+    std::cout<<"slot_save_image_current_map"<<std::endl;
+
+    QList<QCPColorMap*> listMaps=getQCPListOf<QCPColorMap>(true);
+
+    for(int i=0;i<listMaps.size();i++)
+    {
+        QFileInfo info(current_filename);
+        QString where=info.path();
+        QString filename=QFileDialog::getSaveFileName(this,"Save Image",where,"(*.png)");
+        if (!filename.isEmpty())
+        {
+            listMaps[i]->getImage().save(filename);
+        }
+    }
+}
 
 void Viewer1D::slot_save_image()
 {
@@ -2123,6 +2200,7 @@ void Viewer1D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     shortcuts_links.insert(QString("Graph-GadgetText"),actGadgetText);
     shortcuts_links.insert(QString("Graph-GadgetArrow"),actGadgetArrow);
     shortcuts_links.insert(QString("Graph-GadgetMark"),actGadgetMark);
+    shortcuts_links.insert(QString("Graph-GadgetTracer"),actGadgetTracer);
     shortcuts_links.insert(QString("Graph-Save"),actSave);
     shortcuts_links.insert(QString("Graph-Rescale"),actRescale);
     shortcuts_links.insert(QString("Graph-Delete"),actDelete);

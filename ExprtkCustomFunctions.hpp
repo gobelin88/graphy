@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <string>
 #include <QStringList>
+#include "omp.h"
 
 #ifndef EXPRTKCUSTOMFUNCTIONS_HPP
 #define EXPRTKCUSTOMFUNCTIONS_HPP
@@ -387,21 +388,33 @@ struct solveNewtonFunction : public exprtk::igeneric_function<T>
  typedef typename generic_type::string_view string_t;
  typedef typename generic_type::scalar_view scalar_t;
 
- solveNewtonFunction():exprtk::igeneric_function<T>("SST|SSTT")
+ solveNewtonFunction():exprtk::igeneric_function<T>("SST|SSTT|SSTTT|"\
+                                                    "STT|STTT|STTTT")
  {
      symbolsTable.add_variable("z",z);
+     symbolsTable.add_function("gamma"  ,  cf_gamma);
+     symbolsTable.add_function("zeta"  ,  cf_zeta);
+     symbolsTable.add_function("xsi"  ,  cf_xsi);
+
      f_exp.register_symbol_table(symbolsTable);
      fp_exp.register_symbol_table(symbolsTable);
 
      ok_f =false;
      ok_fp=false;
+     finite_diff=false;
      a=1.0;
+     epsilon=1.0;
+
+     omp_init_lock(&writelock);
  }
 
  inline T operator()(const std::size_t& ps_index,parameter_list_t parameters)
  {
-    //if (ps_index > 1) return T(ps_index);
-    Q_UNUSED(ps_index)
+     Q_UNUSED(ps_index)
+     int it=100;
+
+     omp_set_lock(&writelock);
+
 
     for (std::size_t i = 0; i < parameters.size(); ++i)
     {
@@ -427,7 +440,6 @@ struct solveNewtonFunction : public exprtk::igeneric_function<T>
             }
             else if(i==1)
             {
-
                 std::string fp_Str_n=to_str(variableName);
                 if(fp_Str_n!=fp_Str)
                 {
@@ -439,11 +451,18 @@ struct solveNewtonFunction : public exprtk::igeneric_function<T>
                         std::cout<<parser.error()<<std::endl;
                     }
                 }
+                finite_diff=false;
             }
 
          }
          else if (generic_type::e_scalar == gt.type)
          {
+            if(i==1)
+            {
+                scalar_t variableName(gt);
+                epsilon=variableName();
+                finite_diff=true;
+            }
             if(i==2)
             {
                 scalar_t variableName(gt);
@@ -455,56 +474,70 @@ struct solveNewtonFunction : public exprtk::igeneric_function<T>
                 scalar_t variableName(gt);
                 a=variableName();
             }
+            else if(i==4)
+            {
+                scalar_t variableName(gt);
+                it=std::abs(variableName());
+            }
          }
     }
 
     ////////////////////////////////////
     //Perform newton iterations
     ////////////////////////////////////
-    if(ok_f && ok_fp)
+    if(ok_f && (ok_fp || finite_diff))
     {
         z=z0;
 //        std::cout<<"-----------"<<std::endl;
 //        std::cout<<"z0="<<z0.real()<<" "<<z0.imag()<<std::endl;
 //        std::cout<<"f.value()="<<f_exp.value()<<" fp="<<fp_exp.value()<<std::endl;
 
-        T dz=0.0;
-        double p=1e-7;
-
-        do
+        for(int i=0;i<it;i++)
         {
-            dz=-a*f_exp.value()/fp_exp.value();
-            z+=dz;
+            if(finite_diff)
+            {
+                T z_prev=z;//centrale diff for quadratique convengency
+                z=z_prev+epsilon;
+                T fp=f_exp.value();
+                z=z_prev-epsilon;
+                T fm=f_exp.value();
+                z=z_prev;
+
+                z-=a*f_exp.value()/(fp-fm)*2.0*epsilon;
+            }
+            else
+            {
+                z-=a*f_exp.value()/fp_exp.value();
+            }
         }
-        while(std::abs(dz)>p);
 
 //        std::cout<<"z="<<z.real()<<" "<<z.imag()<<std::endl;
 
+        omp_unset_lock(&writelock);
         return z;
     }
-    else
-    {
-        return -1;
-    }
 
+    omp_unset_lock(&writelock);
     return T(0);
  }
 
- void setVariablesNamesPtr(const QStringList * p_variablesNames)
- {
-     this->p_variablesNames=p_variablesNames;
- }
-
- bool ok_f,ok_fp;
+ bool ok_f,ok_fp,finite_diff;
  std::string f_Str;
  std::string fp_Str;
  T z0,z,a;
+ T epsilon;
+
  //
  exprtk::parser<T> parser;
  exprtk::symbol_table<T> symbolsTable;
  exprtk::expression<T> f_exp;
  exprtk::expression<T> fp_exp;
 
+ gammaFunction<T> cf_gamma;
+ zetaFunction<T> cf_zeta;
+ xsiFunction<T> cf_xsi;
+
+ omp_lock_t writelock;
 };
 
 #endif // EXPRTKCUSTOMFUNCTIONS_HPP

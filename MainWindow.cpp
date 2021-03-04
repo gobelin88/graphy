@@ -485,10 +485,13 @@ void MainWindow::slot_plot_field_2D()
 
         if (id_list.size()==2)
         {
-            data_x =table->getLogicalColDataComplex(id_list[0].column()).real();
-            data_y =table->getLogicalColDataComplex(id_list[0].column()).imag();
-            data_vx=table->getLogicalColDataComplex(id_list[1].column()).real();
-            data_vy=table->getLogicalColDataComplex(id_list[1].column()).imag();
+            Eigen::VectorXcd X=table->getLogicalColDataComplex(id_list[0].column());
+            Eigen::VectorXcd V=table->getLogicalColDataComplex(id_list[1].column());
+
+            data_x =X.real();
+            data_y =X.imag();
+            data_vx=V.real();
+            data_vy=V.imag();
 
             std::cout<<data_x.transpose()<<std::endl;
             std::cout<<data_y.transpose()<<std::endl;

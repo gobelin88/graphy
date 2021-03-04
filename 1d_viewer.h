@@ -27,8 +27,8 @@ public:
 public slots:
     void slot_add_data(const Curve2D& datacurve);
 
-    //void keyPressEvent(QKeyEvent* event);
-    //void keyReleaseEvent(QKeyEvent* event);
+    void keyPressEvent(QKeyEvent* event);
+    void keyReleaseEvent(QKeyEvent* event);
 
     void mousePressEvent(QMouseEvent* event);
     void mouseMoveEvent(QMouseEvent* event);
@@ -80,11 +80,13 @@ public slots:
     void slot_setPenAlpha(double alpha);
     void slot_setBrushAlpha(double alpha);
 
+    void slot_itemDoubleClick(QCPAbstractItem* item,QMouseEvent* event);
     void slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart part);
     void slot_legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* item);
     void selectionChanged();
 
     void slot_clear_marks();
+    void slot_gadgetLine();
     void slot_gadgetTracer();
     void slot_gadgetMark();
     void slot_gadgetText();
@@ -147,9 +149,11 @@ protected:
     Qt::AlignmentFlag left_right;
     Qt::AlignmentFlag top_bottom;
     Qt::KeyboardModifiers modifiers;
-    QString state_label,state_arrow,state_mark,state_tracer;
+    QString state_label,state_arrow,state_mark,state_tracer,state_line;
     QCPItemCurve* arrowItem;
     QCPItemTracer* tracerItem;
+    QCPItemLine* lineItem;
+
 
     //Popup
     void createPopup();
@@ -211,6 +215,7 @@ protected:
     QAction* actGadgetText;
     QAction* actGadgetMark;
     QAction* actGadgetTracer;
+    QAction* actGadgetLine;
     QWidgetAction* createParametersWidget();
 
     MyGradientComboBox * cb_gradient;

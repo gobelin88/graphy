@@ -28,10 +28,11 @@ Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* par
     createPopup();
 
     this->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
-                          QCP::iSelectLegend | QCP::iSelectPlottables);
+                          QCP::iSelectLegend | QCP::iSelectPlottables | QCP::iSelectItems);
 
     connect(this, SIGNAL(axisDoubleClick(QCPAxis*,QCPAxis::SelectablePart,QMouseEvent*)), this, SLOT(slot_axisLabelDoubleClick(QCPAxis*,QCPAxis::SelectablePart)));
     connect(this, SIGNAL(legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*,QMouseEvent*)), this, SLOT(slot_legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*)));
+    connect(this, SIGNAL(itemDoubleClick(QCPAbstractItem*,QMouseEvent*)), this, SLOT(slot_itemDoubleClick(QCPAbstractItem*,QMouseEvent*)));
     connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(selectionChanged()));
 
     applyShortcuts(shortcuts_map);
@@ -44,9 +45,11 @@ Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* par
     state_arrow.clear();
     state_mark.clear();
     state_tracer.clear();
+    state_line.clear();
 
     arrowItem=nullptr;
     tracerItem=nullptr;
+    lineItem=nullptr;
 
     legend->setVisible(true);
 
@@ -353,6 +356,7 @@ void Viewer1D::createPopup()
     actGadgetText= new QAction("Text",  this);
     actGadgetMark= new QAction("Mark",  this);
     actGadgetTracer= new QAction("Tracer",  this);
+    actGadgetLine= new QAction("Line",  this);
     actLegendShowHide= new QAction("Hide",  this);
     actLegendTopBottom= new QAction("Move bottom",  this);
     actLegendLeftRight= new QAction("Move left",  this);
@@ -400,6 +404,7 @@ void Viewer1D::createPopup()
     this->addAction(actGadgetText);
     this->addAction(actGadgetMark);
     this->addAction(actGadgetTracer);
+    this->addAction(actGadgetLine);
     this->addAction(actLegendShowHide);
     this->addAction(actLegendTopBottom);
     this->addAction(actLegendLeftRight);
@@ -441,10 +446,11 @@ void Viewer1D::createPopup()
     menuFilters->addAction(actFilterMedian);
     menuFilters->addAction(actFilterMean);
 
+    menuGadgets->addAction(actGadgetArrow);
     menuGadgets->addAction(actGadgetMark);
     menuGadgets->addAction(actGadgetTracer);
+    menuGadgets->addAction(actGadgetLine);
     menuGadgets->addAction(actGadgetText);
-    menuGadgets->addAction(actGadgetArrow);
     menuGadgets->addSeparator();
     menuGadgets->addAction(actClearGadgets);
 
@@ -496,6 +502,7 @@ void Viewer1D::createPopup()
     connect(actIncreasePenWidth,SIGNAL(triggered()),this,SLOT(slot_increasePenWidth()));
     connect(actDecreasePenWidth,SIGNAL(triggered()),this,SLOT(slot_decreasePenWidth()));
 
+    connect(actGadgetLine,SIGNAL(triggered()),this,SLOT(slot_gadgetLine()));
     connect(actGadgetTracer,SIGNAL(triggered()),this,SLOT(slot_gadgetTracer()));
     connect(actGadgetMark,SIGNAL(triggered()),this,SLOT(slot_gadgetMark()));
     connect(actGadgetText,SIGNAL(triggered()),this,SLOT(slot_gadgetText()));
@@ -922,6 +929,20 @@ void Viewer1D::slot_gadgetMark()
     this->setCursor(Qt::PointingHandCursor);
 }
 
+void Viewer1D::slot_gadgetLine()
+{
+    state_line = QString("first");
+
+    lineItem= new QCPItemLine(this);
+    lineItem->start->setType(QCPItemPosition::ptPlotCoords);
+    lineItem->end->setType(QCPItemPosition::ptPlotCoords);
+    lineItem->start->setCoords(0,0);
+    lineItem->end->setCoords(0,0);
+    //lineItem->setPen(linePen);
+
+    this->setCursor(Qt::PointingHandCursor);
+}
+
 void Viewer1D::slot_gadgetTracer()
 {
     QList<QCPGraph*> list=getQCPListOf<QCPGraph>(true);
@@ -1091,7 +1112,46 @@ void Viewer1D::mouseMoveEvent(QMouseEvent* event)
         tracerItem->setGraphKey(cx);
         replot();
     }
+
+    if(lineItem)
+    {
+        double min_x=this->xAxis->range().lower;
+        double min_y=this->yAxis->range().lower;
+        double max_x=this->xAxis->range().upper;
+        double max_y=this->yAxis->range().upper;
+
+        if(modifiers & Qt::ControlModifier)
+        {
+            lineItem->start->setCoords(min_x,cy);
+            lineItem->end->setCoords(max_x,cy);
+        }
+        else
+        {
+            lineItem->start->setCoords(cx,min_y);
+            lineItem->end->setCoords(cx,max_y);
+        }
+        replot();
+    }
 }
+
+void Viewer1D::keyPressEvent(QKeyEvent* event)
+{
+    QCustomPlot::keyPressEvent(event);
+
+    modifiers=event->modifiers();
+
+    std::cout<<modifiers<<" "<<event->modifiers()<<std::endl;
+}
+
+void Viewer1D::keyReleaseEvent(QKeyEvent* event)
+{
+    QCustomPlot::keyReleaseEvent(event);
+
+    modifiers=event->modifiers();
+
+    std::cout<<modifiers<<" "<<event->modifiers()<<std::endl;
+}
+
 
 void Viewer1D::mousePressEvent(QMouseEvent* event)
 {
@@ -1110,6 +1170,30 @@ void Viewer1D::mousePressEvent(QMouseEvent* event)
         tracerItem->setGraphKey(cx);
         state_tracer.clear();
         tracerItem=nullptr;
+        this->setCursor(Qt::ArrowCursor);
+        replot();
+    }
+
+    if (!state_line.isEmpty() && event->button() == Qt::LeftButton)
+    {
+        double min_x=this->xAxis->range().lower;
+        double min_y=this->yAxis->range().lower;
+        double max_x=this->xAxis->range().upper;
+        double max_y=this->yAxis->range().upper;
+
+        if(modifiers & Qt::ControlModifier)
+        {
+            lineItem->start->setCoords(min_x,cy);
+            lineItem->end->setCoords(max_x,cy);
+        }
+        else
+        {
+            lineItem->start->setCoords(cx,min_y);
+            lineItem->end->setCoords(cx,max_y);
+        }
+
+        state_line.clear();
+        lineItem=nullptr;
         this->setCursor(Qt::ArrowCursor);
         replot();
     }
@@ -1289,6 +1373,95 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
             replot();
         }
     }
+}
+
+void Viewer1D::slot_itemDoubleClick(QCPAbstractItem* item,QMouseEvent* event)
+{
+    //If text
+    QCPItemText * ptextItem=dynamic_cast<QCPItemText *>(item);
+    if(ptextItem)
+    {
+        state_label = QInputDialog::getText(this, "Edit label", "label :", QLineEdit::Normal,ptextItem->text());
+        if(!state_label.isEmpty())
+        {
+            ptextItem->setText(state_label);
+            state_label.clear();
+        }
+    }
+
+    //If tracer
+    QCPItemTracer * ptracerItem=dynamic_cast<QCPItemTracer *>(item);
+    if(ptracerItem)
+    {
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("Edit tracer");
+        QGridLayout* gbox = new QGridLayout();
+
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok| QDialogButtonBox::Cancel);
+
+        QDoubleSpinBox * sb_size=new QDoubleSpinBox(dialog);
+        sb_size->setPrefix("Size=");
+        sb_size->setValue(ptracerItem->size());
+
+        ColorWheel * colorWheel=new ColorWheel(dialog);
+        colorWheel->setColor(ptracerItem->brush().color());
+
+        gbox->addWidget(sb_size,0,0);
+        gbox->addWidget(colorWheel,1,0);
+        gbox->addWidget(buttonBox,2,0);
+        dialog->setLayout(gbox);
+
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+        int result=dialog->exec();
+
+        if (result == QDialog::Accepted)
+        {
+            ptracerItem->setSize(sb_size->value());
+            ptracerItem->setBrush(QBrush(colorWheel->color()));
+        }
+    }
+
+    //If line
+    QCPItemLine * plineItem=dynamic_cast<QCPItemLine *>(item);
+    if(plineItem)
+    {
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("Edit line");
+        QGridLayout* gbox = new QGridLayout();
+
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok| QDialogButtonBox::Cancel);
+
+        QDoubleSpinBox * sb_size=new QDoubleSpinBox(dialog);
+        sb_size->setPrefix("Size=");
+        sb_size->setValue(plineItem->pen().widthF());
+
+        ColorWheel * colorWheel=new ColorWheel(dialog);
+        colorWheel->setColor(plineItem->pen().color());
+
+        gbox->addWidget(sb_size,0,0);
+        gbox->addWidget(colorWheel,1,0);
+        gbox->addWidget(buttonBox,2,0);
+        dialog->setLayout(gbox);
+
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+        int result=dialog->exec();
+
+        if (result == QDialog::Accepted)
+        {
+            QPen pen;
+            pen.setWidthF(sb_size->value());
+            pen.setColor(colorWheel->color());
+            plineItem->setPen(pen);
+        }
+    }
+
+    replot();
 }
 
 void Viewer1D::slot_legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* item)
@@ -1893,6 +2066,13 @@ void Viewer1D::slot_delete()
         this->plotLayout()->simplify();
     }
 
+
+    QList<QCPAbstractItem*> itemslist=this->selectedItems();
+    for (int i=0; i<itemslist.size(); i++)
+    {
+        this->removeItem(itemslist[i]);
+    }
+
     this->replot();
 }
 
@@ -2201,6 +2381,7 @@ void Viewer1D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     shortcuts_links.insert(QString("Graph-GadgetArrow"),actGadgetArrow);
     shortcuts_links.insert(QString("Graph-GadgetMark"),actGadgetMark);
     shortcuts_links.insert(QString("Graph-GadgetTracer"),actGadgetTracer);
+    shortcuts_links.insert(QString("Graph-GadgetLine"),actGadgetLine);
     shortcuts_links.insert(QString("Graph-Save"),actSave);
     shortcuts_links.insert(QString("Graph-Rescale"),actRescale);
     shortcuts_links.insert(QString("Graph-Delete"),actDelete);

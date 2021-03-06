@@ -93,6 +93,7 @@ public slots:
     void slot_gadgetArrow();
     void slot_gadgetAddArrow(Eigen::Vector2d A,Eigen::Vector2d B);
     void slot_setScalarFieldGradientType(int type);
+    void slot_showSubGridType(int state);
 
     void slot_auto_color1();
     void slot_auto_color2();
@@ -223,13 +224,14 @@ protected:
     QComboBox* cb_itemLineStyleList;
     QComboBox* cb_ScatterShapes;
     QDoubleSpinBox* sb_ScatterSize;
-    QComboBox* cb_penstyle;
-    QComboBox* cb_brushstyle;
+    QComboBox* cb_penStyle;
+    QComboBox* cb_brushStyle;
     ColorWheel* cw_pen_color;
     ColorWheel* cw_brush_color;
-    QDoubleSpinBox* sb_pen_width;
+    QDoubleSpinBox* sb_penWidth;
     QDoubleSpinBox* s_pen_alpha;
     QDoubleSpinBox* s_brush_alpha;
+    QCheckBox * cb_subGrid;
 
     QVector<QMenu*> sub_menus;
 

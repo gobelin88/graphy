@@ -393,6 +393,7 @@ QStringList Register::getFunctionsList()
         qlist.append(QString::fromStdString(list[i]));
     }
     qlist.append("index");
+    qlist.append("solveNewton");
 
     return qlist;
 }
@@ -688,6 +689,14 @@ QString getHelp(QString name)
     else if(name=="xnor"){return QString("<b>xnor</b><p>The xnor logic operator</p>");}
     else if(name=="xor"){return QString("<b>xor</b><p>The xor logic operator</p>");}
 
+    //Misc
+    else if(name=="solveNewton"){
+        return QString("<b>solveNewton</b>('f(z)','f'(z)'|epsilon,z0,[a],[it])"\
+                                                 "<p>Basic newton solver.</p>"\
+                                                 "<p>Perform newton's algorithm, searching zeros of the expression f(z)."\
+                                                 "If you know the derivative you can specifie it in the second argument 'f'(z)'."\
+                                                 "The algorithm start at z0 then perform 'it' iterations z=z-a*f(z)/f'(z)</p>");
+    }
 
 
     return QString();

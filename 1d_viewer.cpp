@@ -186,11 +186,11 @@ void Viewer1D::configurePopup()
 
         s_pen_alpha->setValue(plottables[0]->pen().color().alphaF());
         s_brush_alpha->setValue(plottables[0]->brush().color().alphaF());
-        cb_brushstyle->setCurrentIndex(plottables[0]->brush().style());
-        cb_penstyle->setCurrentIndex(plottables[0]->pen().style()-1);
+        cb_brushStyle->setCurrentIndex(plottables[0]->brush().style());
+        cb_penStyle->setCurrentIndex(plottables[0]->pen().style()-1);
         cw_pen_color->setColor(plottables[0]->pen().color());
         cw_brush_color->setColor(plottables[0]->brush().color());
-        sb_pen_width->setValue(plottables[0]->pen().widthF());
+        sb_penWidth->setValue(plottables[0]->pen().widthF());
 
     }
 }
@@ -238,29 +238,29 @@ QWidgetAction* Viewer1D::createParametersWidget()
     sb_ScatterSize=new QDoubleSpinBox;
     sb_ScatterSize->setRange(1,100);
 
-    cb_penstyle = new QComboBox;
-    cb_penstyle->addItem(QStringLiteral("SolidLine"));
-    cb_penstyle->addItem(QStringLiteral("DashLine"));
-    cb_penstyle->addItem(QStringLiteral("DotLine"));
-    cb_penstyle->addItem(QStringLiteral("DashDotLine"));
-    cb_penstyle->addItem(QStringLiteral("DashDotDotLine"));
-    cb_penstyle->addItem(QStringLiteral("CustomDashLine"));
+    cb_penStyle = new QComboBox;
+    cb_penStyle->addItem(QStringLiteral("SolidLine"));
+    cb_penStyle->addItem(QStringLiteral("DashLine"));
+    cb_penStyle->addItem(QStringLiteral("DotLine"));
+    cb_penStyle->addItem(QStringLiteral("DashDotLine"));
+    cb_penStyle->addItem(QStringLiteral("DashDotDotLine"));
+    cb_penStyle->addItem(QStringLiteral("CustomDashLine"));
 
-    cb_brushstyle = new QComboBox;
-    cb_brushstyle->addItem(QStringLiteral("NoBrush"));
-    cb_brushstyle->addItem(QStringLiteral("SolidPattern"));
-    cb_brushstyle->addItem(QStringLiteral("Dense1Pattern"));
-    cb_brushstyle->addItem(QStringLiteral("Dense2Pattern"));
-    cb_brushstyle->addItem(QStringLiteral("Dense3Pattern"));
-    cb_brushstyle->addItem(QStringLiteral("Dense4Pattern"));
-    cb_brushstyle->addItem(QStringLiteral("Dense5Pattern"));
-    cb_brushstyle->addItem(QStringLiteral("Dense6Pattern"));
-    cb_brushstyle->addItem(QStringLiteral("Dense7Pattern"));
-    cb_brushstyle->addItem(QStringLiteral("HorPattern"));
-    cb_brushstyle->addItem(QStringLiteral("VerPattern"));
-    cb_brushstyle->addItem(QStringLiteral("CrossPattern"));
-    cb_brushstyle->addItem(QStringLiteral("BDiagPattern"));
-    cb_brushstyle->addItem(QStringLiteral("DiagCrossPattern"));
+    cb_brushStyle = new QComboBox;
+    cb_brushStyle->addItem(QStringLiteral("NoBrush"));
+    cb_brushStyle->addItem(QStringLiteral("SolidPattern"));
+    cb_brushStyle->addItem(QStringLiteral("Dense1Pattern"));
+    cb_brushStyle->addItem(QStringLiteral("Dense2Pattern"));
+    cb_brushStyle->addItem(QStringLiteral("Dense3Pattern"));
+    cb_brushStyle->addItem(QStringLiteral("Dense4Pattern"));
+    cb_brushStyle->addItem(QStringLiteral("Dense5Pattern"));
+    cb_brushStyle->addItem(QStringLiteral("Dense6Pattern"));
+    cb_brushStyle->addItem(QStringLiteral("Dense7Pattern"));
+    cb_brushStyle->addItem(QStringLiteral("HorPattern"));
+    cb_brushStyle->addItem(QStringLiteral("VerPattern"));
+    cb_brushStyle->addItem(QStringLiteral("CrossPattern"));
+    cb_brushStyle->addItem(QStringLiteral("BDiagPattern"));
+    cb_brushStyle->addItem(QStringLiteral("DiagCrossPattern"));
 
     //QPushButton* pb_pen_color=new  QPushButton("Pen");
     cw_pen_color = new ColorWheel;
@@ -269,7 +269,7 @@ QWidgetAction* Viewer1D::createParametersWidget()
 
     cb_gradient=new MyGradientComboBox(nullptr);
 
-    sb_pen_width=new QDoubleSpinBox();
+    sb_penWidth=new QDoubleSpinBox();
     s_pen_alpha=new QDoubleSpinBox();
     s_pen_alpha->setRange(0,1.0);
     s_pen_alpha->setSingleStep(0.1);
@@ -279,54 +279,64 @@ QWidgetAction* Viewer1D::createParametersWidget()
     s_brush_alpha->setSingleStep(0.1);
     s_brush_alpha->setPrefix("alpha=");
 
-    QGridLayout* g_style = new QGridLayout();
-    QGroupBox* gb_style=new QGroupBox("Graphic Style");
-    gb_style->setLayout(g_style);
+    QGridLayout* g_stylePlot = new QGridLayout();
+    QGroupBox* gb_stylePlot=new QGroupBox("Plot Style");
+    gb_stylePlot->setLayout(g_stylePlot);
 
-    g_style->addWidget(new QLabel("Scatter shape : "),0,0);
-    g_style->addWidget(new QLabel("Scatter size : "),1,0);
-    g_style->addWidget(new QLabel("Line style : "),2,0);
-    g_style->addWidget(new QLabel("Pen style : "),3,0);
-    g_style->addWidget(new QLabel("Pen size : "),4,0);
-    g_style->addWidget(new QLabel("Brush style : "),5,0);
+    cb_subGrid=new QCheckBox("Show sub-grid");
 
-    g_style->addWidget(cb_ScatterShapes,0,1);
-    g_style->addWidget(sb_ScatterSize,1,1);
-    g_style->addWidget(cb_itemLineStyleList,2,1);
-    g_style->addWidget(cb_penstyle,3,1);
-    g_style->addWidget(sb_pen_width,4,1);
-    g_style->addWidget(cb_brushstyle,5,1);
+    g_stylePlot->addWidget(cb_subGrid,0,0);
+
+    QGridLayout* g_styleCurve = new QGridLayout();
+    QGroupBox* gb_styleCurve=new QGroupBox("Curve Style");
+    gb_styleCurve->setLayout(g_styleCurve);
+
+    g_styleCurve->addWidget(new QLabel("Scatter shape : "),0,0);
+    g_styleCurve->addWidget(new QLabel("Scatter size : "),1,0);
+    g_styleCurve->addWidget(new QLabel("Line style : "),2,0);
+    g_styleCurve->addWidget(new QLabel("Pen style : "),3,0);
+    g_styleCurve->addWidget(new QLabel("Pen size : "),4,0);
+    g_styleCurve->addWidget(new QLabel("Brush style : "),5,0);
+
+    g_styleCurve->addWidget(cb_ScatterShapes,0,1);
+    g_styleCurve->addWidget(sb_ScatterSize,1,1);
+    g_styleCurve->addWidget(cb_itemLineStyleList,2,1);
+    g_styleCurve->addWidget(cb_penStyle,3,1);
+    g_styleCurve->addWidget(sb_penWidth,4,1);
+    g_styleCurve->addWidget(cb_brushStyle,5,1);
 
     QLabel* l_pen_color=new QLabel("Pen color");
     QLabel* l_brush_color=new QLabel("Brush color");
     l_pen_color->setAlignment(Qt::AlignHCenter);
     l_brush_color->setAlignment(Qt::AlignHCenter);
 
-    g_style->addWidget(l_pen_color,6,0);
-    g_style->addWidget(l_brush_color,6,1);
-    g_style->addWidget(cw_pen_color,7,0);
-    g_style->addWidget(cw_brush_color,7,1);
-    g_style->addWidget(s_pen_alpha,8,0);
-    g_style->addWidget(s_brush_alpha,8,1);
-    g_style->addWidget(cb_gradient,9,0,1,2);
+    g_styleCurve->addWidget(l_pen_color,6,0);
+    g_styleCurve->addWidget(l_brush_color,6,1);
+    g_styleCurve->addWidget(cw_pen_color,7,0);
+    g_styleCurve->addWidget(cw_brush_color,7,1);
+    g_styleCurve->addWidget(s_pen_alpha,8,0);
+    g_styleCurve->addWidget(s_brush_alpha,8,1);
+    g_styleCurve->addWidget(cb_gradient,9,0,1,2);
 
     //gbox->addWidget(gb_axis,0,0);
-    gbox->addWidget(gb_style,1,0);
+    gbox->addWidget(gb_stylePlot,0,0);
+    gbox->addWidget(gb_styleCurve,1,0);
     widget->setLayout(gbox);
 
     QObject::connect(s_pen_alpha, SIGNAL(valueChanged(double)), this, SLOT(slot_setPenAlpha(double)));
     QObject::connect(s_brush_alpha, SIGNAL(valueChanged(double)), this, SLOT(slot_setBrushAlpha(double)));
 
     QObject::connect(cw_brush_color, SIGNAL(colorChanged(QColor)), this, SLOT(slot_setBrushColor(QColor)));
-    QObject::connect(sb_pen_width, SIGNAL(valueChanged(double)), this, SLOT(slot_setPenWidth(double)));
+    QObject::connect(sb_penWidth, SIGNAL(valueChanged(double)), this, SLOT(slot_setPenWidth(double)));
     QObject::connect(cw_pen_color, SIGNAL(colorChanged(QColor)), this, SLOT(slot_setPenColor(QColor)));
-    QObject::connect(cb_penstyle, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setPenStyle(int)));
-    QObject::connect(cb_brushstyle, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setBrushStyle(int)));
+    QObject::connect(cb_penStyle, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setPenStyle(int)));
+    QObject::connect(cb_brushStyle, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setBrushStyle(int)));
     QObject::connect(cb_ScatterShapes, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setScatterShape(int)));
     QObject::connect(sb_ScatterSize, SIGNAL(valueChanged(double) ), this, SLOT(slot_setScatterSize(double)));
     QObject::connect(cb_itemLineStyleList, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setStyle(int)));
 
     QObject::connect(cb_gradient, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setScalarFieldGradientType(int)));
+    QObject::connect(cb_subGrid, SIGNAL(stateChanged(int)), this, SLOT(slot_showSubGridType(int)));
 
     return actWidget;
 }
@@ -2440,6 +2450,13 @@ void Viewer1D::slot_setAxisYType(int mode)
     {
         this->yAxis->setScaleType(QCPAxis::stLinear);
     }
+    replot();
+}
+
+void Viewer1D::slot_showSubGridType(int state)
+{
+    xAxis->grid()->setSubGridVisible(state);
+    yAxis->grid()->setSubGridVisible(state);
     replot();
 }
 

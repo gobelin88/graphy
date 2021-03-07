@@ -3,17 +3,6 @@
 
 Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* parent):QCustomPlot(parent)
 {
-//    colors.append(QColor(255,0,0));
-//    colors.append(QColor(0,128,0));
-//    colors.append(QColor(0,0,255));
-//    colors.append(QColor(255,128,0));
-//    colors.append(QColor(0,128,255));
-//    colors.append(QColor(255,0,255));
-//    colors.append(QColor(128,255,0));
-//    colors.append(QColor(0,255,128));
-//    colors.append(QColor(128,0,255));
-//    colors.append(QColor(255,0,128));
-
     colors<<QColor(160,0,0);
     colors<<QColor(0,160,0);
     colors<<QColor(0,0,160);
@@ -100,20 +89,6 @@ void Viewer1D::selectionChanged()
         }
     }
 }
-
-//QCPGraph* Viewer1D::newGraph(const Curve2D& datacurve)
-//{
-
-//    this->rescaleAxes();
-//    return pgraph;
-//}
-
-//QCPCurve* Viewer1D::newCurve(const Curve2D& datacurve)
-//{
-//    QCPCurve* pcurve =
-//    this->rescaleAxes();
-//    return pcurve;
-//}
 
 void Viewer1D::slot_add_data(const Curve2D& datacurve)
 {
@@ -279,14 +254,6 @@ QWidgetAction* Viewer1D::createParametersWidget()
     s_brush_alpha->setSingleStep(0.1);
     s_brush_alpha->setPrefix("alpha=");
 
-    QGridLayout* g_stylePlot = new QGridLayout();
-    QGroupBox* gb_stylePlot=new QGroupBox("Plot Style");
-    gb_stylePlot->setLayout(g_stylePlot);
-
-    cb_subGrid=new QCheckBox("Show sub-grid");
-
-    g_stylePlot->addWidget(cb_subGrid,0,0);
-
     QGridLayout* g_styleCurve = new QGridLayout();
     QGroupBox* gb_styleCurve=new QGroupBox("Curve Style");
     gb_styleCurve->setLayout(g_styleCurve);
@@ -319,8 +286,7 @@ QWidgetAction* Viewer1D::createParametersWidget()
     g_styleCurve->addWidget(cb_gradient,9,0,1,2);
 
     //gbox->addWidget(gb_axis,0,0);
-    gbox->addWidget(gb_stylePlot,0,0);
-    gbox->addWidget(gb_styleCurve,1,0);
+    gbox->addWidget(gb_styleCurve,0,0);
     widget->setLayout(gbox);
 
     QObject::connect(s_pen_alpha, SIGNAL(valueChanged(double)), this, SLOT(slot_setPenAlpha(double)));
@@ -336,7 +302,6 @@ QWidgetAction* Viewer1D::createParametersWidget()
     QObject::connect(cb_itemLineStyleList, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setStyle(int)));
 
     QObject::connect(cb_gradient, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setScalarFieldGradientType(int)));
-    QObject::connect(cb_subGrid, SIGNAL(stateChanged(int)), this, SLOT(slot_showSubGridType(int)));
 
     return actWidget;
 }
@@ -1317,6 +1282,8 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
         sb_rotation->setValue(currentLabelRotation);
         sb_rotation->setRange(-90,90);
 
+        QCheckBox * cb_subGrid=new QCheckBox("Show sub-grid");
+        cb_subGrid->setChecked(axis->grid()->subGridVisible());
         QObject::connect(sb_rotation,  SIGNAL(valueChanged(double)), axis, SLOT(setTickLabelRotation(double)));
         QObject::connect(sb_rotation,  SIGNAL(valueChanged(double)), this, SLOT(replot()));
         QObject::connect(sb_precision,  SIGNAL(valueChanged(int)), axis, SLOT(setNumberPrecision(int)));
@@ -1329,6 +1296,8 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
         QObject::connect(sb_axis_min,  SIGNAL(valueChanged(double)), this, SLOT(replot()));
         QObject::connect(sb_axis_max,  SIGNAL(valueChanged(double)), this, SLOT(replot()));
         QObject::connect(cb_scale_mode,SIGNAL(currentIndexChanged(int)), this, SLOT(replot()));
+        QObject::connect(cb_subGrid,SIGNAL(stateChanged(int)), axis, SLOT(setSubGridVisible(int)));
+        QObject::connect(cb_subGrid,SIGNAL(stateChanged(int)), this, SLOT(replot()));
 
         dialog->setLocale(QLocale("C"));
         dialog->setWindowTitle("Axis");
@@ -1363,7 +1332,9 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
         gbox->addWidget(new QLabel("Label rotation :"),5,0);
         gbox->addWidget(sb_rotation,5,1,1,2);
 
-        gbox->addWidget(buttonBox,6,0,1,3);
+        gbox->addWidget(cb_subGrid,6,0,1,3);
+
+        gbox->addWidget(buttonBox,7,0,1,3);
 
         dialog->setLayout(gbox);
 

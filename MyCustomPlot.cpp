@@ -8501,6 +8501,11 @@ void QCPAxis::setScaleType(QCPAxis::ScaleType type)
     }
 }
 
+void QCPAxis::setSubGridVisible(int visible)
+{
+    grid()->setSubGridVisible(visible);
+}
+
 void QCPAxis::setScaleType(int type)
 {
     setScaleType(static_cast<QCPAxis::ScaleType>(type));

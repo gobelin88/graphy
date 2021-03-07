@@ -231,7 +231,6 @@ protected:
     QDoubleSpinBox* sb_penWidth;
     QDoubleSpinBox* s_pen_alpha;
     QDoubleSpinBox* s_brush_alpha;
-    QCheckBox * cb_subGrid;
 
     QVector<QMenu*> sub_menus;
 

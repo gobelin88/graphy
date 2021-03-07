@@ -2529,6 +2529,7 @@ public:
     }
 
     // setters:
+    Q_SLOT void setSubGridVisible(int visible);
     Q_SLOT void setScaleType(int type);
     Q_SLOT void setScaleType(QCPAxis::ScaleType type);
     Q_SLOT void setRange(const QCPRange& range);

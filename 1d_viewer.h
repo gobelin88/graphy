@@ -80,6 +80,7 @@ public slots:
     void slot_setPenAlpha(double alpha);
     void slot_setBrushAlpha(double alpha);
 
+    void slot_plottableDoubleClick(QCPAbstractPlottable*plottable, int n, QMouseEvent*event);
     void slot_itemDoubleClick(QCPAbstractItem* item,QMouseEvent* event);
     void slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart part);
     void slot_legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* item);
@@ -217,7 +218,7 @@ protected:
     QAction* actGadgetMark;
     QAction* actGadgetTracer;
     QAction* actGadgetLine;
-    QWidgetAction* createParametersWidget();
+    QWidget *createParametersWidget();
 
     MyGradientComboBox * cb_gradient;
 
@@ -240,6 +241,8 @@ protected:
     QVector<QColor> colors;
 
     QComboBox * createScatterComboBox();
+
+    QWidget * parameterWidget;
 };
 
 #endif // VIEWER1D_H

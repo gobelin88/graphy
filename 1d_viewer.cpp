@@ -22,6 +22,7 @@ Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* par
     connect(this, SIGNAL(axisDoubleClick(QCPAxis*,QCPAxis::SelectablePart,QMouseEvent*)), this, SLOT(slot_axisLabelDoubleClick(QCPAxis*,QCPAxis::SelectablePart)));
     connect(this, SIGNAL(legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*,QMouseEvent*)), this, SLOT(slot_legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*)));
     connect(this, SIGNAL(itemDoubleClick(QCPAbstractItem*,QMouseEvent*)), this, SLOT(slot_itemDoubleClick(QCPAbstractItem*,QMouseEvent*)));
+    connect(this, SIGNAL(plottableDoubleClick(QCPAbstractPlottable*,int,QMouseEvent*)), this, SLOT(slot_plottableDoubleClick(QCPAbstractPlottable*,int,QMouseEvent*)));
     connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(selectionChanged()));
 
     applyShortcuts(shortcuts_map);
@@ -124,6 +125,7 @@ void Viewer1D::configurePopup()
 
     if (plottables.size()>0)
     {
+        parameterWidget->setWindowTitle("Appearance of : "+plottables[0]->name());
         menuAppearance->setEnabled(true);
 
         QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(plottables[0]);
@@ -193,11 +195,11 @@ QComboBox * Viewer1D::createScatterComboBox()
     return comboBox;
 }
 
-QWidgetAction* Viewer1D::createParametersWidget()
+QWidget* Viewer1D::createParametersWidget()
 {
-    QWidgetAction* actWidget=new QWidgetAction(popup_menu);
+
     QWidget* widget=new QWidget;
-    actWidget->setDefaultWidget(widget);
+
 
     QGridLayout* gbox = new QGridLayout();
 
@@ -303,7 +305,7 @@ QWidgetAction* Viewer1D::createParametersWidget()
 
     QObject::connect(cb_gradient, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setScalarFieldGradientType(int)));
 
-    return actWidget;
+    return widget;
 }
 
 void Viewer1D::createPopup()
@@ -462,7 +464,12 @@ void Viewer1D::createPopup()
 
 
     menuAppearance->addMenu(menuLegend);
-    menuAppearance->addAction(createParametersWidget());
+
+    parameterWidget=createParametersWidget();
+
+    //QWidgetAction* actWidget=new QWidgetAction(popup_menu);
+    //actWidget->setDefaultWidget(parameterWidget);
+    //menuAppearance->addAction(actWidget);
 
     menuAnalyse->addMenu(menuFit);
     menuAnalyse->addMenu(menuScalarField);
@@ -1354,6 +1361,13 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
             replot();
         }
     }
+}
+
+void Viewer1D::slot_plottableDoubleClick(QCPAbstractPlottable* plottable, int n, QMouseEvent* event)
+{
+    configurePopup();
+    parameterWidget->setMinimumWidth(400);
+    parameterWidget->show();
 }
 
 void Viewer1D::slot_itemDoubleClick(QCPAbstractItem* item,QMouseEvent* event)

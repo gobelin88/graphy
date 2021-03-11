@@ -137,7 +137,7 @@ void MainWindow::slot_new()
 
 void MainWindow::slot_currentTableModified()
 {
-    unsigned int id=te_widget->currentIndex();
+    int id=te_widget->currentIndex();
     if(id<tables.size())
     {
         te_widget->setTabText(id,tables[id]->model()->getTabTitle());
@@ -164,7 +164,7 @@ void MainWindow::addNewTable(MyTableView * newTable)
 
 MyTableView * MainWindow::getCurrentTable()
 {
-    unsigned int id=te_widget->currentIndex();
+    int id=te_widget->currentIndex();
     if(id<tables.size())
     {
         return tables[id];
@@ -1303,7 +1303,7 @@ void MainWindow::closeEvent (QCloseEvent *event)
 
     QString filesNotSaved;
 
-    for(unsigned int i=0;i<tables.size();i++)
+    for(int i=0;i<tables.size();i++)
     {
         if(tables[i]->model()->isModified())
         {

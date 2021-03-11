@@ -10,7 +10,7 @@
 
 Q_DECLARE_METATYPE(std::complex<double>);
 
-const unsigned int myVariantDoubleToStringPrecision=16;
+const unsigned int myVariantDoubleToStringPrecision=15;//presque 16
 
 class MyVariant:public QVariant
 {

@@ -137,6 +137,8 @@ std::ostream& operator<< (std::ostream &out,const MyVariant & v)
 QString MyVariant::doubleToString(double value)const
 {
     return QString::number(value,'g',myVariantDoubleToStringPrecision);
+    //return QString::number(value);
+    //return QString("%1").arg(value);
 }
 
 QString MyVariant::complexToString(std::complex<double> value)const

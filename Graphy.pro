@@ -49,6 +49,7 @@ SOURCES += \
         DataConvert.cpp \
         FFT.cpp \
         FIR.cpp \
+        FilterDialog.cpp \
         MainWindow.cpp \
         MyCustomPlot.cpp \
         MyGradientComboBox.cpp \
@@ -88,6 +89,7 @@ HEADERS += \
         ExprtkCustomFunctions.hpp \
         FFT.h \
         FIR.h \
+        FilterDialog.h \
         Functor.h \
         MainWindow.h \
         MyCustomPlot.h \

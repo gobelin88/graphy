@@ -923,6 +923,7 @@ namespace exprtk
             template <typename T>
             inline T imag_impl(const T v, real_type_tag)
             {
+               Q_UNUSED(v);
                return 0;
             }
 
@@ -1003,8 +1004,8 @@ namespace exprtk
             template <typename T>
             inline T nequal_impl(const T v0, const T v1, complex_type_tag)
             {
-                //not implemented
-                return v0;
+                typedef real_type_tag rtg;
+                return T(nequal_impl(v0.real(),v1.real(),rtg()),nequal_impl(v0.imag(),v1.imag(),rtg()));
             }
 
             inline float nequal_impl(const float v0, const float v1, real_type_tag)
@@ -1161,8 +1162,21 @@ namespace exprtk
             template <typename T>
             inline T roundn_impl(const T v0, const T v1, complex_type_tag)
             {
-                //not implemented
-               return v0;
+                const int index = std::max<int>(0, std::min<int>(pow10_size - 1, (int)std::floor(v1.real())));
+                const T p10 = T(pow10[index]);
+
+                if (v0.real() < T(0).real() && (v0.imag() < T(0).real())){
+                   return T(std::ceil ((v0.real() * p10.real()) - T(0.5).real()) / p10.real(),
+                            std::ceil ((v0.imag() * p10.real()) - T(0.5).real()) / p10.real());}
+                else if (v0.real() > T(0).real() && (v0.imag() < T(0).real())){
+                   return T(std::floor((v0.real() * p10.real()) + T(0.5).real()) / p10.real(),
+                            std::ceil ((v0.imag() * p10.real()) - T(0.5).real()) / p10.real());}
+                else if (v0.real() < T(0).real() && (v0.imag() > T(0).real())){
+                   return T(std::ceil((v0.real() * p10.real()) - T(0.5).real()) / p10.real(),
+                            std::floor ((v0.imag() * p10.real()) + T(0.5).real()) / p10.real());}
+                else{
+                   return T(std::floor((v0.real() * p10.real()) + T(0.5).real()) / p10.real(),
+                            std::floor ((v0.imag() * p10.real()) + T(0.5).real()) / p10.real());}
             }
 
             template <typename T>
@@ -1205,7 +1219,7 @@ namespace exprtk
             inline T mandel_impl(const T v0, const T v1, real_type_tag)
             {
                 //not implemented
-                return v0;
+                return v0+v1;
             }
 
             template <typename T>
@@ -1243,7 +1257,7 @@ namespace exprtk
             inline T shr_impl(const T v0, const T v1, complex_type_tag)
             {
                //not implemented;
-               return v0;
+               return v0.real() * (T(1) / std::pow(T(2),static_cast<T>(static_cast<int>(v1.real()))));
             }
 
             template <typename T>
@@ -1264,7 +1278,7 @@ namespace exprtk
             inline T shl_impl(const T v0, const T v1, complex_type_tag)
             {
                 //not implemeted
-               return v0;
+               return v0.real() * std::pow(T(2),static_cast<T>(static_cast<int>(v1.real())));
             }
 
             template <typename T>
@@ -1307,7 +1321,7 @@ namespace exprtk
             inline T and_impl(const T v0, const T v1, complex_type_tag)
             {
                //not implemeted
-               return v0;
+               return (is_true_impl(v0.real()) && is_true_impl(v1.real())) ? T(1) : T(0);
             }
 
             template <typename T>
@@ -1326,7 +1340,7 @@ namespace exprtk
             inline T nand_impl(const T v0, const T v1, complex_type_tag)
             {
                //not implemeted
-               return v0;
+               return (is_false_impl(v0.real()) || is_false_impl(v1.real())) ? T(1) : T(0);
             }
 
             template <typename T>
@@ -1345,7 +1359,7 @@ namespace exprtk
             inline T or_impl(const T v0, const T v1, complex_type_tag)
             {
                 //not implemented
-               return v0;
+               return (is_true_impl(v0.real()) || is_true_impl(v1.real())) ? T(1) : T(0);
             }
 
             template <typename T>
@@ -1364,7 +1378,7 @@ namespace exprtk
             inline T nor_impl(const T v0, const T v1, complex_type_tag)
             {
                 //not implemented
-               return v0;
+               return (is_false_impl(v0.real()) && is_false_impl(v1.real())) ? T(1) : T(0);
             }
 
             template <typename T>

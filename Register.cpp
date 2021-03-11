@@ -112,6 +112,9 @@ void Register::clear()
     symbolsTable->add_function("gamma"  ,  cf_gamma);
     symbolsTable->add_function("zeta"  ,  cf_zeta);
     symbolsTable->add_function("xsi"  ,  cf_xsi);
+
+
+    symbolsTable->add_function("isPrime"  ,  cf_isPrime);
     symbolsTable->add_function("lin"  ,  cf_lin);
     symbolsTable->add_function("clin"  ,  cf_clin);
     symbolsTable->add_function("solveNewton"  ,  cf_solveNewton);

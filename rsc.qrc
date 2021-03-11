@@ -1,5 +1,12 @@
 <RCC>
     <qresource prefix="/img">
+        <file>icons/SortAscending.png</file>
+        <file>icons/SortDescending.png</file>
+        <file>icons/SortEqual.png</file>
+        <file>icons/SortNotEqual.png</file>
+        <file>icons/SortGreaterThan.png</file>
+        <file>icons/SortLowerThan.png</file>
+
         <file>icons/bode.png</file>
         <file>icons/cloudYX.png</file>
         <file>icons/cloudZYX.png</file>

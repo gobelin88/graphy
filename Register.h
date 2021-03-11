@@ -104,6 +104,7 @@ private:
     solveNewtonFunction<VariableType> cf_solveNewton;
     dataFunction<VariableType,MatrixXv> cf_data;
     indexFunction<VariableType> cf_id;
+    isPrimeFunction<VariableType> cf_isPrime;
 
     //Misc variables
     VariableType activeRow;

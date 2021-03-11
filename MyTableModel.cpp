@@ -8,6 +8,7 @@
 #include <QDialogButtonBox>
 
 #include "MyTableModel.h"
+#include "FilterDialog.h"
 
 //-----------------------------------------------------------------
 MyModel::MyModel(int nbRows, int nbCols, int rowSpan, QObject *parent): QAbstractTableModel(parent)
@@ -530,7 +531,7 @@ QVector<QString> MyModel::getColLogicalDataString(int logicalIndex)const
     return getColVisualDataString(h_header->visualIndex(logicalIndex));
 }
 
-const VectorXv & MyModel::getColLogicalData(int logicalIndex)const
+const VectorXv &MyModel::getColLogicalData(int logicalIndex)const
 {
     return getColVisualData(h_header->visualIndex(logicalIndex));
 }
@@ -588,87 +589,61 @@ void MyModel::applyFilters(const QModelIndexList & selectedColsIndexes)
     {
         int visualIndex=h_header->visualIndex(selectedColsIndexes[0].column());
 
-        QDialog* dialog=new QDialog;
-        dialog->setLocale(QLocale("C"));
-        dialog->setWindowTitle(QString("Filter by : %1").arg(reg.variablesNames()[visualIndex]));
-        QGridLayout* gbox = new QGridLayout();
-
-        QComboBox* cb_mode=new QComboBox(dialog);
-        cb_mode->addItem("Ascending sort");
-        cb_mode->addItem("Descending sort");
-        cb_mode->addItem("Keep greater than value");
-        cb_mode->addItem("Keep lower than value");
-        cb_mode->addItem("Keep equal to value");
-        cb_mode->addItem("Keep not equal to value");
-
-        QLineEdit* sb_value=new QLineEdit(dialog);
-        sb_value->setToolTip("Value");
-
-
+        ///Default Value
+        QString defaultValue;
         if(asColumnStrings(visualIndex))
         {
             QVector<QString> values=getColVisualDataString(visualIndex);
             if(values.size()>0)
             {
-                sb_value->setText(values.first());
+                defaultValue=values.first();
             }
         }
         else
         {
-            std::complex<double> defaultValue=getColVisualDataComplex(visualIndex).mean();
-            if(std::isnan(defaultValue.real()) || std::isnan(defaultValue.imag()))
+            std::complex<double> defaultValueCplx=getColVisualDataComplex(visualIndex).mean();
+            if(std::isnan(defaultValueCplx.real()) || std::isnan(defaultValueCplx.imag()))
             {
-                sb_value->setText("");
+                defaultValue.clear();
             }
             else
             {
                 MyVariant value;
-                value=defaultValue;
-                sb_value->setText(value.toString());
+                value=defaultValueCplx;
+                defaultValue=value.toString();
             }
         }
 
-        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                           | QDialogButtonBox::Cancel);
+        ////////////////////////
+        FilterDialog* dialog=new FilterDialog(defaultValue,reg.variablesNames()[visualIndex]);
 
-        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
-        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
-
-
-        gbox->addWidget(cb_mode,0,0);
-        gbox->addWidget(sb_value,0,1);
-        gbox->addWidget(buttonBox,2,0,1,2);
-
-        dialog->setLayout(gbox);
-        dialog->setMinimumWidth(300);
-        dialog->adjustSize();
         int result=dialog->exec();
         if (result == QDialog::Accepted)
         {
             MyVariant value;
-            value.loadFromString(sb_value->text());
+            value.loadFromString(dialog->getValue());
 
-            if(cb_mode->currentIndex()==0)
+            if(dialog->getMode()==0)
             {
                 dataSortBy(m_data,visualIndex,MyModel::SortMode::ASCENDING);
             }
-            else if(cb_mode->currentIndex()==1)
+            else if(dialog->getMode()==1)
             {
                 dataSortBy(m_data,visualIndex,MyModel::SortMode::DESCENDING);
             }
-            else if(cb_mode->currentIndex()==2)
+            else if(dialog->getMode()==2)
             {
                 dataThresholdBy(m_data,visualIndex,MyModel::ThresholdMode::KEEP_GREATER,value);
             }
-            else if(cb_mode->currentIndex()==3)
+            else if(dialog->getMode()==3)
             {
                 dataThresholdBy(m_data,visualIndex,MyModel::ThresholdMode::KEEP_LOWER,value);
             }
-            else if(cb_mode->currentIndex()==4)
+            else if(dialog->getMode()==4)
             {
                 dataThresholdBy(m_data,visualIndex,MyModel::ThresholdMode::KEEP_EQUAL,value);
             }
-            else if(cb_mode->currentIndex()==5)
+            else if(dialog->getMode()==5)
             {
                 dataThresholdBy(m_data,visualIndex,MyModel::ThresholdMode::KEEP_NOT_EQUAL,value);
             }

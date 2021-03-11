@@ -1365,6 +1365,10 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
 
 void Viewer1D::slot_plottableDoubleClick(QCPAbstractPlottable* plottable, int n, QMouseEvent* event)
 {
+    Q_UNUSED(plottable);
+    Q_UNUSED(event);
+    Q_UNUSED(n);
+
     configurePopup();
     parameterWidget->setMinimumWidth(400);
     parameterWidget->show();
@@ -1372,6 +1376,7 @@ void Viewer1D::slot_plottableDoubleClick(QCPAbstractPlottable* plottable, int n,
 
 void Viewer1D::slot_itemDoubleClick(QCPAbstractItem* item,QMouseEvent* event)
 {
+    Q_UNUSED(event);
     //If text
     QCPItemText * ptextItem=dynamic_cast<QCPItemText *>(item);
     if(ptextItem)

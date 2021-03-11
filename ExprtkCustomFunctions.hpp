@@ -13,7 +13,34 @@
 #ifndef EXPRTKCUSTOMFUNCTIONS_HPP
 #define EXPRTKCUSTOMFUNCTIONS_HPP
 
-//Noise management
+template <typename T>
+struct isPrimeFunction : public exprtk::ifunction<T>
+{
+    using exprtk::ifunction<T>::operator();
+
+    isPrimeFunction()
+        : exprtk::ifunction<T>(1)
+    {
+        exprtk::disable_has_side_effects(*this);
+    }
+
+    inline T operator()(const T& n)
+    {
+        int N=n.real();
+        int sqrtN=sqrt(N)+1;
+        std::cout<<sqrtN<<std::endl;
+        for(int i=2;i<sqrtN;i++)
+        {
+            if((N%i)==0)
+            {
+                return 0.0;
+            }
+        }
+
+        return 1.0;
+    }
+
+};
 
 
 template <typename T>
@@ -238,7 +265,7 @@ struct gammaFunction : public exprtk::ifunction<T>
 
 
 template <typename T>
-struct zetaFunction : public exprtk::ifunction<T>
+struct  zetaFunction : public exprtk::ifunction<T>
 {
     using exprtk::ifunction<T>::operator();
 
@@ -280,7 +307,7 @@ struct zetaFunction : public exprtk::ifunction<T>
             T eta=0.0;
             T deta;
 
-            int n=1.0;
+            int n=1;
             do
             {
                deta=std::pow(n,-s)*dtab[n];//d(n,N);
@@ -504,6 +531,12 @@ struct solveNewtonFunction : public exprtk::igeneric_function<T>
                 z=z_prev;
 
                 z-=a*f_exp.value()/(fp-fm)*2.0*epsilon;
+
+                if(std::isnan(z.real())||std::isnan(z.imag())||std::isinf(z.real())||std::isinf(z.imag()))
+                {
+                    omp_unset_lock(&writelock);
+                    return z_prev;
+                }
             }
             else
             {

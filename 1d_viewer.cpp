@@ -37,9 +37,13 @@ Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* par
     state_tracer.clear();
     state_line.clear();
 
+    deltaArrowItem=nullptr;
+    deltaLabel=nullptr;
     arrowItem=nullptr;
     tracerItem=nullptr;
     lineItem=nullptr;
+    deltaLineItemA=nullptr;
+    deltaLineItemB=nullptr;
 
     legend->setVisible(true);
 
@@ -334,6 +338,7 @@ void Viewer1D::createPopup()
     actGadgetMark= new QAction("Mark",  this);
     actGadgetTracer= new QAction("Tracer",  this);
     actGadgetLine= new QAction("Line",  this);
+    actGadgetDeltaLine= new QAction("Delta Line",  this);
     actLegendShowHide= new QAction("Hide",  this);
     actLegendTopBottom= new QAction("Move bottom",  this);
     actLegendLeftRight= new QAction("Move left",  this);
@@ -382,6 +387,7 @@ void Viewer1D::createPopup()
     this->addAction(actGadgetMark);
     this->addAction(actGadgetTracer);
     this->addAction(actGadgetLine);
+    this->addAction(actGadgetDeltaLine);
     this->addAction(actLegendShowHide);
     this->addAction(actLegendTopBottom);
     this->addAction(actLegendLeftRight);
@@ -427,6 +433,7 @@ void Viewer1D::createPopup()
     menuGadgets->addAction(actGadgetMark);
     menuGadgets->addAction(actGadgetTracer);
     menuGadgets->addAction(actGadgetLine);
+    menuGadgets->addAction(actGadgetDeltaLine);
     menuGadgets->addAction(actGadgetText);
     menuGadgets->addSeparator();
     menuGadgets->addAction(actClearGadgets);
@@ -484,6 +491,7 @@ void Viewer1D::createPopup()
     connect(actIncreasePenWidth,SIGNAL(triggered()),this,SLOT(slot_increasePenWidth()));
     connect(actDecreasePenWidth,SIGNAL(triggered()),this,SLOT(slot_decreasePenWidth()));
 
+    connect(actGadgetDeltaLine,SIGNAL(triggered()),this,SLOT(slot_gadgetDeltaLine()));
     connect(actGadgetLine,SIGNAL(triggered()),this,SLOT(slot_gadgetLine()));
     connect(actGadgetTracer,SIGNAL(triggered()),this,SLOT(slot_gadgetTracer()));
     connect(actGadgetMark,SIGNAL(triggered()),this,SLOT(slot_gadgetMark()));
@@ -920,9 +928,30 @@ void Viewer1D::slot_gadgetLine()
     lineItem->end->setType(QCPItemPosition::ptPlotCoords);
     lineItem->start->setCoords(0,0);
     lineItem->end->setCoords(0,0);
-    //lineItem->setPen(linePen);
 
     this->setCursor(Qt::PointingHandCursor);
+}
+
+void Viewer1D::slot_gadgetDeltaLine()
+{
+    if(state_deltaline.isEmpty())
+    {
+        state_deltaline = QString("first");
+
+        deltaLineItemA= new QCPItemLine(this);
+        deltaLineItemA->start->setType(QCPItemPosition::ptPlotCoords);
+        deltaLineItemA->end->setType(QCPItemPosition::ptPlotCoords);
+        deltaLineItemA->start->setCoords(0,0);
+        deltaLineItemA->end->setCoords(0,0);
+
+        deltaLineItemB= new QCPItemLine(this);
+        deltaLineItemB->start->setType(QCPItemPosition::ptPlotCoords);
+        deltaLineItemB->end->setType(QCPItemPosition::ptPlotCoords);
+        deltaLineItemB->start->setCoords(0,0);
+        deltaLineItemB->end->setCoords(0,0);
+
+        this->setCursor(Qt::PointingHandCursor);
+    }
 }
 
 void Viewer1D::slot_gadgetTracer()
@@ -1114,6 +1143,68 @@ void Viewer1D::mouseMoveEvent(QMouseEvent* event)
         }
         replot();
     }
+
+    if(deltaLineItemA && deltaLineItemB)
+    {
+        double min_x=this->xAxis->range().lower;
+        double min_y=this->yAxis->range().lower;
+        double max_x=this->xAxis->range().upper;
+        double max_y=this->yAxis->range().upper;
+
+        if(modifiers & Qt::ControlModifier)
+        {
+            if (state_deltaline==QString("first"))
+            {
+                deltaLineItemA->start->setCoords(min_x,cy);
+                deltaLineItemA->end->setCoords(max_x,cy);
+                deltaLineItemB->start->setCoords(min_x,cy);
+                deltaLineItemB->end->setCoords(max_x,cy);
+            }
+        }
+        else
+        {
+            if (state_deltaline==QString("first"))
+            {
+                deltaLineItemA->start->setCoords(cx,min_y);
+                deltaLineItemA->end->setCoords(cx,max_y);
+                deltaLineItemB->start->setCoords(cx,min_y);
+                deltaLineItemB->end->setCoords(cx,max_y);
+            }
+        }
+
+        if (state_deltaline==QString("second_v"))
+        {
+            deltaLineItemB->start->setCoords(min_x,cy);
+            deltaLineItemB->end->setCoords(max_x,cy);
+        }
+        else if (state_deltaline==QString("second_h"))
+        {
+            deltaLineItemB->start->setCoords(cx,min_y);
+            deltaLineItemB->end->setCoords(cx,max_y);
+        }
+
+        if(deltaArrowItem && deltaLabel)
+        {
+            if(state_deltaline==QString("second_v"))
+            {
+                double delta=deltaLineItemA->start->coords().y()-deltaLineItemB->start->coords().y();
+                deltaLabel->position->setCoords(cx,deltaLineItemA->start->coords().y()-delta/2);
+                deltaLabel->setText(QString("%1").arg(std::abs(delta)));
+                deltaArrowItem->start->setCoords(cx, deltaLineItemA->start->coords().y());
+                deltaArrowItem->end->setCoords(cx, deltaLineItemB->start->coords().y());
+            }
+            else
+            {
+                double delta=deltaLineItemA->start->coords().x()-deltaLineItemB->start->coords().x();
+                deltaLabel->position->setCoords(deltaLineItemA->start->coords().x()-delta/2,cy);
+                deltaLabel->setText(QString("%1").arg(std::abs(delta)));
+                deltaArrowItem->start->setCoords( deltaLineItemA->start->coords().x(),cy);
+                deltaArrowItem->end->setCoords( deltaLineItemB->start->coords().x(),cy);
+            }
+        }
+
+        replot();
+    }
 }
 
 void Viewer1D::keyPressEvent(QKeyEvent* event)
@@ -1179,6 +1270,77 @@ void Viewer1D::mousePressEvent(QMouseEvent* event)
         this->setCursor(Qt::ArrowCursor);
         replot();
     }
+
+    if (!state_deltaline.isEmpty() && event->button() == Qt::LeftButton)
+    {
+        double min_x=this->xAxis->range().lower;
+        double min_y=this->yAxis->range().lower;
+        double max_x=this->xAxis->range().upper;
+        double max_y=this->yAxis->range().upper;
+
+        if (state_deltaline==QString("first"))
+        {
+            deltaLabel= new QCPItemText(this);
+            deltaLabel->position->setType(QCPItemPosition::ptPlotCoords);
+            deltaLabel->setTextAlignment(Qt::AlignCenter);
+            deltaLabel->setPositionAlignment(Qt::AlignHCenter|Qt::AlignBottom);
+
+            deltaArrowItem = new QCPItemLine(this);
+            deltaArrowItem->setHead(QCPLineEnding::esSpikeArrow);
+            deltaArrowItem->setTail(QCPLineEnding::esSpikeArrow);
+
+            if(modifiers & Qt::ControlModifier)
+            {
+                deltaLabel->setRotation(-90);
+                deltaLineItemA->start->setCoords(min_x,cy);
+                deltaLineItemA->end->setCoords(max_x,cy);
+                deltaArrowItem->start->setCoords(cx, deltaLineItemA->start->coords().y());
+                deltaArrowItem->end->setCoords(cx, deltaLineItemB->start->coords().y());
+
+                state_deltaline=QString("second_v");
+            }
+            else
+            {
+                deltaLineItemA->start->setCoords(cx,min_y);
+                deltaLineItemA->end->setCoords(cx,max_y);
+                deltaArrowItem->start->setCoords( deltaLineItemA->start->coords().x(),cy);
+                deltaArrowItem->end->setCoords( deltaLineItemB->start->coords().x(),cy);
+
+                state_deltaline=QString("second_h");
+            }
+
+            replot();
+        }
+        else if (state_deltaline.contains("second"))
+        {
+            if(state_deltaline==QString("second_v"))
+            {
+                deltaLineItemB->start->setCoords(min_x,cy);
+                deltaLineItemB->end->setCoords(max_x,cy);
+
+                deltaArrowItem->start->setCoords(cx, deltaLineItemA->start->coords().y());
+                deltaArrowItem->end->setCoords(cx, deltaLineItemB->start->coords().y());
+            }
+            else if(state_deltaline==QString("second_h"))
+            {
+                deltaLineItemB->start->setCoords(cx,min_y);
+                deltaLineItemB->end->setCoords(cx,max_y);
+
+                deltaArrowItem->start->setCoords( deltaLineItemA->start->coords().x(),cy);
+                deltaArrowItem->end->setCoords( deltaLineItemB->start->coords().x(),cy);
+            }
+
+            deltaLineItemA=nullptr;
+            deltaLineItemB=nullptr;
+            deltaArrowItem=nullptr;
+            deltaLabel=nullptr;
+            state_deltaline.clear();
+            this->setCursor(Qt::ArrowCursor);
+            replot();
+        }
+
+    }
+
 
     if (!state_mark.isEmpty() && event->button() == Qt::LeftButton)
     {
@@ -1371,6 +1533,7 @@ void Viewer1D::slot_plottableDoubleClick(QCPAbstractPlottable* plottable, int n,
 
     configurePopup();
     parameterWidget->setMinimumWidth(400);
+    parameterWidget->setWindowFlags(Qt::WindowStaysOnTopHint);
     parameterWidget->show();
 }
 
@@ -2382,6 +2545,7 @@ void Viewer1D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     shortcuts_links.insert(QString("Graph-GadgetMark"),actGadgetMark);
     shortcuts_links.insert(QString("Graph-GadgetTracer"),actGadgetTracer);
     shortcuts_links.insert(QString("Graph-GadgetLine"),actGadgetLine);
+    shortcuts_links.insert(QString("Graph-GadgetDeltaLine"),actGadgetDeltaLine);
     shortcuts_links.insert(QString("Graph-Save"),actSave);
     shortcuts_links.insert(QString("Graph-Rescale"),actRescale);
     shortcuts_links.insert(QString("Graph-Delete"),actDelete);

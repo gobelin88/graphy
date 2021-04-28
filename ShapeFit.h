@@ -1950,7 +1950,7 @@ public:
 
         for(int i=0;i<paramsList.size();i++)
         {
-            if(exp.contains(QRegExp(QString("(^|[^A-Za-z0-9])%1(?=\$|[^A-Za-z0-9])").arg(paramsList[i]))))
+            if(exp.contains(QRegExp(QString(R"abcd((^|[^A-Za-z0-9])%1(?=\$|[^A-Za-z0-9]))abcd").arg(paramsList[i]))))
             {
                 paramsNames.append(paramsList[i]);
                 id++;

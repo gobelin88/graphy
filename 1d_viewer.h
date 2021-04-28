@@ -93,6 +93,8 @@ public slots:
     void slot_gadgetText();
     void slot_gadgetArrow();
     void slot_gadgetAddArrow(Eigen::Vector2d A,Eigen::Vector2d B);
+    void slot_gadgetDeltaLine();
+
     void slot_setScalarFieldGradientType(int type);
     void slot_showSubGridType(int state);
 
@@ -113,6 +115,8 @@ public slots:
 
     void slot_SetSbAxisMax_Min(double min);
     void slot_SetSbAxisMin_Max(double max);
+
+
 
 signals:
     void pick(double p0);
@@ -151,11 +155,14 @@ protected:
     Qt::AlignmentFlag left_right;
     Qt::AlignmentFlag top_bottom;
     Qt::KeyboardModifiers modifiers;
-    QString state_label,state_arrow,state_mark,state_tracer,state_line;
+    QString state_label,state_arrow,state_mark,state_tracer,state_line,state_deltaline;
     QCPItemCurve* arrowItem;
     QCPItemTracer* tracerItem;
     QCPItemLine* lineItem;
 
+    QCPItemLine* deltaLineItemA,*deltaLineItemB;
+    QCPItemLine* deltaArrowItem;
+    QCPItemText* deltaLabel;
 
     //Popup
     void createPopup();
@@ -218,6 +225,7 @@ protected:
     QAction* actGadgetMark;
     QAction* actGadgetTracer;
     QAction* actGadgetLine;
+    QAction* actGadgetDeltaLine;
     QWidget *createParametersWidget();
 
     MyGradientComboBox * cb_gradient;

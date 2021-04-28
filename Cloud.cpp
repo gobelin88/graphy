@@ -140,7 +140,7 @@ std::vector<Eigen::Vector3d> Cloud::positions()const
 
 int Cloud::size()const
 {
-    return pts.size();
+    return static_cast<int>(pts.size());
 }
 
 void Cloud::operator=(const Cloud& other)
@@ -241,7 +241,7 @@ QByteArray Cloud::getBuffer(QCPRange range)
     {
         const double * colordata=(const double *)pts.data()+3;
         colors.resize(pts.size());
-        gradient.colorize(colordata,range,colors.data(),pts.size(),4,false);
+        gradient.colorize(colordata,range,colors.data(),static_cast<int>(pts.size()),4,false);
     }
 
     QByteArray bufferBytes;

@@ -531,12 +531,12 @@ QVector<QString> MyModel::getColLogicalDataString(int logicalIndex)const
     return getColVisualDataString(h_header->visualIndex(logicalIndex));
 }
 
-const VectorXv &MyModel::getColLogicalData(int logicalIndex)const
+VectorXv MyModel::getColLogicalData(int logicalIndex)const
 {
     return getColVisualData(h_header->visualIndex(logicalIndex));
 }
 
-const VectorXv & MyModel::getColVisualData(int visualIndex)const
+VectorXv MyModel::getColVisualData(int visualIndex)const
 {
     return m_data.col(visualIndex);
 }

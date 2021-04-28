@@ -19,6 +19,7 @@ Graph-GadgetArrow;A
 Graph-GadgetMark;M
 Graph-GadgetText;T
 Graph-GadgetLine;_
+Graph-GadgetDeltaLine;D
 Graph-GadgetTracer;!
 Graph-IncreasePenWidth;=
 Graph-Legend-Left/Right;Alt+Right

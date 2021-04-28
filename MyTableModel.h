@@ -63,8 +63,8 @@ public:
     Eigen::VectorXd  getColVisualDataDouble(int visualIndex)const;
     Eigen::VectorXcd getColLogicalDataComplex(int logicalIndex)const;
     Eigen::VectorXcd getColVisualDataComplex(int visualIndex)const;    
-    const VectorXv &getColLogicalData(int logicalIndex)const;
-    const VectorXv &getColVisualData(int visualIndex)const;
+    VectorXv getColLogicalData(int logicalIndex)const;
+    VectorXv getColVisualData(int visualIndex)const;
 
     bool asColumnStrings(int idCol);
     void applyFilters(const QModelIndexList & selectedColsIndexes);

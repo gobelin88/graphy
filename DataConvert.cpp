@@ -33,9 +33,16 @@ QString toString(const Eigen::MatrixXd& m)
 
 QVector<double> toQVector(const Eigen::VectorXd& v)
 {
-    QVector<double> v_q(v.size());
-    memcpy(v_q.data(),v.data(),v_q.size()*sizeof(double));
-    return v_q;
+    if(v.size()>0)
+    {
+        QVector<double> v_q(v.size());
+        memcpy(v_q.data(),v.data(),v_q.size()*sizeof(double));
+        return v_q;
+    }
+    else
+    {
+        return QVector<double>();
+    }
 }
 
 Eigen::VectorXd fromStdVector(const std::vector<double>& v_std)

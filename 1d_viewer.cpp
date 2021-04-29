@@ -1544,11 +1544,40 @@ void Viewer1D::slot_itemDoubleClick(QCPAbstractItem* item,QMouseEvent* event)
     QCPItemText * ptextItem=dynamic_cast<QCPItemText *>(item);
     if(ptextItem)
     {
-        state_label = QInputDialog::getText(this, "Edit label", "label :", QLineEdit::Normal,ptextItem->text());
-        if(!state_label.isEmpty())
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("Edit label");
+        QGridLayout* gbox = new QGridLayout();
+
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok| QDialogButtonBox::Cancel);
+
+        ColorWheel * colorWheel=new ColorWheel(dialog);
+        colorWheel->setColor(ptextItem->color());
+
+        QLineEdit * le_label=new QLineEdit(dialog);
+        le_label->setText(ptextItem->text());
+
+        QSpinBox * fontSize=new QSpinBox(dialog);
+        fontSize->setPrefix("Size=");
+        fontSize->setSuffix(" pt");
+        fontSize->setValue(ptextItem->font().pointSize());
+
+        gbox->addWidget(le_label,0,0);
+        gbox->addWidget(colorWheel,1,0);
+        gbox->addWidget(fontSize,2,0);
+        gbox->addWidget(buttonBox,3,0);
+        dialog->setLayout(gbox);
+
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+        int result=dialog->exec();
+        if (result == QDialog::Accepted)
         {
-            ptextItem->setText(state_label);
-            state_label.clear();
+            ptextItem->setText(le_label->text());
+            ptextItem->setColor(colorWheel->color());
+            ptextItem->setFont(QFont(ptextItem->font().family(),fontSize->value()));
+            ptextItem->setSelectedFont(QFont(ptextItem->font().family(),fontSize->value()));
         }
     }
 
@@ -1565,7 +1594,7 @@ void Viewer1D::slot_itemDoubleClick(QCPAbstractItem* item,QMouseEvent* event)
 
         QDoubleSpinBox * sb_size=new QDoubleSpinBox(dialog);
         sb_size->setPrefix("Size=");
-        sb_size->setValue(ptracerItem->size());
+        sb_size->setValue(ptracerItem->size());        
 
         ColorWheel * colorWheel=new ColorWheel(dialog);
         colorWheel->setColor(ptracerItem->brush().color());
@@ -1625,6 +1654,7 @@ void Viewer1D::slot_itemDoubleClick(QCPAbstractItem* item,QMouseEvent* event)
     }
 
     replot();
+    update();
 }
 
 void Viewer1D::slot_legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* item)

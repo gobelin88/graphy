@@ -51,7 +51,11 @@ public:
         this->activeRow=i;
         this->numberRows=rowCount;
     }
-    void setActiveCol(int i){this->activeCol=i;}
+    void setActiveCol(int i,int colsCount)
+    {
+        this->activeCol=i;
+        this->numberCols=colsCount;
+    }
 
     QStringList getVariablesList();
 

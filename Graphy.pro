@@ -55,6 +55,7 @@ SOURCES += \
         MyGradientComboBox.cpp \
         MyHighLighter.cpp \
         MyItemDelegate.cpp \
+        MySciDoubleSpinBox.cpp \
         MyTableModel.cpp \
         MyTableView.cpp \
         MyTextEdit.cpp \
@@ -96,6 +97,7 @@ HEADERS += \
         MyGradientComboBox.h \
         MyHighLighter.h \
         MyItemDelegate.h \
+        MySciDoubleSpinBox.h \
         MyTableModel.h \
         MyTableView.h \
         MyTextEdit.h \

@@ -282,7 +282,7 @@ bool MyModel::open(QString filename)
                 int dataSize=content[0].count(";")+1;
                 for(int i=0;i<dataSize;i++)
                 {
-                    reg.newVariable(QString("C%1").arg(i),"");
+                    reg.newVariable(QString("C%1").arg(i+1),"");
                 }
             }
 
@@ -466,10 +466,10 @@ QString MyModel::copy(int x0,int y0,int nrows,int ncols)
 
 void MyModel::paste(int x0,int y0,QString buffer)
 {
-    QStringList lines=buffer.split("\n",QString::SkipEmptyParts);
+    QStringList lines=buffer.split(QRegExp("\n"),QString::SkipEmptyParts);
     for(int i=0.0;i<lines.size();i++)
     {
-        QStringList valuesToken=lines[i].split(";");
+        QStringList valuesToken=lines[i].split(QRegExp(";|\t"));
         for(int j=0;j<valuesToken.size();j++)
         {
             int indexRow=i+x0;
@@ -800,7 +800,7 @@ void MyModel::clearLogicalIndexesCols(const QModelIndexList & selectedIndexesCol
 
 void MyModel::evalColumn(int visualIndex)
 {
-    reg.setActiveCol(visualIndex);
+    reg.setActiveCol(visualIndex,m_data.cols());
 
     if (reg.variablesExpressions()[visualIndex].isEmpty())
     {

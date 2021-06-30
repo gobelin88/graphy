@@ -190,7 +190,7 @@ struct dataFunction : public exprtk::ifunction<T>
     {
         if(p_data)
         {
-            if(p_data->rows()>i && p_data->cols()>j)
+            if( i.real()<p_data->rows() && j.real()<p_data->cols() && i.real()>=0 && j.real()>=0)
             {
                 return (*p_data)(static_cast<unsigned int> (i.real()),
                                  static_cast<unsigned int> (j.real())).toComplex();

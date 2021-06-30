@@ -6,6 +6,7 @@
 #include "DataConvert.h"
 #include "ColorWheel.hpp"
 #include "MyGradientComboBox.h"
+#include "MySciDoubleSpinBox.h"
 
 #ifndef VIEWER1D_H
 #define VIEWER1D_H
@@ -15,7 +16,6 @@ class Viewer1D:public QCustomPlot
 {
     Q_OBJECT
 public:
-
 
     Viewer1D(const QMap<QString, QKeySequence>& shortcuts_map, QWidget* parent);
     ~Viewer1D();
@@ -57,6 +57,7 @@ public slots:
     void slot_statistiques();
     void slot_svd();
     void slot_covariance();
+    void slot_appearance();
 
     QCPItemTracer * createTracer(double cx,QCPGraph * graph);
     void addLabel(double cx, double cy);
@@ -190,6 +191,8 @@ protected:
     QAction* actDecreasePenWidth;
     QAction* actSetScatters;
 
+    QAction* actAppearance;
+
     QMenu* menuAppearance;
     QMenu* menuLegend;
     QMenu* menuFit;
@@ -243,8 +246,8 @@ protected:
 
     QVector<QMenu*> sub_menus;
 
-    QDoubleSpinBox * sb_axis_min;
-    QDoubleSpinBox * sb_axis_max;
+    MySciDoubleSpinBox * sb_axis_min;
+    MySciDoubleSpinBox * sb_axis_max;
 
     QVector<QColor> colors;
 

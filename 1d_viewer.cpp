@@ -125,12 +125,10 @@ void Viewer1D::configurePopup()
     cb_gradient->hide();
 
     actSaveMap->setVisible(false);
-    menuAppearance->setEnabled(false);
 
     if (plottables.size()>0)
     {
         parameterWidget->setWindowTitle("Appearance of : "+plottables[0]->name());
-        menuAppearance->setEnabled(true);
 
         QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(plottables[0]);
         QCPGraph* currentgraph=dynamic_cast<QCPGraph*>(plottables[0]);
@@ -203,7 +201,7 @@ QWidget* Viewer1D::createParametersWidget()
 {
 
     QWidget* widget=new QWidget;
-
+    widget->setMinimumWidth(400);
 
     QGridLayout* gbox = new QGridLayout();
 
@@ -371,6 +369,8 @@ void Viewer1D::createPopup()
     actIncreasePenWidth=new QAction("Increase pen width",this);
     actSetScatters=new QAction("Set scatters",this);
 
+    actAppearance=new QAction("Appearance",this);
+
     this->addAction(actDecreasePenWidth);
     this->addAction(actIncreasePenWidth);
     this->addAction(actSetScatters);
@@ -398,6 +398,7 @@ void Viewer1D::createPopup()
     this->addAction(actAutoColor4);
     this->addAction(actAutoColor5);
     this->addAction(actAutoColorClear);
+    this->addAction(actAppearance);
 
     auto customContainerActions=this->actions();
     for(auto act:customContainerActions)
@@ -456,6 +457,7 @@ void Viewer1D::createPopup()
     menuScalarField->addAction(actDistance);
     menuScalarFieldFit->addAction(actFitPolynomial2V);
 
+    menuAppearance->addAction(actAppearance);
     menuAppearance->addMenu(menuThemes);
     menuThemes->addAction(actAutoColor1);
     menuThemes->addAction(actAutoColor2);
@@ -468,8 +470,6 @@ void Viewer1D::createPopup()
     menuThemes->addAction(actDecreasePenWidth);
     menuThemes->addSeparator();
     menuThemes->addAction(actSetScatters);
-
-
     menuAppearance->addMenu(menuLegend);
 
     parameterWidget=createParametersWidget();
@@ -532,6 +532,7 @@ void Viewer1D::createPopup()
 
     connect(actFilterMean,SIGNAL(triggered()),this,SLOT(slot_meanFilter()));
     connect(actFilterMedian,SIGNAL(triggered()),this,SLOT(slot_medianFilter()));
+    connect(actAppearance,SIGNAL(triggered()),this,SLOT(slot_appearance()));
 
 
 }
@@ -1427,11 +1428,13 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
         cb_scale_mode->addItem("Linear");
         cb_scale_mode->addItem("Logarithmic");
         cb_scale_mode->setCurrentIndex(currentScaleType==QCPAxis::ScaleType::stLogarithmic);
-        sb_axis_min=new   QDoubleSpinBox(dialog);
+        sb_axis_min=new   MySciDoubleSpinBox(dialog);
+        //sb_axis_min->setDecimals(DBL_MAX_10_EXP + DBL_DIG);
         sb_axis_min->setPrefix("min=");
         sb_axis_min->setRange(-1e100,currentRange.upper);
         sb_axis_min->setValue(currentRange.lower);
-        sb_axis_max=new   QDoubleSpinBox(dialog);
+        sb_axis_max=new   MySciDoubleSpinBox(dialog);
+        //sb_axis_max->setDecimals(DBL_MAX_10_EXP + DBL_DIG);
         sb_axis_max->setPrefix("max=");
         sb_axis_max->setRange(currentRange.lower,1e100);
         sb_axis_max->setValue(currentRange.upper);
@@ -1531,9 +1534,9 @@ void Viewer1D::slot_plottableDoubleClick(QCPAbstractPlottable* plottable, int n,
     Q_UNUSED(event);
     Q_UNUSED(n);
 
+    //parameterWidget->setWindowFlags(Qt::WindowStaysOnTopHint);
     configurePopup();
-    parameterWidget->setMinimumWidth(400);
-    parameterWidget->setWindowFlags(Qt::WindowStaysOnTopHint);
+    parameterWidget->raise();
     parameterWidget->show();
 }
 
@@ -2743,6 +2746,13 @@ void Viewer1D::slot_Distance()
         }
     }
 
+}
+
+void Viewer1D::slot_appearance()
+{
+    configurePopup();
+    parameterWidget->raise();
+    parameterWidget->show();
 }
 
 void Viewer1D::slot_medianFilter()

@@ -66,6 +66,16 @@ public slots:
     //term
     void slot_showHideTerminal();
 
+    //Progress
+    void slot_progress(int t);
+    void slot_what(QString what);
+    void slot_error(QString what,QString msg);
+
+    //
+    void slot_open_end(MyTableView * newtable);
+    void slot_save_end(MyTableView * table);
+    void connectTable(MyTableView * newtable);
+
 private:
     //Close
     void closeEvent (QCloseEvent *event);
@@ -74,6 +84,8 @@ private:
     void error(QString title,QString msg);
 
     //View & Gui
+    QProgressBar * pb_bar;
+    QLabel * l_what;
     QTextEdit* te_results;
     QMdiSubWindow * subWindowsResults;
     QTabWidget* te_widget;

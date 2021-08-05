@@ -1,15 +1,4 @@
-//3.5
--Custom model fit
--Density estimation for scalar field
--Set columns fit to content
-ok-QCompleter for custom expressions
-ok-warnings
-ok-error function
+-Diff entre 2 fichiers ouverts.
+-Tableau de variables globales.
+-Status et barre de progression pour certaines opérations.
 
-//3.6
--fit circle
--fit ellipse
-
-//4.0
--complex support 
--complex plots

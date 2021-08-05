@@ -962,6 +962,8 @@ void Viewer1D::slot_gadgetTracer()
     if(list.size()>0)
     {
         tracerItem=createTracer(0.0,list[0]);
+        tracerLabel=addLabel(0,tracerItem->position->value());
+
         state_tracer = QString("first");
         this->setCursor(Qt::PointingHandCursor);
     }
@@ -1004,48 +1006,9 @@ QCPItemTracer * Viewer1D::createTracer(double cx,QCPGraph * graph)
     return groupTracer;
 }
 
-void Viewer1D::addLabel(double cx, double cy)
+MyLabel * Viewer1D::addLabel(double cx, double cy)
 {
-    double mx=this->xAxis->range().lower;
-    double my=this->yAxis->range().lower;
-
-    QPen linePen(QColor(200,200,200));
-
-    QCPItemLine* lineX= new QCPItemLine(this);
-    lineX->start->setType(QCPItemPosition::ptPlotCoords);
-    lineX->end->setType(QCPItemPosition::ptPlotCoords);
-    lineX->start->setCoords(cx, my);
-    lineX->end->setCoords(cx, cy);
-    lineX->setPen(linePen);
-
-    QCPItemLine* lineY= new QCPItemLine(this);
-    lineY->start->setType(QCPItemPosition::ptPlotCoords);
-    lineY->end->setType(QCPItemPosition::ptPlotCoords);
-    lineY->start->setCoords(mx, cy);
-    lineY->end->setCoords(cx, cy);
-    lineY->setPen(linePen);
-
-    // add the text label at the top:
-    QCPItemText* coordtextX = new QCPItemText(this);
-    coordtextX->position->setType(QCPItemPosition::ptPlotCoords);
-    coordtextX->setPositionAlignment(Qt::AlignLeft);
-    coordtextX->position->setCoords(cx, my); // lower right corner of axis rect
-    coordtextX->setRotation(-90);
-    coordtextX->setText(QString("%1").arg(cx));
-    coordtextX->setTextAlignment(Qt::AlignLeft);
-    coordtextX->setFont(QFont(font().family(), 9));
-    coordtextX->setPadding(QMargins(8, 0, 0, 0));
-
-    QCPItemText* coordtextY = new QCPItemText(this);
-    coordtextY->position->setType(QCPItemPosition::ptPlotCoords);
-    coordtextY->setPositionAlignment(Qt::AlignLeft|Qt::AlignBottom);
-    coordtextY->position->setCoords(mx, cy); // lower right corner of axis rect
-    coordtextY->setText(QString("%1").arg(cy));
-    coordtextY->setTextAlignment(Qt::AlignLeft);
-    coordtextY->setFont(QFont(font().family(), 9));
-    coordtextY->setPadding(QMargins(8, 0, 0, 0));
-
-    this->replot();
+    return new MyLabel(this,cx,cy);
 }
 
 void Viewer1D::addTextLabel(double cx,double cy,QString markstr)
@@ -1121,8 +1084,22 @@ void Viewer1D::mouseMoveEvent(QMouseEvent* event)
 
     if(tracerItem)
     {
-        tracerItem->setGraphKey(cx);
-        replot();
+        if(modifiers & Qt::ControlModifier)
+        {
+            double dx=tracerLabel->ccx+(cx-tracerLabel->ccx)/10;
+            tracerItem->setGraphKey(dx);
+            tracerLabel->setCoord(dx,tracerItem->position->value());
+            replot();
+            std::cout<<"dx="<<dx<<std::endl;
+        }
+        else
+        {
+            tracerItem->setGraphKey(cx);
+            tracerLabel->setCoord(cx,tracerItem->position->value());
+            tracerLabel->ccx=cx;
+            replot();
+            std::cout<<"cx="<<cx<<std::endl;
+        }
     }
 
     if(lineItem)
@@ -1241,7 +1218,9 @@ void Viewer1D::mousePressEvent(QMouseEvent* event)
 
     if (!state_tracer.isEmpty() && event->button() == Qt::LeftButton)
     {
-        tracerItem->setGraphKey(cx);
+        //tracerItem->setGraphKey(cx);
+        //addLabel(cx,tracerItem->position->value());
+        //tracerLabel->setCoord(cx,tracerItem->position->value());
         state_tracer.clear();
         tracerItem=nullptr;
         this->setCursor(Qt::ArrowCursor);
@@ -1508,6 +1487,14 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
 
         gbox->addWidget(buttonBox,7,0,1,3);
 
+//        if(dynamic_cast<QCPColorScale*>(axis))
+//        {
+//            MyGradientComboBox * cb_gradient2=new MyGradientComboBox(this);
+//            gbox->addWidget(cb_gradient2,8,0,1,3);
+//            QObject::connect(cb_gradient2, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setScalarFieldGradientType(int)));
+//        }
+
+
         dialog->setLayout(gbox);
 
         int result=dialog->exec();
@@ -1543,6 +1530,9 @@ void Viewer1D::slot_plottableDoubleClick(QCPAbstractPlottable* plottable, int n,
 void Viewer1D::slot_itemDoubleClick(QCPAbstractItem* item,QMouseEvent* event)
 {
     Q_UNUSED(event);
+
+
+
     //If text
     QCPItemText * ptextItem=dynamic_cast<QCPItemText *>(item);
     if(ptextItem)

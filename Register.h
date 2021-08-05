@@ -8,6 +8,7 @@
 #include <qmath.h>
 
 #include "MyVariant.h"
+#include "MyProgressHandler.h"
 
 #ifndef REGISTER_H
 #define REGISTER_H
@@ -24,6 +25,11 @@ public:
 
     Register();
     ~Register();
+
+    void setProgressHandler(MyProgressHandler * progressHandler)
+    {
+        this->progressHandler=progressHandler;
+    }
 
     void setDataPtr(MatrixXv * data_ptr)
     {
@@ -117,7 +123,7 @@ private:
     VariableType numberCols;
 
     //Error message
-    void error(QString title,QString msg);
+    MyProgressHandler * progressHandler;
 
     //Misc
     int getVarExpDialog(QString currentName, QString currentExpression, QString & newName, QString & newExpression);

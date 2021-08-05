@@ -1,23 +1,16 @@
 #include <QWheelEvent>
 #include "MyTableView.h"
 
-MyTableView::MyTableView(int nbRow,
-                         int nbCols,
-                         int rowsSpan,
-                         QWidget *parent):QTableView(parent)
+MyTableView::MyTableView(int rowsSpan,
+                         QWidget *parent,
+                         int nbRow,
+                         int nbCols):QTableView(parent)
 {
     createNew(nbRow,nbCols,rowsSpan);
 
     createPopup();
     //this->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectColumns);
     resizeColumnsToContents();
-}
-
-MyTableView::MyTableView(int rowsSpan,QWidget * parent):QTableView(parent)
-{
-    createNew(1,1,rowsSpan);
-    createPopup();
-
 }
 
 void MyTableView::createNew(int nbRow,int nbCols,int rowsSpan)
@@ -70,26 +63,46 @@ void MyTableView::resizeEvent(QResizeEvent *event)
 }
 void MyTableView::slot_deleteSelected()
 {
-    QModelIndexList selectedIndexes=selectionModel()->selectedIndexes();
-    QModelIndexList selectedColsIndexes=selectionModel()->selectedColumns();
-
-    m_model->clearLogicalIndexes(selectedIndexes);
-    m_model->clearLogicalIndexesCols(selectedColsIndexes);
+    m_model->clearLogicalIndexes(selectionModel()->selectedIndexes());
 }
 
 void MyTableView::slot_removeSelectedRowsAndCols()
 {
-    QModelIndexList selectedColsIndexes=selectionModel()->selectedColumns();
-    QModelIndexList selectedRowsIndexes=selectionModel()->selectedRows();
-
-    m_model->removeLogicalIndexesCols(selectedColsIndexes);
-    m_model->removeLogicalIndexesRows(selectedRowsIndexes);
+    m_model->removeLogicalIndexesCols(selectionModel()->selectedColumns());
+    m_model->removeLogicalIndexesRows(selectionModel()->selectedRows());
 }
+
+void MyTableView::slot_complexify()
+{
+    QModelIndexList selectedColumnsIndexes=selectionModel()->selectedColumns();
+
+    if(selectedColumnsIndexes.size()%2==0)
+    {
+        for(int i=0;i<selectedColumnsIndexes.size();i+=2)
+        {
+            Eigen::VectorXcd A=getLogicalColDataComplex(selectedColumnsIndexes[i].column());
+            Eigen::VectorXcd B=getLogicalColDataComplex(selectedColumnsIndexes[i+1].column());
+
+            QString nameA=getLogicalColName(selectedColumnsIndexes[i].column());
+            QString nameB=getLogicalColName(selectedColumnsIndexes[i+1].column());
+
+            for(int k=0;k<A.rows();k++)
+            {
+                A[k]=std::complex<double>(A[k].real(),B[k].real());
+            }
+            this->slot_newColumn(QString("%1_%2").arg(nameA).arg(nameB),A);
+        }
+    }
+    else
+    {
+        QMessageBox::information(nullptr,"Information","Please select 2k columns");
+    }
+}
+
 
 void MyTableView::slot_filter()
 {
-    QModelIndexList selectedColsIndexes=selectionModel()->selectedColumns();
-    m_model->applyFilters(selectedColsIndexes);
+    m_model->applyFilters(selectionModel()->selectedColumns());
 }
 
 void MyTableView::slot_copy()
@@ -121,7 +134,6 @@ void MyTableView::slot_newColumn(QString varName,VectorXv data)
 {
     m_model->slot_newColumn(varName,data);
 }
-
 void MyTableView::slot_newColumn(QString varName,Eigen::VectorXd data)
 {
     m_model->slot_newColumn(varName,fromDouble(data));
@@ -286,6 +298,7 @@ void MyTableView::setSelectionPattern(QString pattern)
 void MyTableView::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
 {
     QMap<QString,QAction*> shortcuts_links;
+    shortcuts_links.insert(QString("Complexify"),actComplexify);
     shortcuts_links.insert(QString("Update"),actUpdateColumns);
     shortcuts_links.insert(QString("Edit/Add-variable"),actNewColumn);
     shortcuts_links.insert(QString("Delete"),actDelete);
@@ -318,6 +331,8 @@ void MyTableView::createPopup()
     actNewColumn=new QAction("New",this);
     actUpdateColumns=new QAction("Update",this);
 
+    actComplexify=new QAction("Complexify",this);
+
     actNewRowBelow = new QAction("Insert below" ,  this);
     actNewRowAbove = new QAction("Insert above" ,  this);
     actNewRowBegin = new QAction("Add begin" ,  this);
@@ -349,6 +364,7 @@ void MyTableView::createPopup()
     this->addAction(actNewRowsBegin);
     this->addAction(actNewRowsEnd  );
     this->addAction(actSetNumberOfRows  );
+    this->addAction(actComplexify  );
 
     popup_menu->addAction(actCopy);
     popup_menu->addAction(actPaste);
@@ -357,6 +373,7 @@ void MyTableView::createPopup()
     popup_menu->addMenu(menuColumns);
     menuColumns->addAction(actNewColumn);
     menuColumns->addAction(actUpdateColumns);
+    menuColumns->addAction(actComplexify);
     popup_menu->addMenu(menuRows);
     menuRows->addAction(actNewRowBelow );
     menuRows->addAction(actNewRowAbove );
@@ -383,10 +400,11 @@ void MyTableView::createPopup()
     connect(actCopy         ,&QAction::triggered,this   ,&MyTableView::slot_copy);
     connect(actPaste        ,&QAction::triggered,this   ,&MyTableView::slot_paste);
 
+    connect(actComplexify,&QAction::triggered,this,&MyTableView::slot_complexify);
     connect(actNewColumn,&QAction::triggered,m_model,&MyModel::slot_createNewColumn);
     connect(actDelete,&QAction::triggered,this,&MyTableView::slot_deleteSelected);
     connect(actRemoveColumnsRows,&QAction::triggered,this,&MyTableView::slot_removeSelectedRowsAndCols);
-    connect(actUpdateColumns,&QAction::triggered,m_model,&MyModel::slot_updateColumns);
+    connect(actUpdateColumns,&QAction::triggered,m_model,&MyModel::slot_startUpdateColumns);
 }
 
 void MyTableView::mousePressEvent(QMouseEvent* event)
@@ -422,4 +440,16 @@ void MyTableView::slot_newRowAbove()
             m_model->slot_newRowAbove(index);
         }
     }
+}
+
+void MyTableView::open(QString filename)
+{
+    is_open=model()->open(filename);
+    emit sig_opened(this);
+}
+
+void MyTableView::save(QString filename)
+{
+    is_save=model()->save(filename);
+    emit sig_saved(this);
 }

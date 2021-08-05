@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT+= 3dcore 3drender 3dinput 3dextras datavisualization
+QT+= 3dcore 3drender 3dinput 3dextras concurrent
 QT       += core gui printsupport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
@@ -55,6 +55,8 @@ SOURCES += \
         MyGradientComboBox.cpp \
         MyHighLighter.cpp \
         MyItemDelegate.cpp \
+        MyLabel.cpp \
+        MyProgressHandler.cpp \
         MySciDoubleSpinBox.cpp \
         MyTableModel.cpp \
         MyTableView.cpp \
@@ -97,6 +99,8 @@ HEADERS += \
         MyGradientComboBox.h \
         MyHighLighter.h \
         MyItemDelegate.h \
+        MyLabel.h \
+        MyProgressHandler.h \
         MySciDoubleSpinBox.h \
         MyTableModel.h \
         MyTableView.h \

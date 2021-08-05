@@ -7,6 +7,7 @@
 #include "ColorWheel.hpp"
 #include "MyGradientComboBox.h"
 #include "MySciDoubleSpinBox.h"
+#include "MyLabel.h"
 
 #ifndef VIEWER1D_H
 #define VIEWER1D_H
@@ -60,7 +61,7 @@ public slots:
     void slot_appearance();
 
     QCPItemTracer * createTracer(double cx,QCPGraph * graph);
-    void addLabel(double cx, double cy);
+    MyLabel *addLabel(double cx, double cy);
     void addTextLabel(double cx,double cy,QString markstr);
 
     void slot_increasePenWidth();
@@ -159,6 +160,7 @@ protected:
     QString state_label,state_arrow,state_mark,state_tracer,state_line,state_deltaline;
     QCPItemCurve* arrowItem;
     QCPItemTracer* tracerItem;
+    MyLabel* tracerLabel;
     QCPItemLine* lineItem;
 
     QCPItemLine* deltaLineItemA,*deltaLineItemB;

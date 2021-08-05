@@ -210,7 +210,7 @@ bool Register::isValidExpression(QString variableExpression)
 
         if (!ok)
         {
-            error("Invalid formula",variableExpression+QString("\nError : ")+QString::fromStdString(parser->error()));
+            progressHandler->errorMsg(variableExpression+QString("\nError : ")+QString::fromStdString(parser->error()));
         }
 
         return ok;
@@ -249,35 +249,29 @@ bool Register::isValidVariable(QString variableName)
 
     if (variableName.begin()->isDigit())
     {
-        error("Variable",QString("%1 : Variables names can't start with a number").arg(variableName));
+        progressHandler-> errorMsg(QString("%1 : Variables names can't start with a number").arg(variableName));
         return false;
     }
 
     if (variableName.contains(" "))
     {
-        error("Variable",QString("%1 : Variables names can't have any space").arg(variableName));
+        progressHandler-> errorMsg(QString("%1 : Variables names can't have any space").arg(variableName));
         return false;
     }
 
     if (!symbolsTable->valid_symbol(variableName.toStdString()))
     {
-        error("Variable",QString("%1 : Invalid variable name.\nVariables names can't have any of these characters :\n+ - / * ^ > < | & ...etc").arg(variableName));
+        progressHandler-> errorMsg(QString("%1 : Invalid variable name.\nVariables names can't have any of these characters :\n+ - / * ^ > < | & ...etc").arg(variableName));
         return false;
     }
 
     if (symbolsTable->symbol_exists(variableName.toStdString()))
     {
-        error("Variable",QString("%1 : This variable name is already used").arg(variableName));
+        progressHandler-> errorMsg(QString("%1 : This variable name is already used").arg(variableName));
         return false;
     }
 
     return true;
-}
-
-void Register::error(QString title,QString msg)
-{
-    QMessageBox::information(nullptr,QString("Error : ")+title,msg);
-    std::cout<<"Error : "<<msg.toLocal8Bit().data()<<std::endl;
 }
 
 const QStringList & Register::variablesNames() const

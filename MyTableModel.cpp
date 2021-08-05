@@ -6,16 +6,20 @@
 #include <QDoubleSpinBox>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QtConcurrent>
 
 #include "MyTableModel.h"
 #include "FilterDialog.h"
 
+
 //-----------------------------------------------------------------
 MyModel::MyModel(int nbRows, int nbCols, int rowSpan, QObject *parent): QAbstractTableModel(parent)
 {
-   create(nbRows, nbCols,rowSpan) ;
+   progressHandler=new MyProgressHandler;
    reg.setDataPtr(&m_data);
+   reg.setProgressHandler(progressHandler);
 
+   create(nbRows, nbCols,rowSpan) ;
    dataTest();
 }
 //-----------------------------------------------------------------
@@ -47,6 +51,8 @@ void MyModel::create(int nbRows, int nbCols,int rowSpan)
     connect(h_header,&QHeaderView::sectionMoved        ,this,&MyModel::slot_hSectionMoved);
     connect(v_header,&QHeaderView::sectionMoved        ,this,&MyModel::slot_vSectionMoved);
     connect(v_scrollBar,&QScrollBar::valueChanged      ,this,&MyModel::setRowOffset);
+
+    connect(this,&MyModel::sig_endUpdateColumns,this,&MyModel::slot_finishUpdateColumns);
 
     modified=true;
     hasheader=false;
@@ -101,6 +107,7 @@ QTableView* MyModel::createVariablesTable()
 void MyModel::exportLatex(QString filename)
 {
     QFile file(filename);
+    progressHandler->setWhat("Export Latex");
 
     if (file.open(QIODevice::WriteOnly | QIODevice::Text))
     {
@@ -119,10 +126,13 @@ void MyModel::exportLatex(QString filename)
         }
         textData += "\\\\ \\hline \n";
 
+        progressHandler->setWhat("Export Latex [Parse]");
+        progressHandler->reset(m_data.rows()*m_data.cols());
         for (int i = 0; i < m_data.rows(); i++)
         {
             for (int j = 0; j < m_data.cols(); j++)
             {
+                progressHandler->update();
                 if(m_data(i,j).color==qRgb(255,255,255))
                 {
                     textData += m_data(i,j).saveToString();
@@ -142,12 +152,13 @@ void MyModel::exportLatex(QString filename)
 
         textData+=QString("\\end{tabular}");
 
+        progressHandler->setWhat("Export Latex [Write]");
         QTextStream out(&file);
         out << textData;
     }
     else
     {
-        error("Export Latex",QString("Impossible d'ouvrir le fichier : ")+filename);
+        progressHandler->errorMsg(QString("Impossible d'ouvrir le fichier : ")+filename);
     }
 }
 
@@ -194,16 +205,17 @@ void MyModel::exportLatex(QString filename)
 
 bool MyModel::open(QString filename)
 {
+
     QElapsedTimer timer;
     timer.start();
     bool ok=true;
     QFile file(filename);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
+        progressHandler->setWhat("Open : [ReadAll]");
+
         QString contentStr=file.readAll();
         QVector<QStringRef> content=contentStr.splitRef('\n');
-
-        std::cout<<"Open time (Opening): "<<timer.nsecsElapsed()*1e-9<<std::endl;
 
         //Clean up
         if( content.last().isEmpty() )content.removeLast();
@@ -220,6 +232,8 @@ bool MyModel::open(QString filename)
             //Parse Header-----------------------------------
             int headerSize=0;
 
+            progressHandler->setWhat("Open : [Parse Header]");
+
             if(content[0]==QString("<header>"))
             {
                 hasheader=true;
@@ -230,7 +244,7 @@ bool MyModel::open(QString filename)
                     {
                         if(!reg.newVariable(variablesNames[i].toString(),""))
                         {
-                            error("Open error",QString("Variable name :")+variablesNames[i]);
+                            //progressHandler->errorMsg(QString("Variable name :")+variablesNames[i]);
                             return false;
                         }
                     }
@@ -247,7 +261,7 @@ bool MyModel::open(QString filename)
                         {
                             if(!reg.newVariable(variablesNames[i].toString(),""))
                             {
-                                error("Open error",QString("Variable name :")+variablesNames[i]);
+                                //progressHandler->errorMsg(QString("Variable name :")+variablesNames[i]);
                                 return false;
                             }
                         }
@@ -259,21 +273,21 @@ bool MyModel::open(QString filename)
                                                "",
                                                Register::getLoadVariableExpression( variablesExpressions[i].toString())))
                             {
-                                error("Open error",QString("Variable name :")+variablesNames[i]);
+                                progressHandler->errorMsg(QString("Variable name :")+variablesNames[i]);
                                 return false;
                             }
                         }
                     }
                     else
                     {
-                        error("Open",QString("Number of expressions (%1) is inferior of the number of variables (%2).").arg(variablesExpressions.size()).arg(variablesNames.size()));
+                        progressHandler->errorMsg(QString("Number of expressions (%1) is inferior of the number of variables (%2).").arg(variablesExpressions.size()).arg(variablesNames.size()));
                         ok=false;
                     }
                     headerSize=4;
                 }
                 else
                 {
-                    error("Open",QString("Bad Header."));
+                    progressHandler->errorMsg(QString("Bad Header."));
                     ok=false;
                 }
             }
@@ -286,13 +300,12 @@ bool MyModel::open(QString filename)
                 }
             }
 
-            std::cout<<"Open time (Variables): "<<timer.nsecsElapsed()*1e-9<<std::endl;
             //Parse Data-----------------------------------
             if(ok)
             {
                 int nbCols=reg.size(),nbRows=content.size()-headerSize;
+                progressHandler->setWhat("Open : [Allocate]");
                 m_data.resize(nbRows,nbCols);
-                std::cout<<"Open time (Allocate): "<<timer.nsecsElapsed()*1e-9<<std::endl;
 
                 int dataSize=content.size()-headerSize;
 
@@ -301,9 +314,15 @@ bool MyModel::open(QString filename)
                 omp_init_lock(&writelock);
 
                 std::vector<unsigned int> linesErrors;
-                #pragma omp parallel for
+
+                progressHandler->setWhat("Open : [Parse]");
+
+                progressHandler->reset(dataSize);
+                #pragma omp parallel for num_threads(4)
                 for(int i=0;i<dataSize;++i)
                 {
+                    progressHandler->update();
+
                     QVector<QStringRef> valueList=content[i+headerSize].split(';');
                     if(valueList.size()>=nbCols)
                     {
@@ -320,12 +339,13 @@ bool MyModel::open(QString filename)
                         omp_unset_lock(&writelock);
                     }
                 }
+                progressHandler->full();
 
                 if(!ok)
                 {
                     for(int k=0;k<1;k++)
                     {
-                        error("Open error",QString("Error line %1.\n\nIncorrect content, see below:\n\n%2\n").arg(linesErrors[k]+1).arg(content[linesErrors[k]]));
+                        progressHandler->errorMsg(QString("Error line %1.\n\nIncorrect content, see below:\n\n%2\n").arg(linesErrors[k]+1).arg(content[linesErrors[k]]));
                     }
                 }
             }
@@ -345,13 +365,13 @@ bool MyModel::open(QString filename)
     }
     else
     {
-        error("Open",QString("Unable to load file : %1").arg(filename));
+        progressHandler->errorMsg(QString("Unable to load file : %1").arg(filename));
         ok=false;
     }
 
     contentResized();
 
-    std::cout<<"Open time (Parsing): "<<timer.nsecsElapsed()*1e-9<<std::endl;
+    progressHandler->setWhat(QString("Open : [Time=%1 s]").arg(timer.nsecsElapsed()*1e-9));
 
     return ok;
 }
@@ -366,15 +386,6 @@ bool MyModel::save(QString filename)
     {
         //QString textData;
         QTextStream out(&file);
-
-        if(!hasheader)
-        {
-            QMessageBox::StandardButton ret=QMessageBox::question(nullptr,"Save header ?","Do you wish to save the header ?");
-            if(ret==QMessageBox::StandardButton::Yes)
-            {
-                hasheader=true;
-            }
-        }
 
         if(hasheader)
         {
@@ -395,35 +406,42 @@ bool MyModel::save(QString filename)
 
         QVector<QByteArray> packLines(m_data.rows());
 
+        progressHandler->setWhat("Save [Parse]");
+        progressHandler->reset(m_data.rows()*m_data.cols());
         #pragma omp parallel for
         for (int i = 0; i < m_data.rows(); i++)
         {
             QString line;
             for (int j = 0; j < m_data.cols(); j++)
             {
+                progressHandler->update();
                 line+=(j!=m_data.cols()-1)? m_data(i,j).saveToString()+";":
                                             m_data(i,j).saveToString()+"\n";
             }
             packLines[i]=line.toUtf8();
         }
+        progressHandler->full();
 
-        std::cout<<"Save parsing time : "<<timer.nsecsElapsed()*1e-9<<std::endl;
+        progressHandler->setWhat("Save [Write]");
+        progressHandler->reset(packLines.size());
         for (const QByteArray & line: packLines)
         {
+            progressHandler->update();
             file.write(line);
         }
+        progressHandler->full();
 
         file.close();
 
         currentFilename=filename;
         modified=false;
 
-        std::cout<<"Save time : "<<timer.nsecsElapsed()*1e-9<<std::endl;
+        progressHandler->setWhat(QString("Save [Time=%1 s]").arg(timer.nsecsElapsed()*1e-9));
         return true;
     }
     else
     {
-        error("Save",QString("Unable to save the file : ")+filename);
+        progressHandler->errorMsg(QString("Unable to save the file : ")+filename);
         return false;
     }
 
@@ -825,6 +843,7 @@ void MyModel::evalColumn(int visualIndex)
             #pragma omp parallel for default(none) num_threads(numthreads)
             for (int i=0; i<m_data.rows(); i++)
             {
+                progressHandler->update();
                 int tid = omp_get_thread_num();
                 regt[tid]->setActiveRow(i,m_data.rows());
                 for (int j=0; j<m_data.cols(); j++)
@@ -983,12 +1002,12 @@ void MyModel::slot_newRowsEnd()
     }
 }
 
-void MyModel::slot_updateColumns()
+void MyModel::updateColumns()
 {
     QElapsedTimer timer;
-
     timer.start();
-
+    progressHandler->setWhat("Update :");
+    progressHandler->reset(m_data.cols()*m_data.rows());
     for (int i=0; i<m_data.cols(); i++)
     {
         if(!reg.variablesExpressions()[i].isEmpty())
@@ -996,9 +1015,23 @@ void MyModel::slot_updateColumns()
             evalColumn(i);
         }
     }
+    progressHandler->full();
+    progressHandler->setWhat(QString("Update [Time=%1 s]:").arg(timer.nsecsElapsed()*1e-9));
 
-    std::cout<<"timer.elapsed()="<<timer.nsecsElapsed()*1e-9<<"s"<<std::endl;
+    emit sig_endUpdateColumns();
+}
 
+
+void MyModel::slot_startUpdateColumns()
+{
+    if(!progressHandler->isBusy())
+    {
+        QtConcurrent::run(this,&MyModel::updateColumns);
+    }
+}
+
+void MyModel::slot_finishUpdateColumns()
+{
     emit layoutChanged();
 
     modified=true;
@@ -1407,10 +1440,4 @@ void MyModel::setRowSpan(int rowSpan)
     this->m_rowSpan=rowSpan;
 
     emit layoutChanged();
-}
-
-void MyModel::error(QString title,QString msg)
-{
-    QMessageBox::information(nullptr,QString("Error : ")+title,msg);
-    std::cout<<"Error : "<<msg.toLocal8Bit().data()<<std::endl;
 }

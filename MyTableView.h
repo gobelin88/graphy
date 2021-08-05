@@ -11,13 +11,10 @@ class MyTableView : public QTableView
 {
     Q_OBJECT
 public:
-    MyTableView(int nbRow,
-                int nbCols,
-                int rowsSpan,
-                QWidget * parent);
-
     MyTableView(int rowsSpan,
-                QWidget * parent);
+                QWidget * parent,
+                int nbRow=1,
+                int nbCols=1);
 
     void createNew(int nbRow,int nbCols,int rowsSpan);
 
@@ -34,9 +31,15 @@ public:
 
     void applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
 
+    void save(QString filename);
+    void open(QString filename);
+    bool isOpen(){return is_open;}
+    bool isSave(){return is_save;}
+
 public slots:
     void slot_deleteSelected();
     void slot_removeSelectedRowsAndCols();
+    void slot_complexify();
     void slot_filter();
     void slot_copy();
     void slot_paste();
@@ -46,6 +49,10 @@ public slots:
     void slot_newColumn(QString varName,QVector<QString> data);
     void slot_newRowBelow();
     void slot_newRowAbove();
+
+signals:
+    void sig_opened(MyTableView * newtable);
+    void sig_saved(MyTableView * newtable);
 
 protected:
     void wheelEvent(QWheelEvent * event);
@@ -77,6 +84,9 @@ private:
     QAction * actDelete;
     QAction * actRemoveColumnsRows;
     QAction * actUpdateColumns;
+    QAction * actComplexify;
+
+    bool is_open,is_save;
 
 protected :
     void mousePressEvent(QMouseEvent* event);

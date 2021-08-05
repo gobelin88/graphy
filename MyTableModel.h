@@ -10,6 +10,7 @@
 
 #include "Register.h"
 #include "MyVariant.h"
+#include "MyProgressHandler.h"
 
 #ifndef MYTABLEMODEL_H
 #define MYTABLEMODEL_H
@@ -46,6 +47,8 @@ public:
     bool save(QString filename);
     void exportLatex(QString filename);
     void createEmpty(int nbRows, int nbCols);
+    bool hasHeader(){return hasheader;}
+    void setHasHeader(bool hasheader){this->hasheader=hasheader;}
 
     //Resizing
     void setNumberOfRows(unsigned int nbRows);
@@ -110,6 +113,11 @@ public:
 
     QTableView* MyModel::createVariablesTable();
 
+    MyProgressHandler * getProgressHandler()
+    {
+        return progressHandler;
+    }
+
 public slots:
     void setRowOffset(int rowOffset);
 
@@ -125,7 +133,8 @@ public slots:
     void slot_newRowsBegin();
     void slot_newRowEnd();
     void slot_newRowsEnd();
-    void slot_updateColumns();
+    void slot_startUpdateColumns();
+    void slot_finishUpdateColumns();
     void slot_setRows();
 
     void slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
@@ -133,8 +142,11 @@ public slots:
 
 signals:
     void sig_dataChanged();
+    void sig_endUpdateColumns();
 
 private:
+    void updateColumns();
+
     void contentResized();
     void create(int nbRows, int nbCols, int rowSpan);
     MyVariant & at(QModelIndex indexLogical);
@@ -171,12 +183,12 @@ private:
     QModelIndex toVisualIndex(const QModelIndex &index) const;
     QModelIndex toLogicalIndex(const QModelIndex &index) const;
 
-    void error(QString title,QString msg);
-
     //Io
     bool modified;
     QString currentFilename;
     bool hasheader;
+
+    MyProgressHandler * progressHandler;
 };
 
 #endif // MYTABLEMODEL_H

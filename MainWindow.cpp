@@ -6,6 +6,7 @@
 #include <QGridLayout>
 #include <QTextStream>
 #include <QMessageBox>
+#include <QtConcurrent>
 
 MainWindow::MainWindow(QWidget* parent) :
     QMainWindow(parent),
@@ -15,11 +16,21 @@ MainWindow::MainWindow(QWidget* parent) :
     ui->setupUi(this);
     this->setWindowTitle(QString("Graphy %1").arg(graphyVersion));
 
+    pb_bar=new QProgressBar(this);
+    pb_bar->setRange(0,100);
+    pb_bar->setFixedHeight(15);
+    l_what=new QLabel;
+
+    this->statusBar()->addWidget(l_what);
+    this->statusBar()->addWidget(pb_bar,1);
+
+
     mdiArea=new QMdiArea();
 
     this->setCentralWidget(mdiArea);
 
     te_results=new QTextEdit;
+
     subWindowsResults=mdiArea->addSubWindow(te_results,Qt::WindowStaysOnTopHint );
     subWindowsResults->setAttribute( Qt::WA_DeleteOnClose, false );
     subWindowsResults->hide();
@@ -131,7 +142,9 @@ void MainWindow::slot_new()
 
     if (result == QDialog::Accepted)
     {
-        addNewTable(new MyTableView(sb_sx->value(),sb_sy->value(),1,this));
+        MyTableView * newtable=new MyTableView(1,this,sb_sx->value(),sb_sy->value());
+        connectTable(newtable);
+        addNewTable(newtable);
     }
 }
 
@@ -210,6 +223,15 @@ int MainWindow::fileAlreadyOpened(QString filename)
     return -1;
 }
 
+void MainWindow::connectTable(MyTableView * newtable)
+{
+    connect(newtable->model()->getProgressHandler(),&MyProgressHandler::sig_progress,this,&MainWindow::slot_progress,Qt::BlockingQueuedConnection);
+    connect(newtable->model()->getProgressHandler(),&MyProgressHandler::sig_what,this,&MainWindow::slot_what,Qt::QueuedConnection);
+    connect(newtable->model()->getProgressHandler(),&MyProgressHandler::sig_error,this,&MainWindow::slot_error,Qt::QueuedConnection);
+    connect(newtable,&MyTableView::sig_opened,this,&MainWindow::slot_open_end);
+    connect(newtable,&MyTableView::sig_saved,this,&MainWindow::slot_save_end);
+}
+
 void MainWindow::direct_open(QStringList filenames)
 {
     for(int i=0;i<filenames.size();i++)
@@ -217,17 +239,28 @@ void MainWindow::direct_open(QStringList filenames)
         int index=fileAlreadyOpened(filenames[i]);
         if(index<0)
         {
-            MyTableView * table=new MyTableView(25,this);
-            if(table->model()->open(filenames[i]))
-            {
-                table->resizeColumnsToContents();
-                addNewTable(table);
-            }
+            MyTableView * newtable=new MyTableView(25,this);            
+            connectTable(newtable);
+
+            QtConcurrent::run(newtable, &MyTableView::open,filenames[i]);
         }
         else
         {
             te_widget->setCurrentIndex(index);
         }
+    }
+}
+
+void MainWindow::slot_open_end(MyTableView * newtable)
+{
+    if(newtable->isOpen())
+    {
+        newtable->resizeColumnsToContents();
+        addNewTable(newtable);
+    }
+    else
+    {
+        delete newtable;
     }
 }
 
@@ -270,10 +303,27 @@ void MainWindow::direct_save(QString filename)
     MyTableView * table=getCurrentTable();
     if(table)
     {
-        table->model()->save(filename);
+        if(!table->model()->hasHeader())
+        {
+            QMessageBox::StandardButton ret=QMessageBox::question(nullptr,"Save header ?","Do you wish to save the header ?");
+            if(ret==QMessageBox::StandardButton::Yes)
+            {
+                table->model()->setHasHeader(true);
+            }
+        }
+
+        QtConcurrent::run(table, &MyTableView::save,filename);
+    }
+}
+
+void MainWindow::slot_save_end(MyTableView * table)
+{
+    if(table->isSave())
+    {
         te_widget->setTabText(te_widget->currentIndex(),table->model()->getTabTitle());
     }
 }
+
 
 void MainWindow::slot_results(QString results)
 {
@@ -1207,6 +1257,22 @@ void MainWindow::closeTable(int index)
 void MainWindow::slot_showHideTerminal()
 {
     te_results->show();
+}
+
+void MainWindow::slot_what(QString what)
+{
+    l_what->setText(what);
+}
+
+void MainWindow::slot_error(QString what,QString msg)
+{
+    QMessageBox::information(this,QString("Error : ")+what,msg);
+    std::cout<<"Error : "<<what.toStdString()<<" : "<<msg.toStdString()<<std::endl;
+}
+
+void MainWindow::slot_progress(int t)
+{
+    pb_bar->setValue(t);
 }
 
 void MainWindow::slot_colourize()

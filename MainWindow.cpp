@@ -20,6 +20,7 @@ MainWindow::MainWindow(QWidget* parent) :
     pb_bar->setRange(0,100);
     pb_bar->setFixedHeight(15);
     l_what=new QLabel;
+    l_what->setFixedWidth(200);
 
     this->statusBar()->addWidget(l_what);
     this->statusBar()->addWidget(pb_bar,1);
@@ -178,7 +179,7 @@ void MainWindow::addNewTable(MyTableView * newTable)
 MyTableView * MainWindow::getCurrentTable()
 {
     int id=te_widget->currentIndex();
-    if(id<tables.size())
+    if(id<tables.size() && id>=0)
     {
         return tables[id];
     }

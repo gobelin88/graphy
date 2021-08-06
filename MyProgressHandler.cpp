@@ -2,12 +2,7 @@
 
 MyProgressHandler::MyProgressHandler()
 {
-
-}
-
-MyProgressHandler::MyProgressHandler(int max)
-{
-    reset(max);
+    index=100;//not busy by construction;
 }
 
 void MyProgressHandler::reset(int max)
@@ -21,19 +16,15 @@ void MyProgressHandler::reset(int max)
     {
         indexes[i]=(i*(max-1))/100;
     }
-    this->value=indexes[index];
+    indexes[100]=-1;
 }
 
 void MyProgressHandler::update()
 {
-    if(counter++==value)
+    if(counter++==indexes[index])
     {
         emit sig_progress(++index);
-        if(index<100)
-        {
-            value=indexes[index];
-        }
-    }
+    }    
 }
 
 void MyProgressHandler::full()
@@ -44,15 +35,10 @@ void MyProgressHandler::full()
 
 bool MyProgressHandler::isBusy()
 {
-    if(index==100)
-    {
-        return false;
-    }
-    std::cout<<"busy="<<index<<std::endl;
-    return true;
+    return index.load()!=100;
 }
 
-void MyProgressHandler::errorMsg(QString msg)
+void MyProgressHandler::setErrorMsg(QString msg)
 {
     mutex_what.lock();
     emit sig_error(what,msg);

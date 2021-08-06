@@ -15,6 +15,9 @@
 //-----------------------------------------------------------------
 MyModel::MyModel(int nbRows, int nbCols, int rowSpan, QObject *parent): QAbstractTableModel(parent)
 {
+   qRegisterMetaType< QList<QPersistentModelIndex> >( "QList<QPersistentModelIndex>" );
+   qRegisterMetaType< QAbstractItemModel::LayoutChangeHint >( "QAbstractItemModel::LayoutChangeHint" );
+
    progressHandler=new MyProgressHandler;
    reg.setDataPtr(&m_data);
    reg.setProgressHandler(progressHandler);
@@ -51,8 +54,6 @@ void MyModel::create(int nbRows, int nbCols,int rowSpan)
     connect(h_header,&QHeaderView::sectionMoved        ,this,&MyModel::slot_hSectionMoved);
     connect(v_header,&QHeaderView::sectionMoved        ,this,&MyModel::slot_vSectionMoved);
     connect(v_scrollBar,&QScrollBar::valueChanged      ,this,&MyModel::setRowOffset);
-
-    connect(this,&MyModel::sig_endUpdateColumns,this,&MyModel::slot_finishUpdateColumns);
 
     modified=true;
     hasheader=false;
@@ -158,7 +159,7 @@ void MyModel::exportLatex(QString filename)
     }
     else
     {
-        progressHandler->errorMsg(QString("Impossible d'ouvrir le fichier : ")+filename);
+        progressHandler->setErrorMsg(QString("Impossible d'ouvrir le fichier : ")+filename);
     }
 }
 
@@ -273,21 +274,21 @@ bool MyModel::open(QString filename)
                                                "",
                                                Register::getLoadVariableExpression( variablesExpressions[i].toString())))
                             {
-                                progressHandler->errorMsg(QString("Variable name :")+variablesNames[i]);
+                                progressHandler->setErrorMsg(QString("Variable name :")+variablesNames[i]);
                                 return false;
                             }
                         }
                     }
                     else
                     {
-                        progressHandler->errorMsg(QString("Number of expressions (%1) is inferior of the number of variables (%2).").arg(variablesExpressions.size()).arg(variablesNames.size()));
+                        progressHandler->setErrorMsg(QString("Number of expressions (%1) is inferior of the number of variables (%2).").arg(variablesExpressions.size()).arg(variablesNames.size()));
                         ok=false;
                     }
                     headerSize=4;
                 }
                 else
                 {
-                    progressHandler->errorMsg(QString("Bad Header."));
+                    progressHandler->setErrorMsg(QString("Bad Header."));
                     ok=false;
                 }
             }
@@ -345,7 +346,7 @@ bool MyModel::open(QString filename)
                 {
                     for(int k=0;k<1;k++)
                     {
-                        progressHandler->errorMsg(QString("Error line %1.\n\nIncorrect content, see below:\n\n%2\n").arg(linesErrors[k]+1).arg(content[linesErrors[k]]));
+                        progressHandler->setErrorMsg(QString("Error line %1.\n\nIncorrect content, see below:\n\n%2\n").arg(linesErrors[k]+1).arg(content[linesErrors[k]]));
                     }
                 }
             }
@@ -365,7 +366,7 @@ bool MyModel::open(QString filename)
     }
     else
     {
-        progressHandler->errorMsg(QString("Unable to load file : %1").arg(filename));
+        progressHandler->setErrorMsg(QString("Unable to load file : %1").arg(filename));
         ok=false;
     }
 
@@ -407,18 +408,20 @@ bool MyModel::save(QString filename)
         QVector<QByteArray> packLines(m_data.rows());
 
         progressHandler->setWhat("Save [Parse]");
-        progressHandler->reset(m_data.rows()*m_data.cols());
+        progressHandler->reset(m_data.rows());
+
+        int endCol=m_data.cols()-1;
+
         #pragma omp parallel for
         for (int i = 0; i < m_data.rows(); i++)
         {
-            QString line;
-            for (int j = 0; j < m_data.cols(); j++)
+            progressHandler->update();
+            packLines[i].reserve(endCol*20);
+            for (int j = 0; j < endCol; j++)
             {
-                progressHandler->update();
-                line+=(j!=m_data.cols()-1)? m_data(i,j).saveToString()+";":
-                                            m_data(i,j).saveToString()+"\n";
+                packLines[i]+=m_data(i,j).saveToByteArray()+";";
             }
-            packLines[i]=line.toUtf8();
+            packLines[i]+=m_data(i,endCol).saveToByteArray()+"\n";
         }
         progressHandler->full();
 
@@ -441,7 +444,7 @@ bool MyModel::save(QString filename)
     }
     else
     {
-        progressHandler->errorMsg(QString("Unable to save the file : ")+filename);
+        progressHandler->setErrorMsg(QString("Unable to save the file : ")+filename);
         return false;
     }
 
@@ -484,6 +487,8 @@ QString MyModel::copy(int x0,int y0,int nrows,int ncols)
 
 void MyModel::paste(int x0,int y0,QString buffer)
 {
+    emit layoutAboutToBeChanged();
+
     QStringList lines=buffer.split(QRegExp("\n"),QString::SkipEmptyParts);
     for(int i=0.0;i<lines.size();i++)
     {
@@ -929,7 +934,7 @@ void MyModel::slot_editColumn(int logicalIndex)
 
         if(!reg.variablesExpressions()[visualIndex].isEmpty())
         {
-            evalColumn(visualIndex);
+            //evalColumn(visualIndex);
         }
 
         emit layoutChanged();
@@ -1004,6 +1009,8 @@ void MyModel::slot_newRowsEnd()
 
 void MyModel::updateColumns()
 {
+    emit layoutAboutToBeChanged();
+
     QElapsedTimer timer;
     timer.start();
     progressHandler->setWhat("Update :");
@@ -1018,24 +1025,11 @@ void MyModel::updateColumns()
     progressHandler->full();
     progressHandler->setWhat(QString("Update [Time=%1 s]:").arg(timer.nsecsElapsed()*1e-9));
 
-    emit sig_endUpdateColumns();
-}
-
-
-void MyModel::slot_startUpdateColumns()
-{
-    if(!progressHandler->isBusy())
-    {
-        QtConcurrent::run(this,&MyModel::updateColumns);
-    }
-}
-
-void MyModel::slot_finishUpdateColumns()
-{
-    emit layoutChanged();
-
     modified=true;
     emit sig_dataChanged();
+    emit sig_endUpdateColumns();
+
+    emit layoutChanged();
 }
 
 //-----------------------------------------------------------------

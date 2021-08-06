@@ -6,6 +6,7 @@
 MyTextEdit::MyTextEdit(const QString &text, QWidget *parent):QTextEdit(parent)
 {
     this->setTextContent(text);
+    this->setToolTip("Press Ctrl+H for completion");
 }
 MyTextEdit::~MyTextEdit()
 {

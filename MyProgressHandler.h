@@ -13,15 +13,15 @@ class MyProgressHandler:public QObject
     Q_OBJECT
 public:
     MyProgressHandler();
-    MyProgressHandler(int max);
 
-    void full();
     void reset(int max);
     void update();
-    void setWhat(QString what);
+    void full();
+
     bool isBusy();
 
-    void errorMsg(QString msg);
+    void setWhat(QString what);
+    void setErrorMsg(QString msg);
 
 signals:
     void sig_progress(int percent);
@@ -32,8 +32,7 @@ public:
     int max;
     QAtomicInt counter;
     QAtomicInt index;
-    QAtomicInt value;
-    int indexes[100];
+    int indexes[101];
     QString what;
     QMutex mutex_what;
 };

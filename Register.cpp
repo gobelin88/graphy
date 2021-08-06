@@ -210,7 +210,7 @@ bool Register::isValidExpression(QString variableExpression)
 
         if (!ok)
         {
-            progressHandler->errorMsg(variableExpression+QString("\nError : ")+QString::fromStdString(parser->error()));
+            progressHandler->setErrorMsg(variableExpression+QString("\nError : ")+QString::fromStdString(parser->error()));
         }
 
         return ok;
@@ -249,25 +249,25 @@ bool Register::isValidVariable(QString variableName)
 
     if (variableName.begin()->isDigit())
     {
-        progressHandler-> errorMsg(QString("%1 : Variables names can't start with a number").arg(variableName));
+        progressHandler-> setErrorMsg(QString("%1 : Variables names can't start with a number").arg(variableName));
         return false;
     }
 
     if (variableName.contains(" "))
     {
-        progressHandler-> errorMsg(QString("%1 : Variables names can't have any space").arg(variableName));
+        progressHandler-> setErrorMsg(QString("%1 : Variables names can't have any space").arg(variableName));
         return false;
     }
 
     if (!symbolsTable->valid_symbol(variableName.toStdString()))
     {
-        progressHandler-> errorMsg(QString("%1 : Invalid variable name.\nVariables names can't have any of these characters :\n+ - / * ^ > < | & ...etc").arg(variableName));
+        progressHandler-> setErrorMsg(QString("%1 : Invalid variable name.\nVariables names can't have any of these characters :\n+ - / * ^ > < | & ...etc").arg(variableName));
         return false;
     }
 
     if (symbolsTable->symbol_exists(variableName.toStdString()))
     {
-        progressHandler-> errorMsg(QString("%1 : This variable name is already used").arg(variableName));
+        progressHandler-> setErrorMsg(QString("%1 : This variable name is already used").arg(variableName));
         return false;
     }
 
@@ -761,8 +761,8 @@ int Register::getVarExpDialog(QString currentName, QString currentExpression, QS
 
     gbox->addWidget(le_variableName,0,1);
     gbox->addWidget(le_variableExpression,1,1);
-    gbox->addWidget(new QLabel("Variable name"),0,0);
-    gbox->addWidget(new QLabel("Variable formula"),1,0);
+    gbox->addWidget(new QLabel("Name="),0,0);
+    gbox->addWidget(new QLabel("Formula="),1,0);
     gbox->addWidget(buttonBox,2,0,1,2);
 
     dialog->setLayout(gbox);
@@ -787,7 +787,7 @@ int Register::getVarExpDialog(QString currentName, QString currentExpression, QS
             }
         }
 
-        emit sig_modified();
+        //emit sig_modified();
         return 1;
     }
     else

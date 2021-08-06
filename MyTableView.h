@@ -49,6 +49,8 @@ public slots:
     void slot_newColumn(QString varName,QVector<QString> data);
     void slot_newRowBelow();
     void slot_newRowAbove();
+    void slot_startUpdateColumns();
+    void slot_finishUpdateColumns();
 
 signals:
     void sig_opened(MyTableView * newtable);

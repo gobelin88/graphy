@@ -1,4 +1,5 @@
 #include <QWheelEvent>
+#include <QtConcurrent>
 #include "MyTableView.h"
 
 MyTableView::MyTableView(int rowsSpan,
@@ -404,7 +405,21 @@ void MyTableView::createPopup()
     connect(actNewColumn,&QAction::triggered,m_model,&MyModel::slot_createNewColumn);
     connect(actDelete,&QAction::triggered,this,&MyTableView::slot_deleteSelected);
     connect(actRemoveColumnsRows,&QAction::triggered,this,&MyTableView::slot_removeSelectedRowsAndCols);
-    connect(actUpdateColumns,&QAction::triggered,m_model,&MyModel::slot_startUpdateColumns);
+
+    connect(actUpdateColumns,&QAction::triggered,this,&MyTableView::slot_startUpdateColumns);
+    connect(m_model,&MyModel::sig_endUpdateColumns,this,&MyTableView::slot_finishUpdateColumns);
+
+}
+
+void MyTableView::slot_startUpdateColumns()
+{
+    actUpdateColumns->setEnabled(false);
+    QtConcurrent::run(m_model,&MyModel::updateColumns);
+}
+
+void MyTableView::slot_finishUpdateColumns()
+{
+    actUpdateColumns->setEnabled(true);
 }
 
 void MyTableView::mousePressEvent(QMouseEvent* event)

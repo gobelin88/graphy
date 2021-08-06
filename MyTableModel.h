@@ -54,6 +54,7 @@ public:
     void setNumberOfRows(unsigned int nbRows);
 
     //Data
+    void updateColumns();
     void colourizeCol(unsigned int visualColIndex, const std::vector<QRgb> &colors);
     void colourizeCol(unsigned int visualColIndex, QRgb color);
 
@@ -133,8 +134,6 @@ public slots:
     void slot_newRowsBegin();
     void slot_newRowEnd();
     void slot_newRowsEnd();
-    void slot_startUpdateColumns();
-    void slot_finishUpdateColumns();
     void slot_setRows();
 
     void slot_vSectionMoved(int logicalIndex,int oldVisualIndex,int newVisualIndex);
@@ -145,7 +144,6 @@ signals:
     void sig_endUpdateColumns();
 
 private:
-    void updateColumns();
 
     void contentResized();
     void create(int nbRows, int nbCols, int rowSpan);

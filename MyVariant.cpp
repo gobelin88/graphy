@@ -134,11 +134,35 @@ std::ostream& operator<< (std::ostream &out,const MyVariant & v)
     return out;
 }
 
+QByteArray MyVariant::doubleToByteArray(double value) const
+{
+    return QByteArray::number(value,'g',myVariantDoubleToStringPrecision);
+}
+
 QString MyVariant::doubleToString(double value)const
 {
     return QString::number(value,'g',myVariantDoubleToStringPrecision);
     //return QString::number(value);
     //return QString("%1").arg(value);
+}
+
+void MyVariant::doubleToString(double value,QString & str)const
+{
+    str=QString::number(value,'g',myVariantDoubleToStringPrecision);
+    //return QString::number(value);
+    //return QString("%1").arg(value);
+}
+
+QByteArray MyVariant::complexToByteArray(std::complex<double> value)const
+{
+    if (value.imag()==0.0)
+    {
+        return doubleToByteArray( value.real());
+    }
+    else
+    {
+        return doubleToByteArray(value.real())+","+doubleToByteArray(value.imag());
+    }
 }
 
 QString MyVariant::complexToString(std::complex<double> value)const
@@ -149,8 +173,20 @@ QString MyVariant::complexToString(std::complex<double> value)const
     }
     else
     {
+        return doubleToString( value.real())+QString(",")+doubleToString( value.imag());
+    }
+}
+
+void MyVariant::complexToString(std::complex<double> value,QString & str)const
+{
+    if (value.imag()==0.0)
+    {
+        str=doubleToString( value.real());
+    }
+    else
+    {
         //return doubleToString( value.real())+QString(",")+doubleToString( value.imag());
-        return QString("%1,%2").arg(value.real()).arg(value.imag());
+        str=QString("%1,%2").arg(value.real()).arg(value.imag());
     }
 }
 
@@ -245,6 +281,38 @@ bool MyVariant::complexFromByteArray(const QByteArray & string,std::complex<doub
         return false;
     }
 
+}
+
+void MyVariant::saveToString(QString & str)const
+{
+    if( isDouble() )
+    {
+        doubleToString(this->toDouble(),str);
+    }
+    else if( isComplex() )
+    {
+        complexToString(toComplex(),str);
+    }
+    else
+    {
+        str=this->toString();
+    }
+}
+
+QByteArray MyVariant::saveToByteArray()const
+{
+    if( isDouble() )
+    {
+        return doubleToByteArray(this->toDouble());
+    }
+    else if( isComplex() )
+    {
+        return complexToByteArray(toComplex());
+    }
+    else
+    {
+        return this->toByteArray();
+    }
 }
 
 QString MyVariant::saveToString()const

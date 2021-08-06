@@ -31,7 +31,9 @@ public:
     void operator=(double other);
     void operator=(const MyVariant & other);
 
+    void saveToString(QString & str)const;
     QString saveToString()const;
+    QByteArray saveToByteArray()const;
     void loadFromStringRef(const QStringRef & string);
     void loadFromString(const QString &string);
     void loadFromByteArray(const QByteArray & string);
@@ -44,8 +46,13 @@ public:
 
 
     //
+    QByteArray doubleToByteArray(double value) const;
     QString doubleToString(double value) const;
+    void doubleToString(double value,QString & str) const;
+    QByteArray complexToByteArray(std::complex<double> value)const;
     QString complexToString(std::complex<double> value)const;
+    void complexToString(std::complex<double> value,QString & str)const;
+
     bool complexFromStringRef(const QStringRef & string,std::complex<double> & value)const;
     bool complexFromString(const QString & string,std::complex<double> & value)const;
     bool complexFromByteArray(const QByteArray &string, std::complex<double> & value)const;

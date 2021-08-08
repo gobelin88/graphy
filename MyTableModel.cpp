@@ -53,7 +53,7 @@ void MyModel::create(int nbRows, int nbCols,int rowSpan)
     connect(h_header,&QHeaderView::sectionDoubleClicked,this,&MyModel::slot_editColumn);
     connect(h_header,&QHeaderView::sectionMoved        ,this,&MyModel::slot_hSectionMoved);
     connect(v_header,&QHeaderView::sectionMoved        ,this,&MyModel::slot_vSectionMoved);
-    connect(v_scrollBar,&QScrollBar::valueChanged      ,this,&MyModel::setRowOffset);
+    connect(v_scrollBar,&QScrollBar::valueChanged      ,this,&MyModel::setRowOffset);    
 
     modified=true;
     hasheader=false;
@@ -213,7 +213,7 @@ bool MyModel::open(QString filename)
     QFile file(filename);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        progressHandler->setWhat("Open : [ReadAll]");
+        progressHandler->setWhat("Open [ReadAll]");
 
         QString contentStr=file.readAll();
         QVector<QStringRef> content=contentStr.splitRef('\n');
@@ -233,7 +233,7 @@ bool MyModel::open(QString filename)
             //Parse Header-----------------------------------
             int headerSize=0;
 
-            progressHandler->setWhat("Open : [Parse Header]");
+            progressHandler->setWhat("Open [Parse Header]");
 
             if(content[0]==QString("<header>"))
             {
@@ -305,7 +305,7 @@ bool MyModel::open(QString filename)
             if(ok)
             {
                 int nbCols=reg.size(),nbRows=content.size()-headerSize;
-                progressHandler->setWhat("Open : [Allocate]");
+                progressHandler->setWhat("Open [Allocate]");
                 m_data.resize(nbRows,nbCols);
 
                 int dataSize=content.size()-headerSize;
@@ -316,7 +316,7 @@ bool MyModel::open(QString filename)
 
                 std::vector<unsigned int> linesErrors;
 
-                progressHandler->setWhat("Open : [Parse]");
+                progressHandler->setWhat("Open [Parse]");
 
                 progressHandler->reset(dataSize);
                 #pragma omp parallel for num_threads(4)
@@ -372,7 +372,7 @@ bool MyModel::open(QString filename)
 
     contentResized();
 
-    progressHandler->setWhat(QString("Open : [Time=%1 s]").arg(timer.nsecsElapsed()*1e-9));
+    progressHandler->setWhat(QString("Open [Time=%1 s]").arg(timer.nsecsElapsed()*1e-9));
 
     return ok;
 }
@@ -1013,7 +1013,7 @@ void MyModel::updateColumns()
 
     QElapsedTimer timer;
     timer.start();
-    progressHandler->setWhat("Update :");
+    progressHandler->setWhat("Update");
     progressHandler->reset(m_data.cols()*m_data.rows());
     for (int i=0; i<m_data.cols(); i++)
     {

@@ -60,7 +60,7 @@ void MyTableView::resizeEvent(QResizeEvent *event)
     }
 
     this->model()->setRowSpan((this->size().height()-this->horizontalHeader()->size().height())/
-                                   (this->verticalHeader()->defaultSectionSize())-1);
+                                   (this->verticalHeader()->defaultSectionSize()));
 }
 void MyTableView::slot_deleteSelected()
 {
@@ -128,6 +128,18 @@ void MyTableView::slot_paste()
 
         //---------------------------------------------------------------------------------
         m_model->paste(range_row.lower,range_col.lower,clipboardbuffer);
+    }
+}
+
+void MyTableView::slot_goto()
+{
+    bool ok=false;
+    int idRow=QInputDialog::getInt(this,"Goto","Row=",0,0,m_model->tableData().rows(),1,&ok);
+
+    if(ok)
+    {
+        //model()->setRowOffset(std::max(0,idRow-1));
+        model()->verticalScrollBar()->setValue(std::max(0,idRow-1));
     }
 }
 
@@ -299,6 +311,7 @@ void MyTableView::setSelectionPattern(QString pattern)
 void MyTableView::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
 {
     QMap<QString,QAction*> shortcuts_links;
+    shortcuts_links.insert(QString("Goto"),actGoto);
     shortcuts_links.insert(QString("Complexify"),actComplexify);
     shortcuts_links.insert(QString("Update"),actUpdateColumns);
     shortcuts_links.insert(QString("Edit/Add-variable"),actNewColumn);
@@ -333,6 +346,7 @@ void MyTableView::createPopup()
     actUpdateColumns=new QAction("Update",this);
 
     actComplexify=new QAction("Complexify",this);
+    actGoto=new QAction("Goto",this);
 
     actNewRowBelow = new QAction("Insert below" ,  this);
     actNewRowAbove = new QAction("Insert above" ,  this);
@@ -366,6 +380,7 @@ void MyTableView::createPopup()
     this->addAction(actNewRowsEnd  );
     this->addAction(actSetNumberOfRows  );
     this->addAction(actComplexify  );
+    this->addAction(actGoto  );
 
     popup_menu->addAction(actCopy);
     popup_menu->addAction(actPaste);
@@ -376,6 +391,7 @@ void MyTableView::createPopup()
     menuColumns->addAction(actUpdateColumns);
     menuColumns->addAction(actComplexify);
     popup_menu->addMenu(menuRows);
+    menuRows->addAction(actGoto);
     menuRows->addAction(actNewRowBelow );
     menuRows->addAction(actNewRowAbove );
     menuRows->addAction(actNewRowBegin );
@@ -400,6 +416,7 @@ void MyTableView::createPopup()
     connect(actNewRowAbove  ,&QAction::triggered,this   ,&MyTableView::slot_newRowAbove);
     connect(actCopy         ,&QAction::triggered,this   ,&MyTableView::slot_copy);
     connect(actPaste        ,&QAction::triggered,this   ,&MyTableView::slot_paste);
+    connect(actGoto         ,&QAction::triggered,this   ,&MyTableView::slot_goto);
 
     connect(actComplexify,&QAction::triggered,this,&MyTableView::slot_complexify);
     connect(actNewColumn,&QAction::triggered,m_model,&MyModel::slot_createNewColumn);

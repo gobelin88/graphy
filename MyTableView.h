@@ -51,6 +51,7 @@ public slots:
     void slot_newRowAbove();
     void slot_startUpdateColumns();
     void slot_finishUpdateColumns();
+    void slot_goto();
 
 signals:
     void sig_opened(MyTableView * newtable);
@@ -87,6 +88,7 @@ private:
     QAction * actRemoveColumnsRows;
     QAction * actUpdateColumns;
     QAction * actComplexify;
+    QAction * actGoto;
 
     bool is_open,is_save;
 

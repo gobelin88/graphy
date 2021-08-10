@@ -240,8 +240,12 @@ void MainWindow::direct_open(QStringList filenames)
         int index=fileAlreadyOpened(filenames[i]);
         if(index<0)
         {
+            QElapsedTimer timer;
+            timer.start();
             MyTableView * newtable=new MyTableView(25,this);            
             connectTable(newtable);
+
+            std::cout<<"Create [time="<<timer.nsecsElapsed()*1e-9<<" s]"<<std::endl;
 
             QtConcurrent::run(newtable, &MyTableView::open,filenames[i]);
         }

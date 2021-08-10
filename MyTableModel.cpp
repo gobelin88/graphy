@@ -465,7 +465,7 @@ QString MyModel::copy(int x0,int y0,int nrows,int ncols)
     {
         for (int j = 0; j < ncols; ++j)
         {
-            content(i,j)=m_data(i+x0,j+y0).toString();
+            m_data(i+x0,j+y0).saveToString(content(i,j));
         }
     }
 

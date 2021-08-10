@@ -30,6 +30,7 @@ int main(int argc, char* argv[])
 
 
 
+        w.show();
         QObject::connect(&app, &SingleApplication::instanceStarted, [ &w ]() {w.raise();w.activateWindow();});
         QObject::connect(&app,&SingleApplication::receivedMessage,&w,&MainWindow::receivedMessage);
 
@@ -42,7 +43,6 @@ int main(int argc, char* argv[])
             std::cout<<args.size()<<std::endl;
         }
 
-        w.show();
 
         return app.exec();
     }

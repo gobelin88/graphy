@@ -16,7 +16,12 @@ MyTableView::MyTableView(int rowsSpan,
 
 void MyTableView::createNew(int nbRow,int nbCols,int rowsSpan)
 {
+    QElapsedTimer timer;
+    timer.start();
     m_model = new MyModel(nbRow,nbCols,rowsSpan);
+    std::cout<<"Create [Model A time="<<timer.nsecsElapsed()*1e-9<<"s]"<<std::endl;
+    timer.restart();
+
     setHorizontalHeader(m_model->horizontalHeader());
     setVerticalHeader(m_model->verticalHeader());
 
@@ -28,7 +33,12 @@ void MyTableView::createNew(int nbRow,int nbCols,int rowsSpan)
     layout->addWidget(this);
     layout->addWidget(m_model->verticalScrollBar());
 
+    std::cout<<"Create [Model B time="<<timer.nsecsElapsed()*1e-9<<"s]"<<std::endl;
+    timer.restart();
+
+    QItemSelectionModel *m = selectionModel();
     setModel(m_model);
+    delete m;
 
     setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 
@@ -36,6 +46,9 @@ void MyTableView::createNew(int nbRow,int nbCols,int rowsSpan)
     //setVerticalScrollBar(m_model->verticalScrollBar());
     //m_model->verticalScrollBar()->setVisible(true);
     //setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
+
+    std::cout<<"Create [Model C time="<<timer.nsecsElapsed()*1e-9<<"s]"<<std::endl;
+
 }
 
 void MyTableView::wheelEvent(QWheelEvent * event)
@@ -64,13 +77,15 @@ void MyTableView::resizeEvent(QResizeEvent *event)
 }
 void MyTableView::slot_deleteSelected()
 {
-    m_model->clearLogicalIndexes(selectionModel()->selectedIndexes());
+    m_model->clearLogicalIndexes(selectionModel()->selectedIndexes());    
+    m_model->clearLogicalIndexesCols(selectionModel()->selectedColumns());
 }
 
 void MyTableView::slot_removeSelectedRowsAndCols()
 {
     m_model->removeLogicalIndexesCols(selectionModel()->selectedColumns());
     m_model->removeLogicalIndexesRows(selectionModel()->selectedRows());
+    selectionModel()->clear();
 }
 
 void MyTableView::slot_complexify()

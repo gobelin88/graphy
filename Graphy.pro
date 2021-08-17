@@ -29,7 +29,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 DEFINES += QAPPLICATION_CLASS=QApplication
 
-CONFIG += c++11
+CONFIG += c++11 console
 
 SOURCES += \
         1d_viewer.cpp \

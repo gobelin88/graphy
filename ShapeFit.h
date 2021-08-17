@@ -185,6 +185,43 @@ private:
 };
 
 /**
+ * @class Ellipsoid
+ * @brief Décrit une forme sphérique.
+ */
+class Ellipsoid: public Shape<Eigen::Vector3d>
+{
+public:
+    Ellipsoid();
+    Ellipsoid(Eigen::Vector3d center, double A,double B,double C);
+    inline Eigen::Vector3d getCenter()const
+    {
+        return Eigen::Vector3d(p[0],p[1],p[2]);
+    }
+    inline double getA()const
+    {
+        return p[3];
+    }
+    inline double getB()const
+    {
+        return p[4];
+    }
+    inline double getC()const
+    {
+        return p[5];
+    }
+
+    Eigen::Vector3d delta(const Eigen::Vector3d& pt);
+    int nb_params();
+    void setParams(const Eigen::VectorXd& p);
+    const Eigen::VectorXd& getParams();
+
+private:
+    Eigen::VectorXd p;
+};
+
+
+
+/**
  * @class Plan
  * @brief Décrit un plan.
  */

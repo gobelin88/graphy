@@ -89,6 +89,7 @@ void Viewer3D::createPopup()
     actSave   = new QAction("Save",  this);
     actSaveRevolution   = new QAction("Save a revolution",  this);
     actExport= new QAction("Export",  this);
+    actFitEllipsoid= new QAction("Ellipsoid",  this);
     actFitSphere= new QAction("Sphere",  this);
     actFitPlan= new QAction("Plan",  this);
     actFitMesh= new QAction("Custom mesh",  this);
@@ -180,6 +181,7 @@ void Viewer3D::createPopup()
     menuData->addMenu(menuSubSample);
     menuData->addAction(actExport);
     menuFit->addAction(actFitSphere);
+    menuFit->addAction(actFitEllipsoid);
     menuFit->addAction(actFitPlan);
     menuFit->addAction(actFitMesh);
     menuProject->addAction(actProjectSphere);
@@ -206,6 +208,7 @@ void Viewer3D::createPopup()
     QObject::connect(actProjectMesh, SIGNAL(triggered() ), this, SLOT(slot_projectCustomMesh()));
     QObject::connect(actProjectPlan, SIGNAL(triggered() ), this, SLOT(slot_projectPlan()));
     QObject::connect(actProjectSphere, SIGNAL(triggered() ), this, SLOT(slot_projectSphere()));
+    QObject::connect(actFitEllipsoid, SIGNAL(triggered() ), this, SLOT(slot_fitEllipsoid()));
     QObject::connect(actFitSphere, SIGNAL(triggered() ), this, SLOT(slot_fitSphere()));
     QObject::connect(actFitPlan, SIGNAL(triggered() ), this, SLOT(slot_fitPlan()));
     QObject::connect(actFitMesh, SIGNAL(triggered() ), this, SLOT(slot_fitCustomMesh()));
@@ -277,6 +280,29 @@ void Viewer3D::slot_saveRevolution()
 
 }
 
+void Viewer3D::slot_fitEllipsoid()
+{
+    std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
+
+    for(int i=0;i<selectedClouds.size();i++)
+    {
+        Cloud * currentCloud=selectedClouds[i]->cloud;
+
+        double R=currentCloud->getBoundingRadius()/2.0;
+        Ellipsoid ellipsoid(currentCloud->getBarycenter(),R,R,R);
+        currentCloud->fit(&ellipsoid);
+
+        Eigen::Vector3d C=ellipsoid.getCenter();
+
+        addEllipsoid(&ellipsoid,QColor(64,64,64));
+
+
+        //addSphere(QPosAtt(C,Eigen::Quaterniond(1,0,0,0)),1.0,QColor(64,64,64),sphere.getRadius());
+
+        emit sig_displayResults( QString("Fit Ellipsoid:\nCenter=(%1 , %2 , %3) Radius=( %4, %5, %6)\nRms=%7\n").arg(C[0]).arg(C[1]).arg(C[2]).arg(ellipsoid.getA()).arg(ellipsoid.getB()).arg(ellipsoid.getC()).arg(ellipsoid.getRMS()) );
+        emit sig_newColumn("Err_Ellipsoid",ellipsoid.getErrNorm());
+    }
+}
 
 void Viewer3D::slot_fitSphere()
 {
@@ -821,9 +847,9 @@ void Viewer3D::slot_removeSelected()
 
     std::vector<Base3D*> selectedObjects=getSelectedObjects();
 
-    for(int i=0;i<selectedObjects.size();i++)
+    for(unsigned int i=0;i<selectedObjects.size();i++)
     {
-        for(int k=0;k<objects3D.size();k++)
+        for(unsigned int k=0;k<objects3D.size();k++)
         {
             if(objects3D[k]==selectedObjects[i])
             {
@@ -881,6 +907,13 @@ void Viewer3D::slot_setPrimitiveType(int type)
         //        TriangleFan = 0x0006,
         currentCloud3D->geometryRenderer->setPrimitiveType(static_cast<Qt3DRender::QGeometryRenderer::PrimitiveType>(type));
     }
+}
+
+void Viewer3D::addEllipsoid(Ellipsoid * ellipsoid,QColor color)
+{
+    Ellipsoid3D* ellipsoid3D=new Ellipsoid3D(rootEntity,ellipsoid,color);
+    referenceObjectEntity(ellipsoid3D,"Sphere");
+    slot_ScaleChanged();
 }
 
 void Viewer3D::addSphere(Sphere * sphere,QColor color)

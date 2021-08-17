@@ -84,6 +84,51 @@ const Eigen::VectorXd& Sphere::getParams()
     return p;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
+//Some standard Shapes
+Ellipsoid::Ellipsoid()
+{
+    p.resize(6);
+    p[0]=0;
+    p[1]=0;
+    p[2]=0;
+    p[3]=0;
+    p[4]=0;
+    p[5]=0;
+}
+
+Ellipsoid::Ellipsoid(Eigen::Vector3d center, double A, double B, double C)
+{
+    p.resize(6);
+    p[0]=center[0];
+    p[1]=center[1];
+    p[2]=center[2];
+    p[3]=A;
+    p[4]=B;
+    p[5]=C;
+}
+
+Eigen::Vector3d Ellipsoid::delta(const Eigen::Vector3d& pt)
+{
+    Eigen::Vector3d u=(pt-getCenter()).cwiseProduct(Eigen::Vector3d(1/getA(),1/getB(),1/getC()));
+    return  (u-u/u.norm()).cwiseProduct(Eigen::Vector3d(getA(),getB(),getC()));
+}
+
+int Ellipsoid::nb_params()
+{
+    return p.size();
+}
+
+void Ellipsoid::setParams(const Eigen::VectorXd& p)
+{
+    this->p=p;
+}
+
+const Eigen::VectorXd& Ellipsoid::getParams()
+{
+    return p;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 void testShapeFit()

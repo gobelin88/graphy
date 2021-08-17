@@ -85,6 +85,7 @@ public:
     void addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode);
     void addObject(Qt3DRender::QMesh* mesh_object, Object *object, PosAtt posatt, float scale, QColor color);
     void addSphere(Sphere * sphere,QColor color);
+    void addEllipsoid(Ellipsoid * ellipsoid,QColor color);
     void addPlan(Plan* plan, float radius, QColor color);
 
     CustomViewContainer* getContainer();
@@ -96,6 +97,7 @@ public slots:
     void slot_saveRevolution();
     void slot_setPointSize(double value);
     void slot_setPrimitiveType(int type);
+    void slot_fitEllipsoid();
     void slot_fitSphere();
     void slot_fitPlan();
     void slot_fitCustomMesh();
@@ -176,6 +178,7 @@ private:
 
     QAction* actSave;
     QAction* actSaveRevolution;
+    QAction* actFitEllipsoid;
     QAction* actFitSphere;
     QAction* actFitPlan;
     QAction* actFitMesh;

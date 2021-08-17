@@ -34,4 +34,15 @@ struct Sphere3D:public Base3D
     Sphere* sphere;
 };
 
+
+struct Ellipsoid3D:public Base3D
+{
+    Ellipsoid3D(Qt3DCore::QEntity* rootEntity, Ellipsoid* ellipsoid, QColor color);
+    QByteArray getBuffer(Ellipsoid* ellipsoid);
+
+    const int Na=50;
+    const int Nb=50;
+
+    Ellipsoid* ellipsoid;
+};
 #endif // GRID3D_H

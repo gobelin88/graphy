@@ -315,3 +315,108 @@ QByteArray Sphere3D::getBuffer(Sphere* sphere)
 
     return bufferBytes;
 }
+
+////////////////////////////
+Ellipsoid3D::Ellipsoid3D(Qt3DCore::QEntity* rootEntity,Ellipsoid * ellipsoid,QColor color)
+:Base3D(rootEntity)
+{
+    this->ellipsoid=ellipsoid;
+
+    geometry = new Qt3DRender::QGeometry(rootEntity);
+
+    buffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer,geometry);
+    buffer->setData(getBuffer(ellipsoid));
+
+    positionAttribute = new Qt3DRender::QAttribute(geometry);
+    positionAttribute->setName(Qt3DRender::QAttribute::defaultPositionAttributeName());
+    positionAttribute->setVertexBaseType(Qt3DRender::QAttribute::Float);
+    positionAttribute->setVertexSize(3);
+    positionAttribute->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
+    positionAttribute->setBuffer(buffer);
+    positionAttribute->setByteStride(3 * sizeof(float));
+    positionAttribute->setCount(Na*Nb);
+    geometry->addAttribute(positionAttribute); // We add the vertices in the geometry
+
+    // connectivity between vertices
+    QByteArray indexBytes;
+    indexBytes.resize( Na*Nb*2*3 * sizeof(unsigned int)); // start to end
+    unsigned int* indices = reinterpret_cast<unsigned int*>(indexBytes.data());
+    for(int i=0;i<Na;i++)
+    {
+        for(int j=0;j<Nb;j++)
+        {
+            int idb=((j+1)==Nb)?Nb-1:j+1;
+            int ida=(i+1)%Na;
+
+            *indices++ = j+i*Nb;
+            *indices++ = idb+i*Nb;
+            *indices++ = j+ida*Nb;
+            *indices++ = idb+i*Nb;
+            *indices++ = idb+ida*Nb;
+            *indices++ = j+ida*Nb;
+        }
+    }
+
+
+    indexBuffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::BufferType::IndexBuffer,geometry);
+    indexBuffer->setData(indexBytes);
+
+    indexAttribute = new Qt3DRender::QAttribute(geometry);
+    indexAttribute->setVertexBaseType(Qt3DRender::QAttribute::UnsignedInt);
+    indexAttribute->setAttributeType(Qt3DRender::QAttribute::IndexAttribute);
+    indexAttribute->setBuffer(indexBuffer);
+    indexAttribute->setCount(Na*Nb*2*3);
+    geometry->addAttribute(indexAttribute); // We add the indices linking the points in the geometry
+
+    // mesh
+    geometryRenderer = new Qt3DRender::QGeometryRenderer(rootEntity);
+    geometryRenderer->setGeometry(geometry);
+    geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Triangles);
+    material = new Qt3DExtras::QPhongMaterial(rootEntity);
+    static_cast<Qt3DExtras::QPhongMaterial*>(material)->setAmbient(color);
+    //static_cast<Qt3DExtras::QPhongAlphaMaterial*>(material)->setAlpha(0.8);
+
+    Qt3DRender::QCullFace* culling = new Qt3DRender::QCullFace();
+    culling->setMode(Qt3DRender::QCullFace::NoCulling);
+    auto effect = material->effect();
+    for (auto t : effect->techniques())
+    {
+        for (auto rp : t->renderPasses())
+        {
+            rp->addRenderState(culling);
+        }
+    }
+
+    // entity
+    entity->addComponent(geometryRenderer);
+    entity->addComponent(material);
+    entity->addComponent(transformInit(entity));
+}
+
+QByteArray Ellipsoid3D::getBuffer(Ellipsoid* ellipsoid)
+{
+    QByteArray bufferBytes;
+    bufferBytes.resize(Na* Nb*3 * sizeof(float));
+    float* positions = reinterpret_cast<float*>(bufferBytes.data());
+
+    double A=ellipsoid->getA();
+    double B=ellipsoid->getB();
+    double C=ellipsoid->getC();
+
+    for (int i=0; i<Na; i++)
+    {
+        for (int j=0; j<Nb; j++)
+        {
+            double alpha=double(i)/Na*M_PI*2;
+            double beta=double(j)/(Nb-1)*M_PI-M_PI/2;
+
+            Eigen::Vector3d p= ellipsoid->getCenter()+Eigen::Vector3d(A*cos(alpha)*cos(beta),B*sin(alpha)*cos(beta),C*sin(beta));
+
+            *positions++ = p.x();
+            *positions++ = p.y();
+            *positions++ = p.z();
+        }
+    }
+
+    return bufferBytes;
+}

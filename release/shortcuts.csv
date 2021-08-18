@@ -28,6 +28,7 @@ Graph-Legend-Top/Bottom;Alt+Down
 Graph-Paste;Ctrl+V
 Graph-Rescale;R
 Graph-RescaleSelected;Alt+R
+Graph-RescaleSelectedSameRanges;Ctrl+R
 Graph-Save;Ctrl+S
 Graph-SetScatters;*
 New;Ctrl+N

@@ -109,16 +109,17 @@ private:
     QString getCurrentFilename();
 
     //Constants
-    const float graphyVersion=9.0f;
-    //1.0//Basic graphs
-    //2.0//Add lots of graph facilities
-    //3.0//Add Copy/Paste management between graphs and table
-    //4.0//Bigs files support
-    //5.0//complex support !
-    //6.0//multithread and multifiles tab + console
-    //7.0//remove 2d viewer map fully integrated + customisation facilities + error handling
-    //8.0//specials functions support + Direct data acces + string functions + improve save time
-    //9.0//newton solver + items configurables
+    const float graphyVersion=10.0f;
+    //1.0 //Basic graphs
+    //2.0 //Add lots of graph facilities
+    //3.0 //Add Copy/Paste management between graphs and table
+    //4.0 //Bigs files support
+    //5.0 //complex support !
+    //6.0 //multithread and multifiles tab + console
+    //7.0 //remove 2d viewer map fully integrated + customisation facilities + error handling
+    //8.0 //specials functions support + Direct data acces + string functions + improve save time
+    //9.0 //newton solver + items configurables
+    //10.0//Bars de progression (ProgressHandler) + correction de bugs + fit ellisoid + threading.
 
     //Helpers
     void plot_xy(Curve2D::CurveType type);

@@ -113,6 +113,7 @@ public slots:
     void slot_randomSubSamples();
     void slot_resetView();
     void slot_resetViewOnSelected();
+    void slot_resetViewOnSelectedSameRanges();
     void slot_export();
     void slot_addMesh();
     void slot_createRotegrity();
@@ -137,6 +138,7 @@ private:
     //Ranges
     void extendScalarRange(QCPRange itemRangeS,int i);
     void extendRanges(QCPRange itemRangeX,QCPRange itemRangeY,QCPRange itemRangeZ,int i);
+    void extendSameRanges(QCPRange itemRangeX,QCPRange itemRangeY,QCPRange itemRangeZ,int i);
 
     //3D
     CameraParams* cameraParams;
@@ -187,6 +189,7 @@ private:
     QAction * actProjectMesh;
     QAction * actRandomSubSample;
     QAction * actRescale;
+    QAction * actRescaleSelectedSameRanges;
     QAction * actRescaleSelected;
     QAction * actRemoveSelected;
     QAction * actExport;

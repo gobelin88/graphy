@@ -99,6 +99,7 @@ void Viewer3D::createPopup()
     actRandomSubSample= new QAction("Random",  this);
     actRescale= new QAction("Rescale",  this);
     actRescaleSelected= new QAction("Rescale selected",  this);
+    actRescaleSelectedSameRanges= new QAction("Rescale selected same ranges",  this);
     actRemoveSelected= new QAction("Remove selected",  this);
     actMeshLoad= new QAction("Load",  this);
     actMeshCreateRotegrity= new QAction("Rotegrity",  this);
@@ -153,6 +154,7 @@ void Viewer3D::createPopup()
     ///////////////////////////////////////////////Action context
     customContainer->addAction(actRescale);
     customContainer->addAction(actRescaleSelected);
+    customContainer->addAction(actRescaleSelectedSameRanges);
     customContainer->addAction(actRemoveSelected);
     customContainer->addAction(actFullscreen);
 
@@ -173,6 +175,7 @@ void Viewer3D::createPopup()
     popupMenu->addAction(actSaveRevolution);
     menuView->addAction(actRescale);
     menuView->addAction(actRescaleSelected);
+    menuView->addAction(actRescaleSelectedSameRanges);
     menuView->addAction(actRemoveSelected);
     menuView->addAction(actFullscreen);
     menuParameters->addAction(actWidget);
@@ -198,6 +201,7 @@ void Viewer3D::createPopup()
     QObject::connect(actMeshCreateRotegrity,SIGNAL(triggered()),this,SLOT(slot_createRotegrity()));
     QObject::connect(actExport,SIGNAL(triggered()),this,SLOT(slot_export()));
     QObject::connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_resetView()));
+    QObject::connect(actRescaleSelectedSameRanges,SIGNAL(triggered()),this,SLOT(slot_resetViewOnSelectedSameRanges()));
     QObject::connect(actRescaleSelected,SIGNAL(triggered()),this,SLOT(slot_resetViewOnSelected()));
     QObject::connect(actRemoveSelected,SIGNAL(triggered()),this,SLOT(slot_removeSelected()));
     QObject::connect(actRandomSubSample,SIGNAL(triggered()),this,SLOT(slot_randomSubSamples()));
@@ -987,6 +991,7 @@ void Viewer3D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     shortcuts_links.insert(QString("Graph-Delete"),actRemoveSelected);
     shortcuts_links.insert(QString("Graph-Rescale"),actRescale);
     shortcuts_links.insert(QString("Graph-RescaleSelected"),actRescaleSelected);
+    shortcuts_links.insert(QString("Graph-RescaleSelectedSameRanges"),actRescaleSelectedSameRanges);
     shortcuts_links.insert(QString("Graph-Fullscreen"),actFullscreen);
 
     QMapIterator<QString, QKeySequence> i(shortcuts_map);
@@ -1323,6 +1328,29 @@ void Viewer3D::slot_createRotegrity()
     }
 }
 
+void Viewer3D::extendSameRanges(QCPRange itemRangeX,QCPRange itemRangeY,QCPRange itemRangeZ,int i)
+{
+
+    QCPRange rangex=customContainer->getXAxis()->range();
+    QCPRange rangey=customContainer->getYAxis()->range();
+    QCPRange rangez=customContainer->getZAxis()->range();
+
+    QCPRange rangeMinMax=QCPRange(std::min(std::min(itemRangeX.lower,itemRangeY.lower),itemRangeZ.lower),
+                                  std::max(std::max(itemRangeX.upper,itemRangeY.upper),itemRangeZ.upper));
+
+    if(i!=0)
+    {
+        customContainer->getXAxis()->setRange(QCPRange(std::min(rangeMinMax.lower,rangex.lower),std::max(rangeMinMax.upper,rangex.upper)));
+        customContainer->getYAxis()->setRange(QCPRange(std::min(rangeMinMax.lower,rangey.lower),std::max(rangeMinMax.upper,rangey.upper)));
+        customContainer->getZAxis()->setRange(QCPRange(std::min(rangeMinMax.lower,rangez.lower),std::max(rangeMinMax.upper,rangez.upper)));
+    }
+    else
+    {
+        customContainer->getXAxis()->setRange(rangeMinMax);
+        customContainer->getYAxis()->setRange(rangeMinMax);
+        customContainer->getZAxis()->setRange(rangeMinMax);
+    }
+}
 
 void Viewer3D::extendRanges(QCPRange itemRangeX,QCPRange itemRangeY,QCPRange itemRangeZ,int i)
 {
@@ -1379,6 +1407,24 @@ void Viewer3D::slot_resetView()
 }
 
 
+void Viewer3D::slot_resetViewOnSelectedSameRanges()
+{
+    cameraParams->reset();
+
+    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+
+    for(int i=0;i<selectedClouds.size();i++)
+    {
+        Cloud * currentCloud=selectedClouds[i]->cloud;
+        extendSameRanges(currentCloud->getXRange(),currentCloud->getYRange(),currentCloud->getZRange(),i);
+        extendScalarRange(currentCloud->getScalarFieldRange(),i);
+    }
+
+    customContainer->getColorScalePlot()->rescaleAxes();
+    customContainer->replot();
+
+    slot_updateGridAndLabels();
+}
 
 void Viewer3D::slot_resetViewOnSelected()
 {

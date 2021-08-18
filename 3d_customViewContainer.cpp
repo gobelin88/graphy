@@ -1,7 +1,9 @@
 #include "3d_customViewContainer.h"
 
-CustomViewContainer::CustomViewContainer(QWidget* container)
+CustomViewContainer::CustomViewContainer(QWidget* container,QWidget*parent, Qt::WindowFlags flags)
+    :QWidget(parent,flags)
 {
+    container->setParent(this);
     glayout=new QGridLayout(this);
 
     axisSize=100;
@@ -35,6 +37,7 @@ CustomViewContainer::CustomViewContainer(QWidget* container)
 CustomViewContainer::~CustomViewContainer()
 {
     std::cout<<"Delete CustomViewContainer"<<std::endl;
+    delete container;
 }
 
 void CustomViewContainer::createColorAxisPlot()

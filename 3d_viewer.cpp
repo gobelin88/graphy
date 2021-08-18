@@ -1,6 +1,6 @@
 #include "3d_viewer.h"
 
-Viewer3D::Viewer3D(const QMap<QString, QKeySequence>& shortcuts_map)
+Viewer3D::Viewer3D(const QMap<QString, QKeySequence>& shortcuts_map,QWidget * parent)
 {
     objects3D.clear();
     xy_reversed=false;
@@ -14,7 +14,9 @@ Viewer3D::Viewer3D(const QMap<QString, QKeySequence>& shortcuts_map)
 
     QWidget* container = QWidget::createWindowContainer(this);
     container->setMinimumSize(QSize(512, 512));
-    customContainer=new CustomViewContainer(container);
+    //customContainer=new CustomViewContainer(container,nullptr,Qt::SubWindow);
+    customContainer=new CustomViewContainer(container,parent,Qt::WindowFlags());
+    customContainer->setAttribute(Qt::WA_DeleteOnClose);
     //container->setMaximumSize(screen()->size());
     //registerAspect(new Qt3DInput::QInputAspect);
 
@@ -51,6 +53,8 @@ Viewer3D::Viewer3D(const QMap<QString, QKeySequence>& shortcuts_map)
 Viewer3D::~Viewer3D()
 {
     std::cout<<"Delete Viewer3D"<<std::endl;
+    std::cout<<"Delete rootEntity"<<std::endl;
+    delete rootEntity;
 }
 
 void Viewer3D::init3D()
@@ -292,19 +296,96 @@ void Viewer3D::slot_fitEllipsoid()
     {
         Cloud * currentCloud=selectedClouds[i]->cloud;
 
-        double R=currentCloud->getBoundingRadius()/2.0;
-        Ellipsoid ellipsoid(currentCloud->getBarycenter(),R,R,R);
-        currentCloud->fit(&ellipsoid);
+        double Ra=(currentCloud->getXRange().upper-currentCloud->getXRange().lower)/2;
+        double Rb=(currentCloud->getYRange().upper-currentCloud->getXRange().lower)/2;
+        double Rc=(currentCloud->getZRange().upper-currentCloud->getXRange().lower)/2;
+        bool searchRotation=false;
+        Eigen::Vector3d B=currentCloud->getBarycenter();
+        double Cx=B[0];
+        double Cy=B[1];
+        double Cz=B[2];
 
-        Eigen::Vector3d C=ellipsoid.getCenter();
+        //dialog------------------------------
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("Fit Ellipsoid");
+        QGridLayout* gbox = new QGridLayout();
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                           | QDialogButtonBox::Cancel);
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
-        addEllipsoid(&ellipsoid,QColor(64,64,64));
+        QDoubleSpinBox * sb_Ra=new QDoubleSpinBox(dialog);
+        sb_Ra->setRange(0,1e100);sb_Ra->setValue(Ra);
+        sb_Ra->setPrefix("Ra=");
+        QDoubleSpinBox * sb_Rb=new QDoubleSpinBox(dialog);
+        sb_Rb->setRange(0,1e100);sb_Rb->setValue(Rb);
+        sb_Rb->setPrefix("Rb=");
+        QDoubleSpinBox * sb_Rc=new QDoubleSpinBox(dialog);
+        sb_Rc->setRange(0,1e100);sb_Rc->setValue(Rc);
+        sb_Rc->setPrefix("Rc=");
+
+        QDoubleSpinBox * sb_Cx=new QDoubleSpinBox(dialog);
+        sb_Cx->setRange(0,1e100);sb_Cx->setValue(Cx);
+        sb_Cx->setPrefix("Cx=");
+        QDoubleSpinBox * sb_Cy=new QDoubleSpinBox(dialog);
+        sb_Cy->setRange(0,1e100);sb_Cy->setValue(Cy);
+        sb_Cy->setPrefix("Cy=");
+        QDoubleSpinBox * sb_Cz=new QDoubleSpinBox(dialog);
+        sb_Cz->setRange(0,1e100);sb_Cz->setValue(Cz);
+        sb_Cz->setPrefix("Cz=");
+
+        QCheckBox * cb_searchRotation=new QCheckBox(dialog);
+        cb_searchRotation->setChecked(searchRotation);
+        cb_searchRotation->setText("Search a rotation");
+
+        gbox->addWidget(sb_Ra,0,0);
+        gbox->addWidget(sb_Rb,1,0);
+        gbox->addWidget(sb_Rc,2,0);
+        gbox->addWidget(sb_Cx,0,1);
+        gbox->addWidget(sb_Cy,1,1);
+        gbox->addWidget(sb_Cz,2,1);
+        gbox->addWidget(cb_searchRotation,3,0,1,2);
+        gbox->addWidget(buttonBox,4,0,1,2);
+        dialog->setLayout(gbox);
+
+        int result=dialog->exec();
+        if (result == QDialog::Accepted)
+        {
+            Ra=sb_Ra->value();
+            Rb=sb_Rb->value();
+            Rc=sb_Rc->value();
+            Cx=sb_Cx->value();
+            Cy=sb_Cx->value();
+            Cz=sb_Cx->value();
+            searchRotation=cb_searchRotation->isChecked();
+
+            //------------------------------
+
+            Ellipsoid ellipsoid(Eigen::Vector3d(Cx,Cy,Cz),Ra,Rb,Rc,searchRotation);
+            currentCloud->fit(&ellipsoid);
+
+            Eigen::Vector3d C=ellipsoid.getCenter();
+            Eigen::Vector3d Ax=ellipsoid.getR().col(0);
+            Eigen::Vector3d Ay=ellipsoid.getR().col(1);
+            Eigen::Vector3d Az=ellipsoid.getR().col(2);
+
+            addEllipsoid(&ellipsoid,QColor(64,64,64));
 
 
-        //addSphere(QPosAtt(C,Eigen::Quaterniond(1,0,0,0)),1.0,QColor(64,64,64),sphere.getRadius());
+            //addSphere(QPosAtt(C,Eigen::Quaterniond(1,0,0,0)),1.0,QColor(64,64,64),sphere.getRadius());
+            QString results;
+            results+=QString("\nCenter=(%1 , %2 , %3)").arg(C[0]).arg(C[1]).arg(C[2]);
+            results+=QString("\nRadius=(%1 , %2 , %3)").arg(ellipsoid.getA()).arg(ellipsoid.getB()).arg(ellipsoid.getC());
+            results+=QString("\nAxis:");
+            results+=QString("\nAx=(%1 , %2 , %3)").arg(Ax[0]).arg(Ax[1]).arg(Ax[2]);
+            results+=QString("\nAy=(%1 , %2 , %3)").arg(Ay[0]).arg(Ay[1]).arg(Ay[2]);
+            results+=QString("\nAz=(%1 , %2 , %3)").arg(Az[0]).arg(Az[1]).arg(Az[2]);
+            results+=QString("\nRms=%7").arg(ellipsoid.getRMS());
 
-        emit sig_displayResults( QString("Fit Ellipsoid:\nCenter=(%1 , %2 , %3) Radius=( %4, %5, %6)\nRms=%7\n").arg(C[0]).arg(C[1]).arg(C[2]).arg(ellipsoid.getA()).arg(ellipsoid.getB()).arg(ellipsoid.getC()).arg(ellipsoid.getRMS()) );
-        emit sig_newColumn("Err_Ellipsoid",ellipsoid.getErrNorm());
+            emit sig_displayResults( QString("Fit Ellipsoid:")+results);
+            emit sig_newColumn("Err_Ellipsoid",ellipsoid.getErrNorm());
+        }
     }
 }
 
@@ -916,7 +997,7 @@ void Viewer3D::slot_setPrimitiveType(int type)
 void Viewer3D::addEllipsoid(Ellipsoid * ellipsoid,QColor color)
 {
     Ellipsoid3D* ellipsoid3D=new Ellipsoid3D(rootEntity,ellipsoid,color);
-    referenceObjectEntity(ellipsoid3D,"Sphere");
+    referenceObjectEntity(ellipsoid3D,"Ellipsoid");
     slot_ScaleChanged();
 }
 

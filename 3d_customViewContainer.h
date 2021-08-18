@@ -8,7 +8,7 @@ class CustomViewContainer: public QWidget
 {
     Q_OBJECT
 public:
-    CustomViewContainer(QWidget* container);
+    CustomViewContainer(QWidget* container,QWidget*parent,Qt::WindowFlags flags);
     ~CustomViewContainer();
 
     QWidget* getContainer();

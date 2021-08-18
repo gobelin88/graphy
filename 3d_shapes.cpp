@@ -410,7 +410,7 @@ QByteArray Ellipsoid3D::getBuffer(Ellipsoid* ellipsoid)
             double alpha=double(i)/Na*M_PI*2;
             double beta=double(j)/(Nb-1)*M_PI-M_PI/2;
 
-            Eigen::Vector3d p= ellipsoid->getCenter()+Eigen::Vector3d(A*cos(alpha)*cos(beta),B*sin(alpha)*cos(beta),C*sin(beta));
+            Eigen::Vector3d p= ellipsoid->getCenter()+ellipsoid->getR()*Eigen::Vector3d(A*cos(alpha)*cos(beta),B*sin(alpha)*cos(beta),C*sin(beta));
 
             *positions++ = p.x();
             *positions++ = p.y();

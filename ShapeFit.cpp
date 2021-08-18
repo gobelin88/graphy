@@ -86,32 +86,117 @@ const Eigen::VectorXd& Sphere::getParams()
 
 /////////////////////////////////////////////////////////////////////////////////////
 //Some standard Shapes
-Ellipsoid::Ellipsoid()
+Ellipsoid::Ellipsoid(bool searchR)
 {
-    p.resize(6);
-    p[0]=0;
-    p[1]=0;
-    p[2]=0;
-    p[3]=0;
-    p[4]=0;
-    p[5]=0;
+    this->searchR=searchR;
+
+    if(searchR)
+    {
+        p.resize(9);
+        p[0]=0;
+        p[1]=0;
+        p[2]=0;
+        p[3]=0;
+        p[4]=0;
+        p[5]=0;
+        p[6]=0;
+        p[7]=0;
+        p[8]=0;
+    }
+    else
+    {
+        p.resize(6);
+        p[0]=0;
+        p[1]=0;
+        p[2]=0;
+        p[3]=0;
+        p[4]=0;
+        p[5]=0;
+    }
 }
 
-Ellipsoid::Ellipsoid(Eigen::Vector3d center, double A, double B, double C)
+Ellipsoid::Ellipsoid(Eigen::Vector3d center, double A, double B, double C,bool searchR)
 {
-    p.resize(6);
-    p[0]=center[0];
-    p[1]=center[1];
-    p[2]=center[2];
-    p[3]=A;
-    p[4]=B;
-    p[5]=C;
+    this->searchR=searchR;
+
+    if(searchR)
+    {
+        p.resize(9);
+        p[0]=center[0];
+        p[1]=center[1];
+        p[2]=center[2];
+        p[3]=sqrt(A);
+        p[4]=sqrt(B);
+        p[5]=sqrt(C);
+        p[6]=0;
+        p[7]=0;
+        p[8]=0;
+    }
+    else
+    {
+        p.resize(6);
+        p[0]=center[0];
+        p[1]=center[1];
+        p[2]=center[2];
+        p[3]=sqrt(A);
+        p[4]=sqrt(B);
+        p[5]=sqrt(C);
+    }
 }
 
-Eigen::Vector3d Ellipsoid::delta(const Eigen::Vector3d& pt)
+double Ellipsoid::getA()const
 {
-    Eigen::Vector3d u=(pt-getCenter()).cwiseProduct(Eigen::Vector3d(1/getA(),1/getB(),1/getC()));
-    return  (u-u/u.norm()).cwiseProduct(Eigen::Vector3d(getA(),getB(),getC()));
+    return p[3]*p[3];
+}
+double Ellipsoid::getB()const
+{
+    return p[4]*p[4];
+}
+double Ellipsoid::getC()const
+{
+    return p[5]*p[5];
+}
+inline Eigen::Matrix3d Ellipsoid::getS()
+{
+    Eigen::Matrix3d S;
+    S<<1/(p[3]*p[3]),0      ,0,
+       0     ,1/(p[4]*p[4]) ,0,
+       0     ,0      ,1/(p[5]*p[5]);
+
+
+    return S;
+}
+
+Eigen::Matrix3d Ellipsoid::getR()
+{
+    if(searchR)
+    {
+        double minR=std::min(std::min(getA(),getB()),getC());
+        double maxR=std::max(std::max(getA(),getB()),getC());
+
+        //Si les rayons sont identiques R n'a pas de sens
+        Eigen::Vector3d a=(maxR-minR)*Eigen::Vector3d(p[6],p[7],p[8]);
+        double theta=a.norm();
+        if(a.norm()>0)
+        {
+            return Eigen::AngleAxisd(theta,a/theta).toRotationMatrix();
+        }
+        else
+        {
+            return Eigen::Matrix3d::Identity();
+        }
+    }
+    else
+    {
+        return Eigen::Matrix3d::Identity();
+    }
+}
+
+Eigen::Vector3d Ellipsoid::delta(const Eigen::Vector3d& P)
+{
+    Eigen::Vector3d PC=P-getCenter();
+    Eigen::Vector3d u= getS()*getR().transpose()*PC;
+    return PC*(1.0-1.0/u.norm());
 }
 
 int Ellipsoid::nb_params()

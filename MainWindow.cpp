@@ -833,7 +833,7 @@ void MainWindow::slot_plot_cloud_3D()
 
     if (id_list.size()==0 || id_list.size()%3==0 || id_list.size()%4==0)
     {
-        Viewer3D* view3d=new Viewer3D(shortcuts);
+        Viewer3D* view3d=new Viewer3D(shortcuts,nullptr);
 
         QObject::connect(view3d,SIGNAL(sig_newColumn(QString,Eigen::VectorXd)),table,SLOT(slot_newColumn(QString,Eigen::VectorXd)));
         QObject::connect(view3d,SIGNAL(sig_displayResults(QString)),this,SLOT(slot_results(QString)));
@@ -887,6 +887,7 @@ void MainWindow::slot_plot_cloud_3D()
 
         //mdiArea->addSubWindow(view3d->getContainer(),Qt::WindowStaysOnTopHint);
         view3d->getContainer()->show();
+        //view3d->show();
     }
     else
     {

@@ -191,32 +191,26 @@ private:
 class Ellipsoid: public Shape<Eigen::Vector3d>
 {
 public:
-    Ellipsoid();
-    Ellipsoid(Eigen::Vector3d center, double A,double B,double C);
+    Ellipsoid(bool searchR);
+    Ellipsoid(Eigen::Vector3d center, double A,double B,double C,bool searchR);
     inline Eigen::Vector3d getCenter()const
     {
         return Eigen::Vector3d(p[0],p[1],p[2]);
     }
-    inline double getA()const
-    {
-        return p[3];
-    }
-    inline double getB()const
-    {
-        return p[4];
-    }
-    inline double getC()const
-    {
-        return p[5];
-    }
+    double getA()const;
+    double getB()const;
+    double getC()const;
+    Eigen::Matrix3d getS();
+    Eigen::Matrix3d getR();
 
-    Eigen::Vector3d delta(const Eigen::Vector3d& pt);
+    Eigen::Vector3d delta(const Eigen::Vector3d& P);
     int nb_params();
     void setParams(const Eigen::VectorXd& p);
     const Eigen::VectorXd& getParams();
 
 private:
     Eigen::VectorXd p;
+    bool searchR;
 };
 
 

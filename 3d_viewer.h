@@ -79,7 +79,7 @@ class Viewer3D:public Qt3DExtras::Qt3DWindow
 {
     Q_OBJECT
 public:
-    Viewer3D(const QMap<QString, QKeySequence>& shortcuts_map);
+    Viewer3D(const QMap<QString, QKeySequence>& shortcuts_map, QWidget *parent);
     ~Viewer3D();
 
     void addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode);

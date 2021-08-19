@@ -1,12 +1,13 @@
 #include "3d_customViewContainer.h"
 
+#include "QStackedLayout.h"
+
 CustomViewContainer::CustomViewContainer(QWidget* container,QWidget*parent, Qt::WindowFlags flags)
     :QWidget(parent,flags)
 {
     container->setParent(this);
-    glayout=new QGridLayout(this);
 
-    axisSize=100;
+    axisSize=80;
     createColorAxisPlot();
     createXAxisPlot();
     createYAxisPlot();
@@ -17,6 +18,7 @@ CustomViewContainer::CustomViewContainer(QWidget* container,QWidget*parent, Qt::
     selectionView->setMaximumWidth(100);
     selectionView->setStyleSheet("QListWidget { border: none; }");
 
+    glayout=new QGridLayout(this);
     glayout->addWidget(axisX_plot,2,1);
     glayout->addWidget(axisY_plot,1,0);
     glayout->addWidget(axisZ_plot,0,1);
@@ -24,6 +26,12 @@ CustomViewContainer::CustomViewContainer(QWidget* container,QWidget*parent, Qt::
     glayout->addWidget(color_plot,1,2);
     glayout->addWidget(selectionView,0,3,3,1);
 
+//    QStackedLayout * stackedLayout=new QStackedLayout(this);
+//    stackedLayout->addWidget(axisX_plot);
+//    stackedLayout->addWidget(selectionView);
+//    stackedLayout->setStackingMode(QStackedLayout::StackAll);
+//    this->setLayout(stackedLayout);
+//    stackedLayout->setCurrentIndex(1);
 
     //white
     QPalette pal = palette();

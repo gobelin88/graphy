@@ -42,3 +42,9 @@ Cloud3D::Cloud3D(Cloud *cloud, Qt3DCore::QEntity* rootEntity)
 
     buffer->setData(cloud->getBuffer(cloud->getScalarFieldRange()));
 }
+
+Cloud3D::~Cloud3D()
+{
+    std::cout<<"Delete Cloud 3D"<<std::endl;
+    delete cloud;
+}

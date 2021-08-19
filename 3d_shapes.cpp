@@ -191,7 +191,11 @@ Plan3D::Plan3D(Qt3DCore::QEntity* rootEntity,Plan* plan,float radius,QColor colo
     entity->addComponent(material);
     entity->addComponent(transformInit(entity));
 }
-
+Plan3D::~Plan3D()
+{
+    std::cout<<"Delete Plan3D"<<std::endl;
+    delete plan;
+}
 QByteArray Plan3D::getBuffer(Plan* plan,float radius)
 {
     QByteArray bufferBytes;
@@ -288,6 +292,12 @@ Sphere3D::Sphere3D(Qt3DCore::QEntity* rootEntity,Sphere * sphere,QColor color)
     entity->addComponent(geometryRenderer);
     entity->addComponent(material);
     entity->addComponent(transformInit(entity));
+}
+
+Sphere3D::~Sphere3D()
+{
+    std::cout<<"Delete Sphere3D"<<std::endl;
+    delete sphere;
 }
 
 QByteArray Sphere3D::getBuffer(Sphere* sphere)
@@ -391,6 +401,12 @@ Ellipsoid3D::Ellipsoid3D(Qt3DCore::QEntity* rootEntity,Ellipsoid * ellipsoid,QCo
     entity->addComponent(geometryRenderer);
     entity->addComponent(material);
     entity->addComponent(transformInit(entity));
+}
+
+Ellipsoid3D::~Ellipsoid3D()
+{
+    std::cout<<"Delete Ellisoid 3D"<<std::endl;
+    delete ellipsoid;
 }
 
 QByteArray Ellipsoid3D::getBuffer(Ellipsoid* ellipsoid)

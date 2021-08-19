@@ -53,6 +53,22 @@ Viewer3D::Viewer3D(const QMap<QString, QKeySequence>& shortcuts_map,QWidget * pa
 Viewer3D::~Viewer3D()
 {
     std::cout<<"Delete Viewer3D"<<std::endl;
+
+    for(unsigned int i=0;i<objects3D.size();i++)
+    {
+        Cloud3D* ptrCloud=dynamic_cast<Cloud3D*>(objects3D[i]);
+        Plan3D * ptrPlan3D=dynamic_cast<Plan3D*>(objects3D[i]);
+        Sphere3D * ptrSphere3D=dynamic_cast<Sphere3D*>(objects3D[i]);
+        Object3D * ptrObject3D=dynamic_cast<Object3D*>(objects3D[i]);
+        Ellipsoid3D * ptrEllipsoid3D=dynamic_cast<Ellipsoid3D*>(objects3D[i]);
+
+        if(ptrCloud){delete ptrCloud;}
+        if(ptrPlan3D){delete ptrPlan3D;}
+        if(ptrSphere3D){delete ptrSphere3D;}
+        if(ptrObject3D){delete ptrObject3D;}
+        if(ptrEllipsoid3D){delete ptrEllipsoid3D;}
+    }
+
     std::cout<<"Delete rootEntity"<<std::endl;
     delete rootEntity;
 }
@@ -292,7 +308,7 @@ void Viewer3D::slot_fitEllipsoid()
 {
     std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<selectedClouds.size();i++)
+    for(unsigned int i=0;i<selectedClouds.size();i++)
     {
         Cloud * currentCloud=selectedClouds[i]->cloud;
 
@@ -362,29 +378,29 @@ void Viewer3D::slot_fitEllipsoid()
 
             //------------------------------
 
-            Ellipsoid ellipsoid(Eigen::Vector3d(Cx,Cy,Cz),Ra,Rb,Rc,searchRotation);
-            currentCloud->fit(&ellipsoid);
+            Ellipsoid * ellipsoid=new Ellipsoid(Eigen::Vector3d(Cx,Cy,Cz),Ra,Rb,Rc,searchRotation);
+            currentCloud->fit(ellipsoid);
 
-            Eigen::Vector3d C=ellipsoid.getCenter();
-            Eigen::Vector3d Ax=ellipsoid.getR().col(0);
-            Eigen::Vector3d Ay=ellipsoid.getR().col(1);
-            Eigen::Vector3d Az=ellipsoid.getR().col(2);
+            Eigen::Vector3d C=ellipsoid->getCenter();
+            Eigen::Vector3d Ax=ellipsoid->getR().col(0);
+            Eigen::Vector3d Ay=ellipsoid->getR().col(1);
+            Eigen::Vector3d Az=ellipsoid->getR().col(2);
 
-            addEllipsoid(&ellipsoid,QColor(64,64,64));
+            addEllipsoid(ellipsoid,QColor(64,64,64));
 
 
             //addSphere(QPosAtt(C,Eigen::Quaterniond(1,0,0,0)),1.0,QColor(64,64,64),sphere.getRadius());
             QString results;
             results+=QString("\nCenter=(%1 , %2 , %3)").arg(C[0]).arg(C[1]).arg(C[2]);
-            results+=QString("\nRadius=(%1 , %2 , %3)").arg(ellipsoid.getA()).arg(ellipsoid.getB()).arg(ellipsoid.getC());
+            results+=QString("\nRadius=(%1 , %2 , %3)").arg(ellipsoid->getA()).arg(ellipsoid->getB()).arg(ellipsoid->getC());
             results+=QString("\nAxis:");
             results+=QString("\nAx=(%1 , %2 , %3)").arg(Ax[0]).arg(Ax[1]).arg(Ax[2]);
             results+=QString("\nAy=(%1 , %2 , %3)").arg(Ay[0]).arg(Ay[1]).arg(Ay[2]);
             results+=QString("\nAz=(%1 , %2 , %3)").arg(Az[0]).arg(Az[1]).arg(Az[2]);
-            results+=QString("\nRms=%7").arg(ellipsoid.getRMS());
+            results+=QString("\nRms=%7").arg(ellipsoid->getRMS());
 
             emit sig_displayResults( QString("Fit Ellipsoid:")+results);
-            emit sig_newColumn("Err_Ellipsoid",ellipsoid.getErrNorm());
+            emit sig_newColumn("Err_Ellipsoid",ellipsoid->getErrNorm());
         }
     }
 }
@@ -393,22 +409,22 @@ void Viewer3D::slot_fitSphere()
 {
     std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<selectedClouds.size();i++)
+    for(unsigned int i=0;i<selectedClouds.size();i++)
     {
         Cloud * currentCloud=selectedClouds[i]->cloud;
 
-        Sphere sphere(currentCloud->getBarycenter(),currentCloud->getBoundingRadius()/2.0);
-        currentCloud->fit(&sphere);
+        Sphere * sphere=new Sphere(currentCloud->getBarycenter(),currentCloud->getBoundingRadius()/2.0);
+        currentCloud->fit(sphere);
 
-        Eigen::Vector3d C=sphere.getCenter();
+        Eigen::Vector3d C=sphere->getCenter();
 
-        addSphere(&sphere,QColor(64,64,64));
+        addSphere(sphere,QColor(64,64,64));
 
 
         //addSphere(QPosAtt(C,Eigen::Quaterniond(1,0,0,0)),1.0,QColor(64,64,64),sphere.getRadius());
 
-        emit sig_displayResults( QString("Fit Sphere:\nCenter=(%1 , %2 , %3) Radius=%4\nRms=%5\n").arg(C[0]).arg(C[1]).arg(C[2]).arg(sphere.getRadius()).arg(sphere.getRMS()) );
-        emit sig_newColumn("Err_Sphere",sphere.getErrNorm());
+        emit sig_displayResults( QString("Fit Sphere:\nCenter=(%1 , %2 , %3) Radius=%4\nRms=%5\n").arg(C[0]).arg(C[1]).arg(C[2]).arg(sphere->getRadius()).arg(sphere->getRMS()) );
+        emit sig_newColumn("Err_Sphere",sphere->getErrNorm());
     }
 }
 
@@ -416,31 +432,37 @@ void Viewer3D::slot_fitPlan()
 {
     std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<selectedClouds.size();i++)
+    for(unsigned int i=0;i<selectedClouds.size();i++)
     {
         Cloud * currentCloud=selectedClouds[i]->cloud;
 
         Eigen::Vector3d barycenter=currentCloud->getBarycenter();
 
-        Plan* plan;
-        Plan planA(Eigen::Vector3d(1,0,0),barycenter);
-        Plan planB(Eigen::Vector3d(0,1,0),barycenter);
-        Plan planC(Eigen::Vector3d(0,0,1),barycenter);
-        currentCloud->fit(&planA);
-        currentCloud->fit(&planB);
-        currentCloud->fit(&planC);
+        Plan * plan;
+        Plan * planA=new Plan(Eigen::Vector3d(1,0,0),barycenter);
+        Plan * planB=new Plan(Eigen::Vector3d(0,1,0),barycenter);
+        Plan * planC=new Plan(Eigen::Vector3d(0,0,1),barycenter);
+        currentCloud->fit(planA);
+        currentCloud->fit(planB);
+        currentCloud->fit(planC);
 
-        if (planA.getRMS()<planB.getRMS() && planA.getRMS()<planC.getRMS())
+        if (planA->getRMS()<planB->getRMS() && planA->getRMS()<planC->getRMS())
         {
-            plan=&planA;
+            plan=planA;
+            delete planB;
+            delete planC;
         }
-        else if (planB.getRMS()<planA.getRMS() && planB.getRMS()<planC.getRMS())
+        else if (planB->getRMS()<planA->getRMS() && planB->getRMS()<planC->getRMS())
         {
-            plan=&planB;
+            plan=planB;
+            delete planA;
+            delete planC;
         }
         else
         {
-            plan=&planC;
+            plan=planC;
+            delete planA;
+            delete planB;
         }
 
         Eigen::Vector3d N=plan->getNormal();
@@ -457,7 +479,7 @@ void Viewer3D::slot_projectPlan()
 {
     std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<selectedClouds.size();i++)
+    for(unsigned int i=0;i<selectedClouds.size();i++)
     {
         Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
@@ -528,7 +550,7 @@ void Viewer3D::slot_projectSphere()
 {
     std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<selectedClouds.size();i++)
+    for(unsigned int i=0;i<selectedClouds.size();i++)
     {
         Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
@@ -589,7 +611,7 @@ void Viewer3D::slot_projectCustomMesh()
 {
     std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<selectedClouds.size();i++)
+    for(unsigned int i=0;i<selectedClouds.size();i++)
     {
         Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
@@ -610,7 +632,7 @@ void Viewer3D::slot_randomSubSamples()
 {
     std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<selectedClouds.size();i++)
+    for(unsigned int i=0;i<selectedClouds.size();i++)
     {
         Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
@@ -665,7 +687,7 @@ void Viewer3D::slot_fitCustomMesh()
 {
     std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<selectedClouds.size();i++)
+    for(unsigned int i=0;i<selectedClouds.size();i++)
     {
         Cloud * currentCloud=selectedClouds[i]->cloud;
 
@@ -676,32 +698,32 @@ void Viewer3D::slot_fitCustomMesh()
         QElapsedTimer timer;
         timer.start();
 
-        Object obj(filename,PosAtt());
+        Object * obj=new Object(filename,PosAtt());
 
 
-        Vector3d obj_center=obj.getBox().middle();
-        obj.setScalePosAtt(PosAtt(currentCloud->getBarycenter()-obj_center,Eigen::Quaterniond(currentCloud->getBoundingRadius()/obj.getRadius(obj_center),0,0,0)));
+        Vector3d obj_center=obj->getBox().middle();
+        obj->setScalePosAtt(PosAtt(currentCloud->getBarycenter()-obj_center,Eigen::Quaterniond(currentCloud->getBoundingRadius()/obj->getRadius(obj_center),0,0,0)));
 
-        currentCloud->fit(&obj,100);
+        currentCloud->fit(obj,100);
 
         QFileInfo info(filename);
 
-        obj.save(info.path()+"/tmp.obj");
+        obj->save(info.path()+"/tmp.obj");
 
         auto* m_obj = new Qt3DRender::QMesh();
         m_obj->setSource(QUrl(QString("file:///")+info.path()+"/tmp.obj"));
 
-        addObject(m_obj,nullptr,PosAtt(),1.0,QColor(64,64,64));
+        addObject(m_obj,obj,PosAtt(),1.0,QColor(64,64,64));
 
-        PosAtt posatt=obj.getPosAtt();
+        PosAtt posatt=obj->getPosAtt();
         emit sig_displayResults( QString("Fit Mesh :\nScale=%1\nPosition=(%2,%3,%4)\nQ=(%5,%6,%7,%8)\nRms=%9\ndt=%10 ms")
-                                 .arg(obj.getScale())
+                                 .arg(obj->getScale())
                                  .arg(posatt.P[0]).arg(posatt.P[1]).arg(posatt.P[2])
                 .arg(posatt.Q.w()).arg(posatt.Q.x()).arg(posatt.Q.y()).arg(posatt.Q.w())
-                .arg(obj.getRMS())
+                .arg(obj->getRMS())
                 .arg(timer.nsecsElapsed()*1e-6));
 
-        emit sig_newColumn("Err_Mesh",obj.getErrNorm());
+        emit sig_newColumn("Err_Mesh",obj->getErrNorm());
     }
 }
 
@@ -714,7 +736,7 @@ void Viewer3D::slot_ColorScaleChanged(const QCPRange& range)
 {
     std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<selectedClouds.size();i++)
+    for(unsigned int i=0;i<selectedClouds.size();i++)
     {
         Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
@@ -753,7 +775,7 @@ void Viewer3D::slot_ScaleChanged()
     T.setTranslation(-customContainer->getTranslation());
     S.setScale3D(customContainer->getScaleInv());
 
-    for(int i=0;i<objects3D.size();i++)
+    for(unsigned int i=0;i<objects3D.size();i++)
     {
         objects3D[i]->transform->setMatrix( S.matrix()*T.matrix()*objects3D[i]->tT*objects3D[i]->tR );//->setMatrix(t.matrix().inverted());
     }
@@ -763,7 +785,7 @@ void Viewer3D::slot_setGradient(int preset)
 {
     std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<selectedClouds.size();i++)
+    for(unsigned int i=0;i<selectedClouds.size();i++)
     {
         Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
@@ -783,7 +805,7 @@ void Viewer3D::slot_useCustomColor(int value)
 {
     std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<selectedClouds.size();i++)
+    for(unsigned int i=0;i<selectedClouds.size();i++)
     {
         Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
@@ -800,7 +822,7 @@ void Viewer3D::slot_setCustomColor(QColor color)
 {
     std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<selectedClouds.size();i++)
+    for(unsigned int i=0;i<selectedClouds.size();i++)
     {
         Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
@@ -844,7 +866,7 @@ std::vector<Cloud3D*> Viewer3D::getClouds()
 {
     std::vector<Cloud3D*> cloudsList;
 
-    for(int i=0;i<objects3D.size();i++)
+    for(unsigned int i=0;i<objects3D.size();i++)
     {
         Cloud3D* ptrCloud=dynamic_cast<Cloud3D*>(objects3D[i]);
         if(ptrCloud)
@@ -859,15 +881,17 @@ std::vector<Base3D*> Viewer3D::getMeshs()
 {
     std::vector<Base3D*> meshList;
 
-    for(int i=0;i<objects3D.size();i++)
+    for(unsigned int i=0;i<objects3D.size();i++)
     {
         Base3D * ptrPlan3D=dynamic_cast<Plan3D*>(objects3D[i]);
         Base3D * ptrSphere3D=dynamic_cast<Sphere3D*>(objects3D[i]);
         Base3D * ptrObject3D=dynamic_cast<Object3D*>(objects3D[i]);
+        Base3D * ptrEllipsoid3D=dynamic_cast<Ellipsoid3D*>(objects3D[i]);
 
         if(ptrPlan3D){meshList.push_back(ptrPlan3D);}
         if(ptrSphere3D){meshList.push_back(ptrSphere3D);}
         if(ptrObject3D){meshList.push_back(ptrObject3D);}
+        if(ptrEllipsoid3D){meshList.push_back(ptrEllipsoid3D);}
     }
 
     return meshList;
@@ -877,7 +901,7 @@ std::vector<Cloud3D*> Viewer3D::getSelectedClouds()
 {
     std::vector<Cloud3D*> selectedClouds;
 
-    int itemsCount=customContainer->getSelectionView()->count();
+    unsigned int itemsCount=customContainer->getSelectionView()->count();
 
     if(objects3D.size()!=itemsCount)
     {
@@ -885,7 +909,7 @@ std::vector<Cloud3D*> Viewer3D::getSelectedClouds()
         return selectedClouds;
     }
 
-    for(int i=0;i<itemsCount;i++)
+    for(unsigned int i=0;i<itemsCount;i++)
     {
         QListWidgetItem * currentItem= customContainer->getSelectionView()->item(i);
 
@@ -905,7 +929,7 @@ std::vector<Base3D*> Viewer3D::getSelectedObjects()
 {
     std::vector<Base3D*> selectedObjects;
 
-    int itemsCount=customContainer->getSelectionView()->count();
+    unsigned int itemsCount=customContainer->getSelectionView()->count();
 
     if(objects3D.size()!=itemsCount)
     {
@@ -913,7 +937,7 @@ std::vector<Base3D*> Viewer3D::getSelectedObjects()
         return selectedObjects;
     }
 
-    for(int i=0;i<itemsCount;i++)
+    for(unsigned int i=0;i<itemsCount;i++)
     {
         QListWidgetItem * currentItem= customContainer->getSelectionView()->item(i);
 
@@ -969,7 +993,7 @@ void Viewer3D::slot_setPointSize(double value)
 {
     std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<selectedClouds.size();i++)
+    for(unsigned int i=0;i<selectedClouds.size();i++)
     {
         setCloudPointSize(selectedClouds[i],value);
     }
@@ -979,7 +1003,7 @@ void Viewer3D::slot_setPrimitiveType(int type)
 {
     std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<selectedClouds.size();i++)
+    for(unsigned int i=0;i<selectedClouds.size();i++)
     {
         Cloud3D * currentCloud3D=selectedClouds[i];
 
@@ -1015,7 +1039,9 @@ void Viewer3D::addPlan(Plan* plan,float radius,QColor color)
     slot_ScaleChanged();
 }
 
-void Viewer3D::referenceObjectEntity(Base3D * base3D,QString name)
+void Viewer3D::
+
+referenceObjectEntity(Base3D * base3D,QString name)
 {
     objects3D.push_back(base3D);
 
@@ -1191,7 +1217,7 @@ void Viewer3D::slot_export()
 {
     std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<selectedClouds.size();i++)
+    for(unsigned int i=0;i<selectedClouds.size();i++)
     {
         Cloud * currentCloud=selectedClouds[i]->cloud;
 
@@ -1473,7 +1499,7 @@ void Viewer3D::slot_resetView()
 
     std::vector<Cloud3D*> cloudsList=getClouds();
 
-    for(int i=0;i<cloudsList.size();i++)
+    for(unsigned int i=0;i<cloudsList.size();i++)
     {
         Cloud * currentCloud=cloudsList[i]->cloud;
         extendRanges(currentCloud->getXRange(),currentCloud->getYRange(),currentCloud->getZRange(),i);
@@ -1494,7 +1520,7 @@ void Viewer3D::slot_resetViewOnSelectedSameRanges()
 
     std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<selectedClouds.size();i++)
+    for(unsigned int i=0;i<selectedClouds.size();i++)
     {
         Cloud * currentCloud=selectedClouds[i]->cloud;
         extendSameRanges(currentCloud->getXRange(),currentCloud->getYRange(),currentCloud->getZRange(),i);
@@ -1513,7 +1539,7 @@ void Viewer3D::slot_resetViewOnSelected()
 
     std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
 
-    for(int i=0;i<selectedClouds.size();i++)
+    for(unsigned int i=0;i<selectedClouds.size();i++)
     {
         Cloud * currentCloud=selectedClouds[i]->cloud;
         extendRanges(currentCloud->getXRange(),currentCloud->getYRange(),currentCloud->getZRange(),i);

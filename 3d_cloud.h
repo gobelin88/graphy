@@ -10,6 +10,7 @@ class Cloud3D:public Base3D
 {
 public:
     Cloud3D(Cloud * cloud,Qt3DCore::QEntity* rootEntity);
+    ~Cloud3D();
 
     Qt3DRender::QPointSize* pointSize;
     Qt3DRender::QLineWidth* lineWidth;

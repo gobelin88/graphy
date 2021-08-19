@@ -18,6 +18,7 @@ struct Grid3D:public Base3D
 struct Plan3D:public Base3D
 {
     Plan3D(Qt3DCore::QEntity* rootEntity, Plan* plan, float radius, QColor color);
+    ~Plan3D();
     QByteArray getBuffer(Plan* plan, float radius);
 
     Plan* plan;
@@ -26,6 +27,7 @@ struct Plan3D:public Base3D
 struct Sphere3D:public Base3D
 {
     Sphere3D(Qt3DCore::QEntity* rootEntity, Sphere* sphere, QColor color);
+    ~Sphere3D();
     QByteArray getBuffer(Sphere* sphere);
 
     const int Na=50;
@@ -38,6 +40,7 @@ struct Sphere3D:public Base3D
 struct Ellipsoid3D:public Base3D
 {
     Ellipsoid3D(Qt3DCore::QEntity* rootEntity, Ellipsoid* ellipsoid, QColor color);
+    ~Ellipsoid3D();
     QByteArray getBuffer(Ellipsoid* ellipsoid);
 
     const int Na=50;

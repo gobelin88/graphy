@@ -74,6 +74,7 @@ class Object:public Shape<Eigen::Vector3d>
 {
 public:
     Object(QString filename, PosAtt scale_posatt);
+    ~Object();
 
     void disp();
 

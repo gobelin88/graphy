@@ -10,11 +10,12 @@
 class Object3D:public Base3D
 {
 public:
-    Object3D(Qt3DCore::QEntity* rootEntity,Qt3DRender::QMesh* m_obj,Object * objet, PosAtt posatt,float scale,QColor color);
+    Object3D(Qt3DCore::QEntity* rootEntity, Qt3DRender::QMesh* m_obj, Object * pobject, PosAtt posatt, float scale, QColor color);
+    ~Object3D();
 
     void setPosAtt(PosAtt posatt);
 
-    Object * objet;
+    Object * p_object;
 };
 
 #endif // OBJECT3D_H

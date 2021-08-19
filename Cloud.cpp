@@ -61,6 +61,11 @@ Cloud::Cloud(const Eigen::VectorXd& x,
     init();
 }
 
+Cloud::~Cloud()
+{
+    std::cout<<"Delete Cloud"<<std::endl;
+}
+
 void Cloud::setGradientPreset(QCPColorGradient::GradientPreset preset)
 {
     this->gradientPreset=preset;

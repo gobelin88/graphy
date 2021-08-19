@@ -92,6 +92,11 @@ Object::Object(QString filename, PosAtt scale_posatt)
     }
 }
 
+Object::~Object()
+{
+   std::cout<<"Delete Object"<<std::endl;
+}
+
 void Object::exportEdges(QString filename)
 {
     QFile file(filename);

@@ -7,6 +7,10 @@ Plan::Plan(Eigen::Vector3d n0, Eigen::Vector3d barycenter)
     p=n0;
     this->barycenter=barycenter;
 }
+Plan::~Plan()
+{
+    std::cout<<"Delete Plan"<<std::endl;
+}
 
 Eigen::Vector3d Plan::delta(const Eigen::Vector3d& pt)
 {
@@ -61,6 +65,11 @@ Sphere::Sphere(Eigen::Vector3d center, double radius)
     p[1]=center[1];
     p[2]=center[2];
     p[3]=radius>0 ? radius : 0.0 ;
+}
+
+Sphere::~Sphere()
+{
+    std::cout<<"Delete Sphere"<<std::endl;
 }
 
 Eigen::Vector3d Sphere::delta(const Eigen::Vector3d& pt)
@@ -142,6 +151,11 @@ Ellipsoid::Ellipsoid(Eigen::Vector3d center, double A, double B, double C,bool s
         p[4]=sqrt(B);
         p[5]=sqrt(C);
     }
+}
+
+Ellipsoid::~Ellipsoid()
+{
+    std::cout<<"Delete Ellipsoid"<<std::endl;
 }
 
 double Ellipsoid::getA()const

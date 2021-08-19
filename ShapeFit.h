@@ -31,6 +31,7 @@ template<typename T>
 class Shape:public Functor<double>
 {
 public:
+    virtual ~Shape(){}
 
     virtual T delta(const T& p)=0;
     virtual int nb_params()=0;
@@ -166,6 +167,8 @@ class Sphere: public Shape<Eigen::Vector3d>
 public:
     Sphere();
     Sphere(Eigen::Vector3d center, double radius);
+    ~Sphere();
+
     inline Eigen::Vector3d getCenter()const
     {
         return Eigen::Vector3d(p[0],p[1],p[2]);
@@ -193,6 +196,7 @@ class Ellipsoid: public Shape<Eigen::Vector3d>
 public:
     Ellipsoid(bool searchR);
     Ellipsoid(Eigen::Vector3d center, double A,double B,double C,bool searchR);
+    ~Ellipsoid();
     inline Eigen::Vector3d getCenter()const
     {
         return Eigen::Vector3d(p[0],p[1],p[2]);
@@ -223,6 +227,8 @@ class Plan: public Shape<Eigen::Vector3d>
 {
 public:
     Plan(Eigen::Vector3d n0,Eigen::Vector3d center);//alpha beta offset
+    ~Plan();
+
     inline Eigen::Vector3d getNormal()const
     {
         Eigen::Vector3d n(p[0],p[1],p[2]);

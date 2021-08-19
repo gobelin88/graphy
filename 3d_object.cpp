@@ -2,13 +2,13 @@
 
 Object3D::Object3D(Qt3DCore::QEntity* rootEntity,
                    Qt3DRender::QMesh* m_obj,
-                   Object * objet,
+                   Object * pobject,
                    PosAtt posatt,
                    float scale,
                    QColor color)
     :Base3D(rootEntity)
 {
-    this->objet=objet;
+    this->p_object=pobject;
 
     material = new Qt3DExtras::QPhongMaterial();
     static_cast<Qt3DExtras::QPhongMaterial*>(material)->setDiffuse(color);
@@ -22,6 +22,12 @@ Object3D::Object3D(Qt3DCore::QEntity* rootEntity,
     setPosAtt(posatt);
     transform->setScale(scale);
 
+}
+
+Object3D::~Object3D()
+{
+    std::cout<<"Delete Object3D"<<std::endl;
+    if(p_object){delete p_object;}
 }
 
 void Object3D::setPosAtt(PosAtt posatt)

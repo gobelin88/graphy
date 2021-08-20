@@ -856,7 +856,8 @@ void Viewer3D::addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::P
     labelz->setText(currentCloud3D->cloud->getLabelZ());
 
     setCloudPointSize(currentCloud3D,currentCloud3D->pointSize->value());
-    slot_resetView();
+    //slot_resetView();
+    slot_resetViewOnSameRanges();
 
     customContainer->adjustSize();
     customContainer->replot();
@@ -1510,9 +1511,29 @@ void Viewer3D::slot_resetView()
     customContainer->getColorScalePlot()->replot();
     customContainer->replot();
 
+    slot_ScaleChanged();
     slot_updateGridAndLabels();
 }
 
+void Viewer3D::slot_resetViewOnSameRanges()
+{
+    cameraParams->reset();
+
+    std::vector<Cloud3D*> selectedClouds=getClouds();
+
+    for(unsigned int i=0;i<selectedClouds.size();i++)
+    {
+        Cloud * currentCloud=selectedClouds[i]->cloud;
+        extendSameRanges(currentCloud->getXRange(),currentCloud->getYRange(),currentCloud->getZRange(),i);
+        extendScalarRange(currentCloud->getScalarFieldRange(),i);
+    }
+
+    customContainer->getColorScalePlot()->rescaleAxes();
+    customContainer->replot();
+
+    slot_ScaleChanged();
+    slot_updateGridAndLabels();
+}
 
 void Viewer3D::slot_resetViewOnSelectedSameRanges()
 {
@@ -1530,6 +1551,7 @@ void Viewer3D::slot_resetViewOnSelectedSameRanges()
     customContainer->getColorScalePlot()->rescaleAxes();
     customContainer->replot();
 
+    slot_ScaleChanged();
     slot_updateGridAndLabels();
 }
 
@@ -1549,6 +1571,7 @@ void Viewer3D::slot_resetViewOnSelected()
     customContainer->getColorScalePlot()->rescaleAxes();
     customContainer->replot();
 
+    slot_ScaleChanged();
     slot_updateGridAndLabels();
 }
 

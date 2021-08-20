@@ -112,6 +112,7 @@ public slots:
     void slot_projectSphere();
     void slot_randomSubSamples();
     void slot_resetView();
+    void slot_resetViewOnSameRanges();
     void slot_resetViewOnSelected();
     void slot_resetViewOnSelectedSameRanges();
     void slot_export();

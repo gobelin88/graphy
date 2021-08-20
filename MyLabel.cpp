@@ -3,8 +3,6 @@
 MyLabel::MyLabel(QCustomPlot* parentPlot,double cx, double cy)
 {
     this->parentPlot=parentPlot;
-    double mx=parentPlot->xAxis->range().lower;
-    double my=parentPlot->yAxis->range().lower;
 
     QPen linePen(QColor(200,200,200));
 

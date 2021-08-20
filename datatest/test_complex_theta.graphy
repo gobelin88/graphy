@@ -1,0 +1,14 @@
+<header>
+z;theta_func
+clin(-1-i,1+1*i);var r:=0@#var q:=z@#for(var n:=0@n<1000@n+=1)#{#r+=q^(n^2)@#}
+</header>
+-1,-1;nan,nan
+-0.993651,-1;nan,nan
+-0.987302,-1;nan,nan
+-0.980952,-1;nan,nan
+-0.974603,-1;nan,nan
+-0.968254,-1;nan,nan
+-0.961905,-1;nan,nan
+-0.955556,-1;nan,nan
+-0.949206,-1;nan,nan
+-0.942857,-1;nan,nan

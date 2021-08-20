@@ -23,8 +23,17 @@ MyModel::MyModel(int nbRows, int nbCols, int rowSpan, QObject *parent): QAbstrac
    reg.setProgressHandler(progressHandler);
 
    create(nbRows, nbCols,rowSpan) ;
-   dataTest();
 }
+
+MyModel::~MyModel()
+{
+    std::cout<<"Delete MyModel"<<std::endl;
+    delete progressHandler;
+    delete v_scrollBar;
+    delete h_header;
+    delete v_header;
+}
+
 //-----------------------------------------------------------------
 void MyModel::create(int nbRows, int nbCols,int rowSpan)
 {
@@ -1237,25 +1246,6 @@ void MyModel::dataAddRows(MatrixXv& matrix, int n)
     matrix.conservativeResize(numRows,numCols);
     //matrix.block(numRows-n,0,n,numCols);
 }
-
-void MyModel::dataTest()
-{
-//    std::cout<<"---------dataInsertRows"<<std::endl;
-//    MatrixXv matrix(3,3);
-//    for(int i=0;i<3;i++)
-//    {
-//        for(int j=0;j<3;j++)
-//        {
-//            matrix(i,j)=i*3+j;
-//        }
-//    }
-//    std::cout<<matrix<<std::endl;
-//    dataInsertRows(matrix,2,3);
-
-//    std::cout<<"---------"<<std::endl;
-//    std::cout<<matrix<<std::endl;
-}
-
 
 void MyModel::dataInsertRows(MatrixXv& matrix,int n,int j)
 {

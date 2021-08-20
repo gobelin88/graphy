@@ -34,6 +34,9 @@ public:
     };
 
     MyModel(int nbRows,int nbCols,int rowSpan,QObject *parent=nullptr);
+
+    ~MyModel();
+
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index_logical, int role = Qt::DisplayRole) const override;
@@ -163,7 +166,6 @@ private:
     Register reg;
 
     //Data management
-    void dataTest();
     void dataSwapColumns(MatrixXv &matrix, int ida, int idb);
     void dataMoveColumn(MatrixXv & matrix,int ida,int idb);
     void dataSwapRows(MatrixXv &matrix, int ida, int idb);

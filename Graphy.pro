@@ -65,6 +65,7 @@ SOURCES += \
         PosAtt.cpp \
         Register.cpp \
         ShapeFit.cpp \
+        WinCPURAM.cpp \
         bode_viewer.cpp \
         complex_hack.cpp \
         exprtk/Faddeeva.cc \
@@ -109,6 +110,7 @@ HEADERS += \
         PosAtt.h \
         Register.h \
         ShapeFit.h \
+        WinCPURAM.h \
         bode_viewer.h \
         complex_hack.h \
         exprtk/Faddeeva.hh \

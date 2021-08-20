@@ -8,6 +8,7 @@
 #include <QMessageBox>
 #include <QtConcurrent>
 
+
 MainWindow::MainWindow(QWidget* parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -21,9 +22,17 @@ MainWindow::MainWindow(QWidget* parent) :
     pb_bar->setFixedHeight(15);
     l_what=new QLabel;
     l_what->setFixedWidth(200);
+    l_ramcpu=new QLabel;
+    l_ramcpu->setFixedWidth(180);
+    l_ramcpu->setAlignment(Qt::AlignCenter);
 
     this->statusBar()->addWidget(l_what);
     this->statusBar()->addWidget(pb_bar,1);
+    this->statusBar()->addWidget(l_ramcpu);
+
+    t_ramcpu=new QTimer();
+    t_ramcpu->start(1000);
+    connect(t_ramcpu,&QTimer::timeout,this,&MainWindow::slot_updateRamCpu);
 
 
     mdiArea=new QMdiArea();
@@ -82,6 +91,13 @@ MainWindow::MainWindow(QWidget* parent) :
     //------------------------------------------------------------------------------
 
     loadShortcuts();
+}
+
+void MainWindow::slot_updateRamCpu()
+{
+
+    l_ramcpu->setText(QString("RAM=%1Mb CPU=%2%").arg(winRamCpu.getPhysicalMemory()).arg(round(winRamCpu.getCPU()*10)/10));
+    l_ramcpu->update();
 }
 
 MainWindow::~MainWindow()

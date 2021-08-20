@@ -14,6 +14,12 @@ MyTableView::MyTableView(int rowsSpan,
     resizeColumnsToContents();
 }
 
+MyTableView::~MyTableView()
+{
+    std::cout<<"Delete MyTableView"<<std::endl;
+    delete m_model;
+}
+
 void MyTableView::createNew(int nbRow,int nbCols,int rowsSpan)
 {
     QElapsedTimer timer;

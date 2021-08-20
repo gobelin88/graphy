@@ -13,6 +13,7 @@
 #include "mytablemodel.h"
 #include "MyTableView.h"
 #include "FFT.h"
+#include "WinCPURAM.h"
 
 namespace Ui {
 class MainWindow;
@@ -76,6 +77,8 @@ public slots:
     void slot_save_end(MyTableView * table);
     void connectTable(MyTableView * newtable);
 
+    void slot_updateRamCpu();
+
 private:
     //Close
     void closeEvent (QCloseEvent *event);
@@ -86,6 +89,10 @@ private:
     //View & Gui
     QProgressBar * pb_bar;
     QLabel * l_what;
+    QLabel * l_ramcpu;
+    QTimer * t_ramcpu;
+    WinCPURAM winRamCpu;
+
     QTextEdit* te_results;
     QMdiSubWindow * subWindowsResults;
     QTabWidget* te_widget;

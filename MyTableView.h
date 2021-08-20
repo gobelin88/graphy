@@ -16,6 +16,8 @@ public:
                 int nbRow=1,
                 int nbCols=1);
 
+    ~MyTableView();
+
     void createNew(int nbRow,int nbCols,int rowsSpan);
 
     MyModel * model() {return m_model;}

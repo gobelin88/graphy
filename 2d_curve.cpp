@@ -377,30 +377,37 @@ double Curve2D::getRms()
     return sqrt(y.cwiseAbs2().mean());
 }
 
-std::complex<double> Curve2D::guessMainFrequencyPhaseModule(double & mainFrequency)
+std::complex<double> Curve2D::guessMainFrequencyPhaseModule(double & mainFrequency,double & a0)
 {
     //Curve2D fft=getFFT(Curve2D::BLACKMAN,1.0,true,true,false);
     //return fft.getX()[fft.getMaxIndex()];
 
+    //faudrait reechantillonner le signal en fait...pfuu
+    //Eigen::VectorXd x=getLinX(x.size());
+
     Eigen::VectorXcd s_in=y;
 
+    double minX=x.minCoeff();
+    double maxX=x.maxCoeff();
+
     Eigen::VectorXcd s_out=MyFFT::getFFT(s_in,
-                  MyFFT::WindowsType::BLACKMAN,
-                                         true,
+                  MyFFT::WindowsType::RECTANGLE,
+                  true,
                   true,
                   false,
                   false);
 
-    Eigen::VectorXd s_mod=s_out.segment(0,s_out.size()/2).cwiseAbs();
+    unsigned int N=s_out.rows();
 
-
+    Eigen::VectorXd s_mod=s_out.segment(1,N/2).cwiseAbs();
 
     int maxindex;
     s_mod.maxCoeff(&maxindex);
+    a0=s_out[0].real()/sqrt(N);
 
-    mainFrequency=double(maxindex)/s_out.rows();
+    mainFrequency=double(maxindex+1)/N*N/(maxX-minX);
 
-    return s_out[maxindex]*sqrt(s_out.rows())*2.0;//+s_out[s_out.size()-maxindex];//Todo
+    return s_out[maxindex+1]/sqrt(N)*2.0;//+s_out[s_out.size()-maxindex];//Todo
 }
 
 Eigen::Vector2d Curve2D::getBarycenter()

@@ -1,6 +1,9 @@
 #include "1d_viewer.h"
 #include "kdtree_eigen.h"
 
+#include "shapes/Sinusoide.hpp"
+#include "shapes/CustomExpression.h"
+
 Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* parent):QCustomPlot(parent)
 {
     colors<<QColor(160,0,0);
@@ -1673,27 +1676,32 @@ void Viewer1D::slot_fit_sinusoide()
 
     if (curves.size()==1)
     {
-        QDoubleSpinBox* A,*F,*P;
-        QDialog* dialog=Sinusoide::createDialog(A,F,P);
+        QDoubleSpinBox* A,*F,*P,*C;
+        QCheckBox * fixedA,*fixedF,*fixedP,*fixedC;
+        QDialog* dialog=Sinusoide::createDialog(A,F,P,C,
+                                                fixedA,fixedF,fixedP,fixedC);
 
-        double frequencyGuess;
-        std::complex<double> pm=curves[0].guessMainFrequencyPhaseModule(frequencyGuess);
+        double frequencyGuess,a0;
+        std::complex<double> pm=curves[0].guessMainFrequencyPhaseModule(frequencyGuess,a0);
 
         A->setValue(std::abs(pm));
         F->setValue(frequencyGuess);
         P->setValue(std::arg(pm)+M_PI/2);
+        C->setValue(a0);
         int result=dialog->exec();
 
         if (result == QDialog::Accepted)
         {
-            Sinusoide sinusoide(A->value(),F->value(),P->value());
+            Sinusoide sinusoide(A->value(),F->value(),P->value(),C->value(),
+                                fixedA->isChecked(),fixedF->isChecked(),fixedP->isChecked(),fixedC->isChecked());
+
             curves[0].fit(&sinusoide);
             sinusoide.regularized();
             Eigen::VectorXd X=curves[0].getLinX(1000);
             Eigen::VectorXd Y=sinusoide.at(X);
 
-            QString result_str=QString("A=%1 F=%2[Hz] P=%3[°]").arg(sinusoide.getA()).arg(sinusoide.getF()).arg(sinusoide.getP()*180/M_PI);
-            QString expression=QString("%1*sin(2*pi*%2*X+%3)").arg(sinusoide.getA()).arg(sinusoide.getF()).arg(sinusoide.getP());
+            QString result_str=QString("A=%1 F=%2[Hz] P=%3[°] C=%4").arg(sinusoide.getA()).arg(sinusoide.getF()).arg(sinusoide.getP()*180/M_PI).arg(sinusoide.getC());
+            QString expression=QString("%1*sin(2*pi*%2*X+%3)+%4").arg(sinusoide.getA()).arg(sinusoide.getF()).arg(sinusoide.getP()).arg(sinusoide.getC());
             Curve2D fit_curve(X,Y,QString("Fit Sinusoid : %1").arg(result_str),Curve2D::GRAPH);
 
             slot_add_data(fit_curve);

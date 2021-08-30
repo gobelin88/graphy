@@ -2,6 +2,7 @@
 
 #include <QDir>
 #include <QFileInfo>
+#include <qmath.h>
 
 Object::Object(QString filename, PosAtt scale_posatt)
 {

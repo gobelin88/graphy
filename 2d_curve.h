@@ -127,7 +127,7 @@ public:
     //misc
     void knnMeanDistance(int knn);
     double getRms();
-    std::complex<double> guessMainFrequencyPhaseModule(double & mainFrequency);
+    std::complex<double> guessMainFrequencyPhaseModule(double & mainFrequency, double &a0);
     uint getMaxIndex();
     Eigen::Vector2d getBarycenter();
     Eigen::VectorXd getLinX(int n)const;

@@ -70,6 +70,7 @@ SOURCES += \
         complex_hack.cpp \
         exprtk/Faddeeva.cc \
         main.cpp \
+        shapes/CustomExpression.cpp \
         single_application/singleapplication.cpp \
         single_application/singleapplication_p.cpp
 
@@ -115,6 +116,12 @@ HEADERS += \
         complex_hack.h \
         exprtk/Faddeeva.hh \
         exprtk\exprtk.hpp \
+        shapes/CustomExpression.h \
+        shapes/Ellipsoid.hpp \
+        shapes/Plan.hpp \
+        shapes/Shape.hpp \
+        shapes/Sinusoide.hpp \
+        shapes/Sphere.hpp \
         single_application/singleapplication.h \
         single_application/singleapplication_p.h
 

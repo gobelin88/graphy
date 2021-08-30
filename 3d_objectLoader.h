@@ -4,7 +4,9 @@
 #include <QObject>
 #include <QFile>
 
-#include "ShapeFit.h"
+#include "shapes/Shape.hpp"
+#include "shapes/Sphere.hpp"
+
 #include "PosAtt.h"
 
 #include <omp.h>

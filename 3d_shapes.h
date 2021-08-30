@@ -2,7 +2,9 @@
 #define GRID3D_H
 
 #include "3d_base.h"
-#include "ShapeFit.h"
+#include "shapes/Sphere.hpp"
+#include "shapes/Ellipsoid.hpp"
+#include "shapes/Plan.hpp"
 
 #include <Qt3DExtras>
 #include <Qt3DRender>

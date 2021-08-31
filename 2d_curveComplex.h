@@ -2,7 +2,7 @@
 #define CURVE2D_GAINPHASE_H
 
 #include <Eigen/Dense>
-#include "ShapeFit.h"
+#include "shapes/Shape.hpp"
 #include "2d_curve.h"
 
 class Curve2DComplex

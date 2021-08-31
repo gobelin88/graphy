@@ -1,5 +1,7 @@
 #include "bode_viewer.h"
 
+#include "shapes/Impedances.hpp"
+
 ViewerBode::ViewerBode(const QMap<QString,QKeySequence>& shortcuts_map,
                        QWidget* parent):QWidget(parent)
 {

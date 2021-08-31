@@ -4,7 +4,7 @@
 #include <Eigen/Dense>
 
 #include "MyCustomPlot.h"
-#include "ShapeFit.h"
+#include "shapes/Shape.hpp"
 
 #ifndef CLOUD_H
 #define CLOUD_H

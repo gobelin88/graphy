@@ -64,13 +64,17 @@ SOURCES += \
         MyVariant.cpp \
         PosAtt.cpp \
         Register.cpp \
-        ShapeFit.cpp \
         WinCPURAM.cpp \
         bode_viewer.cpp \
         complex_hack.cpp \
         exprtk/Faddeeva.cc \
         main.cpp \
+        shapes/Circle2D.cpp \
+        shapes/Circle3D.cpp \
         shapes/CustomExpression.cpp \
+        shapes/Ellipse2D.cpp \
+        shapes/Gaussian.cpp \
+        shapes/Sigmoid.cpp \
         single_application/singleapplication.cpp \
         single_application/singleapplication_p.cpp
 
@@ -110,16 +114,21 @@ HEADERS += \
         MyVariant.h \
         PosAtt.h \
         Register.h \
-        ShapeFit.h \
         WinCPURAM.h \
         bode_viewer.h \
         complex_hack.h \
         exprtk/Faddeeva.hh \
         exprtk\exprtk.hpp \
+        shapes/Circle2D.h \
+        shapes/Circle3D.h \
         shapes/CustomExpression.h \
+        shapes/Ellipse2D.h \
         shapes/Ellipsoid.hpp \
+        shapes/Gaussian.h \
+        shapes/Impedances.hpp \
         shapes/Plan.hpp \
         shapes/Shape.hpp \
+        shapes/Sigmoid.h \
         shapes/Sinusoide.hpp \
         shapes/Sphere.hpp \
         single_application/singleapplication.h \

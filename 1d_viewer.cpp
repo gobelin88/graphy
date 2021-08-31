@@ -3,6 +3,11 @@
 
 #include "shapes/Sinusoide.hpp"
 #include "shapes/CustomExpression.h"
+#include "shapes/Circle2D.h"
+#include "shapes/Ellipse2D.h"
+#include "shapes/Sigmoid.h"
+#include "shapes/Gaussian.h"
+#include "shapes/Impedances.hpp"
 
 Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* parent):QCustomPlot(parent)
 {

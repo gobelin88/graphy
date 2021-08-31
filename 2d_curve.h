@@ -4,7 +4,7 @@
 #include <Eigen/Dense>
 
 #include <QVector>
-#include "ShapeFit.h"
+#include "shapes/Shape.hpp"
 #include "MyCustomPlot.h"
 #include "FIR.h"
 #include "DataConvert.h"

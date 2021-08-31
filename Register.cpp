@@ -103,7 +103,6 @@ void Register::clear()
     symbolsTable->add_function("data",cf_data);
     symbolsTable->add_function("index",cf_id);
 
-
     //Noise
     symbolsTable->add_function("uniform"  ,  cf_uniform);
     symbolsTable->add_function("normal"  ,  cf_normal);
@@ -119,7 +118,10 @@ void Register::clear()
     symbolsTable->add_function("clin"  ,  cf_clin);
     symbolsTable->add_function("solveNewton"  ,  cf_solveNewton);
 
+    symbolsTable->add_function("cwise"  ,  cf_cwise);
+
     cf_id.setVariablesNamesPtr(&variables_names);
+    cf_cwise.setVariablesNamesPtr(&variables_names);
     cf_lin.setNumberOfRowsPtr(&numberRows);
     cf_lin.setCurrentRowPtr(&activeRow);
 

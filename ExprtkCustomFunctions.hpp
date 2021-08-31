@@ -211,6 +211,140 @@ struct dataFunction : public exprtk::ifunction<T>
     const Tdata * p_data;
 };
 
+template <typename T,typename Tdata>
+struct cwiseFunction : public exprtk::igeneric_function<T>
+{
+    typedef typename exprtk::igeneric_function<T>::parameter_list_t
+                                                   parameter_list_t;
+
+    typedef typename generic_type::string_view string_t;
+
+    using exprtk::igeneric_function<T>::operator();
+
+    cwiseFunction()
+        : exprtk::igeneric_function<T>("SS")
+    {
+        //exprtk::disable_has_side_effects(*this);
+        p_data=nullptr;
+        p_variablesNames=nullptr;
+    }
+
+    void setDataPtr(const Tdata * data)
+    {
+        this->p_data=data;
+    }
+
+    inline T operator()(parameter_list_t parameters)
+    {
+        if(p_data && p_variablesNames && parameters.size()==2)
+        {
+            generic_type& gt_var = parameters[0];
+            generic_type& gt_op = parameters[1];
+
+            if (generic_type::e_string == gt_op.type &&
+                generic_type::e_string == gt_var.type)
+            {
+                string_t optName(gt_op);
+                string_t variableName(gt_var);
+
+                QString qOptName=QString::fromStdString(to_str(optName));
+                unsigned int cindex=p_variablesNames->indexOf(QString::fromStdString(to_str(variableName)));
+
+                if( cindex<p_data->cols() && cindex>=0)
+                {
+                    if(qOptName==QString("sum"))
+                    {
+                        std::complex<double> sum(0.0,0.0);
+                        for(int i=0;i<p_data->rows();i++)
+                        {
+                            sum+=(*p_data)(i,cindex).toComplex();
+                        }
+                        return sum;
+                    }
+                    else if(qOptName==QString("mean"))
+                    {
+                        std::complex<double> sum(0.0,0.0);
+                        for(int i=0;i<p_data->rows();i++)
+                        {
+                            sum+=(*p_data)(i,cindex).toComplex();
+                        }
+                        return sum/double(p_data->rows());
+                    }
+                    else if(qOptName==QString("max"))
+                    {
+                        std::complex<double> max(DBL_MIN,DBL_MIN);
+                        for(int i=0;i<p_data->rows();i++)
+                        {
+                            auto v=(*p_data)(i,cindex).toComplex();
+                            if (v.real()>max.real())
+                            {
+                                max.real(v.real());
+                            }
+                            else if (v.imag()>max.imag())
+                            {
+                                max.imag(v.imag());
+                            }
+                        }
+                        return max;
+                    }
+                    else if(qOptName==QString("min"))
+                    {
+                        std::complex<double> min(DBL_MAX,DBL_MAX);
+                        for(int i=0;i<p_data->rows();i++)
+                        {
+                            auto v=(*p_data)(i,cindex).toComplex();
+                            if (v.real()<min.real())
+                            {
+                                min.real(v.real());
+                            }
+                            else if (v.imag()<min.imag())
+                            {
+                                min.imag(v.imag());
+                            }
+                        }
+                        return min;
+                    }
+                    else if(qOptName==QString("std"))
+                    {
+                        double N=double(p_data->rows());
+                        std::complex<double> sumA(0.0,0.0);
+                        std::complex<double> sumB(0.0,0.0);
+                        for(int i=0;i<p_data->rows();i++)
+                        {
+                            std::complex<double> x=(*p_data)(i,cindex).toComplex();
+
+                            sumA+=x;
+                            sumB+=std::complex<double>( x.real()*x.real(),
+                                                        x.imag()*x.imag());
+                        }
+
+                        return sqrt( sumB/N - std::complex<double>(sumA.real()*sumA.real()/(N*N),sumA.imag()*sumA.imag()/(N*N)) );
+                    }
+                }
+                else
+                {
+                    //std::cout<<"data out index"<<std::endl;
+                    return 0.0;
+                }
+            }
+        }
+        else
+        {
+            //std::cout<<"nullptr"<<std::endl;
+            return 0.0;
+        }
+    }
+
+    void setVariablesNamesPtr(const QStringList * p_variablesNames)
+    {
+        this->p_variablesNames=p_variablesNames;
+    }
+
+    const QStringList * p_variablesNames;
+
+    const Tdata * p_data;
+};
+
 template <typename T>
 struct gammaFunction : public exprtk::ifunction<T>
 {

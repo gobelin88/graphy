@@ -35,6 +35,7 @@ public:
     {
         this->data_ptr=data_ptr;
         cf_data.setDataPtr(data_ptr);
+        cf_cwise.setDataPtr(data_ptr);
     }
 
     void swapVariables(int ida,int idb);
@@ -113,6 +114,7 @@ private:
     clinFunction<VariableType> cf_clin;
     solveNewtonFunction<VariableType> cf_solveNewton;
     dataFunction<VariableType,MatrixXv> cf_data;
+    cwiseFunction<VariableType,MatrixXv> cf_cwise;
     indexFunction<VariableType> cf_id;
     isPrimeFunction<VariableType> cf_isPrime;
 

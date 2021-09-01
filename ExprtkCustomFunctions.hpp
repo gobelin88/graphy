@@ -197,13 +197,11 @@ struct dataFunction : public exprtk::ifunction<T>
             }
             else
             {
-                //std::cout<<"data out index"<<std::endl;
                 return 0.0;
             }
         }
         else
         {
-            //std::cout<<"nullptr"<<std::endl;
             return 0.0;
         }
     }
@@ -227,6 +225,7 @@ struct cwiseFunction : public exprtk::igeneric_function<T>
         //exprtk::disable_has_side_effects(*this);
         p_data=nullptr;
         p_variablesNames=nullptr;
+        currentCol=false;
     }
 
     void setDataPtr(const Tdata * data)
@@ -234,103 +233,144 @@ struct cwiseFunction : public exprtk::igeneric_function<T>
         this->p_data=data;
     }
 
-    inline T operator()(parameter_list_t parameters)
+    void reset(unsigned int currentCol)
     {
-        if(p_data && p_variablesNames && parameters.size()==2)
+        this->currentCol=currentCol;
+        if(p_data)
         {
-            generic_type& gt_var = parameters[0];
-            generic_type& gt_op = parameters[1];
-
-            if (generic_type::e_string == gt_op.type &&
-                generic_type::e_string == gt_var.type)
+            if(firstEvaluation.size()!=p_data->cols())
             {
-                string_t optName(gt_op);
-                string_t variableName(gt_var);
-
-                QString qOptName=QString::fromStdString(to_str(optName));
-                unsigned int cindex=p_variablesNames->indexOf(QString::fromStdString(to_str(variableName)));
-
-                if( cindex<p_data->cols() && cindex>=0)
-                {
-                    if(qOptName==QString("sum"))
-                    {
-                        std::complex<double> sum(0.0,0.0);
-                        for(int i=0;i<p_data->rows();i++)
-                        {
-                            sum+=(*p_data)(i,cindex).toComplex();
-                        }
-                        return sum;
-                    }
-                    else if(qOptName==QString("mean"))
-                    {
-                        std::complex<double> sum(0.0,0.0);
-                        for(int i=0;i<p_data->rows();i++)
-                        {
-                            sum+=(*p_data)(i,cindex).toComplex();
-                        }
-                        return sum/double(p_data->rows());
-                    }
-                    else if(qOptName==QString("max"))
-                    {
-                        std::complex<double> max(DBL_MIN,DBL_MIN);
-                        for(int i=0;i<p_data->rows();i++)
-                        {
-                            auto v=(*p_data)(i,cindex).toComplex();
-                            if (v.real()>max.real())
-                            {
-                                max.real(v.real());
-                            }
-                            else if (v.imag()>max.imag())
-                            {
-                                max.imag(v.imag());
-                            }
-                        }
-                        return max;
-                    }
-                    else if(qOptName==QString("min"))
-                    {
-                        std::complex<double> min(DBL_MAX,DBL_MAX);
-                        for(int i=0;i<p_data->rows();i++)
-                        {
-                            auto v=(*p_data)(i,cindex).toComplex();
-                            if (v.real()<min.real())
-                            {
-                                min.real(v.real());
-                            }
-                            else if (v.imag()<min.imag())
-                            {
-                                min.imag(v.imag());
-                            }
-                        }
-                        return min;
-                    }
-                    else if(qOptName==QString("std"))
-                    {
-                        double N=double(p_data->rows());
-                        std::complex<double> sumA(0.0,0.0);
-                        std::complex<double> sumB(0.0,0.0);
-                        for(int i=0;i<p_data->rows();i++)
-                        {
-                            std::complex<double> x=(*p_data)(i,cindex).toComplex();
-
-                            sumA+=x;
-                            sumB+=std::complex<double>( x.real()*x.real(),
-                                                        x.imag()*x.imag());
-                        }
-
-                        return sqrt( sumB/N - std::complex<double>(sumA.real()*sumA.real()/(N*N),sumA.imag()*sumA.imag()/(N*N)) );
-                    }
-                }
-                else
-                {
-                    //std::cout<<"data out index"<<std::endl;
-                    return 0.0;
-                }
+                firstEvaluation.resize(p_data->cols(),true);
+                previousResult.resize(p_data->cols(),T(0,0));
+            }
+            else
+            {
+                firstEvaluation[currentCol]=true;
+                previousResult[currentCol]=T(0,0);
             }
         }
         else
         {
-            //std::cout<<"nullptr"<<std::endl;
+            std::cout<<"reset error no data ptr"<<std::endl;
+        }
+    }
+
+    inline T operator()(parameter_list_t parameters)
+    {
+        if(currentCol<firstEvaluation.size())
+        {
+            if(firstEvaluation[currentCol])
+            {
+                firstEvaluation[currentCol]=false;
+
+                if(p_data && p_variablesNames && parameters.size()==2)
+                {
+                    generic_type& gt_var = parameters[0];
+                    generic_type& gt_op = parameters[1];
+                    T result;
+
+                    if (generic_type::e_string == gt_op.type &&
+                        generic_type::e_string == gt_var.type)
+                    {
+                        string_t optName(gt_op);
+                        string_t variableName(gt_var);
+
+                        QString qOptName=QString::fromStdString(to_str(optName));
+                        unsigned int cindex=p_variablesNames->indexOf(QString::fromStdString(to_str(variableName)));
+
+                        if( cindex<p_data->cols() && cindex>=0)
+                        {
+                            if(qOptName==QString("sum"))
+                            {
+                                T sum(0.0,0.0);
+                                for(int i=0;i<p_data->rows();i++)
+                                {
+                                    sum+=(*p_data)(i,cindex).toComplex();
+                                }
+                                result=sum;
+                            }
+                            else if(qOptName==QString("mean"))
+                            {
+                                T sum(0.0,0.0);
+                                for(int i=0;i<p_data->rows();i++)
+                                {
+                                    sum+=(*p_data)(i,cindex).toComplex();
+                                }
+                                result=sum/double(p_data->rows());
+                            }
+                            else if(qOptName==QString("max"))
+                            {
+                                T max(DBL_MIN,DBL_MIN);
+                                for(int i=0;i<p_data->rows();i++)
+                                {
+                                    auto v=(*p_data)(i,cindex).toComplex();
+                                    if (v.real()>max.real())
+                                    {
+                                        max.real(v.real());
+                                    }
+                                    else if (v.imag()>max.imag())
+                                    {
+                                        max.imag(v.imag());
+                                    }
+                                }
+                                result=max;
+                            }
+                            else if(qOptName==QString("min"))
+                            {
+                                T min(DBL_MAX,DBL_MAX);
+                                for(int i=0;i<p_data->rows();i++)
+                                {
+                                    auto v=(*p_data)(i,cindex).toComplex();
+                                    if (v.real()<min.real())
+                                    {
+                                        min.real(v.real());
+                                    }
+                                    else if (v.imag()<min.imag())
+                                    {
+                                        min.imag(v.imag());
+                                    }
+                                }
+                                result=min;
+                            }
+                            else if(qOptName==QString("std"))
+                            {
+                                double N=double(p_data->rows());
+                                T sumA(0.0,0.0);
+                                T sumB(0.0,0.0);
+                                for(int i=0;i<p_data->rows();i++)
+                                {
+                                    std::complex<double> x=(*p_data)(i,cindex).toComplex();
+
+                                    sumA+=x;
+                                    sumB+=std::complex<double>( x.real()*x.real(),
+                                                                x.imag()*x.imag());
+                                }
+
+                                result=sqrt( sumB/N - std::complex<double>(sumA.real()*sumA.real()/(N*N),sumA.imag()*sumA.imag()/(N*N)) );
+                            }
+
+
+                        }
+                        else
+                        {
+                            result=T(0.0);
+                        }
+                        previousResult[currentCol]=result;
+                        return result;
+                    }
+                }
+                else
+                {
+                    return 0.0;
+                }
+            }
+            else
+            {
+                return previousResult[currentCol];
+            }
+        }
+        else
+        {
             return 0.0;
         }
     }
@@ -343,6 +383,10 @@ struct cwiseFunction : public exprtk::igeneric_function<T>
     const QStringList * p_variablesNames;
 
     const Tdata * p_data;
+    std::vector<bool> firstEvaluation;
+    std::vector<T> previousResult;
+
+    unsigned int currentCol;
 };
 
 template <typename T>

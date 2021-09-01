@@ -342,9 +342,7 @@ bool Register::compileExpression(int id)
 //    std::cout<<"collect_functions_enabled="<<parser->settings().collect_functions_enabled()<<std::endl;
 //    std::cout<<"collect_assignments_enabled="<<parser->settings().collect_assignments_enabled()<<std::endl;
 
-
-
-
+    cf_cwise.reset(id);
     return parser->compile(variables_expressions[id].toStdString(),*current_compiled_expression);
 }
 
@@ -393,6 +391,7 @@ QStringList Register::getFunctionsList()
     }
     qlist.append("index");
     qlist.append("solveNewton");
+    qlist.append("cwise");
 
     return qlist;
 }
@@ -688,7 +687,22 @@ QString getHelp(QString name)
     else if(name=="xnor"){return QString("<b>xnor</b><p>The xnor logic operator</p>");}
     else if(name=="xor"){return QString("<b>xor</b><p>The xor logic operator</p>");}
 
+    //Columns Wise
+    else if(name=="cwise"){return QString("<b>cwise</b>('varName','operator')<p>Process a column wise operator on'varName'."
+                                          "'operator' could be either:</p> "
+                                          "<ul>"
+                                          "<li>'min' :Minimum of all elements</li>"
+                                          "<li>'max' :Minimum of all elements</li>"
+                                          "<li>'std' :Standard deviation of all elements</li>"
+                                          "<li>'mean':Mean of all elements</li>"
+                                          "<li>'sum' :Sum of all elements</li>"
+                                          "</ul>");}
+
+    //Number theory
+    else if(name=="isPrime"){return QString("<b>isPrime</b>(n)<p>Return 1 if n is a prime number 0 otherwise.</p>");}
+
     //Misc
+    else if(name=="index"){return QString("<b>index</b>('varName')<p>return the current column index of 'varName'</p>");}
     else if(name=="solveNewton"){
         return QString("<b>solveNewton</b>('f(z)','f'(z)'|epsilon,z0,[a],[it])"\
                                                  "<p>Basic newton solver.</p>"\

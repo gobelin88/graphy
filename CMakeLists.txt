@@ -119,9 +119,10 @@ set(SOURCES
     shapes/Sphere.hpp
     single_application/singleapplication.h
     single_application/singleapplication_p.h
-    mainwindow.ui)
+    mainwindow.ui
+    rsc.qrc)
 
-qt5_add_resources(SOURCES rsc.qrc)
+#qt5_add_resources(SOURCES )
 add_executable(graphy ${SOURCES})
 
 string(REGEX REPLACE "/W[3|4]" "/w" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
@@ -132,7 +133,7 @@ target_include_directories(graphy PRIVATE ${EIGEN3_INCLUDE_DIR})
 target_link_libraries(graphy PRIVATE Qt5::Widgets Qt5::3DCore Qt5::3DRender Qt5::3DExtras Qt5::Concurrent Qt5::PrintSupport)
 target_link_libraries (graphy PRIVATE Eigen3::Eigen)
 
-install (TARGETS graphy RUNTIME DESTINATION ${PROJECT_BINARY_DIR}/bin)
+install (TARGETS graphy RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 install (FILES
 #         $<TARGET_RUNTIME_DLLS:graphy>
@@ -144,11 +145,11 @@ install (FILES
          $<TARGET_FILE:Qt5::Concurrent>
          $<TARGET_FILE:Qt5::PrintSupport>
          CONFIGURATIONS Release
-         DESTINATION ${PROJECT_BINARY_DIR}/bin
+         DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
     )
 
-install (DIRECTORY ${_qt5Core_install_prefix}/plugins/platforms DESTINATION ${PROJECT_BINARY_DIR}/bin)
-install (DIRECTORY ${_qt5Core_install_prefix}/plugins/styles DESTINATION ${PROJECT_BINARY_DIR}/bin)
+install (DIRECTORY ${_qt5Core_install_prefix}/plugins/platforms DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install (DIRECTORY ${_qt5Core_install_prefix}/plugins/styles DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 message("CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")
 message("PROJECT_BINARY_DIR=${PROJECT_BINARY_DIR}")

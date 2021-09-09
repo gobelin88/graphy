@@ -34,9 +34,9 @@ public:
         entity->addComponent(picker);
     }
 
-    Qt3DCore::QTransform * transformInit(Qt3DCore::QEntity* entity)
+    Qt3DCore::QTransform * transformInit(Qt3DCore::QEntity* pentity)
     {
-        transform=new Qt3DCore::QTransform(entity);
+        transform=new Qt3DCore::QTransform(pentity);
         transform->setScale(1.0);
         transform->setRotation(QQuaternion(1,0,0,0));
         transform->setTranslation(QVector3D(0,0,0));

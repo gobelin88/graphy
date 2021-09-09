@@ -47,9 +47,9 @@ Object::Object(QString filename, PosAtt scale_posatt)
                 {
                     Face new_face;
                     std::vector<Vector2d> new_face_tex_coord;
-                    for (int i=1; i<line.size(); i++)
+                    for (int j=1; j<line.size(); j++)
                     {
-                        QStringList args=line[i].split("/");
+                        QStringList args=line[j].split("/");
                         if (args.size()>=1)
                         {
                             int idp=args[0].toInt()-1;
@@ -108,7 +108,7 @@ void Object::exportEdges(QString filename)
         ts<<"<header>\n";
         ts<<"X;Y;Z;S\n";
         ts<<"</header>\n";
-        for(int i=0;i<edges.size();i++)
+        for(unsigned int i=0;i<edges.size();i++)
         {
             Vector3d A=pts.col(edges[i][0]);
             Vector3d B=pts.col(edges[i][1]);
@@ -192,7 +192,7 @@ void Object::rotegrity(double angle,
 
             //rotate all segments
             Vector3d center(0,0,0);
-            for(int i=0;i<edges.size();i++)
+            for(unsigned int i=0;i<edges.size();i++)
             {
                 Vector3d A=pts.col(edges[i][0]);
                 Vector3d B=pts.col(edges[i][1]);
@@ -210,14 +210,14 @@ void Object::rotegrity(double angle,
 
             double radius_ext=radius_int+radius_dr;
             faces.clear();
-            for(int i=0;i<edges.size();i++)
+            for(unsigned int i=0;i<edges.size();i++)
             {
                 Vector3d A=pts.col(edges[i][0]);
                 Vector3d B=pts.col(edges[i][1]);
                 Vector3d V=B-A;
 
-                Vector3d N=V.cross(A);
-                N=N/N.norm();
+                Vector3d Nv=V.cross(A);
+                Nv=Nv/Nv.norm();
 
                 Vector3d Ap =A /A .norm()*(radius_ext+radius_int)*0.5;
                 Vector3d Bp =B /B .norm()*(radius_ext+radius_int)*0.5;
@@ -251,15 +251,15 @@ void Object::rotegrity(double angle,
                     }
 
 
-                    Vector3d Pa1 =P /P .norm()*(radius_ext+dr_ext) +N*width*0.5;//A-->B
-                    Vector3d Pb1 =P /P .norm()*(radius_int+dr_int) +N*width*0.5;//B-->A
-                    Vector3d Pap1=Pp/Pp.norm()*(radius_ext+dr_ext) +N*width*0.5;//A-->B
-                    Vector3d Pbp1=Pp/Pp.norm()*(radius_int+dr_int) +N*width*0.5;//B-->A
+                    Vector3d Pa1 =P /P .norm()*(radius_ext+dr_ext) +Nv*width*0.5;//A-->B
+                    Vector3d Pb1 =P /P .norm()*(radius_int+dr_int) +Nv*width*0.5;//B-->A
+                    Vector3d Pap1=Pp/Pp.norm()*(radius_ext+dr_ext) +Nv*width*0.5;//A-->B
+                    Vector3d Pbp1=Pp/Pp.norm()*(radius_int+dr_int) +Nv*width*0.5;//B-->A
 
-                    Vector3d Pa2 =P /P .norm()*(radius_ext+dr_ext) -N*width*0.5;//A-->B
-                    Vector3d Pb2 =P /P .norm()*(radius_int+dr_int) -N*width*0.5;//B-->A
-                    Vector3d Pap2=Pp/Pp.norm()*(radius_ext+dr_ext) -N*width*0.5;//A-->B
-                    Vector3d Pbp2=Pp/Pp.norm()*(radius_int+dr_int) -N*width*0.5;//B-->A
+                    Vector3d Pa2 =P /P .norm()*(radius_ext+dr_ext) -Nv*width*0.5;//A-->B
+                    Vector3d Pb2 =P /P .norm()*(radius_int+dr_int) -Nv*width*0.5;//B-->A
+                    Vector3d Pap2=Pp/Pp.norm()*(radius_ext+dr_ext) -Nv*width*0.5;//A-->B
+                    Vector3d Pbp2=Pp/Pp.norm()*(radius_int+dr_int) -Nv*width*0.5;//B-->A
 
 
                     Face new_face1;
@@ -375,14 +375,14 @@ void Object::rotegrity(double angle,
                 QString path=info.path();
                 QDir dir(path);
 
-                QString filename=path+QString("/")+basename+QString("/part_%2_%1.obj").arg(id_seg+1).arg(id_enc);
-                std::cout<<filename.toLocal8Bit().data()<<std::endl;
+                QString partFilename=path+QString("/")+basename+QString("/part_%2_%1.obj").arg(id_seg+1).arg(id_enc);
+                std::cout<<partFilename.toLocal8Bit().data()<<std::endl;
 
                 if(!dir.exists())
                 {
                     dir.mkdir(basename);
                 }
-                save(filename);
+                save(partFilename);
             }
             else
             {
@@ -411,12 +411,12 @@ void Object::save(QString filename)
             ts<<"vn "<<normals.col(i).x()<<" "<<normals.col(i).y()<<" "<<normals.col(i).z()<<"\n";
         }
 
-        if(normals.cols()==faces.size())
+        if(static_cast<unsigned int>(normals.cols())==faces.size())
         {
-            for(int i=0;i<faces.size();i++)
+            for(unsigned int i=0;i<faces.size();i++)
             {
                 ts<<"f";
-                for(int j=0;j<faces[i].size();j++)
+                for(unsigned int j=0;j<faces[i].size();j++)
                 {
                     ts<<" "<<faces[i][j]+1<<"//"<<i;
                 }
@@ -425,10 +425,10 @@ void Object::save(QString filename)
         }
         else
         {
-            for(int i=0;i<faces.size();i++)
+            for(unsigned int i=0;i<faces.size();i++)
             {
                 ts<<"f";
-                for(int j=0;j<faces[i].size();j++)
+                for(unsigned int j=0;j<faces[i].size();j++)
                 {
                     ts<<" "<<faces[i][j]+1;
                 }
@@ -451,9 +451,9 @@ void Object::disp()
         std::cout<<pts.col(i).x()<<" "<<pts.col(i).y()<<" "<<pts.col(i).z()<<" "<<std::endl;
     }
     std::cout<<"faces :"<<std::endl;
-    for (int i=0; i<faces.size(); i++)
+    for (unsigned int i=0; i<faces.size(); i++)
     {
-        for (int j=0; j<faces[i].size(); j++)
+        for (unsigned int j=0; j<faces[i].size(); j++)
         {
             std::cout<<faces[i][j]<<" ";
         }
@@ -816,7 +816,7 @@ Vector3d Object::delta(const Vector3d& p)
 {
     double dmin=DBL_MAX;
     Vector3d nDelta,delta;
-    for (int i=0; i<faces.size(); i++)
+    for (unsigned int i=0; i<faces.size(); i++)
     {
         double distance=nearestDelta(i,p,delta);
 
@@ -845,7 +845,7 @@ double Object::getRadius(Vector3d center)
 
 bool Object::isNewEdge(const Edge & edge)
 {
-    for(int i=0;i<edges.size();i++)
+    for(unsigned int i=0;i<edges.size();i++)
     {
         if((edges[i][0]==edge[0]) && (edges[i][1]==edge[1]))
         {
@@ -862,9 +862,9 @@ bool Object::isNewEdge(const Edge & edge)
 void Object::computeEdges()
 {
     edges.clear();
-    for (int i=0; i<faces.size(); i++)
+    for (unsigned int i=0; i<faces.size(); i++)
     {
-        for (int a=0; a<faces[i].size(); a++)
+        for (unsigned int a=0; a<faces[i].size(); a++)
         {
             int b=(a+1)%faces[i].size();
             Edge edge(faces[i][a],faces[i][b]);
@@ -913,7 +913,7 @@ void Object::cutEdge(int id_edge)
 void Object::dispEdges()
 {
     std::cout<<"-------------pts.cols()="<<pts.cols()<<std::endl;
-    for(int i=0;i<edges.size();i++)
+    for(unsigned int i=0;i<edges.size();i++)
     {
         std::cout<<edges[i].transpose()<<" "<<pts.col(edges[i][0]).transpose()<<" "<<pts.col(edges[i][1]).transpose()<<std::endl;
     }
@@ -922,7 +922,7 @@ void Object::dispEdges()
 
 void Object::cutEdges()
 {
-    for(int i=0;i<edges.size();i++)
+    for(unsigned int i=0;i<edges.size();i++)
     {
         cutEdge(i);
     }
@@ -932,7 +932,7 @@ void Object::computeNormals()
 {
     //normals_base.resize(faces.size());
     normals_base.resize(3,faces.size());
-    for (int i=0; i<faces.size(); i++)
+    for (unsigned int i=0; i<faces.size(); i++)
     {
         if (faces[i].size()>=3)
         {
@@ -990,7 +990,7 @@ Vector3d Object::getCoord3D(const Base& b,Vector2d p,Vector3d bary)const
 Vector3d Object::getBarycenter(const Face& f)const
 {
     Vector3d bary(0,0,0);
-    for (int i=0; i<f.size(); i++)
+    for (unsigned int i=0; i<f.size(); i++)
     {
         bary+=pts.col(f[i]);
     }

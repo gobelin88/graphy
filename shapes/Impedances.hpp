@@ -165,16 +165,16 @@ public:
         return Eigen::Vector2d(std::abs(G), std::arg(G)*180.0/M_PI );
     }
 
-    void at(Eigen::VectorXd f,Eigen::VectorXd& g,Eigen::VectorXd& p)
+    void at(Eigen::VectorXd _f,Eigen::VectorXd& _g,Eigen::VectorXd& _p)
     {
-        g.resize(f.size());
-        p.resize(f.size());
+        _g.resize(_f.size());
+        _p.resize(_f.size());
 
-        for (int i=0; i<f.size(); i++)
+        for (int i=0; i<_f.size(); i++)
         {
-            Eigen::Vector2d res=at(f[i]);
-            g[i]=res[0];
-            p[i]=res[1];
+            Eigen::Vector2d res=at(_f[i]);
+            _g[i]=res[0];
+            _p[i]=res[1];
         }
     }
 
@@ -182,11 +182,11 @@ public:
     {
         return int(p.rows());
     }
-    void setParams(const Eigen::VectorXd& p)
+    void setParams(const Eigen::VectorXd& _p)
     {
-        for (int i=0; i<p.rows(); i++)
+        for (int i=0; i<_p.rows(); i++)
         {
-            this->p[i]=std::abs(p[i]);
+            this->p[i]=std::abs(_p[i]);
         }
     }
     const Eigen::VectorXd& getParams()
@@ -404,11 +404,11 @@ public:
     {
         return int(p.rows());
     }
-    void setParams(const Eigen::VectorXd& p)
+    void setParams(const Eigen::VectorXd& _p)
     {
-        for (int i=0; i<p.rows(); i++)
+        for (int i=0; i<_p.rows(); i++)
         {
-            this->p[i]=std::abs(p[i]);
+            this->p[i]=std::abs(_p[i]);
         }
     }
     const Eigen::VectorXd& getParams()
@@ -623,11 +623,11 @@ public:
     {
         return int(p.rows());
     }
-    void setParams(const Eigen::VectorXd& p)
+    void setParams(const Eigen::VectorXd& _p)
     {
-        for (int i=0; i<p.rows(); i++)
+        for (int i=0; i<_p.rows(); i++)
         {
-            this->p[i]=std::abs(p[i]);
+            this->p[i]=std::abs(_p[i]);
         }
     }
     const Eigen::VectorXd& getParams()
@@ -765,16 +765,16 @@ public:
         return Eigen::Vector2d(std::abs(G), std::arg(G)*180.0/M_PI );
     }
 
-    void at(Eigen::VectorXd f,Eigen::VectorXd& g,Eigen::VectorXd& p)
+    void at(Eigen::VectorXd _f,Eigen::VectorXd& _g,Eigen::VectorXd& _p)
     {
-        g.resize(f.size());
-        p.resize(f.size());
+        _g.resize(_f.size());
+        _p.resize(_f.size());
 
-        for (int i=0; i<f.size(); i++)
+        for (int i=0; i<_f.size(); i++)
         {
-            Eigen::Vector2d res=at(f[i]);
-            g[i]=res[0];
-            p[i]=res[1];
+            Eigen::Vector2d res=at(_f[i]);
+            _g[i]=res[0];
+            _p[i]=res[1];
         }
     }
 
@@ -782,11 +782,11 @@ public:
     {
         return int(p.rows());
     }
-    void setParams(const Eigen::VectorXd& p)
+    void setParams(const Eigen::VectorXd& _p)
     {
-        for (int i=0; i<p.rows(); i++)
+        for (int i=0; i<_p.rows(); i++)
         {
-            this->p[i]=std::abs(p[i]);
+            this->p[i]=std::abs(_p[i]);
         }
     }
     const Eigen::VectorXd& getParams()
@@ -954,16 +954,16 @@ public:
         return Eigen::Vector2d(std::abs(G), std::arg(G)*180.0/M_PI );
     }
 
-    void at(Eigen::VectorXd f,Eigen::VectorXd& g,Eigen::VectorXd& p)
+    void at(Eigen::VectorXd f,Eigen::VectorXd& g,Eigen::VectorXd& _p)
     {
         g.resize(f.size());
-        p.resize(f.size());
+        _p.resize(f.size());
 
         for (int i=0; i<f.size(); i++)
         {
             Eigen::Vector2d res=at(f[i]);
             g[i]=res[0];
-            p[i]=res[1];
+            _p[i]=res[1];
         }
     }
 
@@ -971,11 +971,11 @@ public:
     {
         return int(p.rows());
     }
-    void setParams(const Eigen::VectorXd& p)
+    void setParams(const Eigen::VectorXd& _p)
     {
-        for (int i=0; i<p.rows(); i++)
+        for (int i=0; i<_p.rows(); i++)
         {
-            this->p[i]=std::abs(p[i]);
+            this->p[i]=std::abs(_p[i]);
         }
     }
     const Eigen::VectorXd& getParams()

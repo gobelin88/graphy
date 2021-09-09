@@ -15943,9 +15943,9 @@ QList<QCPLegend*> QCustomPlot::selectedLegends() const
 */
 void QCustomPlot::deselectAll()
 {
-    foreach (QCPLayer* layer, mLayers)
+    for (const QCPLayer * layer : mLayers)
     {
-        foreach (QCPLayerable* layerable, layer->children())
+        for (QCPLayerable* layerable : layer->children())
         {
             layerable->deselectEvent(0);
         }
@@ -16984,9 +16984,9 @@ void QCustomPlot::processRectSelection(QRect rect, QMouseEvent* event)
             if (!additive)
             {
                 // emit deselection except to those plottables who will be selected afterwards:
-                foreach (QCPLayer* layer, mLayers)
+                for (const QCPLayer* layer : mLayers)
                 {
-                    foreach (QCPLayerable* layerable, layer->children())
+                    for (QCPLayerable* layerable : layer->children())
                     {
                         if ((potentialSelections.isEmpty() || potentialSelections.constBegin()->first != layerable) && mInteractions.testFlag(layerable->selectionCategory()))
                         {
@@ -17073,9 +17073,9 @@ void QCustomPlot::processPointSelection(QMouseEvent* event)
     // deselect all other layerables if not additive selection:
     if (!additive)
     {
-        foreach (QCPLayer* layer, mLayers)
+        for (const QCPLayer* layer : mLayers)
         {
-            foreach (QCPLayerable* layerable, layer->children())
+            for (QCPLayerable* layerable : layer->children())
             {
                 if (layerable != clickedLayerable && mInteractions.testFlag(layerable->selectionCategory()))
                 {

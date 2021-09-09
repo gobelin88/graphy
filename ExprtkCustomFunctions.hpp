@@ -358,6 +358,10 @@ struct cwiseFunction : public exprtk::igeneric_function<T>
                         previousResult[currentCol]=result;
                         return result;
                     }
+                    else
+                    {
+                        return 0.0;
+                    }
                 }
                 else
                 {
@@ -367,7 +371,7 @@ struct cwiseFunction : public exprtk::igeneric_function<T>
             else
             {
                 return previousResult[currentCol];
-            }
+            }            
         }
         else
         {

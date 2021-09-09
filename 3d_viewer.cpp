@@ -277,7 +277,7 @@ void Viewer3D::slot_saveRevolution()
         int N=QInputDialog::getInt(nullptr,"Number of frames","Number of frames=",1,1,360*10,1);
         //QScreen* screen=QGuiApplication::primaryScreen();
 
-        QFileInfo info(filename);
+        QFileInfo infoFilename(filename);
 
         Qt3DRender::QRenderCapture* capture = new Qt3DRender::QRenderCapture;
         this->activeFrameGraph()->setParent(capture);
@@ -289,7 +289,7 @@ void Viewer3D::slot_saveRevolution()
 
         for (int k=0; k<N; k++)
         {
-            QString image_filename=info.dir().path()+QString("/%1_").arg(k)+info.baseName()+QString(".png");
+            QString image_filename=infoFilename.dir().path()+QString("/%1_").arg(k)+infoFilename.baseName()+QString(".png");
             std::cout<<image_filename.toLocal8Bit().data()<<std::endl;
             cameraParams->moveTo(a0+float(2.0*M_PI/N*k),cameraParams->getBeta(),cameraParams->getRadius());
             slot_updateGridAndLabels();
@@ -1236,9 +1236,9 @@ void Viewer3D::slot_export()
                 ts<<"<header>\n";
                 ts<<"X;Y;Z;S;\n";
                 ts<<"</header>\n";
-                for(int i=0;i<currentCloud->size();i++)
+                for(int k=0;k<currentCloud->size();k++)
                 {
-                    ts<<data[i][0]<<";"<<data[i][1]<<";"<<data[i][2]<<";"<<data[i][3]<<";\n";
+                    ts<<data[k][0]<<";"<<data[k][1]<<";"<<data[k][2]<<";"<<data[k][3]<<";\n";
                 }
                 file.close();
             }
@@ -1408,7 +1408,7 @@ void Viewer3D::slot_createRotegrity()
 
         QFileInfo info(filename);
         Object * objet=new Object(filename,PosAtt());
-        QString filename=info.path()+"/"+info.baseName()+"_rotegrity.obj";
+        QString filenameRotegrity=info.path()+"/"+info.baseName()+"_rotegrity.obj";
 
         objet->rotegrity(sb_angle->value(),
                       sb_subdivisions->value(),
@@ -1418,7 +1418,7 @@ void Viewer3D::slot_createRotegrity()
                       sb_width->value(),
                       sb_encA->value(),
                       sb_encB->value(),
-                      filename,
+                      filenameRotegrity,
                       true);
 
         BoundingBox bb=objet->getBox();
@@ -1427,7 +1427,7 @@ void Viewer3D::slot_createRotegrity()
         customContainer->getZAxis()->setRange(QCPRange(bb.Pmin[2],bb.Pmax[2]));
 
         auto* mesh_object = new Qt3DRender::QMesh();
-        mesh_object->setSource(QUrl(QString("file:///")+filename));
+        mesh_object->setSource(QUrl(QString("file:///")+filenameRotegrity));
 
         addObject(mesh_object,objet,PosAtt(),1.0,QColor(64,64,64));
 

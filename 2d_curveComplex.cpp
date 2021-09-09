@@ -83,7 +83,7 @@ void Curve2DComplex::fromRealImag(Eigen::VectorXd reals,Eigen::VectorXd imags)
     this->x=Eigen::VectorXd::LinSpaced(y.rows(),0,y.rows()-1);
 }
 
-void Curve2DComplex::fromModuleArgument(Eigen::VectorXd x,Eigen::VectorXd modules,Eigen::VectorXd arguments)
+void Curve2DComplex::fromModuleArgument(Eigen::VectorXd _x,Eigen::VectorXd modules,Eigen::VectorXd arguments)
 {
     y.resize(modules.rows());
 
@@ -92,10 +92,10 @@ void Curve2DComplex::fromModuleArgument(Eigen::VectorXd x,Eigen::VectorXd module
         y[i]=std::polar(modules[i],arguments[i]*M_PI/180);
     }
 
-    this->x=x;
+    this->x=_x;
 }
 
-void Curve2DComplex::fromRealImag(Eigen::VectorXd x,Eigen::VectorXd reals,Eigen::VectorXd imags)
+void Curve2DComplex::fromRealImag(Eigen::VectorXd _x,Eigen::VectorXd reals,Eigen::VectorXd imags)
 {
     y.resize(reals.rows());
 
@@ -104,7 +104,7 @@ void Curve2DComplex::fromRealImag(Eigen::VectorXd x,Eigen::VectorXd reals,Eigen:
         y[i]=std::complex<double>(reals[i],imags[i]);
     }
 
-    this->x=x;
+    this->x=_x;
 }
 void Curve2DComplex::fit(Shape<Eigen::Vector3d>* model,FitMode mode)
 {
@@ -204,9 +204,9 @@ QString Curve2DComplex::getLegend()
     return legend;
 }
 
-void Curve2DComplex::setLegend(QString legend)
+void Curve2DComplex::setLegend(QString _legend)
 {
-    this->legend=legend;
+    this->legend=_legend;
 }
 
 void Curve2DComplex::operator=(const Curve2DComplex & other)

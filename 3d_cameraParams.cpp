@@ -8,11 +8,11 @@ CameraParams::CameraParams(Qt3DRender::QCamera* cameraEntity,float alpha,float b
     this->boundingRadius=boundingRadius;
 }
 
-void CameraParams::init(float alpha,float beta,float radius)
+void CameraParams::init(float _alpha,float _beta,float _radius)
 {
-    this->alpha=alpha;
-    this->beta=beta;
-    this->radius=radius;
+    this->alpha=_alpha;
+    this->beta=_beta;
+    this->radius=_radius;
 }
 
 void CameraParams::update()
@@ -41,15 +41,15 @@ void CameraParams::move(float dx,float dy)
     update();
 }
 
-void CameraParams::moveTo(float alpha,float beta,float radius)
+void CameraParams::moveTo(float _alpha,float _beta,float _radius)
 {
-    init(alpha,beta,radius);
+    init(_alpha,_beta,_radius);
     update();
 }
 
-void CameraParams::setBarycenter(QVector3D barycenter)
+void CameraParams::setBarycenter(QVector3D _barycenter)
 {
-    this->barycenter=barycenter;
+    this->barycenter=_barycenter;
     update();
 }
 
@@ -58,9 +58,9 @@ QVector3D CameraParams::getBarycenter()
     return barycenter;
 }
 
-void CameraParams::setBoundingRadius(float boundingRadius)
+void CameraParams::setBoundingRadius(float _boundingRadius)
 {
-    this->boundingRadius=boundingRadius;
+    this->boundingRadius=_boundingRadius;
 }
 
 float CameraParams::getBoundingRadius()
@@ -73,9 +73,9 @@ float CameraParams::getRadius()
     return radius;
 }
 
-void CameraParams::setRadius(float radius)
+void CameraParams::setRadius(float _radius)
 {
-    this->radius=radius;
+    this->radius=_radius;
     update();
 }
 

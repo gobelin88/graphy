@@ -10,7 +10,7 @@
 #include "3d_viewer.h"
 #include "bode_viewer.h"
 #include "MyGradientComboBox.h"
-#include "mytablemodel.h"
+#include "MyTableModel.h"
 #include "MyTableView.h"
 #include "FFT.h"
 #include "WinCPURAM.h"
@@ -26,6 +26,8 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
+
+    const float graphyVersion=11.0f;
 
 public slots:
     //IO & edition
@@ -116,7 +118,7 @@ private:
     QString getCurrentFilename();
 
     //Constants
-    const float graphyVersion=10.0f;
+
     //1.0 //Basic graphs
     //2.0 //Add lots of graph facilities
     //3.0 //Add Copy/Paste management between graphs and table
@@ -127,6 +129,7 @@ private:
     //8.0 //specials functions support + Direct data acces + string functions + improve save time
     //9.0 //newton solver + items configurables
     //10.0//Bars de progression (ProgressHandler) + correction de bugs + fit ellisoid + threading.
+    //11.0//Cmake + grosses correction de bugs
 
     //Helpers
     void plot_xy(Curve2D::CurveType type);

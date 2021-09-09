@@ -6216,9 +6216,9 @@ public:
         }
     }
 
-    void setScalarField(const QVector<double>& scalarFieldData)
+    void setScalarField(const QVector<double>& _scalarFieldData)
     {
-        this->scalarFieldData=scalarFieldData;
+        this->scalarFieldData=_scalarFieldData;
         scalarFieldRange=getScalarFieldRange();
         scalarFieldColors=QVector<QRgb>(scalarFieldData.size(),0);
         scale->setDataRange(scalarFieldRange);
@@ -6229,9 +6229,9 @@ public:
         return scalarFieldData;
     }
 
-    void setAlphaField(const QVector<double>& alphaFieldData)
+    void setAlphaField(const QVector<double>& _alphaFieldData)
     {
-        this->alphaFieldData=alphaFieldData;
+        this->alphaFieldData=_alphaFieldData;
     }
 
     QVector<double> getAlphaField()const
@@ -6239,9 +6239,9 @@ public:
         return alphaFieldData;
     }
 
-    void setLabelField(const QVector<QString>& labelFieldData)
+    void setLabelField(const QVector<QString>& _labelFieldData)
     {
-        this->labelFieldData=labelFieldData;
+        this->labelFieldData=_labelFieldData;
     }
 
     QVector<QString> getLabelField()const

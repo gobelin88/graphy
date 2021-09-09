@@ -26,14 +26,14 @@ public:
     Register();
     ~Register();
 
-    void setProgressHandler(MyProgressHandler * progressHandler)
+    void setProgressHandler(MyProgressHandler * _progressHandler)
     {
-        this->progressHandler=progressHandler;
+        this->progressHandler=_progressHandler;
     }
 
-    void setDataPtr(MatrixXv * data_ptr)
+    void setDataPtr(MatrixXv * _data_ptr)
     {
-        this->data_ptr=data_ptr;
+        this->data_ptr=_data_ptr;
         cf_data.setDataPtr(data_ptr);
         cf_cwise.setDataPtr(data_ptr);
     }

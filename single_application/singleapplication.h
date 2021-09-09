@@ -28,7 +28,7 @@
 #include <QDataStream>
 
 #ifndef QAPPLICATION_CLASS
-  #define QAPPLICATION_CLASS QCoreApplication
+  #define QAPPLICATION_CLASS QApplication
 #endif
 
 #include QT_STRINGIFY(QAPPLICATION_CLASS)

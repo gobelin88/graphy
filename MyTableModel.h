@@ -51,7 +51,7 @@ public:
     void exportLatex(QString filename);
     void createEmpty(int nbRows, int nbCols);
     bool hasHeader(){return hasheader;}
-    void setHasHeader(bool hasheader){this->hasheader=hasheader;}
+    void setHasHeader(bool _hasheader){this->hasheader=_hasheader;}
 
     //Resizing
     void setNumberOfRows(unsigned int nbRows);

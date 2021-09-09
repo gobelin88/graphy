@@ -182,9 +182,9 @@ void Viewer1D::configurePopup()
     }
 }
 
-QComboBox * Viewer1D::createScatterComboBox()
+QComboBox * Viewer1D::createScatterComboBox(QWidget * parent)
 {
-    QComboBox * comboBox=new QComboBox;
+    QComboBox * comboBox=new QComboBox(parent);
     comboBox->addItem(QStringLiteral("ssNone"),             int(QCPScatterStyle::ScatterShape::ssNone));
     comboBox->addItem(QStringLiteral("ssDot"),              int(QCPScatterStyle::ScatterShape::ssDot));
     comboBox->addItem(QStringLiteral("ssCross"),            int(QCPScatterStyle::ScatterShape::ssCross));
@@ -205,15 +205,15 @@ QComboBox * Viewer1D::createScatterComboBox()
     return comboBox;
 }
 
-QWidget* Viewer1D::createParametersWidget()
+QWidget* Viewer1D::createParametersWidget(QWidget * parent)
 {
 
-    QWidget* widget=new QWidget;
+    QWidget* widget=new QWidget(parent);
     widget->setMinimumWidth(400);
 
     QGridLayout* gbox = new QGridLayout();
 
-    cb_itemLineStyleList = new QComboBox;
+    cb_itemLineStyleList = new QComboBox(widget);
     cb_itemLineStyleList->addItem(QStringLiteral("lsNone"),        int(QCPGraph::LineStyle::lsNone));
     cb_itemLineStyleList->addItem(QStringLiteral("lsLine"),        int(QCPGraph::LineStyle::lsLine));
     cb_itemLineStyleList->addItem(QStringLiteral("lsStepLeft"),    int(QCPGraph::LineStyle::lsStepLeft));
@@ -221,11 +221,11 @@ QWidget* Viewer1D::createParametersWidget()
     cb_itemLineStyleList->addItem(QStringLiteral("lsStepCenter"),  int(QCPGraph::LineStyle::lsStepCenter));
     cb_itemLineStyleList->addItem(QStringLiteral("lsImpulse"),     int(QCPGraph::LineStyle::lsImpulse));
 
-    cb_ScatterShapes = createScatterComboBox();
-    sb_ScatterSize=new QDoubleSpinBox;
+    cb_ScatterShapes = createScatterComboBox(widget);
+    sb_ScatterSize=new QDoubleSpinBox(widget);
     sb_ScatterSize->setRange(1,100);
 
-    cb_penStyle = new QComboBox;
+    cb_penStyle = new QComboBox(widget);
     cb_penStyle->addItem(QStringLiteral("SolidLine"));
     cb_penStyle->addItem(QStringLiteral("DashLine"));
     cb_penStyle->addItem(QStringLiteral("DotLine"));
@@ -233,7 +233,7 @@ QWidget* Viewer1D::createParametersWidget()
     cb_penStyle->addItem(QStringLiteral("DashDotDotLine"));
     cb_penStyle->addItem(QStringLiteral("CustomDashLine"));
 
-    cb_brushStyle = new QComboBox;
+    cb_brushStyle = new QComboBox(widget);
     cb_brushStyle->addItem(QStringLiteral("NoBrush"));
     cb_brushStyle->addItem(QStringLiteral("SolidPattern"));
     cb_brushStyle->addItem(QStringLiteral("Dense1Pattern"));
@@ -250,18 +250,18 @@ QWidget* Viewer1D::createParametersWidget()
     cb_brushStyle->addItem(QStringLiteral("DiagCrossPattern"));
 
     //QPushButton* pb_pen_color=new  QPushButton("Pen");
-    cw_pen_color = new ColorWheel;
-    cw_brush_color = new ColorWheel;
+    cw_pen_color = new ColorWheel(widget);
+    cw_brush_color = new ColorWheel(widget);
     //cd_pen_color->setOptions(QColorDialog::DontUseNativeDialog| QColorDialog::NoButtons);
 
-    cb_gradient=new MyGradientComboBox(nullptr);
+    cb_gradient=new MyGradientComboBox(widget);
 
-    sb_penWidth=new QDoubleSpinBox();
-    s_pen_alpha=new QDoubleSpinBox();
+    sb_penWidth=new QDoubleSpinBox(widget);
+    s_pen_alpha=new QDoubleSpinBox(widget);
     s_pen_alpha->setRange(0,1.0);
     s_pen_alpha->setSingleStep(0.1);
     s_pen_alpha->setPrefix("alpha=");
-    s_brush_alpha=new QDoubleSpinBox();
+    s_brush_alpha=new QDoubleSpinBox(widget);
     s_brush_alpha->setRange(0,1.0);
     s_brush_alpha->setSingleStep(0.1);
     s_brush_alpha->setPrefix("alpha=");
@@ -480,7 +480,7 @@ void Viewer1D::createPopup()
     menuThemes->addAction(actSetScatters);
     menuAppearance->addMenu(menuLegend);
 
-    parameterWidget=createParametersWidget();
+    parameterWidget=createParametersWidget(this);
 
     //QWidgetAction* actWidget=new QWidgetAction(popup_menu);
     //actWidget->setDefaultWidget(parameterWidget);
@@ -684,11 +684,11 @@ void Viewer1D::slot_setScatters()
         QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
         QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
-        QComboBox * cb_scattersShape=createScatterComboBox();
+        QComboBox * cb_scattersShape=createScatterComboBox(dialog);
         cb_scattersShape->setCurrentIndex(scattersList[0]);
         QObject::connect(cb_scattersShape, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setScattersShape(int)));
 
-        QSpinBox * sb_scattersSize=new QSpinBox();
+        QSpinBox * sb_scattersSize=new QSpinBox(dialog);
         sb_scattersSize->setValue(scattersSizeList[0]);
         QObject::connect(sb_scattersSize, SIGNAL(valueChanged(int)), this, SLOT(slot_setScattersSize(int)));
 
@@ -1780,9 +1780,9 @@ void Viewer1D::slot_fit_custom()
                 //Results
                 QString result_str;
                 VectorXd p=p_exp->getParams();
-                for(int i=0;i<p_exp->getParamsNames().size();i++)
+                for(int k=0;k<p_exp->getParamsNames().size();k++)
                 {
-                    result_str.append(QString("%1=%2 ").arg(p_exp->getParamsNames()[i]).arg(p[i]));
+                    result_str.append(QString("%1=%2 ").arg(p_exp->getParamsNames()[k]).arg(p[k]));
                 }
 
                 Eigen::VectorXd X=curves[0].getLinX(1000);
@@ -2225,21 +2225,21 @@ void Viewer1D::slot_setBrushStyle(int style)
     replot();
 }
 
-void Viewer1D::slot_histogram(Eigen::VectorXd data,QString name,int nbbins)
+void Viewer1D::slot_histogram(Eigen::VectorXd _data,QString name,int nbbins)
 {
     Eigen::VectorXd labels=Eigen::VectorXd::Zero(nbbins);
     Eigen::VectorXd hist=Eigen::VectorXd::Zero(nbbins);
 
-    double min=data.minCoeff();
-    double max=data.maxCoeff();
+    double min=_data.minCoeff();
+    double max=_data.maxCoeff();
 
     double delta= (max-min)/nbbins;
 
-    for (int k=0; k<data.size(); k++)
+    for (int k=0; k<_data.size(); k++)
     {
-        int index=static_cast<int>(std::floor((data[k]-min)/delta));
+        int index=static_cast<int>(std::floor((_data[k]-min)/delta));
 
-        if (index>=0 && index<data.size())
+        if (index>=0 && index<_data.size())
         {
             hist[index]+=1;
         }
@@ -2453,8 +2453,8 @@ void Viewer1D::slot_paste()
         if(mimeData->hasFormat("Curve"))
         {
             Curve2D curve;
-            QByteArray data=mimeData->data("Curve");
-            curve.fromByteArray(data);
+            QByteArray _data=mimeData->data("Curve");
+            curve.fromByteArray(_data);
             slot_add_data(curve);
         }
     }
@@ -2476,10 +2476,10 @@ void Viewer1D::slot_svd()
         Eigen::VectorXd C=M.colwise().mean();
 
         //Substract centroid
-        for (int i=0; i<M.rows(); i++)
+        for (int k=0; k<M.rows(); k++)
         {
-            M(i,0)-=C[0];
-            M(i,1)-=C[1];
+            M(k,0)-=C[0];
+            M(k,1)-=C[1];
         }
 
         //Svd
@@ -2510,10 +2510,10 @@ void Viewer1D::slot_covariance()
         Eigen::VectorXd C=M.colwise().mean();
 
         //Substract centroid
-        for (int i=0; i<M.rows(); i++)
+        for (int k=0; k<M.rows(); k++)
         {
-            M(i,0)-=C[0];
-            M(i,1)-=C[1];
+            M(k,0)-=C[0];
+            M(k,1)-=C[1];
         }
 
         Eigen::MatrixXd Cov=(M.transpose()*M)*1.0/M.rows();
@@ -2802,7 +2802,7 @@ void Viewer1D::slot_medianFilter()
                             values.push_back(Y[j]);
                         }
                     }
-                    qSort(values);
+                    std::sort(values.begin(),values.end());
                     Ymean[i]=values[values.size()/2];
                 }
 

@@ -133,7 +133,7 @@ Plan3D::Plan3D(Qt3DCore::QEntity* rootEntity,Plan* plan,float radius,QColor colo
     geometry = new Qt3DRender::QGeometry(rootEntity);
 
     buffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer,geometry);
-    buffer->setData(getBuffer(plan,radius));
+    buffer->setData(getBuffer(radius));
 
     positionAttribute = new Qt3DRender::QAttribute(geometry);
     positionAttribute->setName(Qt3DRender::QAttribute::defaultPositionAttributeName());
@@ -196,7 +196,7 @@ Plan3D::~Plan3D()
     std::cout<<"Delete Plan3D"<<std::endl;
     delete plan;
 }
-QByteArray Plan3D::getBuffer(Plan* plan,float radius)
+QByteArray Plan3D::getBuffer(float radius)
 {
     QByteArray bufferBytes;
     bufferBytes.resize(3 * 4 * sizeof(float));
@@ -226,7 +226,7 @@ Sphere3D::Sphere3D(Qt3DCore::QEntity* rootEntity,Sphere * sphere,QColor color)
     geometry = new Qt3DRender::QGeometry(rootEntity);
 
     buffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer,geometry);
-    buffer->setData(getBuffer(sphere));
+    buffer->setData(getBuffer());
 
     positionAttribute = new Qt3DRender::QAttribute(geometry);
     positionAttribute->setName(Qt3DRender::QAttribute::defaultPositionAttributeName());
@@ -300,7 +300,7 @@ Sphere3D::~Sphere3D()
     delete sphere;
 }
 
-QByteArray Sphere3D::getBuffer(Sphere* sphere)
+QByteArray Sphere3D::getBuffer()
 {
     QByteArray bufferBytes;
     bufferBytes.resize(Na* Nb*3 * sizeof(float));
@@ -335,7 +335,7 @@ Ellipsoid3D::Ellipsoid3D(Qt3DCore::QEntity* rootEntity,Ellipsoid * ellipsoid,QCo
     geometry = new Qt3DRender::QGeometry(rootEntity);
 
     buffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer,geometry);
-    buffer->setData(getBuffer(ellipsoid));
+    buffer->setData(getBuffer());
 
     positionAttribute = new Qt3DRender::QAttribute(geometry);
     positionAttribute->setName(Qt3DRender::QAttribute::defaultPositionAttributeName());
@@ -409,7 +409,7 @@ Ellipsoid3D::~Ellipsoid3D()
     delete ellipsoid;
 }
 
-QByteArray Ellipsoid3D::getBuffer(Ellipsoid* ellipsoid)
+QByteArray Ellipsoid3D::getBuffer()
 {
     QByteArray bufferBytes;
     bufferBytes.resize(Na* Nb*3 * sizeof(float));

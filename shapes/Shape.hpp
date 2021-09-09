@@ -83,10 +83,10 @@ public:
         points=points_list;
     }
 
-    void fit(const std::vector<T> & points, int it, double xtol=-1)
+    void fit(const std::vector<T> & _points, int it, double xtol=-1)
     {
         Eigen::VectorXd p=this->getParams();
-        this->setPointsList(points);
+        this->setPointsList(_points);
         Eigen::LevenbergMarquardt<Shape<T>,double> lm(*this);
         lm.parameters.maxfev = it;
         lm.parameters.factor = 2;

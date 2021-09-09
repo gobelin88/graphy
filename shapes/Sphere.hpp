@@ -47,9 +47,9 @@ public:
 		return p.rows();
 	}
 	
-    void setParams(const Eigen::VectorXd& p)
+    void setParams(const Eigen::VectorXd& _p)
 	{
-		this->p=p;
+        this->p=_p;
 	}
 
     const Eigen::VectorXd& getParams()

@@ -304,21 +304,21 @@ void MyTableView::setSelectionPattern(QString pattern)
                 {
                     if(isRow)
                     {
-                        for(int index=0;index<model()->rowCount();index++)
+                        for(int _index=0;_index<model()->rowCount();_index++)
                         {
-                            if((index+dec)%modulo==0)
+                            if((_index+dec)%modulo==0)
                             {
-                                selectRow(index);
+                                selectRow(_index);
                             }
                         }
                     }
                     else
                     {
-                        for(int index=0;index<model()->columnCount();index++)
+                        for(int _index=0;_index<model()->columnCount();_index++)
                         {
-                            if((index+dec)%modulo==0)
+                            if((_index+dec)%modulo==0)
                             {
-                                selectColumn(index);
+                                selectColumn(_index);
                             }
                         }
                     }

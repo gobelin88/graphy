@@ -52,7 +52,7 @@ public slots:
     void slot_show_legend(bool value);
     void slot_top_legend(bool value);
     void slot_left_legend(bool value);
-    void slot_histogram(Eigen::VectorXd data, QString name, int nbbins);
+    void slot_histogram(Eigen::VectorXd _data, QString name, int nbbins);
     void slot_copy();
     void slot_paste();
     void slot_statistiques();
@@ -231,7 +231,7 @@ protected:
     QAction* actGadgetTracer;
     QAction* actGadgetLine;
     QAction* actGadgetDeltaLine;
-    QWidget *createParametersWidget();
+    QWidget *createParametersWidget(QWidget *parent);
 
     MyGradientComboBox * cb_gradient;
 
@@ -253,7 +253,7 @@ protected:
 
     QVector<QColor> colors;
 
-    QComboBox * createScatterComboBox();
+    QComboBox * createScatterComboBox(QWidget *parent);
 
     QWidget * parameterWidget;
 };

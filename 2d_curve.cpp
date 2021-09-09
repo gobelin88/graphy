@@ -74,9 +74,9 @@ QVector<double> Curve2D::getQY()const
     return toQVector(y);
 }
 
-void Curve2D::setAlphaField(const Eigen::VectorXd& a)
+void Curve2D::setAlphaField(const Eigen::VectorXd& _a)
 {
-    this->a=a;
+    this->a=_a;
 }
 
 Eigen::VectorXd Curve2D::getAlphaField()const
@@ -88,9 +88,9 @@ QVector<double> Curve2D::getQAlphaField()const
     return toQVector(a);
 }
 
-void Curve2D::setScalarField(const Eigen::VectorXd& s)
+void Curve2D::setScalarField(const Eigen::VectorXd& _s)
 {
-    this->s=s;
+    this->s=_s;
 }
 const Eigen::VectorXd & Curve2D::getScalarField()const
 {
@@ -101,9 +101,9 @@ QVector<double> Curve2D::getQScalarField()const
     return toQVector(s);
 }
 
-void Curve2D::setLabelsField(const QVector<QString>& l)
+void Curve2D::setLabelsField(const QVector<QString>& _l)
 {
-    this->l=l;
+    this->l=_l;
 }
 
 QVector<QString> Curve2D::getLabelsField()const
@@ -444,12 +444,12 @@ double Curve2D::at(const Eigen::VectorXd& A, double valuex)
 
 Eigen::VectorXd Curve2D::at(const Eigen::VectorXd& A, Eigen::VectorXd values)
 {
-    Eigen::VectorXd y(values.size());
-    for (int i=0; i<y.size(); i++)
+    Eigen::VectorXd _y(values.size());
+    for (int i=0; i<_y.size(); i++)
     {
-        y[i]=at(A,values[i]);
+        _y[i]=at(A,values[i]);
     }
-    return y;
+    return _y;
 }
 
 QString Curve2D::getPolynomeString(const Eigen::VectorXd& C,unsigned int order)
@@ -546,9 +546,9 @@ QString Curve2D::getLegend() const
     return legendname;
 }
 
-void Curve2D::setLegend(QString legendname)
+void Curve2D::setLegend(QString _legendname)
 {
-    this->legendname=legendname;
+    this->legendname=_legendname;
 }
 
 Curve2D::CurveType Curve2D::getType()const

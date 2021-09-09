@@ -43,7 +43,7 @@ public:
     std::vector<QRgb>& getColors();
 
     QRgb getCustomColor(){return customColor;}
-    void setCustomColor(QRgb customColor){this->customColor=customColor;}
+    void setCustomColor(QRgb _customColor){this->customColor=_customColor;}
     bool isCustomColorUsed(){return useCustomColor;}
     void setUseCustomColor(bool value){useCustomColor=value;}
 

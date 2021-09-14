@@ -480,7 +480,8 @@ void Viewer1D::createPopup()
     menuThemes->addAction(actSetScatters);
     menuAppearance->addMenu(menuLegend);
 
-    parameterWidget=createParametersWidget(this);
+    parameterWidget=createParametersWidget(nullptr);
+    parameterWidget->hide();
 
     //QWidgetAction* actWidget=new QWidgetAction(popup_menu);
     //actWidget->setDefaultWidget(parameterWidget);

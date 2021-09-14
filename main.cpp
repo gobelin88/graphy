@@ -13,13 +13,10 @@ void test()
 
 int main(int argc, char* argv[])
 {
-    std::cout<<"Start graphy...1"<<std::endl;
     test();
     SingleApplication app(argc, argv,true,SingleApplication::Mode::SecondaryNotification,10000);
-    std::cout<<"Start graphy...2"<<std::endl;
 
     QStringList args=app.arguments();
-    std::cout<<"Start graphy...3"<<std::endl;
     args.removeAt(0);
 
     if( app.isSecondary() )
@@ -38,9 +35,8 @@ int main(int argc, char* argv[])
     }
     else
     {
-        std::cout<<"Start graphy...3"<<std::endl;
         MainWindow w;
-        std::cout<<"Start graphy...Version"<<w.graphyVersion<<std::endl;
+        std::cout<<"Start graphy...Version"<<graphyVersion<<std::endl;
 
         w.show();
         QObject::connect(&app, &SingleApplication::instanceStarted, [ &w ]() {w.raise();w.activateWindow();});

@@ -27,8 +27,6 @@ public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
-    const float graphyVersion=11.0f;
-
 public slots:
     //IO & edition
     void receivedMessage(int instanceId, QByteArray message);

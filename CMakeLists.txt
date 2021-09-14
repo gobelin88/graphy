@@ -11,7 +11,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-
+set(GRAPHY_VERSION 11)
+set(TARGET_NAME "graphy${GRAPHY_VERSION}")
 
 list(APPEND CMAKE_PREFIX_PATH "C:/Tools/Eigen3")
 
@@ -120,20 +121,21 @@ set(SOURCES
     single_application/singleapplication.h
     single_application/singleapplication_p.h
     mainwindow.ui
-    rsc.qrc)
+    rsc.qrc
+    icon.rc)
 
 #qt5_add_resources(SOURCES )
-add_executable(graphy ${SOURCES})
+add_executable(${TARGET_NAME} ${SOURCES})
 
 string(REGEX REPLACE "/W[3|4]" "/w" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-target_compile_options(graphy PRIVATE /bigobj /we4456 /wd4127)
+target_compile_options(${TARGET_NAME} PRIVATE /bigobj /we4456 /wd4127 /DgraphyVersion=${GRAPHY_VERSION} /Dexprtk_disable_caseinsensitivity)
 
-target_include_directories(graphy PRIVATE ${EIGEN3_INCLUDE_DIR})
+target_include_directories(${TARGET_NAME} PRIVATE ${EIGEN3_INCLUDE_DIR})
 
-target_link_libraries(graphy PRIVATE Qt5::Widgets Qt5::3DCore Qt5::3DRender Qt5::3DExtras Qt5::Concurrent Qt5::PrintSupport)
-target_link_libraries (graphy PRIVATE Eigen3::Eigen)
+target_link_libraries(${TARGET_NAME} PRIVATE Qt5::Widgets Qt5::3DCore Qt5::3DRender Qt5::3DExtras Qt5::Concurrent Qt5::PrintSupport)
+target_link_libraries (${TARGET_NAME} PRIVATE Eigen3::Eigen)
 
-install (TARGETS graphy RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install (TARGETS ${TARGET_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 install (FILES
 #         $<TARGET_RUNTIME_DLLS:graphy>

@@ -7,7 +7,7 @@ CustomViewContainer::CustomViewContainer(QWidget* container,QWidget*parent, Qt::
 {
     container->setParent(this);
 
-    axisSize=80;
+    axisSize=100;
     createColorAxisPlot();
     createXAxisPlot();
     createYAxisPlot();

@@ -21,6 +21,8 @@ find_package (Eigen3 3.3 REQUIRED)
 find_package(Qt5 COMPONENTS Widgets 3DCore 3DRender 3DExtras Concurrent PrintSupport REQUIRED)
 
 set(SOURCES
+    PenStyleComboBox.cpp
+    PenStyleComboBox.h
     HeadComboBox.cpp
     HeadComboBox.h
     ScatterComboBox.cpp

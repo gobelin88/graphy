@@ -9,24 +9,18 @@ AppearanceDialog::AppearanceDialog(QWidget *parent)
     QGridLayout* gbox = new QGridLayout();
 
     cb_itemLineStyleList = new QComboBox(widget);
-    cb_itemLineStyleList->addItem(QStringLiteral("lsNone"),        int(QCPGraph::LineStyle::lsNone));
-    cb_itemLineStyleList->addItem(QStringLiteral("lsLine"),        int(QCPGraph::LineStyle::lsLine));
-    cb_itemLineStyleList->addItem(QStringLiteral("lsStepLeft"),    int(QCPGraph::LineStyle::lsStepLeft));
-    cb_itemLineStyleList->addItem(QStringLiteral("lsStepRight"),   int(QCPGraph::LineStyle::lsStepRight));
-    cb_itemLineStyleList->addItem(QStringLiteral("lsStepCenter"),  int(QCPGraph::LineStyle::lsStepCenter));
-    cb_itemLineStyleList->addItem(QStringLiteral("lsImpulse"),     int(QCPGraph::LineStyle::lsImpulse));
+    cb_itemLineStyleList->addItem(QStringLiteral("None"),        int(QCPGraph::LineStyle::lsNone));
+    cb_itemLineStyleList->addItem(QStringLiteral("Line"),        int(QCPGraph::LineStyle::lsLine));
+    cb_itemLineStyleList->addItem(QStringLiteral("StepLeft"),    int(QCPGraph::LineStyle::lsStepLeft));
+    cb_itemLineStyleList->addItem(QStringLiteral("StepRight"),   int(QCPGraph::LineStyle::lsStepRight));
+    cb_itemLineStyleList->addItem(QStringLiteral("StepCenter"),  int(QCPGraph::LineStyle::lsStepCenter));
+    cb_itemLineStyleList->addItem(QStringLiteral("Impulse"),     int(QCPGraph::LineStyle::lsImpulse));
 
     cb_ScatterShapes = new ScatterComboBox(widget);
     sb_ScatterSize=new QDoubleSpinBox(widget);
     sb_ScatterSize->setRange(1,100);
 
-    cb_penStyle = new QComboBox(widget);
-    cb_penStyle->addItem(QStringLiteral("SolidLine"));
-    cb_penStyle->addItem(QStringLiteral("DashLine"));
-    cb_penStyle->addItem(QStringLiteral("DotLine"));
-    cb_penStyle->addItem(QStringLiteral("DashDotLine"));
-    cb_penStyle->addItem(QStringLiteral("DashDotDotLine"));
-    cb_penStyle->addItem(QStringLiteral("CustomDashLine"));
+    cb_penStyle = new PenStyleComboBox(widget);
 
     cb_brushStyle = new QComboBox(widget);
     cb_brushStyle->addItem(QStringLiteral("NoBrush"));
@@ -48,6 +42,8 @@ AppearanceDialog::AppearanceDialog(QWidget *parent)
     cw_pen_color = new ColorWheel(widget);
     cw_brush_color = new ColorWheel(widget);
     //cd_pen_color->setOptions(QColorDialog::DontUseNativeDialog| QColorDialog::NoButtons);
+    cw_pen_color->setMinimumSize(QSize(128,128));
+    cw_brush_color->setMinimumSize(QSize(128,128));
 
     cb_gradient=new MyGradientComboBox(widget);
 
@@ -62,8 +58,6 @@ AppearanceDialog::AppearanceDialog(QWidget *parent)
     s_brush_alpha->setPrefix("alpha=");
 
     QGridLayout* g_styleCurve = new QGridLayout();
-    QGroupBox* gb_styleCurve=new QGroupBox("Curve Style");
-    gb_styleCurve->setLayout(g_styleCurve);
 
     g_styleCurve->addWidget(new QLabel("Scatter shape : "),0,0);
     g_styleCurve->addWidget(new QLabel("Scatter size : "),1,0);
@@ -92,9 +86,7 @@ AppearanceDialog::AppearanceDialog(QWidget *parent)
     g_styleCurve->addWidget(s_brush_alpha,8,1);
     g_styleCurve->addWidget(cb_gradient,9,0,1,2);
 
-    //gbox->addWidget(gb_axis,0,0);
-    gbox->addWidget(gb_styleCurve,0,0);
-    widget->setLayout(gbox);
+    widget->setLayout(g_styleCurve);
 
     //-------------------------------------
     this->setLocale(QLocale("C"));

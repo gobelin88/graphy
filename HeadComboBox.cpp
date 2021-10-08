@@ -4,29 +4,29 @@
 
 HeadComboBox::HeadComboBox(QWidget * parent):QComboBox(parent)
 {
-    QStringList headNameList;
-    headNameList.append(QString("None"));
-    headNameList.append(QString("FlatArrow"));
-    headNameList.append(QString("SpikeArrow"));
-    headNameList.append(QString("LineArrow"));
-    headNameList.append(QString("Disc"));
-    headNameList.append(QString("Square"));
-    headNameList.append(QString("Diamond"));
-    headNameList.append(QString("Bar"));
-    headNameList.append(QString("HalfBar"));
-    headNameList.append(QString("SkewedBar"));
+    QStringList entriesNames;
+    entriesNames.append(QString("None"));
+    entriesNames.append(QString("FlatArrow"));
+    entriesNames.append(QString("SpikeArrow"));
+    entriesNames.append(QString("LineArrow"));
+    entriesNames.append(QString("Disc"));
+    entriesNames.append(QString("Square"));
+    entriesNames.append(QString("Diamond"));
+    entriesNames.append(QString("Bar"));
+    entriesNames.append(QString("HalfBar"));
+    entriesNames.append(QString("SkewedBar"));
 
-    QList<int> headValueList;
-    headValueList.append(int(QCPLineEnding::esNone));
-    headValueList.append(int(QCPLineEnding::esFlatArrow));
-    headValueList.append(int(QCPLineEnding::esSpikeArrow));
-    headValueList.append(int(QCPLineEnding::esLineArrow));
-    headValueList.append(int(QCPLineEnding::esDisc));
-    headValueList.append(int(QCPLineEnding::esSquare));
-    headValueList.append(int(QCPLineEnding::esDiamond));
-    headValueList.append(int(QCPLineEnding::esBar));
-    headValueList.append(int(QCPLineEnding::esHalfBar));
-    headValueList.append(int(QCPLineEnding::esSkewedBar));
+    QList<int> entriesValues;
+    entriesValues.append(int(QCPLineEnding::esNone));
+    entriesValues.append(int(QCPLineEnding::esFlatArrow));
+    entriesValues.append(int(QCPLineEnding::esSpikeArrow));
+    entriesValues.append(int(QCPLineEnding::esLineArrow));
+    entriesValues.append(int(QCPLineEnding::esDisc));
+    entriesValues.append(int(QCPLineEnding::esSquare));
+    entriesValues.append(int(QCPLineEnding::esDiamond));
+    entriesValues.append(int(QCPLineEnding::esBar));
+    entriesValues.append(int(QCPLineEnding::esHalfBar));
+    entriesValues.append(int(QCPLineEnding::esSkewedBar));
 
     QPixmap pixmap(64,64);
 
@@ -35,10 +35,10 @@ HeadComboBox::HeadComboBox(QWidget * parent):QComboBox(parent)
     lineEnding.setLength(40);
     lineEnding.setWidth(32);
 
-    for(int i=0;i<headValueList.size();i++)
+    for(int i=0;i<entriesValues.size();i++)
     {
         pixmap.fill();
-        lineEnding.setStyle(static_cast<QCPLineEnding::EndingStyle>(headValueList[i]));
+        lineEnding.setStyle(static_cast<QCPLineEnding::EndingStyle>(entriesValues[i]));
         if(i<4)
         {
             lineEnding.draw(painter,QCPVector2D(32+lineEnding.length()/2,32),0.0);
@@ -48,7 +48,7 @@ HeadComboBox::HeadComboBox(QWidget * parent):QComboBox(parent)
             lineEnding.draw(painter,QCPVector2D(32,32),0.0);
         }
         QIcon icon(pixmap);
-        this->addItem(icon,headNameList[i],headValueList[i]);
+        this->addItem(icon,entriesNames[i],entriesValues[i]);
     }
 
     delete painter;

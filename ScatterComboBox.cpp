@@ -3,21 +3,60 @@
 
 ScatterComboBox::ScatterComboBox(QWidget * parent):QComboBox(parent)
 {
-    addItem(QStringLiteral("None"),             int(QCPScatterStyle::ScatterShape::ssNone));
-    addItem(QStringLiteral("Dot"),              int(QCPScatterStyle::ScatterShape::ssDot));
-    addItem(QStringLiteral("Cross"),            int(QCPScatterStyle::ScatterShape::ssCross));
-    addItem(QStringLiteral("Plus"),             int(QCPScatterStyle::ScatterShape::ssPlus));
-    addItem(QStringLiteral("Circle"),           int(QCPScatterStyle::ScatterShape::ssCircle));
-    addItem(QStringLiteral("Disc"),             int(QCPScatterStyle::ScatterShape::ssDisc));
-    addItem(QStringLiteral("Square"),           int(QCPScatterStyle::ScatterShape::ssSquare));
-    addItem(QStringLiteral("Diamond"),          int(QCPScatterStyle::ScatterShape::ssDiamond));
-    addItem(QStringLiteral("Star"),             int(QCPScatterStyle::ScatterShape::ssStar));
-    addItem(QStringLiteral("Triangle"),         int(QCPScatterStyle::ScatterShape::ssTriangle));
-    addItem(QStringLiteral("TriangleInverted"), int(QCPScatterStyle::ScatterShape::ssTriangleInverted));
-    addItem(QStringLiteral("CrossSquare"),      int(QCPScatterStyle::ScatterShape::ssCrossSquare));
-    addItem(QStringLiteral("PlusSquare"),       int(QCPScatterStyle::ScatterShape::ssPlusSquare));
-    addItem(QStringLiteral("CrossCircle"),      int(QCPScatterStyle::ScatterShape::ssCrossCircle));
-    addItem(QStringLiteral("PlusCircle"),       int(QCPScatterStyle::ScatterShape::ssPlusCircle));
-    addItem(QStringLiteral("Peace"),            int(QCPScatterStyle::ScatterShape::ssPeace));
-    addItem(QStringLiteral("Arrow"),            int(QCPScatterStyle::ScatterShape::ssArrow));
+    QStringList entriesNames;
+    entriesNames.append(QString("None"));
+    entriesNames.append(QString("Dot"));
+    entriesNames.append(QString("Cross"));
+    entriesNames.append(QString("Plus"));
+    entriesNames.append(QString("Circle"));
+    entriesNames.append(QString("Disc"));
+    entriesNames.append(QString("Square"));
+    entriesNames.append(QString("Diamond"));
+    entriesNames.append(QString("Star"));
+    entriesNames.append(QString("Triangle"));
+    entriesNames.append(QString("TriangleInverted"));
+    entriesNames.append(QString("CrossSquare"));
+    entriesNames.append(QString("PlusSquare"));
+    entriesNames.append(QString("CrossCircle"));
+    entriesNames.append(QString("PlusCircle"));
+    entriesNames.append(QString("Peace"));
+    entriesNames.append(QString("Arrow"));
+
+    QList<int> entriesValues;
+    entriesValues.append(int(QCPScatterStyle::ScatterShape::ssNone));
+    entriesValues.append(int(QCPScatterStyle::ScatterShape::ssDot));
+    entriesValues.append(int(QCPScatterStyle::ScatterShape::ssCross));
+    entriesValues.append(int(QCPScatterStyle::ScatterShape::ssPlus));
+    entriesValues.append(int(QCPScatterStyle::ScatterShape::ssCircle));
+    entriesValues.append(int(QCPScatterStyle::ScatterShape::ssDisc));
+    entriesValues.append(int(QCPScatterStyle::ScatterShape::ssSquare));
+    entriesValues.append(int(QCPScatterStyle::ScatterShape::ssDiamond));
+    entriesValues.append(int(QCPScatterStyle::ScatterShape::ssStar));
+    entriesValues.append(int(QCPScatterStyle::ScatterShape::ssTriangle));
+    entriesValues.append(int(QCPScatterStyle::ScatterShape::ssTriangleInverted));
+    entriesValues.append(int(QCPScatterStyle::ScatterShape::ssCrossSquare));
+    entriesValues.append(int(QCPScatterStyle::ScatterShape::ssPlusSquare));
+    entriesValues.append(int(QCPScatterStyle::ScatterShape::ssCrossCircle));
+    entriesValues.append(int(QCPScatterStyle::ScatterShape::ssPlusCircle));
+    entriesValues.append(int(QCPScatterStyle::ScatterShape::ssPeace));
+    entriesValues.append(int(QCPScatterStyle::ScatterShape::ssArrow));
+
+    QPixmap pixmap(64,64);
+
+    QCPPainter * painter= new QCPPainter(&pixmap);
+    QCPScatterStyle shape;
+    shape.setSize(40);
+
+    for(int i=0;i<entriesValues.size();i++)
+    {
+        pixmap.fill();
+        shape.setShape(static_cast<QCPScatterStyle::ScatterShape>(entriesValues[i]));
+
+        shape.drawShape(painter,QPointF(32,32),0.0);
+
+        QIcon icon(pixmap);
+        this->addItem(icon,entriesNames[i],entriesValues[i]);
+    }
+
+    delete painter;
 }

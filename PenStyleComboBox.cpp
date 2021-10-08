@@ -11,7 +11,7 @@ PenStyleComboBox::PenStyleComboBox(QWidget *parent):QComboBox(parent)
     addItem("DashDotDotLine",int(Qt::PenStyle::DashDotDotLine));
     addItem("CustomDashLine",int(Qt::PenStyle::CustomDashLine));
 
-    QSize icon_size(128,16);
+    QSize icon_size(64,16);
     this->setIconSize(icon_size);
 
     for(int k=0;k<this->count();k++)
@@ -24,6 +24,7 @@ PenStyleComboBox::PenStyleComboBox(QWidget *parent):QComboBox(parent)
 QPen PenStyleComboBox::getCurrentPen()
 {
     QPen pen(currentData().value<Qt::PenStyle>());
+    pen.setWidth(2);
     return pen;
 }
 

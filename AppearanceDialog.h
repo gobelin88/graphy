@@ -9,6 +9,7 @@
 #include "MyCustomPlot.h"
 #include "ScatterComboBox.h"
 #include "PenStyleComboBox.h"
+#include "BrushStyleComboBox.h"
 
 class AppearanceDialog:public QDialog
 {
@@ -22,7 +23,7 @@ public:
     ScatterComboBox * cb_ScatterShapes;
     QDoubleSpinBox* sb_ScatterSize;
     PenStyleComboBox * cb_penStyle;
-    QComboBox* cb_brushStyle;
+    BrushStyleComboBox * cb_brushStyle;
     ColorWheel* cw_pen_color;
     ColorWheel* cw_brush_color;
     QDoubleSpinBox* sb_penWidth;

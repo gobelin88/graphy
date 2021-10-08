@@ -22,21 +22,7 @@ AppearanceDialog::AppearanceDialog(QWidget *parent)
 
     cb_penStyle = new PenStyleComboBox(widget);
 
-    cb_brushStyle = new QComboBox(widget);
-    cb_brushStyle->addItem(QStringLiteral("NoBrush"));
-    cb_brushStyle->addItem(QStringLiteral("SolidPattern"));
-    cb_brushStyle->addItem(QStringLiteral("Dense1Pattern"));
-    cb_brushStyle->addItem(QStringLiteral("Dense2Pattern"));
-    cb_brushStyle->addItem(QStringLiteral("Dense3Pattern"));
-    cb_brushStyle->addItem(QStringLiteral("Dense4Pattern"));
-    cb_brushStyle->addItem(QStringLiteral("Dense5Pattern"));
-    cb_brushStyle->addItem(QStringLiteral("Dense6Pattern"));
-    cb_brushStyle->addItem(QStringLiteral("Dense7Pattern"));
-    cb_brushStyle->addItem(QStringLiteral("HorPattern"));
-    cb_brushStyle->addItem(QStringLiteral("VerPattern"));
-    cb_brushStyle->addItem(QStringLiteral("CrossPattern"));
-    cb_brushStyle->addItem(QStringLiteral("BDiagPattern"));
-    cb_brushStyle->addItem(QStringLiteral("DiagCrossPattern"));
+    cb_brushStyle = new BrushStyleComboBox(widget);
 
     //QPushButton* pb_pen_color=new  QPushButton("Pen");
     cw_pen_color = new ColorWheel(widget);
@@ -100,6 +86,12 @@ AppearanceDialog::AppearanceDialog(QWidget *parent)
     gbox->addWidget(buttonBox,1,0);
 
     this->setLayout(gbox);
+
+    //white
+    QPalette pal = palette();
+    pal.setColor(QPalette::Background, Qt::white);
+    this->setAutoFillBackground(true);
+    this->setPalette(pal);
 }
 
 void AppearanceDialog::configure(QList<QCPAbstractPlottable*> plottables)

@@ -11,6 +11,7 @@
 #include "MyTextEdit.h"
 #include "MyHighLighter.h"
 #include <QStandardItemModel>
+#include <QPushButton>
 
 Register::Register()
 {    
@@ -721,7 +722,7 @@ void checkHelp(QStringList names)
     {
         if(getHelp(names[i]).isEmpty())
         {
-            std::cout<<"Missing help for :"<<names[i].toStdString()<<std::endl;
+            //std::cout<<"Missing help for :"<<names[i].toStdString()<<std::endl;
         }
     }
 }
@@ -775,14 +776,34 @@ int Register::getVarExpDialog(QString currentName, QString currentExpression, QS
     QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
     QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
+    QPushButton * pb_next=new QPushButton(">>",dialog);pb_next->setCheckable(true);
+    QPushButton * pb_prev=new QPushButton("<<",dialog);pb_prev->setCheckable(true);
+    pb_next->setMaximumWidth(30);
+    pb_prev->setMaximumWidth(30);
+    pb_next->setShortcut(QKeySequence("PgDown"));
+    pb_prev->setShortcut(QKeySequence("PgUp"));
+
+    QObject::connect(pb_next, SIGNAL(clicked()), dialog, SLOT(accept()));
+    QObject::connect(pb_prev, SIGNAL(clicked()), dialog, SLOT(accept()));
+
+    QHBoxLayout * hlayout=new QHBoxLayout;
+    hlayout->addWidget(pb_prev);
+    hlayout->addWidget(buttonBox);
+    hlayout->addWidget(pb_next);
+
     gbox->addWidget(le_variableName,0,1);
     gbox->addWidget(le_variableExpression,1,1);
     gbox->addWidget(new QLabel("Name="),0,0);
     gbox->addWidget(new QLabel("Formula="),1,0);
-    gbox->addWidget(buttonBox,2,0,1,2);
-
+    gbox->addLayout(hlayout,2,0,1,2);
     dialog->setLayout(gbox);
+
+    le_variableName->setFocusPolicy(Qt::StrongFocus);
+    le_variableName->setFocus();
+    //QTimer::singleShot(0, le_variableName, SLOT(setFocus()));
+
     int result=dialog->exec();
+
     if (result == QDialog::Accepted)
     {
         newName=le_variableName->text();
@@ -804,7 +825,18 @@ int Register::getVarExpDialog(QString currentName, QString currentExpression, QS
         }
 
         //emit sig_modified();
-        return 1;
+        if(pb_next->isChecked())
+        {
+            return 2;
+        }
+        else if(pb_prev->isChecked())
+        {
+            return 3;
+        }
+        else
+        {
+            return 1;
+        }
     }
     else
     {
@@ -812,7 +844,7 @@ int Register::getVarExpDialog(QString currentName, QString currentExpression, QS
     }
 }
 
-bool Register::editVariableAndExpression(int currentIndex)
+int Register::editVariableAndExpression(int currentIndex)
 {
     QString currentName,currentExpression;
     QString newName,newExpression;
@@ -837,7 +869,7 @@ bool Register::editVariableAndExpression(int currentIndex)
     }
     while(ret==-1);
 
-    return bool(ret);
+    return ret;
 
 }
 

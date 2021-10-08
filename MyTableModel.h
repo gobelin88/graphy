@@ -128,6 +128,7 @@ public slots:
     void slot_newColumn(QString varName, VectorXv dataCol);
 
     void slot_createNewColumn();
+    void slot_editColumnVisual(int visualIndex);
     void slot_editColumn(int logicalIndex);
 
     void slot_newRowAbove(int j);

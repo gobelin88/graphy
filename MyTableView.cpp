@@ -7,6 +7,7 @@ MyTableView::MyTableView(int rowsSpan,
                          int nbRow,
                          int nbCols):QTableView(parent)
 {
+    setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     createNew(nbRow,nbCols,rowsSpan);
 
     createPopup();
@@ -25,11 +26,23 @@ void MyTableView::createNew(int nbRow,int nbCols,int rowsSpan)
     QElapsedTimer timer;
     timer.start();
     m_model = new MyModel(nbRow,nbCols,rowsSpan);
+
     std::cout<<"Create [Model A time="<<timer.nsecsElapsed()*1e-9<<"s]"<<std::endl;
     timer.restart();
 
     setHorizontalHeader(m_model->horizontalHeader());
     setVerticalHeader(m_model->verticalHeader());
+
+    std::cout<<"Create [Model B time="<<timer.nsecsElapsed()*1e-9<<"s]"<<std::endl;
+    timer.restart();
+
+    this->blockSignals(true);
+    QItemSelectionModel *m = selectionModel();
+    setModel(m_model);
+    delete m;
+    this->blockSignals(false);
+
+    std::cout<<"Create [Model C time="<<timer.nsecsElapsed()*1e-9<<"s]"<<std::endl;
 
     m_delegate=new MyItemDelegate(this);
     setItemDelegate(m_delegate);
@@ -39,21 +52,12 @@ void MyTableView::createNew(int nbRow,int nbCols,int rowsSpan)
     layout->addWidget(this);
     layout->addWidget(m_model->verticalScrollBar());
 
-    std::cout<<"Create [Model B time="<<timer.nsecsElapsed()*1e-9<<"s]"<<std::endl;
-    timer.restart();
-
-    QItemSelectionModel *m = selectionModel();
-    setModel(m_model);
-    delete m;
-
-    setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 
     //i tried this without success:
     //setVerticalScrollBar(m_model->verticalScrollBar());
     //m_model->verticalScrollBar()->setVisible(true);
     //setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
 
-    std::cout<<"Create [Model C time="<<timer.nsecsElapsed()*1e-9<<"s]"<<std::endl;
 
 }
 

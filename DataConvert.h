@@ -1,10 +1,10 @@
+#ifndef DATACONVERT_H
+#define DATACONVERT_H
+
 #include <QVector>
 #include <iostream>
 #include <Eigen/Dense>
 #include <QDataStream>
-
-#ifndef DATACONVERT_H
-#define DATACONVERT_H
 
 std::vector<double> toStdVector(const Eigen::VectorXd& v);
 Eigen::VectorXd fromStdVector(const std::vector<double>& v_std);

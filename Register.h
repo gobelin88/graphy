@@ -41,7 +41,7 @@ public:
     void swapVariables(int ida,int idb);
     void moveVariable(int ida,int idb);
     void dispVariables();
-    bool editVariableAndExpression(int currentIndex);
+    int editVariableAndExpression(int currentIndex);
 
     void clear();
     bool newVariable   (QString varname,QString varexpr);

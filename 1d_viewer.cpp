@@ -9,6 +9,8 @@
 #include "shapes/Gaussian.h"
 #include "shapes/Impedances.hpp"
 
+#include "HeadComboBox.h"
+
 Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* parent):QCustomPlot(parent)
 {
     colors<<QColor(160,0,0);
@@ -23,6 +25,8 @@ Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* par
     colors<<QColor(0,0,0);
 
     createPopup();
+    appearanceDialog=new AppearanceDialog(nullptr);
+    connectAppearance(appearanceDialog);
 
     this->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
                           QCP::iSelectLegend | QCP::iSelectPlottables | QCP::iSelectItems);
@@ -39,7 +43,6 @@ Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* par
     left_right=Qt::AlignRight;
 
     modifiers=Qt::NoModifier;
-    state_label.clear();
     state_arrow.clear();
     state_mark.clear();
     state_tracer.clear();
@@ -47,6 +50,7 @@ Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* par
 
     deltaArrowItem=nullptr;
     deltaLabel=nullptr;
+    textItem=nullptr;
     arrowItem=nullptr;
     tracerItem=nullptr;
     lineItem=nullptr;
@@ -65,7 +69,7 @@ Viewer1D::~Viewer1D()
 
 }
 
-unsigned int Viewer1D::getId()
+unsigned int Viewer1D::getColorId()
 {
     unsigned int id=(this->plottableCount()-1)%colors.size();
     return id;
@@ -126,197 +130,36 @@ void Viewer1D::slot_add_data(const Curve2D& datacurve)
     replot();
 }
 
+void Viewer1D::connectAppearance(AppearanceDialog * adiag)
+{
+    QObject::connect(adiag->s_pen_alpha, SIGNAL(valueChanged(double)), this, SLOT(slot_setPenAlpha(double)));
+    QObject::connect(adiag->s_brush_alpha, SIGNAL(valueChanged(double)), this, SLOT(slot_setBrushAlpha(double)));
+    QObject::connect(adiag->cw_brush_color, SIGNAL(colorChanged(QColor)), this, SLOT(slot_setBrushColor(QColor)));
+    QObject::connect(adiag->sb_penWidth, SIGNAL(valueChanged(double)), this, SLOT(slot_setPenWidth(double)));
+    QObject::connect(adiag->cw_pen_color, SIGNAL(colorChanged(QColor)), this, SLOT(slot_setPenColor(QColor)));
+    QObject::connect(adiag->cb_penStyle, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setPenStyle(int)));
+    QObject::connect(adiag->cb_brushStyle, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setBrushStyle(int)));
+    QObject::connect(adiag->cb_ScatterShapes, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setScatterShape(int)));
+    QObject::connect(adiag->sb_ScatterSize, SIGNAL(valueChanged(double) ), this, SLOT(slot_setScatterSize(double)));
+    QObject::connect(adiag->cb_itemLineStyleList, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setStyle(int)));
+    QObject::connect(adiag->cb_gradient, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setScalarFieldGradientType(int)));
+}
+
 void Viewer1D::configurePopup()
 {
     QList<QCPAbstractPlottable*> plottables=selectedPlottables();
-
-    cb_gradient->hide();
-
     actSaveMap->setVisible(false);
 
     if (plottables.size()>0)
     {
-        parameterWidget->setWindowTitle("Appearance of : "+plottables[0]->name());
-
-        QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(plottables[0]);
-        QCPGraph* currentgraph=dynamic_cast<QCPGraph*>(plottables[0]);
         QCPColorMap* currentmap=dynamic_cast<QCPColorMap*>(plottables[0]);
         if (currentmap)
         {
             actSaveMap->setVisible(true);
-            cb_gradient->setCurrentIndex(currentmap->colorScale()->gradient().getPreset());
-            cb_gradient->show();
         }
-        else if (currentcurve)
-        {
-            cb_itemLineStyleList->setCurrentIndex(currentcurve->lineStyle());
-            cb_ScatterShapes->setCurrentIndex(static_cast<int>(currentcurve->scatterStyle().shape()));
-            sb_ScatterSize->setValue(currentcurve->scatterStyle().size());
-            if (currentcurve->getScalarField().size()>0)
-            {
-                cb_gradient->setCurrentIndex(currentcurve->getScalarFieldGradientType());
-                cb_gradient->show();
-            }
-        }
-        else if (currentgraph)
-        {
-            cb_itemLineStyleList->setCurrentIndex(currentgraph->lineStyle());
-            cb_ScatterShapes->setCurrentIndex(static_cast<int>(currentgraph->scatterStyle().shape()));
-            sb_ScatterSize->setValue(currentgraph->scatterStyle().size());
-            if (currentgraph->getScalarField().size()>0)
-            {
-                cb_gradient->setCurrentIndex(currentgraph->getScalarFieldGradientType());
-                cb_gradient->show();
-            }
-        }
-
-
-        s_pen_alpha->setValue(plottables[0]->pen().color().alphaF());
-        s_brush_alpha->setValue(plottables[0]->brush().color().alphaF());
-        cb_brushStyle->setCurrentIndex(plottables[0]->brush().style());
-        cb_penStyle->setCurrentIndex(plottables[0]->pen().style()-1);
-        cw_pen_color->setColor(plottables[0]->pen().color());
-        cw_brush_color->setColor(plottables[0]->brush().color());
-        sb_penWidth->setValue(plottables[0]->pen().widthF());
-
     }
 }
 
-QComboBox * Viewer1D::createScatterComboBox(QWidget * parent)
-{
-    QComboBox * comboBox=new QComboBox(parent);
-    comboBox->addItem(QStringLiteral("ssNone"),             int(QCPScatterStyle::ScatterShape::ssNone));
-    comboBox->addItem(QStringLiteral("ssDot"),              int(QCPScatterStyle::ScatterShape::ssDot));
-    comboBox->addItem(QStringLiteral("ssCross"),            int(QCPScatterStyle::ScatterShape::ssCross));
-    comboBox->addItem(QStringLiteral("ssPlus"),             int(QCPScatterStyle::ScatterShape::ssPlus));
-    comboBox->addItem(QStringLiteral("ssCircle"),           int(QCPScatterStyle::ScatterShape::ssCircle));
-    comboBox->addItem(QStringLiteral("ssDisc"),             int(QCPScatterStyle::ScatterShape::ssDisc));
-    comboBox->addItem(QStringLiteral("ssSquare"),           int(QCPScatterStyle::ScatterShape::ssSquare));
-    comboBox->addItem(QStringLiteral("ssDiamond"),          int(QCPScatterStyle::ScatterShape::ssDiamond));
-    comboBox->addItem(QStringLiteral("ssStar"),             int(QCPScatterStyle::ScatterShape::ssStar));
-    comboBox->addItem(QStringLiteral("ssTriangle"),         int(QCPScatterStyle::ScatterShape::ssTriangle));
-    comboBox->addItem(QStringLiteral("ssTriangleInverted"), int(QCPScatterStyle::ScatterShape::ssTriangleInverted));
-    comboBox->addItem(QStringLiteral("ssCrossSquare"),      int(QCPScatterStyle::ScatterShape::ssCrossSquare));
-    comboBox->addItem(QStringLiteral("ssPlusSquare"),       int(QCPScatterStyle::ScatterShape::ssPlusSquare));
-    comboBox->addItem(QStringLiteral("ssCrossCircle"),      int(QCPScatterStyle::ScatterShape::ssCrossCircle));
-    comboBox->addItem(QStringLiteral("ssPlusCircle"),       int(QCPScatterStyle::ScatterShape::ssPlusCircle));
-    comboBox->addItem(QStringLiteral("ssPeace"),            int(QCPScatterStyle::ScatterShape::ssPeace));
-    comboBox->addItem(QStringLiteral("ssArrow"),            int(QCPScatterStyle::ScatterShape::ssArrow));
-    return comboBox;
-}
-
-QWidget* Viewer1D::createParametersWidget(QWidget * parent)
-{
-
-    QWidget* widget=new QWidget(parent);
-    widget->setMinimumWidth(400);
-
-    QGridLayout* gbox = new QGridLayout();
-
-    cb_itemLineStyleList = new QComboBox(widget);
-    cb_itemLineStyleList->addItem(QStringLiteral("lsNone"),        int(QCPGraph::LineStyle::lsNone));
-    cb_itemLineStyleList->addItem(QStringLiteral("lsLine"),        int(QCPGraph::LineStyle::lsLine));
-    cb_itemLineStyleList->addItem(QStringLiteral("lsStepLeft"),    int(QCPGraph::LineStyle::lsStepLeft));
-    cb_itemLineStyleList->addItem(QStringLiteral("lsStepRight"),   int(QCPGraph::LineStyle::lsStepRight));
-    cb_itemLineStyleList->addItem(QStringLiteral("lsStepCenter"),  int(QCPGraph::LineStyle::lsStepCenter));
-    cb_itemLineStyleList->addItem(QStringLiteral("lsImpulse"),     int(QCPGraph::LineStyle::lsImpulse));
-
-    cb_ScatterShapes = createScatterComboBox(widget);
-    sb_ScatterSize=new QDoubleSpinBox(widget);
-    sb_ScatterSize->setRange(1,100);
-
-    cb_penStyle = new QComboBox(widget);
-    cb_penStyle->addItem(QStringLiteral("SolidLine"));
-    cb_penStyle->addItem(QStringLiteral("DashLine"));
-    cb_penStyle->addItem(QStringLiteral("DotLine"));
-    cb_penStyle->addItem(QStringLiteral("DashDotLine"));
-    cb_penStyle->addItem(QStringLiteral("DashDotDotLine"));
-    cb_penStyle->addItem(QStringLiteral("CustomDashLine"));
-
-    cb_brushStyle = new QComboBox(widget);
-    cb_brushStyle->addItem(QStringLiteral("NoBrush"));
-    cb_brushStyle->addItem(QStringLiteral("SolidPattern"));
-    cb_brushStyle->addItem(QStringLiteral("Dense1Pattern"));
-    cb_brushStyle->addItem(QStringLiteral("Dense2Pattern"));
-    cb_brushStyle->addItem(QStringLiteral("Dense3Pattern"));
-    cb_brushStyle->addItem(QStringLiteral("Dense4Pattern"));
-    cb_brushStyle->addItem(QStringLiteral("Dense5Pattern"));
-    cb_brushStyle->addItem(QStringLiteral("Dense6Pattern"));
-    cb_brushStyle->addItem(QStringLiteral("Dense7Pattern"));
-    cb_brushStyle->addItem(QStringLiteral("HorPattern"));
-    cb_brushStyle->addItem(QStringLiteral("VerPattern"));
-    cb_brushStyle->addItem(QStringLiteral("CrossPattern"));
-    cb_brushStyle->addItem(QStringLiteral("BDiagPattern"));
-    cb_brushStyle->addItem(QStringLiteral("DiagCrossPattern"));
-
-    //QPushButton* pb_pen_color=new  QPushButton("Pen");
-    cw_pen_color = new ColorWheel(widget);
-    cw_brush_color = new ColorWheel(widget);
-    //cd_pen_color->setOptions(QColorDialog::DontUseNativeDialog| QColorDialog::NoButtons);
-
-    cb_gradient=new MyGradientComboBox(widget);
-
-    sb_penWidth=new QDoubleSpinBox(widget);
-    s_pen_alpha=new QDoubleSpinBox(widget);
-    s_pen_alpha->setRange(0,1.0);
-    s_pen_alpha->setSingleStep(0.1);
-    s_pen_alpha->setPrefix("alpha=");
-    s_brush_alpha=new QDoubleSpinBox(widget);
-    s_brush_alpha->setRange(0,1.0);
-    s_brush_alpha->setSingleStep(0.1);
-    s_brush_alpha->setPrefix("alpha=");
-
-    QGridLayout* g_styleCurve = new QGridLayout();
-    QGroupBox* gb_styleCurve=new QGroupBox("Curve Style");
-    gb_styleCurve->setLayout(g_styleCurve);
-
-    g_styleCurve->addWidget(new QLabel("Scatter shape : "),0,0);
-    g_styleCurve->addWidget(new QLabel("Scatter size : "),1,0);
-    g_styleCurve->addWidget(new QLabel("Line style : "),2,0);
-    g_styleCurve->addWidget(new QLabel("Pen style : "),3,0);
-    g_styleCurve->addWidget(new QLabel("Pen size : "),4,0);
-    g_styleCurve->addWidget(new QLabel("Brush style : "),5,0);
-
-    g_styleCurve->addWidget(cb_ScatterShapes,0,1);
-    g_styleCurve->addWidget(sb_ScatterSize,1,1);
-    g_styleCurve->addWidget(cb_itemLineStyleList,2,1);
-    g_styleCurve->addWidget(cb_penStyle,3,1);
-    g_styleCurve->addWidget(sb_penWidth,4,1);
-    g_styleCurve->addWidget(cb_brushStyle,5,1);
-
-    QLabel* l_pen_color=new QLabel("Pen color");
-    QLabel* l_brush_color=new QLabel("Brush color");
-    l_pen_color->setAlignment(Qt::AlignHCenter);
-    l_brush_color->setAlignment(Qt::AlignHCenter);
-
-    g_styleCurve->addWidget(l_pen_color,6,0);
-    g_styleCurve->addWidget(l_brush_color,6,1);
-    g_styleCurve->addWidget(cw_pen_color,7,0);
-    g_styleCurve->addWidget(cw_brush_color,7,1);
-    g_styleCurve->addWidget(s_pen_alpha,8,0);
-    g_styleCurve->addWidget(s_brush_alpha,8,1);
-    g_styleCurve->addWidget(cb_gradient,9,0,1,2);
-
-    //gbox->addWidget(gb_axis,0,0);
-    gbox->addWidget(gb_styleCurve,0,0);
-    widget->setLayout(gbox);
-
-    QObject::connect(s_pen_alpha, SIGNAL(valueChanged(double)), this, SLOT(slot_setPenAlpha(double)));
-    QObject::connect(s_brush_alpha, SIGNAL(valueChanged(double)), this, SLOT(slot_setBrushAlpha(double)));
-
-    QObject::connect(cw_brush_color, SIGNAL(colorChanged(QColor)), this, SLOT(slot_setBrushColor(QColor)));
-    QObject::connect(sb_penWidth, SIGNAL(valueChanged(double)), this, SLOT(slot_setPenWidth(double)));
-    QObject::connect(cw_pen_color, SIGNAL(colorChanged(QColor)), this, SLOT(slot_setPenColor(QColor)));
-    QObject::connect(cb_penStyle, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setPenStyle(int)));
-    QObject::connect(cb_brushStyle, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setBrushStyle(int)));
-    QObject::connect(cb_ScatterShapes, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setScatterShape(int)));
-    QObject::connect(sb_ScatterSize, SIGNAL(valueChanged(double) ), this, SLOT(slot_setScatterSize(double)));
-    QObject::connect(cb_itemLineStyleList, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setStyle(int)));
-
-    QObject::connect(cb_gradient, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setScalarFieldGradientType(int)));
-
-    return widget;
-}
 
 void Viewer1D::createPopup()
 {
@@ -480,12 +323,7 @@ void Viewer1D::createPopup()
     menuThemes->addAction(actSetScatters);
     menuAppearance->addMenu(menuLegend);
 
-    parameterWidget=createParametersWidget(nullptr);
-    parameterWidget->hide();
 
-    //QWidgetAction* actWidget=new QWidgetAction(popup_menu);
-    //actWidget->setDefaultWidget(parameterWidget);
-    //menuAppearance->addAction(actWidget);
 
     menuAnalyse->addMenu(menuFit);
     menuAnalyse->addMenu(menuScalarField);
@@ -685,7 +523,7 @@ void Viewer1D::slot_setScatters()
         QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
         QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
-        QComboBox * cb_scattersShape=createScatterComboBox(dialog);
+        QComboBox * cb_scattersShape=new ScatterComboBox(dialog);
         cb_scattersShape->setCurrentIndex(scattersList[0]);
         QObject::connect(cb_scattersShape, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setScattersShape(int)));
 
@@ -971,7 +809,7 @@ void Viewer1D::slot_gadgetTracer()
     if(list.size()>0)
     {
         tracerItem=createTracer(0.0,list[0]);
-        tracerLabel=addLabel(0,tracerItem->position->value());
+        tracerLabel=createLabel(0,tracerItem->position->value());
 
         state_tracer = QString("first");
         this->setCursor(Qt::PointingHandCursor);
@@ -980,7 +818,8 @@ void Viewer1D::slot_gadgetTracer()
 
 void Viewer1D::slot_gadgetText()
 {
-    state_label = QInputDialog::getText(this, "New label", "New label :", QLineEdit::Normal,"");
+    QString textContent = QInputDialog::getText(this, "New label", "New label :", QLineEdit::Normal,"");
+    textItem=createTextItem(0,0,textContent);
     this->setCursor(Qt::PointingHandCursor);
 }
 
@@ -1015,12 +854,12 @@ QCPItemTracer * Viewer1D::createTracer(double cx,QCPGraph * graph)
     return groupTracer;
 }
 
-MyLabel * Viewer1D::addLabel(double cx, double cy)
+MyLabel * Viewer1D::createLabel(double cx, double cy)
 {
     return new MyLabel(this,cx,cy);
 }
 
-void Viewer1D::addTextLabel(double cx,double cy,QString markstr)
+QCPItemText * Viewer1D::createTextItem(double cx,double cy,QString markstr)
 {
     // add the text label at the top:
     QCPItemText* coordtextStr = new QCPItemText(this);
@@ -1033,6 +872,8 @@ void Viewer1D::addTextLabel(double cx,double cy,QString markstr)
     coordtextStr->setPadding(QMargins(8, 0, 0, 0));
 
     this->replot();
+
+    return coordtextStr;
 }
 
 //void Viewer1D::keyPressEvent(QKeyEvent* event)
@@ -1088,6 +929,12 @@ void Viewer1D::mouseMoveEvent(QMouseEvent* event)
         {
             arrowItem->end->setCoords(cx, cy);
         }
+        replot();
+    }
+
+    if(textItem)
+    {
+        textItem->position->setCoords(cx, cy);
         replot();
     }
 
@@ -1333,17 +1180,16 @@ void Viewer1D::mousePressEvent(QMouseEvent* event)
 
     if (!state_mark.isEmpty() && event->button() == Qt::LeftButton)
     {
-        addLabel(cx,cy);
+        createLabel(cx,cy);
 
         state_mark.clear();
         this->setCursor(Qt::ArrowCursor);
         replot();
     }
 
-    if (!state_label.isEmpty() && event->button() == Qt::LeftButton)
+    if (textItem && event->button() == Qt::LeftButton)
     {
-        addTextLabel(cx,cy,state_label);
-        state_label.clear();
+        textItem=nullptr;
         this->setCursor(Qt::ArrowCursor);
         replot();
     }
@@ -1531,9 +1377,8 @@ void Viewer1D::slot_plottableDoubleClick(QCPAbstractPlottable* plottable, int n,
     Q_UNUSED(n);
 
     //parameterWidget->setWindowFlags(Qt::WindowStaysOnTopHint);
-    configurePopup();
-    parameterWidget->raise();
-    parameterWidget->show();
+    appearanceDialog->configure(plottables());
+    appearanceDialog->exec();
 }
 
 void Viewer1D::slot_itemDoubleClick(QCPAbstractItem* item,QMouseEvent* event)
@@ -1564,18 +1409,27 @@ void Viewer1D::slot_itemDoubleClick(QCPAbstractItem* item,QMouseEvent* event)
         fontSize->setSuffix(" pt");
         fontSize->setValue(ptextItem->font().pointSize());
 
+        QPushButton * bp_move=new QPushButton("Move",dialog);
+        bp_move->setCheckable(true);
+
         gbox->addWidget(le_label,0,0);
         gbox->addWidget(colorWheel,1,0);
         gbox->addWidget(fontSize,2,0);
         gbox->addWidget(buttonBox,3,0);
+        gbox->addWidget(bp_move,4,0);
         dialog->setLayout(gbox);
 
+        QObject::connect(bp_move, SIGNAL(clicked()), dialog, SLOT(accept()));
         QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
         QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
         int result=dialog->exec();
         if (result == QDialog::Accepted)
         {
+            if(bp_move->isChecked())
+            {
+                textItem=ptextItem;
+            }
             ptextItem->setText(le_label->text());
             ptextItem->setColor(colorWheel->color());
             ptextItem->setFont(QFont(ptextItem->font().family(),fontSize->value()));
@@ -1615,6 +1469,48 @@ void Viewer1D::slot_itemDoubleClick(QCPAbstractItem* item,QMouseEvent* event)
         {
             ptracerItem->setSize(sb_size->value());
             ptracerItem->setBrush(QBrush(colorWheel->color()));
+        }
+    }
+
+    //If curve
+    QCPItemCurve * pcurveItem=dynamic_cast<QCPItemCurve *>(item);
+    if(pcurveItem)
+    {
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("Edit curve");
+        QGridLayout* gbox = new QGridLayout();
+
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok| QDialogButtonBox::Cancel);
+
+        QDoubleSpinBox * sb_size=new QDoubleSpinBox(dialog);
+        sb_size->setPrefix("Size=");
+        sb_size->setValue(pcurveItem->pen().widthF());
+
+        ColorWheel * colorWheel=new ColorWheel(dialog);
+        colorWheel->setColor(pcurveItem->pen().color());
+
+        HeadComboBox * cb_endStyle=new HeadComboBox(dialog);
+        cb_endStyle->setCurrentIndex(cb_endStyle->findData(QVariant::fromValue(pcurveItem->head().style())));
+
+        gbox->addWidget(sb_size,0,0);
+        gbox->addWidget(colorWheel,1,0);
+        gbox->addWidget(cb_endStyle,2,0);
+        gbox->addWidget(buttonBox,3,0);
+        dialog->setLayout(gbox);
+
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+        int result=dialog->exec();
+
+        if (result == QDialog::Accepted)
+        {
+            QPen pen;
+            pen.setWidthF(sb_size->value());
+            pen.setColor(colorWheel->color());
+            pcurveItem->setPen(pen);
+            pcurveItem->setHead(cb_endStyle->currentData().value<QCPLineEnding::EndingStyle>());
         }
     }
 
@@ -2754,9 +2650,8 @@ void Viewer1D::slot_Distance()
 
 void Viewer1D::slot_appearance()
 {
-    configurePopup();
-    parameterWidget->raise();
-    parameterWidget->show();
+    appearanceDialog->configure(plottables());
+    appearanceDialog->exec();
 }
 
 void Viewer1D::slot_medianFilter()

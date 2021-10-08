@@ -21,6 +21,12 @@ find_package (Eigen3 3.3 REQUIRED)
 find_package(Qt5 COMPONENTS Widgets 3DCore 3DRender 3DExtras Concurrent PrintSupport REQUIRED)
 
 set(SOURCES
+    HeadComboBox.cpp
+    HeadComboBox.h
+    ScatterComboBox.cpp
+    ScatterComboBox.h
+    AppearanceDialog.cpp
+    AppearanceDialog.h
     1d_viewer.cpp
     2d_curve.cpp
     2d_curveComplex.cpp
@@ -121,10 +127,10 @@ set(SOURCES
     single_application/singleapplication.h
     single_application/singleapplication_p.h
     mainwindow.ui
+    icon.rc
     rsc.qrc
-    icon.rc)
+    )
 
-#qt5_add_resources(SOURCES )
 add_executable(${TARGET_NAME} ${SOURCES})
 
 string(REGEX REPLACE "/W[3|4]" "/w" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
@@ -152,6 +158,9 @@ install (FILES
 
 install (DIRECTORY ${_qt5Core_install_prefix}/plugins/platforms DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 install (DIRECTORY ${_qt5Core_install_prefix}/plugins/styles DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install (DIRECTORY ${_qt5Core_install_prefix}/plugins/imageformats DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install (DIRECTORY ${_qt5Core_install_prefix}/plugins/printsupport DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
 
 message("CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")
 message("PROJECT_BINARY_DIR=${PROJECT_BINARY_DIR}")

@@ -73,7 +73,7 @@ void MyModel::create(int nbRows, int nbCols,int rowSpan)
 void MyModel::createEmpty(int nbRows, int nbCols)
 {
     reg.clear();
-    m_data=MatrixXv(nbRows,nbCols);
+    m_data.resize(nbRows,nbCols);
     for(int i=0;i<nbCols;i++)
     {
         QString value = QString("C%1").arg(i+1);
@@ -929,28 +929,48 @@ void MyModel::slot_createNewColumn()
     slot_editColumn(-1);
 }
 
-void MyModel::slot_editColumn(int logicalIndex)
+void MyModel::slot_editColumnVisual(int visualIndex)
 {
-    int visualIndex=h_header->visualIndex( logicalIndex );
-
-    if (reg.editVariableAndExpression(visualIndex))
+    std::cout<<"VisualIndex="<<visualIndex<<std::endl;
+    int ret=reg.editVariableAndExpression(visualIndex);
+    if (ret)
     {
+        std::cout<<"ret="<<ret<<std::endl;
         if(visualIndex==-1)//new col
         {
             visualIndex=m_data.cols();
             dataAddColumn(m_data,VectorXv(m_data.rows()));
         }
 
-        if(!reg.variablesExpressions()[visualIndex].isEmpty())
-        {
-            //evalColumn(visualIndex);
-        }
-
         emit layoutChanged();
-
         modified=true;
         emit sig_dataChanged();
+
+        if(ret==2)//next
+        {
+            ++visualIndex;
+            if(visualIndex>(m_data.cols()-1))
+            {
+                visualIndex=0;
+            }
+            slot_editColumnVisual(visualIndex);
+        }
+        else if(ret==3)//prev
+        {
+            --visualIndex;
+            if(visualIndex<0)
+            {
+                visualIndex=(m_data.cols()-1);
+            }
+            slot_editColumnVisual(visualIndex);
+        }
     }
+}
+
+void MyModel::slot_editColumn(int logicalIndex)
+{
+    int visualIndex=h_header->visualIndex( logicalIndex );
+    slot_editColumnVisual(visualIndex);
 }
 
 void MyModel::slot_newRowAbove(int j)

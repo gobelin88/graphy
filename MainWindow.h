@@ -27,7 +27,11 @@ public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
+    void setArgs(QStringList args);
+
 public slots:
+
+
     //IO & edition
     void receivedMessage(int instanceId, QByteArray message);
 
@@ -37,6 +41,7 @@ public slots:
     void slot_save();
     void slot_save_as();
     void slot_export();
+    void direct_open_args();
     void direct_open(QStringList filenames);
     void direct_save(QString filename);
 
@@ -134,6 +139,7 @@ private:
 
     //misc
     int fileAlreadyOpened(QString filename);
+    QStringList args;
 };
 
 #endif // MAINWINDOW_H

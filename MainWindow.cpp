@@ -14,6 +14,8 @@ MainWindow::MainWindow(QWidget* parent) :
     ui(new Ui::MainWindow)
 {
     //Gui--------------------------------------------------------------------------
+    QElapsedTimer timer;
+    timer.start();
     ui->setupUi(this);
     this->setWindowTitle(QString("Graphy %1").arg(graphyVersion));
 
@@ -91,6 +93,7 @@ MainWindow::MainWindow(QWidget* parent) :
     //------------------------------------------------------------------------------
 
     loadShortcuts();
+    std::cout<<"MainWindow time="<<timer.nsecsElapsed()*1e-9<<std::endl;
 }
 
 void MainWindow::slot_updateRamCpu()
@@ -103,6 +106,11 @@ void MainWindow::slot_updateRamCpu()
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::setArgs(QStringList args)
+{
+    this->args=args;
 }
 
 void MainWindow::receivedMessage(int instanceId, QByteArray message)
@@ -214,7 +222,7 @@ QString MainWindow::getCurrentFilename()
     }
     else
     {
-        return QString("");
+        return QString();
     }
 }
 
@@ -232,7 +240,7 @@ int MainWindow::fileAlreadyOpened(QString filename)
 {
     for(int i=0;i<tables.size();i++)
     {
-        if(tables[i]->model()->getCurrentFilename()==filename)
+        if(QFileInfo(tables[i]->model()->getCurrentFilename())==QFileInfo(filename))
         {
             return i;
         }
@@ -249,6 +257,12 @@ void MainWindow::connectTable(MyTableView * newtable)
     connect(newtable,&MyTableView::sig_saved,this,&MainWindow::slot_save_end);
 }
 
+void MainWindow::direct_open_args()
+{
+    std::cout<<"direct_open_args"<<std::endl;
+    direct_open(args);
+}
+
 void MainWindow::direct_open(QStringList filenames)
 {
     for(int i=0;i<filenames.size();i++)
@@ -258,7 +272,7 @@ void MainWindow::direct_open(QStringList filenames)
         {
             QElapsedTimer timer;
             timer.start();
-            MyTableView * newtable=new MyTableView(25,this);            
+            MyTableView * newtable=new MyTableView(25,this);
             connectTable(newtable);
 
             std::cout<<"Create [time="<<timer.nsecsElapsed()*1e-9<<" s]"<<std::endl;
@@ -292,7 +306,7 @@ void MainWindow::slot_save()
     {
         direct_save(getCurrentFilename());
     }
-    else
+    else if(getCurrentTable()!=nullptr)
     {
         slot_save_as();
     }
@@ -300,11 +314,14 @@ void MainWindow::slot_save()
 
 void MainWindow::slot_save_as()
 {
-    QString filename=QFileDialog::getSaveFileName(this,"Save data",getCurrentFilename(),tr("Data file (*.csv *.graphy)"));
-
-    if (!filename.isEmpty())
+    if(getCurrentTable()!=nullptr)
     {
-        direct_save(filename);
+        QString filename=QFileDialog::getSaveFileName(this,"Save data",getCurrentFilename(),tr("Data file (*.csv *.graphy)"));
+
+        if (!filename.isEmpty())
+        {
+            direct_save(filename);
+        }
     }
 }
 

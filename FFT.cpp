@@ -195,28 +195,39 @@ double FFTDialog::getFe()
 void FFTDialog::setFormula(bool value)
 {
     Q_UNUSED(value);
+
+    QPixmap pix;
+    QString pixFileName;
+
     if(cb_symetrical->isChecked())
     {
         if(cb_inverse->isChecked())
         {
-            labelFormula->setPixmap(QPixmap(":/eqn/eqn/invfft.gif"));
+            pixFileName=":/eqn/eqn/invfft.gif";
         }
         else
         {
-            labelFormula->setPixmap(QPixmap(":/eqn/eqn/fft.gif"));
+            pixFileName=":/eqn/eqn/fft.gif";
         }
     }
     else
     {
         if(cb_inverse->isChecked())
         {
-            labelFormula->setPixmap(QPixmap(":/eqn/eqn/invfft_asym.gif"));
+            pixFileName=":/eqn/eqn/invfft_asym.gif";
         }
         else
         {
-            labelFormula->setPixmap(QPixmap(":/eqn/eqn/fft_asym.gif"));
+            pixFileName=":/eqn/eqn/fft_asym.gif";
         }
     }
+
+    if(!pix.load(pixFileName))
+    {
+        std::cout<<"Unable to load "<<pixFileName.toStdString()<<std::endl;
+    }
+
+    labelFormula->setPixmap(pix);
 }
 
 void FFTDialog::setWindowsFormula(MyFFT::WindowsType type)

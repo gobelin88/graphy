@@ -7810,6 +7810,49 @@ protected:
     QPen mainPen() const;
 };
 
+class QCP_LIB_DECL QCPItemCustomCurve : public QCPAbstractItem
+{
+    Q_OBJECT
+public:
+    explicit QCPItemCustomCurve(QCustomPlot* parentPlot);
+    virtual ~QCPItemCustomCurve();
+
+    // getters:
+    QPen pen() const
+    {
+        return mPen;
+    }
+    QPen selectedPen() const
+    {
+        return mSelectedPen;
+    }
+
+    // setters;
+    void setPen(const QPen& pen);
+    void setSelectedPen(const QPen& pen);
+
+    void setData(const std::vector<Eigen::Vector2d> & points)
+    {
+        this->points=points;
+    }
+
+    virtual double selectTest(const QPointF& pos, bool onlySelectable, QVariant* details=0) const Q_DECL_OVERRIDE;
+
+protected:
+    // property members:
+    QPen mPen, mSelectedPen;
+
+    // reimplemented virtual methods:
+    virtual void draw(QCPPainter* painter) Q_DECL_OVERRIDE;
+
+    QCPItemPosition * currentPoint;
+
+    std::vector<Eigen::Vector2d> points;
+
+    QPainterPath getPath()const;
+    QPen mainPen() const;
+};
+
 /* end of 'src/items/item-curve.h' */
 
 

@@ -62,10 +62,10 @@ void ViewerBode::createFitImpedanceMenu()
 
 void ViewerBode::slot_add_data(const Curve2DComplex& curve)
 {
-    modules_viewer->slot_add_data(curve.getModulesCurve());
-    phases_viewer->slot_add_data(curve.getArgumentsCurve());
-    real_viewer->slot_add_data(curve.getRealCurve());
-    imag_viewer->slot_add_data(curve.getImagCurve());
+    modules_viewer->slot_addData(curve.getModulesCurve());
+    phases_viewer->slot_addData(curve.getArgumentsCurve());
+    real_viewer->slot_addData(curve.getRealCurve());
+    imag_viewer->slot_addData(curve.getImagCurve());
     curves.push_back(curve);
 }
 

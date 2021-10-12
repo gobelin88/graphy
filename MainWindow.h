@@ -30,15 +30,15 @@ public:
     void setArgs(QStringList args);
 
 public slots:
-
-
     //IO & edition
     void receivedMessage(int instanceId, QByteArray message);
 
     void slot_filter();
     void slot_new();
     void slot_open();
+    void slot_open_end(MyTableView * newtable);
     void slot_save();
+    void slot_save_end(MyTableView * table);
     void slot_save_as();
     void slot_export();
     void direct_open_args();
@@ -77,11 +77,8 @@ public slots:
     void slot_what(QString what);
     void slot_error(QString what,QString msg);
 
-    //
-    void slot_open_end(MyTableView * newtable);
-    void slot_save_end(MyTableView * table);
+    //    
     void connectTable(MyTableView * newtable);
-
     void slot_updateRamCpu();
 
 private:

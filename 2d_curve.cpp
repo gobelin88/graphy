@@ -360,15 +360,19 @@ Eigen::VectorXd Curve2D::fit(unsigned int order)
     return X.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(Y);
 }
 
+std::vector<Eigen::Vector2d> Curve2D::getPoints()
+{
+    std::vector<Eigen::Vector2d> points(x.rows());
+    for (int i=0; i<x.rows(); ++i)
+    {
+        points[i]=Eigen::Vector2d(x[i],y[i]);
+    }
+    return points;
+}
+
 void Curve2D::fit(Shape<Eigen::Vector2d>* model)
 {
-    std::vector<Eigen::Vector2d> points;
-    for (int m=0; m<x.size(); ++m)
-    {
-        points.push_back(Eigen::Vector2d(x[m],y[m]));
-    }
-
-    model->fit(points,10000);
+    model->fit(getPoints(),10000);
 }
 
 

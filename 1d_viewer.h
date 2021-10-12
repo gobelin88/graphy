@@ -11,6 +11,7 @@
 #include "MySciDoubleSpinBox.h"
 #include "MyLabel.h"
 #include "AppearanceDialog.h"
+#include "ModelCurveInterface.h"
 
 class Viewer1D:public QCustomPlot
 {
@@ -22,29 +23,28 @@ public:
     void applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
     void addSubMenu(QMenu * sub_menu);
 
-
     void keyPressEvent(QKeyEvent* event);
     void keyReleaseEvent(QKeyEvent* event);
     void mousePressEvent(QMouseEvent* event);
     void mouseMoveEvent(QMouseEvent* event);
 
 public slots:
-    void slot_add_data(const Curve2D& datacurve);
-    void slot_fit_polynomial();
-    void slot_fit_gaussian();
-    void slot_fit_sinusoide();
-    void slot_fit_sigmoid();
-    void slot_fit_circle();
-    void slot_fit_ellipse();
-    void slot_fit_custom();
-    void slot_fit_2var_polynomial();
-    void slot_save_image_current_map();
-    void slot_save_image();
+    void slot_addData(const Curve2D& datacurve);
+    void slot_fitPolynomial();
+    void slot_fitGaussian();
+    void slot_fitSinusoide();
+    void slot_fitSigmoid();
+    void slot_fitCircle();
+    void slot_fitEllipse();
+    void slot_fitCustom();
+    void slot_fitPolynomialTwoVariables();
+    void slot_saveImageCurrentMap();
+    void slot_saveImage();
     void slot_rescale();
     void slot_delete();
-    void slot_show_legend(bool value);
-    void slot_top_legend(bool value);
-    void slot_left_legend(bool value);
+    void slot_showLegend(bool value);
+    void slot_topLegend(bool value);
+    void slot_leftLegend(bool value);
     void slot_histogram(Eigen::VectorXd _data, QString name, int nbbins);
     void slot_copy();
     void slot_paste();
@@ -72,8 +72,8 @@ public slots:
     void slot_itemDoubleClick(QCPAbstractItem* item,QMouseEvent* event);
     void slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart part);
     void slot_legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* item);
-    void selectionChanged();
-    void slot_clear_marks();
+    void slot_selectionChanged();
+    void slot_clearMarks();
     void slot_gadgetLine();
     void slot_gadgetTracer();
     void slot_gadgetMark();
@@ -83,18 +83,19 @@ public slots:
     void slot_gadgetDeltaLine();
     void slot_setScalarFieldGradientType(int type);
     void slot_showSubGridType(int state);
-    void slot_auto_color1();
-    void slot_auto_color2();
-    void slot_auto_color3();
-    void slot_auto_color4();
-    void slot_auto_color5();
-    void slot_auto_clear();
+    void slot_autoColor1();
+    void slot_autoColor2();
+    void slot_autoColor3();
+    void slot_autoColor4();
+    void slot_autoColor5();
+    void slot_autoClear();
     void slot_setScatters();
     void slot_meanFilter();
     void slot_medianFilter();
-    void slot_Distance();
-    void slot_SetSbAxisMax_Min(double min);
-    void slot_SetSbAxisMin_Max(double max);
+    void slot_distance();
+    void slot_setSbAxisMaxMin(double min);
+    void slot_setSbAxisMinMax(double max);
+    void slot_updateModelPreview(ModelCurveInterface * model);
 
 signals:
     void pick(double p0);
@@ -142,6 +143,12 @@ protected:
     QCPItemLine* deltaLineItemA,*deltaLineItemB;
     QCPItemLine* deltaArrowItem;
     QCPItemText* deltaLabel;
+
+    //Model curve
+    QCPItemCustomCurve * modelCurve;
+    void createModelCurve();
+    void showModelCurve();
+    void hideModelCurve();
 
     //Popup
     void createPopup();
@@ -198,8 +205,8 @@ protected:
     QAction* actGadgetLine;
     QAction* actGadgetDeltaLine;   
     QVector<QMenu*> sub_menus;
-    MySciDoubleSpinBox * sb_axis_min;
-    MySciDoubleSpinBox * sb_axis_max;
+    MySciDoubleSpinBox * sb_axisMin;
+    MySciDoubleSpinBox * sb_axisMax;
     QVector<QColor> colors;
 
     //Appearance --> AppearanceDialog

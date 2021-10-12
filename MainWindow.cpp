@@ -421,7 +421,7 @@ void MainWindow::slot_plot_y()
 
             if (data_y.size()>0)
             {
-                viewer1d->slot_add_data(Curve2D(data_y,
+                viewer1d->slot_addData(Curve2D(data_y,
                                                 table->getLogicalColName(id_list[k  ].column()),
                                                 Curve2D::GRAPH));
             }
@@ -455,13 +455,13 @@ void MainWindow::plot_xy(Curve2D::CurveType type)
                 if (!table->model()->asColumnStrings(table->horizontalHeader()->visualIndex(id_list[k  ].column())))
                 {
                     Curve2D curve(data_x,data_y,QString("%2=f(%1)").arg(table->getLogicalColName(id_list[0  ].column())).arg(table->getLogicalColName(id_list[k].column())),type);
-                    viewer1d->slot_add_data(curve);
+                    viewer1d->slot_addData(curve);
                 }
                 else
                 {
                     Curve2D curve(data_y,QString("%2=f(%1)").arg(table->getLogicalColName(id_list[0  ].column())).arg(table->getLogicalColName(id_list[k].column())),type);
                     curve.setLabelsField(table->getLogicalColDataString(table->horizontalHeader()->visualIndex(id_list[k  ].column())));
-                    viewer1d->slot_add_data(curve);
+                    viewer1d->slot_addData(curve);
                 }
             }
         }
@@ -477,7 +477,7 @@ void MainWindow::plot_xy(Curve2D::CurveType type)
         if (data_x.size()>0 && data_y.size()>0)
         {
             Curve2D curve(data_x,data_y,QString("Im(%1)=f(Re(%1))").arg(table->getLogicalColName(id_list[0  ].column())),type);
-            viewer1d->slot_add_data(curve);
+            viewer1d->slot_addData(curve);
         }
     }
     else
@@ -543,7 +543,7 @@ void MainWindow::slot_plot_cloud_2D()
             curve.setScalarField(data_s);
             curve.getStyle().mLineStyle=QCPCurve::lsNone;
             curve.getStyle().mScatterShape=QCPScatterStyle::ssDisc;
-            viewer1d->slot_add_data(curve);
+            viewer1d->slot_addData(curve);
         }
     }
     else
@@ -627,7 +627,7 @@ void MainWindow::slot_plot_field_2D()
             curve.getStyle().mScatterSize=20;
 
 
-            viewer1d->slot_add_data(curve);
+            viewer1d->slot_addData(curve);
         }
     }
     else
@@ -797,7 +797,7 @@ void MainWindow::slot_plot_map_2D()
             std::cout<<data_z.rows()<<std::endl;
             std::cout<<curve.getScalarField().rows()<<std::endl;
 
-            viewer1d->slot_add_data(curve);
+            viewer1d->slot_addData(curve);
         }
     }
 }

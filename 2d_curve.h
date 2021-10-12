@@ -140,6 +140,7 @@ public:
 
     void operator=(const Curve2D& other);
 
+    std::vector<Eigen::Vector2d> getPoints();
 
     QCPCurve * getCurvePtr()
     {

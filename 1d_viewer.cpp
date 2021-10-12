@@ -35,7 +35,7 @@ Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* par
     connect(this, SIGNAL(legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*,QMouseEvent*)), this, SLOT(slot_legendDoubleClick(QCPLegend*,QCPAbstractLegendItem*)));
     connect(this, SIGNAL(itemDoubleClick(QCPAbstractItem*,QMouseEvent*)), this, SLOT(slot_itemDoubleClick(QCPAbstractItem*,QMouseEvent*)));
     connect(this, SIGNAL(plottableDoubleClick(QCPAbstractPlottable*,int,QMouseEvent*)), this, SLOT(slot_plottableDoubleClick(QCPAbstractPlottable*,int,QMouseEvent*)));
-    connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(selectionChanged()));
+    connect(this, SIGNAL(selectionChangedByUser()), this, SLOT(slot_selectionChanged()));
 
     applyShortcuts(shortcuts_map);
 
@@ -62,6 +62,9 @@ Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* par
 //    plotLayout()->elementAt(0)->setMinimumSize(QSize(512,512));
 //    plotLayout()->elementAt(0)->setMaximumSize(QSize(512,512));
 //    plotLayout()->elementAt(0)->setSizeConstraintRect(QCPLayoutElement::scrInnerRect);
+
+    createModelCurve();
+    hideModelCurve();
 }
 
 Viewer1D::~Viewer1D()
@@ -75,9 +78,38 @@ unsigned int Viewer1D::getColorId()
     return id;
 }
 
+void Viewer1D::createModelCurve()
+{
+    QPen pen;
+    pen.setColor(QColor(Qt::red));
+    modelCurve=new QCPItemCustomCurve(this);
+    modelCurve->setSelectable(false);
+    modelCurve->setPen(pen);
 
+//    std::vector<Eigen::Vector2d> points;
+//    for(int i=0;i<100;i++)
+//    {
+//        double alpha=2*M_PI/100*i;
+//        points.push_back(Eigen::Vector2d(cos(alpha),sin(alpha)));
+//    }
+//    modelCurve->setData(points);
+}
 
-void Viewer1D::selectionChanged()
+void Viewer1D::showModelCurve()
+{
+    modelCurve->setVisible(true);
+    replot();
+    update();
+}
+
+void Viewer1D::hideModelCurve()
+{
+    modelCurve->setVisible(false);
+    replot();
+    update();
+}
+
+void Viewer1D::slot_selectionChanged()
 {
     for (int i=0; i<plottableCount(); ++i)
     {
@@ -107,7 +139,7 @@ void Viewer1D::selectionChanged()
     }
 }
 
-void Viewer1D::slot_add_data(const Curve2D& datacurve)
+void Viewer1D::slot_addData(const Curve2D& datacurve)
 {
     if (datacurve.getType()==Curve2D::GRAPH)
     {
@@ -344,37 +376,37 @@ void Viewer1D::createPopup()
     connect(actGadgetMark,SIGNAL(triggered()),this,SLOT(slot_gadgetMark()));
     connect(actGadgetText,SIGNAL(triggered()),this,SLOT(slot_gadgetText()));
     connect(actGadgetArrow,SIGNAL(triggered()),this,SLOT(slot_gadgetArrow()));
-    connect(actClearGadgets,SIGNAL(triggered()),this,SLOT(slot_clear_marks()));
+    connect(actClearGadgets,SIGNAL(triggered()),this,SLOT(slot_clearMarks()));
     connect(actStatistiques,SIGNAL(triggered()),this,SLOT(slot_statistiques()));
     connect(actSvd,SIGNAL(triggered()),this,SLOT(slot_svd()));
     connect(actCovariance,SIGNAL(triggered()),this,SLOT(slot_covariance()));
 
-    connect(actDistance,SIGNAL(triggered()),this,SLOT(slot_Distance()));
+    connect(actDistance,SIGNAL(triggered()),this,SLOT(slot_distance()));
 
-    connect(actSaveMap,SIGNAL(triggered()),this,SLOT(slot_save_image_current_map()));
-    connect(actSave,SIGNAL(triggered()),this,SLOT(slot_save_image()));
+    connect(actSaveMap,SIGNAL(triggered()),this,SLOT(slot_saveImageCurrentMap()));
+    connect(actSave,SIGNAL(triggered()),this,SLOT(slot_saveImage()));
     connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_rescale()));
-    connect(actFitPolynomial,SIGNAL(triggered()),this,SLOT(slot_fit_polynomial()));
-    connect(actFitPolynomial2V,SIGNAL(triggered()),this,SLOT(slot_fit_2var_polynomial()));
-    connect(actFitGaussian,SIGNAL(triggered()),this,SLOT(slot_fit_gaussian()));
-    connect(actFitSinusoide,SIGNAL(triggered()),this,SLOT(slot_fit_sinusoide()));
-    connect(actFitSigmoid,SIGNAL(triggered()),this,SLOT(slot_fit_sigmoid()));
-    connect(actFitCircle,SIGNAL(triggered()),this,SLOT(slot_fit_circle()));
-    connect(actFitEllipse,SIGNAL(triggered()),this,SLOT(slot_fit_ellipse()));
-    connect(actFitCustomExp,SIGNAL(triggered()),this,SLOT(slot_fit_custom()));
+    connect(actFitPolynomial,SIGNAL(triggered()),this,SLOT(slot_fitPolynomial()));
+    connect(actFitPolynomial2V,SIGNAL(triggered()),this,SLOT(slot_fitPolynomialTwoVariables()));
+    connect(actFitGaussian,SIGNAL(triggered()),this,SLOT(slot_fitGaussian()));
+    connect(actFitSinusoide,SIGNAL(triggered()),this,SLOT(slot_fitSinusoide()));
+    connect(actFitSigmoid,SIGNAL(triggered()),this,SLOT(slot_fitSigmoid()));
+    connect(actFitCircle,SIGNAL(triggered()),this,SLOT(slot_fitCircle()));
+    connect(actFitEllipse,SIGNAL(triggered()),this,SLOT(slot_fitEllipse()));
+    connect(actFitCustomExp,SIGNAL(triggered()),this,SLOT(slot_fitCustom()));
 
     connect(actCopy,SIGNAL(triggered()),this,SLOT(slot_copy()));
     connect(actPaste,SIGNAL(triggered()),this,SLOT(slot_paste()));
     connect(actDelete,SIGNAL(triggered()),this,SLOT(slot_delete()));
-    connect(actLegendShowHide,SIGNAL(toggled(bool)),this,SLOT(slot_show_legend(bool)));
-    connect(actLegendTopBottom,SIGNAL(toggled(bool)),this,SLOT(slot_top_legend(bool)));
-    connect(actLegendLeftRight,SIGNAL(toggled(bool)),this,SLOT(slot_left_legend(bool)));
-    connect(actAutoColor1,SIGNAL(triggered()),this,SLOT(slot_auto_color1()));
-    connect(actAutoColor2,SIGNAL(triggered()),this,SLOT(slot_auto_color2()));
-    connect(actAutoColor3,SIGNAL(triggered()),this,SLOT(slot_auto_color3()));
-    connect(actAutoColor4,SIGNAL(triggered()),this,SLOT(slot_auto_color4()));
-    connect(actAutoColor5,SIGNAL(triggered()),this,SLOT(slot_auto_color5()));
-    connect(actAutoColorClear,SIGNAL(triggered()),this,SLOT(slot_auto_clear()));
+    connect(actLegendShowHide,SIGNAL(toggled(bool)),this,SLOT(slot_showLegend(bool)));
+    connect(actLegendTopBottom,SIGNAL(toggled(bool)),this,SLOT(slot_topLegend(bool)));
+    connect(actLegendLeftRight,SIGNAL(toggled(bool)),this,SLOT(slot_leftLegend(bool)));
+    connect(actAutoColor1,SIGNAL(triggered()),this,SLOT(slot_autoColor1()));
+    connect(actAutoColor2,SIGNAL(triggered()),this,SLOT(slot_autoColor2()));
+    connect(actAutoColor3,SIGNAL(triggered()),this,SLOT(slot_autoColor3()));
+    connect(actAutoColor4,SIGNAL(triggered()),this,SLOT(slot_autoColor4()));
+    connect(actAutoColor5,SIGNAL(triggered()),this,SLOT(slot_autoColor5()));
+    connect(actAutoColorClear,SIGNAL(triggered()),this,SLOT(slot_autoClear()));
     connect(actSetScatters,SIGNAL(triggered()),this,SLOT(slot_setScatters()));
 
     connect(actFilterMean,SIGNAL(triggered()),this,SLOT(slot_meanFilter()));
@@ -384,7 +416,7 @@ void Viewer1D::createPopup()
 
 }
 
-void Viewer1D::slot_auto_color1()//Diff colors
+void Viewer1D::slot_autoColor1()//Diff colors
 {
     QList<QCPAbstractPlottable*> plottables=this->plottables();
 
@@ -409,7 +441,7 @@ void Viewer1D::slot_auto_color1()//Diff colors
     replot();
 }
 
-void Viewer1D::slot_auto_color2()//diff color pair
+void Viewer1D::slot_autoColor2()//diff color pair
 {
     QList<QCPAbstractPlottable*> plottables=this->plottables();
 
@@ -434,7 +466,7 @@ void Viewer1D::slot_auto_color2()//diff color pair
     replot();
 }
 
-void Viewer1D::slot_auto_color3()//brush diag
+void Viewer1D::slot_autoColor3()//brush diag
 {
     QList<QCPAbstractPlottable*> plottables=this->plottables();
 
@@ -460,7 +492,7 @@ void Viewer1D::slot_auto_color3()//brush diag
     replot();
 }
 
-void Viewer1D::slot_auto_color4()//brush solid
+void Viewer1D::slot_autoColor4()//brush solid
 {
     QList<QCPAbstractPlottable*> plottables=this->plottables();
 
@@ -486,7 +518,7 @@ void Viewer1D::slot_auto_color4()//brush solid
     replot();
 }
 
-void Viewer1D::slot_auto_color5()
+void Viewer1D::slot_autoColor5()
 {
     QList<QCPAbstractPlottable*> plottables=this->plottables();
 
@@ -549,7 +581,7 @@ void Viewer1D::slot_setScatters()
     }
 }
 
-void Viewer1D::slot_auto_clear()
+void Viewer1D::slot_autoClear()
 {
     QList<QCPAbstractPlottable*> plottables=this->plottables();
 
@@ -753,10 +785,19 @@ void Viewer1D::slot_setScatterSize(double scatter_size)
     replot();
 }
 
-void Viewer1D::slot_clear_marks()
+void Viewer1D::slot_clearMarks()
 {
     std::cout<<"clear items "<<this->itemCount()<<std::endl;
-    this->clearItems();
+
+    //this->clearItems();
+    int c = mItems.size();
+    for (int i=c-1; i >= 0; --i)
+    {
+        if(mItems[i]!=modelCurve)
+        {
+            removeItem(mItems[i]);
+        }
+    }
 
     this->replot();
 }
@@ -818,9 +859,13 @@ void Viewer1D::slot_gadgetTracer()
 
 void Viewer1D::slot_gadgetText()
 {
-    QString textContent = QInputDialog::getText(this, "New label", "New label :", QLineEdit::Normal,"");
-    textItem=createTextItem(0,0,textContent);
-    this->setCursor(Qt::PointingHandCursor);
+    bool ok=false;
+    QString textContent = QInputDialog::getMultiLineText(this,"New text label", "Text:","",&ok);
+    if(ok)
+    {
+        textItem=createTextItem(0,0,textContent);
+        this->setCursor(Qt::PointingHandCursor);
+    }
 }
 
 void Viewer1D::slot_gadgetArrow()
@@ -1233,14 +1278,14 @@ void Viewer1D::mousePressEvent(QMouseEvent* event)
     }
 }
 
-void Viewer1D::slot_SetSbAxisMax_Min(double min)
+void Viewer1D::slot_setSbAxisMaxMin(double min)
 {
-    sb_axis_max->setMinimum(min);
+    sb_axisMax->setMinimum(min);
 }
 
-void Viewer1D::slot_SetSbAxisMin_Max(double max)
+void Viewer1D::slot_setSbAxisMinMax(double max)
 {
-    sb_axis_min->setMaximum(max);
+    sb_axisMin->setMaximum(max);
 }
 
 void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart part)
@@ -1262,16 +1307,16 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
         cb_scale_mode->addItem("Linear");
         cb_scale_mode->addItem("Logarithmic");
         cb_scale_mode->setCurrentIndex(currentScaleType==QCPAxis::ScaleType::stLogarithmic);
-        sb_axis_min=new   MySciDoubleSpinBox(dialog);
+        sb_axisMin=new   MySciDoubleSpinBox(dialog);
         //sb_axis_min->setDecimals(DBL_MAX_10_EXP + DBL_DIG);
-        sb_axis_min->setPrefix("min=");
-        sb_axis_min->setRange(-1e100,currentRange.upper);
-        sb_axis_min->setValue(currentRange.lower);
-        sb_axis_max=new   MySciDoubleSpinBox(dialog);
+        sb_axisMin->setPrefix("min=");
+        sb_axisMin->setRange(-1e100,currentRange.upper);
+        sb_axisMin->setValue(currentRange.lower);
+        sb_axisMax=new   MySciDoubleSpinBox(dialog);
         //sb_axis_max->setDecimals(DBL_MAX_10_EXP + DBL_DIG);
-        sb_axis_max->setPrefix("max=");
-        sb_axis_max->setRange(currentRange.lower,1e100);
-        sb_axis_max->setValue(currentRange.upper);
+        sb_axisMax->setPrefix("max=");
+        sb_axisMax->setRange(currentRange.lower,1e100);
+        sb_axisMax->setValue(currentRange.upper);
         QLineEdit * le_format=new QLineEdit(currentNumberFormat,dialog);
         le_format->setToolTip("gb : If number is small, fixed format is used, if number is large, scientific format is used with beautifully typeset decimal powers and a dot as multiplication sign\n"\
                               "ebc : All numbers are in scientific format with beautifully typeset decimal power and a cross multiplication sign\n"\
@@ -1294,13 +1339,13 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
         QObject::connect(sb_rotation,  SIGNAL(valueChanged(double)), this, SLOT(replot()));
         QObject::connect(sb_precision,  SIGNAL(valueChanged(int)), axis, SLOT(setNumberPrecision(int)));
         QObject::connect(sb_precision,  SIGNAL(valueChanged(int)), this, SLOT(replot()));
-        QObject::connect(sb_axis_min,  SIGNAL(valueChanged(double)), axis, SLOT(setRangeLower(double)));
-        QObject::connect(sb_axis_max,  SIGNAL(valueChanged(double)), axis, SLOT(setRangeUpper(double)));
-        QObject::connect(sb_axis_min,  SIGNAL(valueChanged(double)), this, SLOT(slot_SetSbAxisMax_Min(double)));
-        QObject::connect(sb_axis_max,  SIGNAL(valueChanged(double)), this, SLOT(slot_SetSbAxisMin_Max(double)));
+        QObject::connect(sb_axisMin,  SIGNAL(valueChanged(double)), axis, SLOT(setRangeLower(double)));
+        QObject::connect(sb_axisMax,  SIGNAL(valueChanged(double)), axis, SLOT(setRangeUpper(double)));
+        QObject::connect(sb_axisMin,  SIGNAL(valueChanged(double)), this, SLOT(slot_setSbAxisMaxMin(double)));
+        QObject::connect(sb_axisMax,  SIGNAL(valueChanged(double)), this, SLOT(slot_setSbAxisMinMax(double)));
         QObject::connect(cb_scale_mode,SIGNAL(currentIndexChanged(int)), axis, SLOT(setScaleType(int)));
-        QObject::connect(sb_axis_min,  SIGNAL(valueChanged(double)), this, SLOT(replot()));
-        QObject::connect(sb_axis_max,  SIGNAL(valueChanged(double)), this, SLOT(replot()));
+        QObject::connect(sb_axisMin,  SIGNAL(valueChanged(double)), this, SLOT(replot()));
+        QObject::connect(sb_axisMax,  SIGNAL(valueChanged(double)), this, SLOT(replot()));
         QObject::connect(cb_scale_mode,SIGNAL(currentIndexChanged(int)), this, SLOT(replot()));
         QObject::connect(cb_subGrid,SIGNAL(stateChanged(int)), axis, SLOT(setSubGridVisible(int)));
         QObject::connect(cb_subGrid,SIGNAL(stateChanged(int)), this, SLOT(replot()));
@@ -1323,8 +1368,8 @@ void Viewer1D::slot_axisLabelDoubleClick(QCPAxis* axis, QCPAxis::SelectablePart 
         gbox->addWidget(le_legend,0,1,1,2);
 
         gbox->addWidget(new QLabel("Range :"),1,0);
-        gbox->addWidget(sb_axis_min,1,1);
-        gbox->addWidget(sb_axis_max,1,2);
+        gbox->addWidget(sb_axisMin,1,1);
+        gbox->addWidget(sb_axisMax,1,2);
 
         gbox->addWidget(new QLabel("Scale type :"),2,0);
         gbox->addWidget(cb_scale_mode,2,1,1,2);
@@ -1401,7 +1446,7 @@ void Viewer1D::slot_itemDoubleClick(QCPAbstractItem* item,QMouseEvent* event)
         ColorWheel * colorWheel=new ColorWheel(dialog);
         colorWheel->setColor(ptextItem->color());
 
-        QLineEdit * le_label=new QLineEdit(dialog);
+        QTextEdit * le_label=new QTextEdit(dialog);
         le_label->setText(ptextItem->text());
 
         QSpinBox * fontSize=new QSpinBox(dialog);
@@ -1430,7 +1475,7 @@ void Viewer1D::slot_itemDoubleClick(QCPAbstractItem* item,QMouseEvent* event)
             {
                 textItem=ptextItem;
             }
-            ptextItem->setText(le_label->text());
+            ptextItem->setText(le_label->toPlainText());
             ptextItem->setColor(colorWheel->color());
             ptextItem->setFont(QFont(ptextItem->font().family(),fontSize->value()));
             ptextItem->setSelectedFont(QFont(ptextItem->font().family(),fontSize->value()));
@@ -1572,31 +1617,66 @@ void Viewer1D::slot_legendDoubleClick(QCPLegend* legend, QCPAbstractLegendItem* 
     }
 }
 
-void Viewer1D::slot_fit_sinusoide()
+void Viewer1D::slot_updateModelPreview(ModelCurveInterface * model)
+{
+    std::cout<<"slot_updateModelPreview : "<<model<<std::endl;
+    if(model)
+    {
+        int N=300;
+        std::vector<Eigen::Vector2d> points(N);
+
+        QCPRange range=this->xAxis->range();
+        for(int k=0;k<N;k++)
+        {
+            double x=(range.upper-range.lower)*k/(N-1)+range.lower;
+            points[k]=Eigen::Vector2d(x,model->at(x));
+        }
+
+        modelCurve->setData(points);
+        replot();
+    }
+}
+
+void Viewer1D::slot_fitSinusoide()
 {
     QList<Curve2D> curves=getSelectedCurves();
 
     if (curves.size()==1)
     {
-        QDoubleSpinBox* A,*F,*P,*C;
-        QCheckBox * fixedA,*fixedF,*fixedP,*fixedC;
-        QDialog* dialog=Sinusoide::createDialog(A,F,P,C,
-                                                fixedA,fixedF,fixedP,fixedC);
+        FitDialog* dialog=new FitDialog("Initials parameters");
+        dialog->addPixmap(":/eqn/eqn/sin.gif");
+        dialog->addParameter("A",0,0.0001,1e8,6);
+        dialog->addParameter("F",0,0.0001,1e8,6);
+        dialog->addParameter("P",0,0.0001,1e8,6);
+        dialog->addParameter("C",0,0.0001,1e8,6);
+
+        Sinusoide sinusoide(dialog->valueOf("A"),
+                            dialog->valueOf("F"),
+                            dialog->valueOf("P"),
+                            dialog->valueOf("C"),
+                            dialog->isFixed("A"),
+                            dialog->isFixed("F"),
+                            dialog->isFixed("P"),
+                            dialog->isFixed("C"));
+
+        dialog->setModelCurve(&sinusoide);
 
         double frequencyGuess,a0;
         std::complex<double> pm=curves[0].guessMainFrequencyPhaseModule(frequencyGuess,a0);
 
-        A->setValue(std::abs(pm));
-        F->setValue(frequencyGuess);
-        P->setValue(std::arg(pm)+M_PI/2);
-        C->setValue(a0);
+        dialog->setValueOf("A",std::abs(pm));
+        dialog->setValueOf("F",frequencyGuess);
+        dialog->setValueOf("P",std::arg(pm)+M_PI/2);
+        dialog->setValueOf("C",a0);
+
+        connect(dialog,&FitDialog::sig_modelChanged,this,&Viewer1D::slot_updateModelPreview);
+
+        showModelCurve();
         int result=dialog->exec();
+        hideModelCurve();
 
         if (result == QDialog::Accepted)
         {
-            Sinusoide sinusoide(A->value(),F->value(),P->value(),C->value(),
-                                fixedA->isChecked(),fixedF->isChecked(),fixedP->isChecked(),fixedC->isChecked());
-
             curves[0].fit(&sinusoide);
             sinusoide.regularized();
             Eigen::VectorXd X=curves[0].getLinX(1000);
@@ -1606,7 +1686,7 @@ void Viewer1D::slot_fit_sinusoide()
             QString expression=QString("%1*sin(2*pi*%2*X+%3)+%4").arg(sinusoide.getA()).arg(sinusoide.getF()).arg(sinusoide.getP()).arg(sinusoide.getC());
             Curve2D fit_curve(X,Y,QString("Fit Sinusoid : %1").arg(result_str),Curve2D::GRAPH);
 
-            slot_add_data(fit_curve);
+            slot_addData(fit_curve);
 
             emit sig_displayResults(QString("Fit Sinusoid :\n%1\nF(X)=%2\nRms=%3").arg(result_str).arg(expression).arg(sinusoide.getRMS()));
             emit sig_newColumn(QString("Err_Sinusoid"),sinusoide.getErrNorm());
@@ -1614,7 +1694,7 @@ void Viewer1D::slot_fit_sinusoide()
     }
 }
 
-void Viewer1D::slot_fit_circle()
+void Viewer1D::slot_fitCircle()
 {
     QList<Curve2D> curves=getSelectedCurves();
 
@@ -1642,7 +1722,7 @@ void Viewer1D::slot_fit_circle()
             QString result_str=QString("A=%1 B=%2 R=%3").arg(circle.getCenter()[0]).arg(circle.getCenter()[1]).arg(circle.getRadius());
             Curve2D fit_curve(X,Y,QString("Fit Circle : %1").arg(result_str),Curve2D::CURVE);
 
-            slot_add_data(fit_curve);
+            slot_addData(fit_curve);
 
             emit sig_displayResults(QString("Fit Circle :\n%1\nRms=%3").arg(result_str).arg(circle.getRMS()));
             emit sig_newColumn(QString("Err_Circle"),circle.getErrNorm());
@@ -1650,7 +1730,7 @@ void Viewer1D::slot_fit_circle()
     }
 }
 
-void Viewer1D::slot_fit_custom()
+void Viewer1D::slot_fitCustom()
 {
     std::cout<<"Custom fit"<<std::endl;
 
@@ -1687,7 +1767,7 @@ void Viewer1D::slot_fit_custom()
 
                 Curve2D fit_curve(X,Y,QString("Fit Custom : %1").arg(result_str),Curve2D::CURVE);
 
-                slot_add_data(fit_curve);
+                slot_addData(fit_curve);
 
                 emit sig_displayResults(QString("Fit Custom real expression :%1\n%2\nRms=%3").arg(p_exp->getExpression()).arg(result_str).arg(p_exp->getRMS()));
                 emit sig_newColumn(QString("Err_Custom"),p_exp->getErrNorm());
@@ -1698,7 +1778,7 @@ void Viewer1D::slot_fit_custom()
     }
 }
 
-void Viewer1D::slot_fit_ellipse()
+void Viewer1D::slot_fitEllipse()
 {
     QList<Curve2D> curves=getSelectedCurves();
 
@@ -1728,7 +1808,7 @@ void Viewer1D::slot_fit_ellipse()
             QString result_str=QString("A=%1 B=%2 Ra=%3 Rb=%4 Theta=%5").arg(ellipse.getCenter()[0]).arg(ellipse.getCenter()[1]).arg(ellipse.getRa()).arg(ellipse.getRb()).arg(ellipse.getTheta()*180/M_PI);
             Curve2D fit_curve(X,Y,QString("Fit Ellipse : %1").arg(result_str),Curve2D::CURVE);
 
-            slot_add_data(fit_curve);
+            slot_addData(fit_curve);
 
             emit sig_displayResults(QString("Fit Ellipse :\n%1\nRms=%3").arg(result_str).arg(ellipse.getRMS()));
             emit sig_newColumn(QString("Err_Ellipse"),ellipse.getErrNorm());
@@ -1736,7 +1816,7 @@ void Viewer1D::slot_fit_ellipse()
     }
 }
 
-void Viewer1D::slot_fit_sigmoid()
+void Viewer1D::slot_fitSigmoid()
 {
     QList<Curve2D> curves=getSelectedCurves();
 
@@ -1765,7 +1845,7 @@ void Viewer1D::slot_fit_sigmoid()
 
             QString expression=QString("(%2-%1)/(1+exp((%3-X)*%4*(%2-%1)))+%1").arg(sigmoid.getA()).arg(sigmoid.getB()).arg(sigmoid.getC()).arg(sigmoid.getP());
 
-            slot_add_data(fit_curve);
+            slot_addData(fit_curve);
 
             emit sig_displayResults(QString("Fit Sigmoid :\n%1\nF(X)=%2\nRms=%3").arg(result_str).arg(expression).arg(sigmoid.getRMS()));
             emit sig_newColumn(QString("Err_Sigmoid"),sigmoid.getErrNorm());
@@ -1773,7 +1853,7 @@ void Viewer1D::slot_fit_sigmoid()
     }
 }
 
-void Viewer1D::slot_fit_gaussian()
+void Viewer1D::slot_fitGaussian()
 {
     QList<Curve2D> curves=getSelectedCurves();
 
@@ -1798,7 +1878,7 @@ void Viewer1D::slot_fit_gaussian()
 
             Curve2D fit_curve(X,Y,QString("Fit Gaussian : %1").arg(result_str),Curve2D::GRAPH);
 
-            slot_add_data(fit_curve);
+            slot_addData(fit_curve);
 
             QString expression=QString("%3/(%1*sqrt(2*pi))*exp(-0.5*((X-%2)/%1)^2)").arg(gaussian.getS()).arg(gaussian.getM()).arg(gaussian.getK());
 
@@ -1810,7 +1890,7 @@ void Viewer1D::slot_fit_gaussian()
     }
 }
 
-void Viewer1D::slot_fit_2var_polynomial()
+void Viewer1D::slot_fitPolynomialTwoVariables()
 {
     QList<Curve2D> curves=getSelectedCurves();
     if (curves.size()>0)
@@ -1859,7 +1939,7 @@ void Viewer1D::slot_fit_2var_polynomial()
                 fit_curve.getStyle().mScatterShape=static_cast<int>(QCPScatterStyle::ssDisc);
                 fit_curve.getStyle().mLineStyle=static_cast<int>(QCPCurve::lsNone);
                 fit_curve.setScalarField(S);
-                slot_add_data(fit_curve);
+                slot_addData(fit_curve);
             }
         }
         else
@@ -1873,7 +1953,7 @@ void Viewer1D::slot_fit_2var_polynomial()
     }
 }
 
-void Viewer1D::slot_fit_polynomial()
+void Viewer1D::slot_fitPolynomial()
 {
     QList<Curve2D> curves=getSelectedCurves();
     if (curves.size()>0)
@@ -1925,7 +2005,7 @@ void Viewer1D::slot_fit_polynomial()
                 Eigen::VectorXd E=curves[i].getY()-Yhat;
                 double rms=sqrt(E.dot(E)/E.size());
 
-                slot_add_data(fit_curve);
+                slot_addData(fit_curve);
                 emit sig_displayResults(QString("Fit Polynome :\nP(X)=%1\nRms=%2").arg(result_str).arg(rms));
                 emit sig_newColumn(QString("Err_Polynome"),E);
             }
@@ -1938,7 +2018,7 @@ void Viewer1D::slot_fit_polynomial()
 
 }
 
-void Viewer1D::slot_show_legend(bool value)
+void Viewer1D::slot_showLegend(bool value)
 {
     legend->setVisible(value);
     replot();
@@ -1953,7 +2033,7 @@ void Viewer1D::slot_show_legend(bool value)
     }
 }
 
-void Viewer1D::slot_top_legend(bool value)
+void Viewer1D::slot_topLegend(bool value)
 {
     if (value)
     {
@@ -1971,7 +2051,7 @@ void Viewer1D::slot_top_legend(bool value)
     replot();
 }
 
-void Viewer1D::slot_left_legend(bool value)
+void Viewer1D::slot_leftLegend(bool value)
 {
     if (value)
     {
@@ -2149,7 +2229,7 @@ void Viewer1D::slot_histogram(Eigen::VectorXd _data,QString name,int nbbins)
 
     Curve2D hist_curve(labels,hist,name,Curve2D::GRAPH);
     hist_curve.getStyle().mLineStyle=QCPGraph::lsStepCenter;
-    slot_add_data(hist_curve);
+    slot_addData(hist_curve);
 }
 
 void Viewer1D::slot_delete()
@@ -2229,7 +2309,7 @@ QList<Curve2D> Viewer1D::getSelectedCurves()
     return curvelist;
 }
 
-void Viewer1D::slot_save_image_current_map()
+void Viewer1D::slot_saveImageCurrentMap()
 {
     std::cout<<"slot_save_image_current_map"<<std::endl;
 
@@ -2247,7 +2327,7 @@ void Viewer1D::slot_save_image_current_map()
     }
 }
 
-void Viewer1D::slot_save_image()
+void Viewer1D::slot_saveImage()
 {
     QFileInfo info(current_filename);
     QString where=info.path();
@@ -2352,7 +2432,7 @@ void Viewer1D::slot_paste()
             Curve2D curve;
             QByteArray _data=mimeData->data("Curve");
             curve.fromByteArray(_data);
-            slot_add_data(curve);
+            slot_addData(curve);
         }
     }
 
@@ -2619,14 +2699,14 @@ void Viewer1D::slot_meanFilter()
                 }
 
                 Curve2D fit_curve(curves[k].getX(),Ymean,QString("Mean Filter: %1").arg(curves[k].getLegend()),Curve2D::GRAPH);
-                slot_add_data(fit_curve);
+                slot_addData(fit_curve);
                 emit sig_newColumn(QString("Mean"),Ymean);
             }
         }
     }
 }
 
-void Viewer1D::slot_Distance()
+void Viewer1D::slot_distance()
 {
     QList<Curve2D> curves=getSelectedCurves();
     if (curves.size()>0)
@@ -2703,7 +2783,7 @@ void Viewer1D::slot_medianFilter()
                 }
 
                 Curve2D fit_curve(curves[k].getX(),Ymean,QString("Median Filter").arg(curves[k].getLegend()),Curve2D::GRAPH);
-                slot_add_data(fit_curve);
+                slot_addData(fit_curve);
                 emit sig_newColumn(QString("Median"),Ymean);
             }
         }

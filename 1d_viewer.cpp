@@ -85,28 +85,18 @@ void Viewer1D::createModelCurve()
     modelCurve=new QCPItemCustomCurve(this);
     modelCurve->setSelectable(false);
     modelCurve->setPen(pen);
-
-//    std::vector<Eigen::Vector2d> points;
-//    for(int i=0;i<100;i++)
-//    {
-//        double alpha=2*M_PI/100*i;
-//        points.push_back(Eigen::Vector2d(cos(alpha),sin(alpha)));
-//    }
-//    modelCurve->setData(points);
 }
 
 void Viewer1D::showModelCurve()
 {
     modelCurve->setVisible(true);
     replot();
-    update();
 }
 
 void Viewer1D::hideModelCurve()
 {
     modelCurve->setVisible(false);
     replot();
-    update();
 }
 
 void Viewer1D::slot_selectionChanged()
@@ -1643,12 +1633,15 @@ void Viewer1D::slot_fitSinusoide()
 
     if (curves.size()==1)
     {
+        double frequencyGuess,a0;
+        std::complex<double> pm=curves[0].guessMainFrequencyPhaseModule(frequencyGuess,a0);
+
         FitDialog* dialog=new FitDialog("Initials parameters");
         dialog->addPixmap(":/eqn/eqn/sin.gif");
-        dialog->addParameter("A",0,0.0001,1e8,6);
-        dialog->addParameter("F",0,0.0001,1e8,6);
-        dialog->addParameter("P",0,0.0001,1e8,6);
-        dialog->addParameter("C",0,0.0001,1e8,6);
+        dialog->addParameter("A",std::abs(pm),0.0001,1e8,6);
+        dialog->addParameter("F",frequencyGuess,0.0001,1e8,6);
+        dialog->addParameter("P",std::arg(pm)+M_PI/2,0.0001,1e8,6);
+        dialog->addParameter("C",a0,0.0001,1e8,6);
 
         Sinusoide sinusoide(dialog->valueOf("A"),
                             dialog->valueOf("F"),
@@ -1660,15 +1653,6 @@ void Viewer1D::slot_fitSinusoide()
                             dialog->isFixed("C"));
 
         dialog->setModelCurve(&sinusoide);
-
-        double frequencyGuess,a0;
-        std::complex<double> pm=curves[0].guessMainFrequencyPhaseModule(frequencyGuess,a0);
-
-        dialog->setValueOf("A",std::abs(pm));
-        dialog->setValueOf("F",frequencyGuess);
-        dialog->setValueOf("P",std::arg(pm)+M_PI/2);
-        dialog->setValueOf("C",a0);
-
         connect(dialog,&FitDialog::sig_modelChanged,this,&Viewer1D::slot_updateModelPreview);
 
         showModelCurve();
@@ -1859,17 +1843,30 @@ void Viewer1D::slot_fitGaussian()
 
     for (int i=0; i<curves.size(); i++)
     {
+        FitDialog* dialog=new FitDialog("Initials parameters");
+        dialog->addPixmap(":/eqn/eqn/gaussian.gif");
 
-        QDoubleSpinBox* S,*M,*K;
-        QDialog* dialog=Gaussian::createDialog(S,M,K);
-        S->setValue(1);
-        M->setValue(curves[i].getMeanXWeightedByY());
+        double Mguess=curves[i].getMeanXWeightedByY();
+        double Sguess=curves[i].getStdXWeightedByY(Mguess);
+        double Kguess=Sguess*sqrt(2*M_PI)*curves[i].getY().maxCoeff();
+
+        dialog->addParameter("S",Sguess, 1e-100, 1e100,6,false);
+        dialog->addParameter("M",Mguess,-1e100 , 1e100,6,false);
+        dialog->addParameter("K",Kguess,-1e100 , 1e100,6,false);
+
+        Gaussian gaussian(dialog->valueOf("S"),
+                          dialog->valueOf("M"),
+                          dialog->valueOf("K"));
+
+        dialog->setModelCurve(&gaussian);
+        connect(dialog,&FitDialog::sig_modelChanged,this,&Viewer1D::slot_updateModelPreview);
+
+        showModelCurve();
         int result=dialog->exec();
+        hideModelCurve();
 
         if (result == QDialog::Accepted)
         {
-            Gaussian gaussian(S->value(),M->value(),K->value());
-
             curves[i].fit(&gaussian);
             Eigen::VectorXd X=curves[i].getLinX(1000);
             Eigen::VectorXd Y=gaussian.at(X);

@@ -3,16 +3,13 @@
 
 #include <QDialog>
 #include <QDoubleSpinBox>
+#include "ModelCurveInterface.h"
 
-class Gaussian: public Shape<Eigen::Vector2d>
+class Gaussian: public Shape<Eigen::Vector2d>,public ModelCurveInterface
 {
 public:
 
     Gaussian(double S,double M,double K);
-
-    static QDialog* createDialog(QDoubleSpinBox*& getS,
-                                 QDoubleSpinBox*& getM,
-                                 QDoubleSpinBox*& getK);
 
     double getS()const;
     double getM()const;
@@ -22,13 +19,18 @@ public:
     void  setM(double L);
     void  setK(double K);
 
-    double at(double x)const;
-    Eigen::VectorXd at(Eigen::VectorXd f);
 
     Eigen::Vector2d delta(const Eigen::Vector2d& pt);
     int nb_params();
     void setParams(const Eigen::VectorXd& p);
     const Eigen::VectorXd& getParams();
+
+    //ModelCurveInterface
+    double at(double x)const;
+    Eigen::VectorXd at(Eigen::VectorXd f)const;
+    void setParameter(QString parameterName,double value);
+    double getParameter(QString parameterName);
+    void setFixedParameter(QString parameterName,bool fixed);
 
 private:
     Eigen::VectorXd p;

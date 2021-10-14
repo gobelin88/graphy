@@ -31,6 +31,8 @@ public:
 
     void setModelCurve(ModelCurveInterface * model);
 
+    int exec() override;
+
 public slots:
     void slot_parameterValueChanged(QString parameterName,double value);
     void slot_parameterFixedChanged(QString parameterName);

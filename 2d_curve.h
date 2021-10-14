@@ -315,6 +315,18 @@ public:
         return sumx/sumy;
     }
 
+    double getStdXWeightedByY(double meanX)
+    {
+        double sumx=0.0,sumy=0.0;
+        for (int i=0; i<x.size(); i++)
+        {
+            sumx+=(x[i]-meanX)*(x[i]-meanX)*y[i];
+            sumy+=y[i];
+        }
+
+        return sqrt(sumx/sumy);
+    }
+
     void clear();
 
 

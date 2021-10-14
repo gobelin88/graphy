@@ -1057,6 +1057,7 @@ referenceObjectEntity(Base3D * base3D,QString name)
         item->setIcon(QIcon(QPixmap::fromImage(QImage(":/img/icons/shape_icosahedron.gif"))));
     }
 
+    item->setSelected(true);
     customContainer->getSelectionView()->addItem(item);
 }
 

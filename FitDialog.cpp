@@ -46,22 +46,20 @@ void FitDialog::addParameter(QString parameterName,
     p->sb_value->setDecimals(decimals);
     p->sb_value->setValue(value);
 
+    QHBoxLayout * playout=new QHBoxLayout;
+
+    connect(p->sb_value,static_cast<void(QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,[this,p](double value){slot_parameterValueChanged(p->name,value);});
+    playout->addWidget(p->sb_value);
     if(fixable)
     {
         p->cb_isFixed=new QCheckBox(this);
         p->cb_isFixed->setChecked(false);
         p->cb_isFixed->setText("Fixed");
         connect(p->cb_isFixed,&QCheckBox::stateChanged,this,[this,p]{slot_parameterFixedChanged(p->name);});
+        playout->addWidget(p->cb_isFixed);
     }
 
     parameters.append(p);
-
-    connect(p->sb_value,static_cast<void(QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,[this,p](double value){slot_parameterValueChanged(p->name,value);});
-
-    QHBoxLayout * playout=new QHBoxLayout(this);
-    playout->addWidget(p->sb_value);
-    playout->addWidget(p->cb_isFixed);
-
     vlayout->addLayout(playout);
 }
 
@@ -138,4 +136,10 @@ void FitDialog::slot_parameterFixedChanged(QString parameterName)
 void FitDialog::setModelCurve(ModelCurveInterface * model)
 {
     this->model=model;
+}
+
+int FitDialog::exec()
+{
+    emit sig_modelChanged(model);
+    return QDialog::exec();
 }

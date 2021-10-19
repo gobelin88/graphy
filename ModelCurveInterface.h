@@ -5,8 +5,8 @@
 class ModelCurveInterface
 {
 public:
-    virtual double at(double t)const=0;
-    virtual Eigen::VectorXd at(Eigen::VectorXd t)const=0;
+    virtual double at(double t)=0;
+    virtual Eigen::VectorXd at(Eigen::VectorXd t)=0;
 
     virtual void setParameter(QString parameterName,double value)=0;
     virtual double getParameter(QString parameterName)=0;

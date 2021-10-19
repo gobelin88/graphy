@@ -1,5 +1,8 @@
 #include "3d_viewer.h"
 
+#include "algorithmes/Arun.h"
+#include "algorithmes/Horn.h"
+
 Viewer3D::Viewer3D(const QMap<QString, QKeySequence>& shortcuts_map,QWidget * parent)
 {
     objects3D.clear();
@@ -102,6 +105,7 @@ void Viewer3D::createPopup()
     menuData= new QMenu("Point cloud");
     menuFit= new QMenu("Fit");
     menuProject= new QMenu("Project");
+    menuAlgorithmes= new QMenu("Algorithmes");
     menuSubSample= new QMenu("Subsample");
     menuView= new QMenu("View");
     menuMesh= new QMenu("Mesh");
@@ -117,6 +121,8 @@ void Viewer3D::createPopup()
     actProjectPlan= new QAction("Plan",  this);
     actProjectMesh= new QAction("Custom mesh",  this);
     actRandomSubSample= new QAction("Random",  this);
+    actComputeArun= new QAction("Arun",  this);
+    actComputeHorn= new QAction("Horn",  this);
     actRescale= new QAction("Rescale",  this);
     actRescaleSelected= new QAction("Rescale selected",  this);
     actRescaleSelectedSameRanges= new QAction("Rescale selected same ranges",  this);
@@ -201,6 +207,7 @@ void Viewer3D::createPopup()
     menuParameters->addAction(actWidget);
     menuData->addMenu(menuFit);
     menuData->addMenu(menuProject);
+    menuData->addMenu(menuAlgorithmes);
     menuData->addMenu(menuSubSample);
     menuData->addAction(actExport);
     menuFit->addAction(actFitSphere);
@@ -213,6 +220,8 @@ void Viewer3D::createPopup()
     menuMesh->addAction(actMeshLoad);
     menuMesh->addAction(actMeshCreateRotegrity);
     menuSubSample->addAction(actRandomSubSample);
+    menuAlgorithmes->addAction(actComputeArun);
+    menuAlgorithmes->addAction(actComputeHorn);
 
     QObject::connect(cb_show_hide_labels,SIGNAL(stateChanged(int)),this,SLOT(slot_showHideLabels(int)));
     QObject::connect(cb_show_hide_grid,SIGNAL(stateChanged(int)),this,SLOT(slot_showHideGrid(int)));
@@ -223,6 +232,8 @@ void Viewer3D::createPopup()
     QObject::connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_resetView()));
     QObject::connect(actRescaleSelectedSameRanges,SIGNAL(triggered()),this,SLOT(slot_resetViewOnSelectedSameRanges()));
     QObject::connect(actRescaleSelected,SIGNAL(triggered()),this,SLOT(slot_resetViewOnSelected()));
+    QObject::connect(actComputeArun,SIGNAL(triggered()),this,SLOT(slot_computeArun()));
+    QObject::connect(actComputeHorn,SIGNAL(triggered()),this,SLOT(slot_computeHorn()));
     QObject::connect(actRemoveSelected,SIGNAL(triggered()),this,SLOT(slot_removeSelected()));
     QObject::connect(actRandomSubSample,SIGNAL(triggered()),this,SLOT(slot_randomSubSamples()));
     QObject::connect(actSave,SIGNAL(triggered()),this,SLOT(slot_saveImage()));
@@ -1040,9 +1051,7 @@ void Viewer3D::addPlan(Plan* plan,float radius,QColor color)
     slot_ScaleChanged();
 }
 
-void Viewer3D::
-
-referenceObjectEntity(Base3D * base3D,QString name)
+void Viewer3D::referenceObjectEntity(Base3D * base3D,QString name)
 {
     objects3D.push_back(base3D);
 
@@ -1057,8 +1066,8 @@ referenceObjectEntity(Base3D * base3D,QString name)
         item->setIcon(QIcon(QPixmap::fromImage(QImage(":/img/icons/shape_icosahedron.gif"))));
     }
 
-    item->setSelected(true);
     customContainer->getSelectionView()->addItem(item);
+    item->setSelected(true);
 }
 
 void Viewer3D::addObject(Qt3DRender::QMesh* mesh_object,Object * object, PosAtt posatt,float scale,QColor color)
@@ -1112,6 +1121,86 @@ void Viewer3D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
         {
             shortcuts_links[i.key()]->setShortcut(i.value());
         }
+    }
+}
+
+void Viewer3D::slot_computeArun()
+{
+    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+
+    if(selectedClouds.size()==2)
+    {
+        Eigen::Matrix3d R=Eigen::Matrix3d::Identity();
+        Eigen::Vector3d T=Eigen::Vector3d::Zero();
+
+        std::vector<Eigen::Vector3d> Pa=selectedClouds[0]->cloud->positions();
+        std::vector<Eigen::Vector3d> Pb=selectedClouds[1]->cloud->positions();
+
+        std::cout<<"Compute Arun"<<std::endl;
+        std::cout<<"Pa.size()="<<Pa.size()<<std::endl;
+        std::cout<<"Pb.size()="<<Pb.size()<<std::endl;
+
+        algorithms::computeArunTranform(Pa,Pb,R,T);
+        Eigen::VectorXd ArunE=algorithms::getArunError(Pa,Pb,R,T);
+        double rms=ArunE.norm()/sqrt(ArunE.rows());
+
+        emit sig_displayResults( QString("Compute Arun:\nR=\n"
+                                         "%1 , %2 , %3\n"
+                                         "%4 , %5 , %6\n"
+                                         "%7 , %8 , %9\n"
+                                         "T=(%10 , %11 , %12)\n"
+                                         "Rms=%13\n")
+                                 .arg(R(0,0)).arg(R(0,1)).arg(R(0,2))
+                                 .arg(R(1,0)).arg(R(1,1)).arg(R(1,2))
+                                 .arg(R(2,0)).arg(R(2,1)).arg(R(2,2))
+                                 .arg(T[0]).arg(T[1]).arg(T[2])
+                                 .arg(rms));
+
+        emit sig_newColumn("Err_Arun",ArunE);
+    }
+    else
+    {
+        QMessageBox::information(nullptr,"Information Arun","Please select two clouds");
+    }
+
+}
+
+void Viewer3D::slot_computeHorn()
+{
+    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+
+    if(selectedClouds.size()==2)
+    {
+        Eigen::Quaterniond Q(1,0,0,0);
+        Eigen::Vector3d T=Eigen::Vector3d::Zero();
+        double S=1.0;
+
+        std::vector<Eigen::Vector3d> Pa=selectedClouds[0]->cloud->positions();
+        std::vector<Eigen::Vector3d> Pb=selectedClouds[1]->cloud->positions();
+
+        std::cout<<"Compute Horn"<<std::endl;
+        std::cout<<"Pa.size()="<<Pa.size()<<std::endl;
+        std::cout<<"Pb.size()="<<Pb.size()<<std::endl;
+
+        algorithms::computeHornTranform(Pa,Pb,Q,T,S);
+        Eigen::VectorXd HornE=algorithms::getHornError(Pa,Pb,Q,T,S);
+        double rms=HornE.norm()/sqrt(HornE.rows());
+
+        emit sig_displayResults( QString("Compute Horn:\n"
+                                         "Q=(%1 , %2 , %3 , %4)\n"
+                                         "T=(%10 , %11 , %12)\n"
+                                         "S=%13\n"
+                                         "Rms=%14\n")
+                                 .arg(Q.w()).arg(Q.x()).arg(Q.y()).arg(Q.z())
+                                 .arg(T[0]).arg(T[1]).arg(T[2])
+                                 .arg(S)
+                                 .arg(rms));
+
+        emit sig_newColumn("Err_Horn",HornE);
+    }
+    else
+    {
+        QMessageBox::information(nullptr,"Information Arun","Please select two clouds");
     }
 }
 

@@ -26,8 +26,8 @@ public:
     const Eigen::VectorXd& getParams();
 
     //ModelCurveInterface
-    double at(double x)const;
-    Eigen::VectorXd at(Eigen::VectorXd f)const;
+    double at(double x);
+    Eigen::VectorXd at(Eigen::VectorXd f);
     void setParameter(QString parameterName,double value);
     double getParameter(QString parameterName);
     void setFixedParameter(QString parameterName,bool fixed);

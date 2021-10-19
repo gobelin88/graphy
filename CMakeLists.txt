@@ -129,11 +129,18 @@ set(SOURCES
     shapes/Plan.hpp
     shapes/Shape.hpp
     shapes/Sigmoid.h
-    shapes/Sinusoide.hpp
+    shapes/Sinusoide.cpp
+    shapes/Sinusoide.h
     shapes/Sphere.hpp
     single_application/singleapplication.h
     single_application/singleapplication_p.h
     mainwindow.ui
+    algorithmes/Horn.cpp
+    algorithmes/Horn.h
+    algorithmes/Arun.cpp
+    algorithmes/Arun.h
+    algorithmes/Pivot.cpp
+    algorithmes/Pivot.h
     icon.rc
     rsc.qrc
     )

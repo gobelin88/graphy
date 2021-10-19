@@ -80,6 +80,28 @@ Eigen::VectorXd CustomRealExp::at(Eigen::VectorXd v)
     return y;
 }
 
+void CustomRealExp::setParameter(QString parameterName,double value)
+{
+    unsigned int id=paramsNames.indexOf(parameterName);
+    if(id>0)
+    {
+        p[id]=value;
+    }
+}
+double CustomRealExp::getParameter(QString parameterName)
+{
+    unsigned int id=paramsNames.indexOf(parameterName);
+    if(id>0)
+    {
+        return p[id];
+    }
+}
+void CustomRealExp::setFixedParameter(QString parameterName,bool fixed)
+{
+
+}
+
+
 Eigen::Vector2d CustomRealExp::delta(const Eigen::Vector2d& P)
 {
     return Eigen::Vector2d(0,P[1]-at(P[0]));

@@ -47,7 +47,7 @@ void  Gaussian::setK(double K)
     p[2]=K;
 }
 
-double Gaussian::at(double x)const
+double Gaussian::at(double x)
 {
     double S=getS();
     double M=getM();
@@ -56,7 +56,7 @@ double Gaussian::at(double x)const
     return K/(S*sqrt(2*M_PI))*exp(-0.5*I*I);
 }
 
-Eigen::VectorXd Gaussian::at(Eigen::VectorXd f)const
+Eigen::VectorXd Gaussian::at(Eigen::VectorXd f)
 {
     Eigen::VectorXd y(f.size());
 

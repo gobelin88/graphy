@@ -92,6 +92,9 @@ public slots:
     void slot_setScatters();
     void slot_meanFilter();
     void slot_medianFilter();
+    void slot_ciFilter();
+    void slot_maxFilter();
+    void slot_minFilter();
     void slot_distance();
     void slot_setSbAxisMaxMin(double min);
     void slot_setSbAxisMinMax(double max);
@@ -182,7 +185,10 @@ protected:
     QMenu* menuFilters;
     QMenu* menuMisc;
     QMenu* menuThemes;
+    QAction* actFilterCI;
     QAction* actFilterMedian;
+    QAction* actFilterMax;
+    QAction* actFilterMin;
     QAction* actFilterMean;
     QAction* actFitPolynomial;
     QAction* actFitPolynomial2V;
@@ -217,6 +223,8 @@ protected:
     QCPItemTracer * createTracer(double cx,QCPGraph * graph);
     MyLabel *createLabel(double cx, double cy);
     QCPItemText * createTextItem(double cx,double cy,QString markstr);
+
+    void applyCIFilter(QString name);
 };
 
 #endif // VIEWER1D_H

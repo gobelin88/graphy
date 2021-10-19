@@ -34,13 +34,13 @@ public:
     QString toStr();
 };
 
-typedef std::vector<PosAtt> QPosAttList;
-typedef std::vector<Eigen::Vector3d> QPosList;
+typedef std::vector<PosAtt> PosAttList;
+typedef std::vector<Eigen::Vector3d> PosList;
 
-bool loadPosAttList(QString filename,QPosAttList& list);
-bool loadPosList(QString filename,QPosList& list);
-QPosList extractPos(QPosAttList& list);
+bool loadPosAttList(QString filename,PosAttList& list);
+bool loadPosList(QString filename,PosList& list);
+PosList extractPos(PosAttList& list);
 
-Eigen::MatrixXd toEigenMatXd(const QPosList& ptlist);
+Eigen::MatrixXd toEigenMatXd(const PosList& ptlist);
 
 #endif // QPOSATT_H

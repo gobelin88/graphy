@@ -10,7 +10,7 @@ QVector3D toQVector3D(Eigen::Vector3d v)
     return QVector3D(float(v.x()),float(v.y()),float(v.z()));
 }
 
-bool loadPosAttList(QString filename,QPosAttList& list)
+bool loadPosAttList(QString filename,PosAttList& list)
 {
     if (filename.isEmpty())
     {
@@ -50,7 +50,7 @@ bool loadPosAttList(QString filename,QPosAttList& list)
     }
 }
 
-Eigen::MatrixXd toEigenMatXd(const QPosList& ptlist)
+Eigen::MatrixXd toEigenMatXd(const PosList& ptlist)
 {
     Eigen::MatrixXd M(ptlist.size(),3);
 
@@ -64,7 +64,7 @@ Eigen::MatrixXd toEigenMatXd(const QPosList& ptlist)
     return M.transpose();
 }
 
-bool loadPosList(QString filename,QPosList& list)
+bool loadPosList(QString filename,PosList& list)
 {
     if (filename.isEmpty())
     {
@@ -99,9 +99,9 @@ bool loadPosList(QString filename,QPosList& list)
     }
 }
 
-QPosList extractPos(QPosAttList& list)
+PosList extractPos(PosAttList& list)
 {
-    QPosList listp(list.size());
+    PosList listp(list.size());
 
     for (int i=0; i<list.size(); i++)
     {

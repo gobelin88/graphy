@@ -123,6 +123,8 @@ public slots:
     void slot_showHideLabels(int value);
     void slot_removeSelected();
     void slot_updateLabels();
+    void slot_computeArun();
+    void slot_computeHorn();
 
 signals:
     void sig_newColumn(QString varName,Eigen::VectorXd data);
@@ -174,6 +176,7 @@ private:
     QMenu* menuParameters;
     QMenu* menuFit;
     QMenu * menuProject;
+    QMenu * menuAlgorithmes;
     QMenu * menuSubSample;
     QMenu * menuView;
     QMenu * menuData;
@@ -189,6 +192,8 @@ private:
     QAction * actProjectPlan;
     QAction * actProjectMesh;
     QAction * actRandomSubSample;
+    QAction * actComputeArun;
+    QAction * actComputeHorn;
     QAction * actRescale;
     QAction * actRescaleSelectedSameRanges;
     QAction * actRescaleSelected;

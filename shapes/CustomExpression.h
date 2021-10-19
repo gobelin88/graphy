@@ -9,10 +9,13 @@
 #include <QDialogButtonBox>
 #include <QLineEdit>
 #include <QLabel>
+#include "ModelCurveInterface.h"
 
 #include "exprtk/exprtk.hpp"
 
-class CustomRealExp: public Shape<Eigen::Vector2d>
+class CustomRealExp:
+        public Shape<Eigen::Vector2d>,
+        public ModelCurveInterface
 {
 public:
     CustomRealExp();
@@ -20,13 +23,20 @@ public:
     QString getExpression();
     void registerParams(QString exp);
     QString getError();
-    double at(double x);
-    Eigen::VectorXd at(Eigen::VectorXd v);
-    Eigen::Vector2d delta(const Eigen::Vector2d& P);
+
     int nb_params();
     void setParams(const Eigen::VectorXd& _p);
     const Eigen::VectorXd& getParams();
     const QStringList & getParamsNames();
+    Eigen::Vector2d delta(const Eigen::Vector2d& P);
+
+    //ModelCurveInterface
+    double at(double x);
+    Eigen::VectorXd at(Eigen::VectorXd v) ;
+    void setParameter(QString parameterName,double value);
+    double getParameter(QString parameterName);
+    void setFixedParameter(QString parameterName,bool fixed);
+
 
 private:
     Eigen::VectorXd p;

@@ -2,6 +2,7 @@
 
 #include "algorithmes/Arun.h"
 #include "algorithmes/Horn.h"
+#include "shapes/SolidHarmonicsDecomposition.h"
 
 Viewer3D::Viewer3D(const QMap<QString, QKeySequence>& shortcuts_map,QWidget * parent)
 {
@@ -123,6 +124,7 @@ void Viewer3D::createPopup()
     actRandomSubSample= new QAction("Random",  this);
     actComputeArun= new QAction("Arun",  this);
     actComputeHorn= new QAction("Horn",  this);
+    actComputeSolidHarmonics= new QAction("Solid Harmonics",  this);
     actRescale= new QAction("Rescale",  this);
     actRescaleSelected= new QAction("Rescale selected",  this);
     actRescaleSelectedSameRanges= new QAction("Rescale selected same ranges",  this);
@@ -131,6 +133,11 @@ void Viewer3D::createPopup()
     actMeshCreateRotegrity= new QAction("Rotegrity",  this);
     actFullscreen= new QAction("Fullscreen",  this);
     actFullscreen->setCheckable(true);
+
+    actCopy= new QAction("Copy",  this);
+    actCopy->setShortcut(QKeySequence("Ctrl+C"));
+    actPaste= new QAction("Paste",  this);
+    actPaste->setShortcut(QKeySequence("Ctrl+V"));
 
     ///////////////////////////////////////////////
     QWidgetAction* actWidget=new QWidgetAction(popupMenu);
@@ -178,6 +185,8 @@ void Viewer3D::createPopup()
     widget->setLayout(gbox);
 
     ///////////////////////////////////////////////Action context
+    customContainer->addAction(actCopy);
+    customContainer->addAction(actPaste);
     customContainer->addAction(actRescale);
     customContainer->addAction(actRescaleSelected);
     customContainer->addAction(actRescaleSelectedSameRanges);
@@ -222,6 +231,7 @@ void Viewer3D::createPopup()
     menuSubSample->addAction(actRandomSubSample);
     menuAlgorithmes->addAction(actComputeArun);
     menuAlgorithmes->addAction(actComputeHorn);
+    menuAlgorithmes->addAction(actComputeSolidHarmonics);
 
     QObject::connect(cb_show_hide_labels,SIGNAL(stateChanged(int)),this,SLOT(slot_showHideLabels(int)));
     QObject::connect(cb_show_hide_grid,SIGNAL(stateChanged(int)),this,SLOT(slot_showHideGrid(int)));
@@ -234,6 +244,7 @@ void Viewer3D::createPopup()
     QObject::connect(actRescaleSelected,SIGNAL(triggered()),this,SLOT(slot_resetViewOnSelected()));
     QObject::connect(actComputeArun,SIGNAL(triggered()),this,SLOT(slot_computeArun()));
     QObject::connect(actComputeHorn,SIGNAL(triggered()),this,SLOT(slot_computeHorn()));
+    QObject::connect(actComputeSolidHarmonics,SIGNAL(triggered()),this,SLOT(slot_computeSolidHarmonics()));
     QObject::connect(actRemoveSelected,SIGNAL(triggered()),this,SLOT(slot_removeSelected()));
     QObject::connect(actRandomSubSample,SIGNAL(triggered()),this,SLOT(slot_randomSubSamples()));
     QObject::connect(actSave,SIGNAL(triggered()),this,SLOT(slot_saveImage()));
@@ -251,6 +262,8 @@ void Viewer3D::createPopup()
     QObject::connect(cb_use_custom_color, SIGNAL(stateChanged(int)), this, SLOT(slot_useCustomColor(int)));
     QObject::connect(cw_custom_color, SIGNAL(colorChanged(QColor)), this, SLOT(slot_setCustomColor(QColor)));
     QObject::connect(actFullscreen, SIGNAL(triggered(bool)), customContainer, SLOT(slot_fullscreen(bool)));
+    QObject::connect(actCopy, SIGNAL(triggered()), this, SLOT(slot_copy()));
+    QObject::connect(actPaste, SIGNAL(triggered()), this, SLOT(slot_paste()));
 
 }
 
@@ -269,6 +282,36 @@ void Viewer3D::slot_saveImage()
         this->current_filename=filename;
 
         screen->grabWindow(customContainer->winId()).save(filename);
+    }
+
+}
+
+void Viewer3D::slot_copy()
+{
+    std::vector<Cloud3D*> list=getSelectedClouds();
+
+    if (list.size()>0)
+    {
+        QMimeData * mimeData=new QMimeData();
+        QByteArray rawData=list[0]->cloud->toByteArray();
+        mimeData->setData("Cloud",rawData);
+        QApplication::clipboard()->setMimeData(mimeData);
+    }
+}
+
+void Viewer3D::slot_paste()
+{
+    const QMimeData * mimeData=QApplication::clipboard()->mimeData();
+
+    if(mimeData)
+    {
+        if(mimeData->hasFormat("Cloud"))
+        {
+            Cloud * cloud=new Cloud();
+            QByteArray _data=mimeData->data("Cloud");
+            cloud->fromByteArray(_data);
+            addCloudScalar(cloud,Qt3DRender::QGeometryRenderer::PrimitiveType::Points);
+        }
     }
 
 }
@@ -846,11 +889,26 @@ void Viewer3D::slot_setCustomColor(QColor color)
     }
 }
 
+QString appendLabel(QString label,QString content)
+{
+    if(label.isEmpty())
+    {
+        return content;
+    }
+    else
+    {
+        return label+QString(",")+content;
+    }
+}
+
 void Viewer3D::addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode)
 {
     Cloud3D * currentCloud3D=new Cloud3D(cloudData,rootEntity);
 
-    referenceObjectEntity(currentCloud3D,"Cloud");
+    referenceObjectEntity(currentCloud3D,QString("Cloud(%1,%2,%3)")
+                          .arg(currentCloud3D->cloud->getLabelX())
+                          .arg(currentCloud3D->cloud->getLabelY())
+                          .arg(currentCloud3D->cloud->getLabelZ()));
 
 
     currentCloud3D->geometryRenderer->setPrimitiveType(primitiveMode);
@@ -858,13 +916,13 @@ void Viewer3D::addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::P
     customContainer->getColorScale()->axis()->setLabel(currentCloud3D->cloud->getLabelS());
     customContainer->getColorScale()->setGradient(currentCloud3D->cloud->getGradient());
 
-    customContainer->getXAxis()->setLabel(currentCloud3D->cloud->getLabelX());
-    customContainer->getYAxis()->setLabel(currentCloud3D->cloud->getLabelY());
-    customContainer->getZAxis()->setLabel(currentCloud3D->cloud->getLabelZ());
+    customContainer->getXAxis()->setLabel(appendLabel(customContainer->getXAxis()->label(),currentCloud3D->cloud->getLabelX()));
+    customContainer->getYAxis()->setLabel(appendLabel(customContainer->getYAxis()->label(),currentCloud3D->cloud->getLabelY()));
+    customContainer->getZAxis()->setLabel(appendLabel(customContainer->getZAxis()->label(),currentCloud3D->cloud->getLabelZ()));
 
-    labelx->setText(currentCloud3D->cloud->getLabelX());
-    labely->setText(currentCloud3D->cloud->getLabelY());
-    labelz->setText(currentCloud3D->cloud->getLabelZ());
+    labelx->setText(customContainer->getXAxis()->label());
+    labely->setText(customContainer->getYAxis()->label());
+    labelz->setText(customContainer->getZAxis()->label());
 
     setCloudPointSize(currentCloud3D,currentCloud3D->pointSize->value());
     //slot_resetView();
@@ -928,6 +986,7 @@ std::vector<Cloud3D*> Viewer3D::getSelectedClouds()
         Cloud3D* ptrCloud=dynamic_cast<Cloud3D*>(objects3D[i]);
         if(ptrCloud)
         {
+            ptrCloud->cloud->setName(currentItem->text());
             if(currentItem->isSelected())
             {
                 selectedClouds.push_back(ptrCloud);
@@ -1135,8 +1194,10 @@ void Viewer3D::slot_computeArun()
 
         std::vector<Eigen::Vector3d> Pa=selectedClouds[0]->cloud->positions();
         std::vector<Eigen::Vector3d> Pb=selectedClouds[1]->cloud->positions();
+        QString PaName=selectedClouds[0]->cloud->getName();
+        QString PbName=selectedClouds[1]->cloud->getName();
 
-        std::cout<<"Compute Arun"<<std::endl;
+        std::cout<<"Compute Arun :"<<std::endl;
         std::cout<<"Pa.size()="<<Pa.size()<<std::endl;
         std::cout<<"Pb.size()="<<Pb.size()<<std::endl;
 
@@ -1144,7 +1205,10 @@ void Viewer3D::slot_computeArun()
         Eigen::VectorXd ArunE=algorithms::getArunError(Pa,Pb,R,T);
         double rms=ArunE.norm()/sqrt(ArunE.rows());
 
-        emit sig_displayResults( QString("Compute Arun:\nR=\n"
+        emit sig_displayResults( QString("Compute Arun (Pa=R Pb+ T):\n"
+                                         "Pa=%14\n"
+                                         "Pb=%15\n"
+                                         "R=\n"
                                          "%1 , %2 , %3\n"
                                          "%4 , %5 , %6\n"
                                          "%7 , %8 , %9\n"
@@ -1154,7 +1218,7 @@ void Viewer3D::slot_computeArun()
                                  .arg(R(1,0)).arg(R(1,1)).arg(R(1,2))
                                  .arg(R(2,0)).arg(R(2,1)).arg(R(2,2))
                                  .arg(T[0]).arg(T[1]).arg(T[2])
-                                 .arg(rms));
+                                 .arg(rms).arg(PaName).arg(PbName));
 
         emit sig_newColumn("Err_Arun",ArunE);
     }
@@ -1163,6 +1227,96 @@ void Viewer3D::slot_computeArun()
         QMessageBox::information(nullptr,"Information Arun","Please select two clouds");
     }
 
+}
+
+void Viewer3D::slot_computeSolidHarmonics()
+{
+    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+
+    if(selectedClouds.size()==1)
+    {
+        Cloud * pcl=selectedClouds[0]->cloud;
+
+        QDialog* dialog=new QDialog;
+        dialog->setLocale(QLocale("C"));
+        dialog->setWindowTitle("Solid Harmonics decomposition");
+        QGridLayout* gbox = new QGridLayout();
+
+        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok| QDialogButtonBox::Cancel);
+
+        QSpinBox * sb_order=new QSpinBox(dialog);
+        sb_order->setPrefix("Order=");
+        sb_order->setValue(3);
+        sb_order->setRange(1,SolidHarmonicsDecomposition::maxOrder());
+
+        QComboBox * cb_mode=new QComboBox(dialog);
+        cb_mode->addItem("REGULAR",int(SolidHarmonicsDecomposition::MODE_REGULAR));
+        cb_mode->addItem("IRREGULAR",int(SolidHarmonicsDecomposition::MODE_IRREGULAR));
+
+        QLabel * l_eqn=new QLabel;
+        l_eqn->setPixmap(QPixmap(":/eqn/eqn/SolidHarmonics_Regular.gif"));
+
+        gbox->addWidget(l_eqn,0,0,1,2);
+        gbox->addWidget(sb_order,1,0);
+        gbox->addWidget(cb_mode,1,1);
+        gbox->addWidget(buttonBox,2,0,1,2);
+        dialog->setLayout(gbox);
+
+//        connect(cb_mode, &QComboBox::currentIndexChanged,[=](int index) { l_eqn->setPixmap(QPixmap(":/eqn/eqn/SolidHarmonics_Regular.gif")); });
+
+        connect(cb_mode, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [=]( int index )
+        {
+            if(index==0){l_eqn->setPixmap(QPixmap(":/eqn/eqn/SolidHarmonics_Regular.gif"));}
+            else if(index==1){l_eqn->setPixmap(QPixmap(":/eqn/eqn/SolidHarmonics_Irregular.gif"));}
+        } );
+
+        QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+        QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+        int result=dialog->exec();
+        if (result == QDialog::Accepted)
+        {
+            std::cout<<"slot_computeSolidHarmonics...fit"<<std::endl;
+            SolidHarmonicsDecomposition shd(sb_order->value()+1,static_cast<SolidHarmonicsDecomposition::Mode>(cb_mode->currentData().toInt()));
+            std::cout<<"Number of harmonics="<<shd.nb_params()<<std::endl;
+
+            shd.guessDecomposition(pcl->data());
+            Eigen::MatrixXd C=shd.getC();
+            std::cout<<"C="<<C<<std::endl;
+            pcl->fit(&shd);
+
+            QString str;
+            for(int l=0;l<shd.order();l++)
+            {
+                for(int m=-l;m<=l;m++)
+                {
+                    str+=QString("C(%1,%2)=%3 \n").arg(l).arg(m).arg(shd.getC(l,m));
+                }
+//                str+=QString("\n");
+            }
+
+            str+=QString("\n");
+            str+=QString("Expression\n");
+            for(int l=0;l<shd.order();l++)
+            {
+                for(int m=-l;m<=l;m++)
+                {
+                    if(shd.getMode()==SolidHarmonicsDecomposition::MODE_IRREGULAR)
+                    {
+                        str+=QString("%3*solidHarmonicsI(x,y,z,%1,%2)+\n").arg(l).arg(m).arg(shd.getC(l,m));
+                    }
+                    else if(shd.getMode()==SolidHarmonicsDecomposition::MODE_REGULAR)
+                    {
+                        str+=QString("%3*solidHarmonicsR(x,y,z,%1,%2)+\n").arg(l).arg(m).arg(shd.getC(l,m));
+                    }
+                }
+            }
+            str+=QString("\n");
+
+            emit sig_displayResults( QString("Fit SolidHarmonicsDecomposition:\n\nC(l,m)=\n")+str);
+            emit sig_newColumn("Err_SolidHarmonicsDecomposition",shd.getErrNorm());
+        }
+    }
 }
 
 void Viewer3D::slot_computeHorn()

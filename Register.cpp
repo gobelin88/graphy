@@ -113,13 +113,16 @@ void Register::clear()
     symbolsTable->add_function("zeta"  ,  cf_zeta);
     symbolsTable->add_function("xsi"  ,  cf_xsi);
 
+    symbolsTable->add_function("isPrime"            ,cf_isPrime);
+    symbolsTable->add_function("lin"                ,cf_lin);
+    symbolsTable->add_function("clin"               ,cf_clin);
+    symbolsTable->add_function("solveNewton"        ,cf_solveNewton);
+    symbolsTable->add_function("cwise"              ,cf_cwise);
 
-    symbolsTable->add_function("isPrime"  ,  cf_isPrime);
-    symbolsTable->add_function("lin"  ,  cf_lin);
-    symbolsTable->add_function("clin"  ,  cf_clin);
-    symbolsTable->add_function("solveNewton"  ,  cf_solveNewton);
-
-    symbolsTable->add_function("cwise"  ,  cf_cwise);
+    symbolsTable->add_function("solidHarmonicsR"    ,cf_solidHarmonicsRegularFunction);
+    symbolsTable->add_function("solidHarmonicsI"    ,cf_solidHarmonicsIrregularFunction);
+    symbolsTable->add_function("sphericalHarmonicsY",cf_sphericalHarmonicsFunction);
+    symbolsTable->add_function("legendrePolynomeP"  ,cf_legendrePolynomeFunction);
 
     cf_id.setVariablesNamesPtr(&variables_names);
     cf_cwise.setVariablesNamesPtr(&variables_names);
@@ -662,6 +665,11 @@ QString getHelp(QString name)
     else if(name=="ncdf"){return QString("<b>ncdf</b>(x)<p>Normal cumulative distribution function.</p>");}
     else if(name=="clamp"){return QString("<b>clamp</b>(a,x,b)<p>Clamp x in range between a and b, where a &lt; b.</p><b>Example:</b><p>clamp(0,x,1)</p>");}
     else if(name=="iclamp"){return QString("<b>clamp</b>(a,x,b)<p>Inverse-clamp x outside of the range a and b. Where a &lt; b. If x is within the range it will snap to the closest bound.</p><b>Example:</b><p>clamp(0,x,1)</p>");}
+
+    else if(name=="solidHarmonicsR"){return QString("<b>solidHarmonicsR</b>(x,y,z,l,m)<p> Regular solid harmonics. </p>");}
+    else if(name=="solidHarmonicsI"){return QString("<b>solidHarmonicsI</b>(x,y,z,l,m)<p> Irregular solid harmonics. </p>");}
+    else if(name=="sphericalHarmonicsY"){return QString("<b>sphericalHarmonicsY</b>(theta,phi,l,m)<p> Sphericals harmonics. </p>");}
+    else if(name=="legendrePolynomeP"){return QString("<b>legendrePolynomeP</b>(x,l,m)<p> Associated Legendre polynomials. Without Condon–Shortley phase (-1)^m factor </p>");}
 
     //Constants
     else if(name=="i"){return QString("<b>i</b><p>The unit complex number.</p><b>Example:</b><p>i^2=-1</p>");}

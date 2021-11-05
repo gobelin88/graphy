@@ -1733,7 +1733,11 @@ void Viewer1D::slot_fitCustom()
     {
         CustomExpDialog dialog;
 
+        connect(&dialog,&CustomExpDialog::sig_modelChanged,this,&Viewer1D::slot_updateModelPreview);
+
+        showModelCurve();
         int result=dialog.exec();
+        hideModelCurve();
 
         if (result == QDialog::Accepted)
         {
@@ -2407,28 +2411,55 @@ void Viewer1D::slot_copy()
 {
     std::cout<<"slot_copy"<<std::endl;
 
-    QList<Curve2D> list=getSelectedCurves();
-
-    std::cout<<"slot_copy "<<list.size()<<std::endl;
-
-    if (list.size()>0)
+    QList<Curve2D> listCurves=getSelectedCurves();
+    if (listCurves.size()>0)
     {
         QMimeData * mimeData=new QMimeData();
-        QByteArray rawData=list[0].toByteArray();
+        QByteArray rawData=listCurves[0].toByteArray();
         mimeData->setData("Curve",rawData);
+        QApplication::clipboard()->setMimeData(mimeData);
+    }
+
+    QList<QCPAxis*> listAxis=selectedAxes();
+    if (listAxis.size()>0)
+    {
+        //Todo
+        std::cout<<"copy axis"<<std::endl;
+        QMimeData * mimeData=new QMimeData();
+        QByteArray rawData=axistoByteArray(listAxis[0]);
+
+        mimeData->setData("Axis",rawData);
         QApplication::clipboard()->setMimeData(mimeData);
     }
 }
 
+QByteArray Viewer1D::axistoByteArray(QCPAxis * paxis)
+{
+    QByteArray data;
+    QBuffer buffer(&data);
+    buffer.open(QIODevice::WriteOnly);
+    QDataStream ds(&buffer);
+
+    ds<<paxis->label();
+
+    buffer.close();
+
+    return data;
+}
+
+void Viewer1D::axisFromByteArray(QCPAxis * paxis,QByteArray data)
+{
+    QBuffer buffer(&data);
+    buffer.open(QIODevice::ReadOnly);
+    QDataStream ds(&buffer);
+
+    QString label;ds>>label;paxis->setLabel(label);
+
+    buffer.close();
+}
+
 void Viewer1D::slot_paste()
 {
-    //    if (sharedBuf!=nullptr)
-    //    {
-    //        if (sharedBuf->getX().size()>0)
-    //        {
-    //            slot_add_data(*sharedBuf);
-    //        }
-    //    }
     const QMimeData * mimeData=QApplication::clipboard()->mimeData();
 
     if(mimeData)
@@ -2436,9 +2467,18 @@ void Viewer1D::slot_paste()
         if(mimeData->hasFormat("Curve"))
         {
             Curve2D curve;
-            QByteArray _data=mimeData->data("Curve");
-            curve.fromByteArray(_data);
+            curve.fromByteArray(mimeData->data("Curve"));
             slot_addData(curve);
+        }
+
+        if(mimeData->hasFormat("Axis"))
+        {
+            QList<QCPAxis*> listAxis=selectedAxes();
+            if (listAxis.size()>0)
+            {
+                    std::cout<<"paste axis"<<std::endl;
+                    axisFromByteArray(listAxis[0],mimeData->data("Axis"));
+            }
         }
     }
 
@@ -2663,7 +2703,7 @@ void getCI(const Eigen::VectorXd & Y,Eigen::VectorXd & Yfiltered,double radius,d
         std::vector<double> values;
         for(int j=i-radius;j<=i+radius;j++)
         {
-            if(j>0 && j<Y.rows())
+            if(j>=0 && j<Y.rows())
             {
                 values.push_back(Y[j]);
             }
@@ -2836,7 +2876,7 @@ void Viewer1D::slot_distance()
     if (curves.size()>0)
     {
         bool ok;
-        double knn=QInputDialog::getInt(this,"K-nearest neighbors distances",
+        int knn=QInputDialog::getInt(this,"K-nearest neighbors distances",
                                         "Evaluate the mean distance of K-nearest neighbors .\n\n K=",20,0,2147483647,1,&ok);
         if(ok)
         {

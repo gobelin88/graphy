@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include <QApplication>
 #include <iostream>
+#include "solidHarmonics/solidHarmonics.h"
 
 //#define QAPPLICATION_CLASS QApplication
 #include <single_application/SingleApplication>
@@ -35,6 +36,8 @@ int main(int argc, char* argv[])
 {
     //testA();
     //testB();
+    testHarmonics();
+
     SingleApplication app(argc, argv,true,SingleApplication::Mode::SecondaryNotification,10000);
 
     QStringList args=app.arguments();

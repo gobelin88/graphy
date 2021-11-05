@@ -117,6 +117,10 @@ private:
     cwiseFunction<VariableType,MatrixXv> cf_cwise;
     indexFunction<VariableType> cf_id;
     isPrimeFunction<VariableType> cf_isPrime;
+    solidHarmonicsRegularFunction<VariableType> cf_solidHarmonicsRegularFunction;
+    solidHarmonicsIrregularFunction<VariableType> cf_solidHarmonicsIrregularFunction;
+    sphericalHarmonicsFunction<VariableType> cf_sphericalHarmonicsFunction;
+    legendrePolynomeFunction<VariableType> cf_legendrePolynomeFunction;
 
     //Misc variables
     VariableType activeRow;

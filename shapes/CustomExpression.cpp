@@ -131,16 +131,17 @@ CustomExpDialog::CustomExpDialog():QDialog()
     QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
                                                        | QDialogButtonBox::Cancel);
 
-    le_expr=new QLineEdit(this);
+    le_expr=new QTextEdit(this);
     le_expr->setToolTip("ex: A*x^2+B*x+C\nParameters ares specified by capitals letters.");
+    le_expr->setMinimumWidth(300);
 
     QObject::connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
     QObject::connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
-    QObject::connect(le_expr, SIGNAL(textChanged(QString)), this, SLOT(slot_setExp(QString)));
+    QObject::connect(le_expr, SIGNAL(textChanged()), this, SLOT(slot_setExp()));
 
     l_error=new QLabel();
 
-    gbox->addWidget(new QLabel("Expression f(x)="),0,0);
+    gbox->addWidget(new QLabel("f(x)="),0,0);
     gbox->addWidget(le_expr,0,1);
     gbox->addWidget(l_error,1,0,1,2);
     gbox->addLayout(vbox,2,0,1,2);
@@ -167,12 +168,15 @@ void CustomExpDialog::slot_p0Changed()
     {
         customRealExp.setParams(getP0());
         l_error->setText(QString("Ok f(0)=%1").arg(customRealExp.at(0)));
+
+        emit sig_modelChanged(&customRealExp);
     }
 }
 
-void CustomExpDialog::slot_setExp(QString expStr)
+void CustomExpDialog::slot_setExp()
 {
-    if(customRealExp.setExpression(expStr))
+    QString expStr=le_expr->toPlainText();
+    if(customRealExp.setExpression(expStr+QString(";")))
     {
         std::cout<<customRealExp.getParamsNames().size()<<std::endl;
 
@@ -187,6 +191,9 @@ void CustomExpDialog::slot_setExp(QString expStr)
             QDoubleSpinBox * sp_newParams=new QDoubleSpinBox(this);
             sp_newParams->setPrefix(customRealExp.getParamsNames()[i]+QString("="));
             sp_newParams->setToolTip(QString("Initial value for parameter %1").arg(customRealExp.getParamsNames()[i]));
+            sp_newParams->setDecimals(8);
+            sp_newParams->setRange(-1e100,1e100);
+            sp_newParams->setSingleStep(0.01);
             sp_params.append(sp_newParams);
             vbox->addWidget(sp_newParams);
             connect(sp_newParams,SIGNAL(valueChanged(double)),this,SLOT(slot_p0Changed()));

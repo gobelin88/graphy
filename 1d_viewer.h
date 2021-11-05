@@ -225,6 +225,9 @@ protected:
     QCPItemText * createTextItem(double cx,double cy,QString markstr);
 
     void applyCIFilter(QString name);
+
+    QByteArray axistoByteArray(QCPAxis * paxis);
+    void axisFromByteArray(QCPAxis * paxis,QByteArray data);
 };
 
 #endif // VIEWER1D_H

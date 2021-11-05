@@ -7,7 +7,7 @@
 #include <QDoubleSpinBox>
 #include <QGridLayout>
 #include <QDialogButtonBox>
-#include <QLineEdit>
+#include <QTextEdit>
 #include <QLabel>
 #include "ModelCurveInterface.h"
 
@@ -60,12 +60,15 @@ public:
     VectorXd getP0();
 
 public slots:
-    void slot_setExp(QString expStr);
+    void slot_setExp();
     void slot_p0Changed();
+
+signals:
+    void sig_modelChanged(ModelCurveInterface * model);
 
 private:
     CustomRealExp customRealExp;
-    QLineEdit * le_expr;
+    QTextEdit * le_expr;
     QVector<QDoubleSpinBox*> sp_params;
     QVBoxLayout* vbox;
     QLabel * l_error;

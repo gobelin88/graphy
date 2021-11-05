@@ -132,6 +132,8 @@ set(SOURCES
     shapes/Sinusoide.cpp
     shapes/Sinusoide.h
     shapes/Sphere.hpp
+    shapes/SolidHarmonicsDecomposition.cpp
+    shapes/SolidHarmonicsDecomposition.h
     single_application/singleapplication.h
     single_application/singleapplication_p.h
     mainwindow.ui
@@ -141,14 +143,17 @@ set(SOURCES
     algorithmes/Arun.h
     algorithmes/Pivot.cpp
     algorithmes/Pivot.h
+    solidHarmonics/solidHarmonics.h
+    solidHarmonics/solidHarmonics.cpp
     icon.rc
     rsc.qrc
     )
 
 add_executable(${TARGET_NAME} ${SOURCES})
+target_compile_features(${TARGET_NAME} PRIVATE cxx_std_17)
 
 string(REGEX REPLACE "/W[3|4]" "/w" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-target_compile_options(${TARGET_NAME} PRIVATE /bigobj /we4456 /wd4127 /DgraphyVersion=${GRAPHY_VERSION} /Dexprtk_disable_caseinsensitivity)
+target_compile_options(${TARGET_NAME} PRIVATE /bigobj /we4456 /wd4127 /DgraphyVersion=${GRAPHY_VERSION} /Dexprtk_disable_caseinsensitivity /D__STDCPP_WANT_MATH_SPEC_FUNCS__)
 
 target_include_directories(${TARGET_NAME} PRIVATE ${EIGEN3_INCLUDE_DIR})
 

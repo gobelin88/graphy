@@ -93,6 +93,8 @@ public:
     void applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map);
 
 public slots:
+    void slot_copy();
+    void slot_paste();
     void slot_saveImage();
     void slot_saveRevolution();
     void slot_setPointSize(double value);
@@ -125,6 +127,7 @@ public slots:
     void slot_updateLabels();
     void slot_computeArun();
     void slot_computeHorn();
+    void slot_computeSolidHarmonics();
 
 signals:
     void sig_newColumn(QString varName,Eigen::VectorXd data);
@@ -194,6 +197,7 @@ private:
     QAction * actRandomSubSample;
     QAction * actComputeArun;
     QAction * actComputeHorn;
+    QAction * actComputeSolidHarmonics;
     QAction * actRescale;
     QAction * actRescaleSelectedSameRanges;
     QAction * actRescaleSelected;
@@ -202,6 +206,8 @@ private:
     QAction * actMeshLoad;
     QAction * actMeshCreateRotegrity;
     QAction * actFullscreen;
+    QAction* actCopy;
+    QAction* actPaste;
 
     QComboBox* c_gradient;
     QDoubleSpinBox* sb_size;

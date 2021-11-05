@@ -69,9 +69,6 @@ public slots:
     void closeTable(int index);
     void slot_tab_moved(int from,int to);
 
-    //term
-    void slot_showHideTerminal();
-
     //Progress
     void slot_progress(int t);
     void slot_what(QString what);
@@ -96,6 +93,7 @@ private:
     WinCPURAM winRamCpu;
 
     QTextEdit* te_results;
+    QSplitter* spliter;
     QMdiSubWindow * subWindowsResults;
     QTabWidget* te_widget;
     Ui::MainWindow* ui;

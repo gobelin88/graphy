@@ -465,11 +465,11 @@ QString Curve2D::getPolynomeString(const Eigen::VectorXd& C,unsigned int order)
 
         if (i==1)
         {
-            monome=QString("X");
+            monome=QString("*X");
         }
         else
         {
-            monome=QString("X^%1").arg(i);
+            monome=QString("*X^%1").arg(i);
         }
 
         if (i==0)

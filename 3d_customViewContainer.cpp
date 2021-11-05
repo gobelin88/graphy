@@ -15,7 +15,7 @@ CustomViewContainer::CustomViewContainer(QWidget* container,QWidget*parent, Qt::
 
     selectionView=new QListWidget(this);
     selectionView->setSelectionMode(QListWidget::ExtendedSelection);
-    selectionView->setMaximumWidth(100);
+    selectionView->setMaximumWidth(200);
     selectionView->setStyleSheet("QListWidget { border: none; }");
 
     glayout=new QGridLayout(this);
@@ -40,6 +40,21 @@ CustomViewContainer::CustomViewContainer(QWidget* container,QWidget*parent, Qt::
     this->setPalette(pal);
 
     this->container=container;
+
+    connect(selectionView,&QListWidget::itemDoubleClicked,this,&CustomViewContainer::slot_onItemDoubleClicked);
+}
+
+void CustomViewContainer::slot_onItemDoubleClicked(QListWidgetItem *item)
+{
+    if (item) // only react if item was clicked (user could have clicked on border padding of legend where there is no item, then item is 0)
+    {
+        bool ok;
+        QString newName = QInputDialog::getText(this,"Set legend", "New cloud name:", QLineEdit::Normal, item->text(), &ok);
+        if (ok)
+        {
+            item->setText(newName);
+        }
+    }
 }
 
 CustomViewContainer::~CustomViewContainer()
@@ -64,6 +79,9 @@ void CustomViewContainer::createColorAxisPlot()
 void CustomViewContainer::createXAxisPlot()
 {
     axisX_plot=new QCustomPlot(this);
+
+    axisX_plot->setBackground(Qt::GlobalColor::transparent);
+    axisX_plot->setAttribute(Qt::WA_OpaquePaintEvent, false);
 
     axisX_rect=new QCPAxisRect(axisX_plot,false);
     axisX=new QCPAxis(axisX_rect,QCPAxis::AxisType::atBottom);

@@ -6,6 +6,22 @@ void Cloud::init()
     customColor=qRgb(0,0,0);
     setGradientPreset(QCPColorGradient::gpPolar);
     calcBarycenterAndBoundingRadius();
+    name="Cloud";
+}
+
+Cloud::Cloud()
+{
+    rangeX=QCPRange(-1,1);
+    rangeY=QCPRange(-1,1);
+    rangeZ=QCPRange(-1,1);
+    rangeS=QCPRange(-1,1);
+
+    this->labelX ="X";
+    this->labelY ="Y";
+    this->labelZ ="Z";
+    this->labelS .clear();
+
+    init();
 }
 
 Cloud::Cloud(const Eigen::VectorXd& x,
@@ -64,6 +80,16 @@ Cloud::Cloud(const Eigen::VectorXd& x,
 Cloud::~Cloud()
 {
     std::cout<<"Delete Cloud"<<std::endl;
+}
+
+void Cloud::setName(QString name)
+{
+    this->name=name;
+}
+
+QString Cloud::getName()
+{
+    return name;
 }
 
 void Cloud::setGradientPreset(QCPColorGradient::GradientPreset preset)
@@ -216,6 +242,11 @@ QVector3D Cloud::toQVec3D(Eigen::Vector3d p)
     return QVector3D(p[0],p[1],p[2]);
 }
 
+void Cloud::fit(Shape<Eigen::Vector4d>* model,int it,double xtol)
+{
+    model->fit(pts,it,xtol);
+}
+
 void Cloud::fit(Shape<Eigen::Vector3d>* model,int it,double xtol)
 {
     model->fit(positions(),it,xtol);
@@ -274,4 +305,47 @@ QByteArray Cloud::getBuffer(QCPRange range)
     }
 
     return bufferBytes;
+}
+
+QByteArray Cloud::toByteArray()
+{
+    QByteArray data;
+    QBuffer buffer(&data);
+    buffer.open(QIODevice::WriteOnly);
+    QDataStream ds(&buffer);
+
+    ds<<pts;
+    ds<<name;
+    ds<<labelX;
+    ds<<labelY;
+    ds<<labelZ;
+    ds<<labelS;
+    ds<<rangeX.lower<<rangeX.upper;
+    ds<<rangeY.lower<<rangeY.upper;
+    ds<<rangeZ.lower<<rangeZ.upper;
+    ds<<rangeS.lower<<rangeS.upper;
+
+    buffer.close();
+
+    return data;
+}
+
+void Cloud::fromByteArray(QByteArray data)
+{
+    QBuffer buffer(&data);
+    buffer.open(QIODevice::ReadOnly);
+    QDataStream ds(&buffer);
+
+    ds>>pts;
+    ds>>name;
+    ds>>labelX;
+    ds>>labelY;
+    ds>>labelZ;
+    ds>>labelS;
+    ds>>rangeX.lower>>rangeX.upper;
+    ds>>rangeY.lower>>rangeY.upper;
+    ds>>rangeZ.lower>>rangeZ.upper;
+    ds>>rangeS.lower>>rangeS.upper;
+
+    buffer.close();
 }

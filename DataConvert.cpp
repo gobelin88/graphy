@@ -102,3 +102,24 @@ QDataStream & operator>>(QDataStream & ds,QVector<QString> & v)
     }
     return ds;
 }
+
+QDataStream & operator<<(QDataStream & ds,const std::vector<Eigen::Vector4d> & v)
+{
+    ds<<v.size();
+    for(int i=0;i<v.size();i++)
+    {
+        ds<<v[i][0]<<v[i][1]<<v[i][2]<<v[i][3];
+    }
+    return ds;
+}
+QDataStream & operator>>(QDataStream & ds,std::vector<Eigen::Vector4d> & v)
+{
+    size_t size_v;
+    ds>>size_v;
+    v.resize(size_v);
+    for(int i=0;i<size_v;i++)
+    {
+        ds>>v[i][0]>>v[i][1]>>v[i][2]>>v[i][3];
+    }
+    return ds;
+}

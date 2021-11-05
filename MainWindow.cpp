@@ -7,6 +7,7 @@
 #include <QTextStream>
 #include <QMessageBox>
 #include <QtConcurrent>
+#include <QWidgetAction>
 
 
 MainWindow::MainWindow(QWidget* parent) :
@@ -43,19 +44,22 @@ MainWindow::MainWindow(QWidget* parent) :
 
     te_results=new QTextEdit;
 
-    subWindowsResults=mdiArea->addSubWindow(te_results,Qt::WindowStaysOnTopHint );
-    subWindowsResults->setAttribute( Qt::WA_DeleteOnClose, false );
-    subWindowsResults->hide();
-
     te_widget=new QTabWidget();
     te_widget->setTabsClosable(true);
     te_widget->setTabShape(QTabWidget::Triangular);
     te_widget->setMovable(true);
 
+    spliter=new QSplitter;
+    spliter->addWidget(te_widget);
+    spliter->addWidget(te_results);
+
+    QList<int> widgetsSizes;
+    widgetsSizes<<1,0;
+    spliter->setSizes(widgetsSizes);
 
     connect(te_widget,&QTabWidget::tabCloseRequested,this,&MainWindow::closeTable);
 
-    QMdiSubWindow* subWindow = mdiArea->addSubWindow(te_widget, Qt::FramelessWindowHint );
+    QMdiSubWindow* subWindow = mdiArea->addSubWindow(spliter, Qt::FramelessWindowHint );
     subWindow->showMaximized();
     mdiArea->setOption(QMdiArea::DontMaximizeSubWindowOnActivation);
     mdiArea->setSizeAdjustPolicy (QAbstractScrollArea::AdjustToContents);
@@ -88,8 +92,6 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(ui->actionPlot_Gain_Phase, &QAction::triggered,this,&MainWindow::slot_plot_bode);
 
     connect(te_widget->tabBar(), &QTabBar::tabMoved ,this,&MainWindow::slot_tab_moved);
-
-    connect(ui->actionTerminal,&QAction::triggered,this,&MainWindow::slot_showHideTerminal);
     //------------------------------------------------------------------------------
 
     loadShortcuts();
@@ -1292,12 +1294,6 @@ void MainWindow::closeTable(int index)
     te_widget->removeTab(index);
 }
 
-
-void MainWindow::slot_showHideTerminal()
-{
-    te_results->show();
-}
-
 void MainWindow::slot_what(QString what)
 {
     l_what->setText(what);
@@ -1341,12 +1337,16 @@ void MainWindow::slot_colourize()
 
         MyGradientComboBox * cb_gradients=new MyGradientComboBox(this);
 
+        QCheckBox * cb_invert=new QCheckBox("Invert");
+        cb_invert->setChecked(false);
+
         QCheckBox * cb_percolumns=new QCheckBox("Range per columns");
         cb_percolumns->setChecked(false);
 
         gbox->addWidget(cb_gradients,0,0);
         gbox->addWidget(cb_percolumns,1,0);
-        gbox->addWidget(buttonBox,2,0);
+        gbox->addWidget(cb_invert,2,0);
+        gbox->addWidget(buttonBox,3,0);
 
         dialog->setLayout(gbox);
         int result=dialog->exec();
@@ -1390,6 +1390,7 @@ void MainWindow::slot_colourize()
 
                 if(!pb_clear->isChecked())
                 {
+                    if(cb_invert->isChecked())range.revert();
                     std::vector<QRgb> colors=cb_gradients->colourize(colData,range);
                     table->model()->colourizeCol(visualIndex,colors);
                 }

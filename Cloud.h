@@ -13,6 +13,8 @@
 class Cloud
 {
 public:
+    Cloud();
+
     Cloud(const Eigen::VectorXd& x,
           const Eigen::VectorXd& y,
           const Eigen::VectorXd& z,
@@ -30,6 +32,9 @@ public:
           QString labelS);
 
     ~Cloud();
+
+    void setName(QString name);
+    QString getName();
 
     void operator=(const Cloud& other);
     std::vector<Eigen::Vector3d> positions()const;
@@ -52,7 +57,6 @@ public:
 
     const QCPColorGradient& getGradient();
     QCPColorGradient::GradientPreset getGradientPreset();
-
     Eigen::Vector3d getCenter();
     Eigen::Vector3d getBarycenter();
     double getBoundingRadius();
@@ -68,9 +72,14 @@ public:
 
     //Fit a model
     void fit(Shape<Eigen::Vector3d>* model, int it=10000,double xtol=-1);
+    void fit(Shape<Eigen::Vector4d>* model, int it=10000,double xtol=-1);
     void project(Shape<Eigen::Vector3d>* model);
-
     void subSample(unsigned int nbPoints);
+
+
+    QByteArray toByteArray();
+    void fromByteArray(QByteArray data);
+
 
 private:
     void calcBarycenterAndBoundingRadius();
@@ -87,6 +96,7 @@ private:
     QString labelY ;
     QString labelZ ;
     QString labelS ;
+    QString name;
 
     Eigen::Vector3d Barycenter;
     double boundingRadius;

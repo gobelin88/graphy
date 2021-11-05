@@ -17,7 +17,7 @@
   <widget class="QStatusBar" name="statusBar"/>
   <widget class="QToolBar" name="toolbar_menu">
    <property name="windowTitle">
-    <string>toolBar</string>
+    <string>ToolBar Menu</string>
    </property>
    <property name="allowedAreas">
     <set>Qt::LeftToolBarArea</set>
@@ -41,15 +41,14 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionNew"/>
-   <addaction name="actionSaveAs"/>
    <addaction name="actionOpen"/>
+   <addaction name="actionSaveAs"/>
    <addaction name="actionExport"/>
    <addaction name="actionParameters"/>
-   <addaction name="actionTerminal"/>
   </widget>
   <widget class="QToolBar" name="toolbar_graph">
    <property name="windowTitle">
-    <string>toolBar</string>
+    <string>ToolBar Graphiques</string>
    </property>
    <property name="allowedAreas">
     <set>Qt::LeftToolBarArea</set>

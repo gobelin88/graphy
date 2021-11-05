@@ -967,6 +967,15 @@ public:
             qSwap(lower, upper);
         }
     }
+
+    void revert()
+    {
+        if (lower < upper)
+        {
+            qSwap(lower, upper);
+        }
+    }
+
     void expand(const QCPRange& otherRange);
     void expand(double includeCoord);
     QCPRange expanded(const QCPRange& otherRange) const;

@@ -51,6 +51,9 @@
         <file>eqn/window_hann.gif</file>
         <file>eqn/window_normalize.gif</file>
         <file>eqn/window_not_normalize.gif</file>
+        <file>eqn/SolidHarmonics_Irregular.gif</file>
+        <file>eqn/SolidHarmonics_Regular.gif</file>
+        <file>eqn/SphericalHarmonics.gif</file>
     </qresource>
     <qresource prefix="/imp">
         <file>imp/(R+L)-C.png</file>

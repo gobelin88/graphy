@@ -9,6 +9,7 @@
 #include <string>
 #include <QStringList>
 #include "omp.h"
+#include "solidHarmonics/solidHarmonics.h"
 
 #ifndef EXPRTKCUSTOMFUNCTIONS_HPP
 #define EXPRTKCUSTOMFUNCTIONS_HPP
@@ -544,6 +545,78 @@ struct xsiFunction : public exprtk::ifunction<T>
     zetaFunction<T> m_zeta;
     gammaFunction<T> m_gamma;
 };
+
+template <typename T>
+struct solidHarmonicsRegularFunction : public exprtk::ifunction<T>
+{
+    using exprtk::ifunction<T>::operator();
+
+    solidHarmonicsRegularFunction()
+        : exprtk::ifunction<T>(5)
+    {
+        exprtk::disable_has_side_effects(*this);
+    }
+
+    inline T operator()(const T& x,const T& y,const T& z,const T& l,const T& m)
+    {
+        return T(solidHarmonicsR(x.real(),y.real(),z.real(),
+                               std::round(l.real()),std::round(m.real())));
+    }
+};
+
+template <typename T>
+struct solidHarmonicsIrregularFunction : public exprtk::ifunction<T>
+{
+    using exprtk::ifunction<T>::operator();
+
+    solidHarmonicsIrregularFunction()
+        : exprtk::ifunction<T>(5)
+    {
+        exprtk::disable_has_side_effects(*this);
+    }
+
+    inline T operator()(const T& x,const T& y,const T& z,const T& l,const T& m)
+    {
+        return T(solidHarmonicsI(x.real(),y.real(),z.real(),
+                               std::round(l.real()),std::round(m.real())));
+    }
+};
+
+template <typename T>
+struct sphericalHarmonicsFunction : public exprtk::ifunction<T>
+{
+    using exprtk::ifunction<T>::operator();
+
+    sphericalHarmonicsFunction()
+        : exprtk::ifunction<T>(4)
+    {
+        exprtk::disable_has_side_effects(*this);
+    }
+
+    inline T operator()(const T& theta,const T& phi,const T& l,const T& m)
+    {
+        return T(sphericalHarmonicsY(theta.real(),phi.real(),std::round(l.real()),std::round(m.real())));
+    }
+};
+
+template <typename T>
+struct legendrePolynomeFunction : public exprtk::ifunction<T>
+{
+    using exprtk::ifunction<T>::operator();
+
+    legendrePolynomeFunction()
+        : exprtk::ifunction<T>(3)
+    {
+        exprtk::disable_has_side_effects(*this);
+    }
+
+    inline T operator()(const T& z,const T& l,const T& m)
+    {
+        return T(legendrePolynomeP(z.real(),std::round(l.real()),std::round(m.real())));
+    }
+};
+
+
 
 template <typename T>
 struct indexFunction : public exprtk::igeneric_function<T>

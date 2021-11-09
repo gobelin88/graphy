@@ -334,7 +334,8 @@ void MainWindow::slot_export()
 
     if (!filename.isEmpty())
     {
-        getCurrentTable()->model()->exportLatex(filename);
+        //getCurrentTable()->model()->exportLatex(filename);
+        QtConcurrent::run(getCurrentTable()->model(), &MyModel::exportLatex,filename);
     }
 }
 

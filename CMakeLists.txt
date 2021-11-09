@@ -165,7 +165,7 @@ install (TARGETS ${TARGET_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 install (FILES
 #         $<TARGET_RUNTIME_DLLS:graphy>
          ${_qt5Core_install_prefix}/bin/Qt5Core.dll
-         ${PROJECT_BINARY_DIR}/shortcuts.csv
+         ./shortcuts.csv
          $<TARGET_FILE:Qt5::Widgets>
          $<TARGET_FILE:Qt5::3DRender>
          $<TARGET_FILE:Qt5::3DExtras>

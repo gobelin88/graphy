@@ -16,11 +16,11 @@ set(TARGET_NAME "graphy${GRAPHY_VERSION}")
 
 list(APPEND CMAKE_PREFIX_PATH "C:/Tools/Eigen3")
 
-
 find_package (Eigen3 3.3 REQUIRED)
 find_package(Qt5 COMPONENTS Widgets 3DCore 3DRender 3DExtras Concurrent PrintSupport REQUIRED)
 
-set(SOURCES
+add_executable(${TARGET_NAME})
+target_sources(${TARGET_NAME} PRIVATE
     ModelCurveInterface.h
     FitDialog.cpp
     FitDialog.h
@@ -149,21 +149,17 @@ set(SOURCES
     rsc.qrc
     )
 
-add_executable(${TARGET_NAME} ${SOURCES})
-target_compile_features(${TARGET_NAME} PRIVATE cxx_std_17)
 
+target_compile_features(${TARGET_NAME} PRIVATE cxx_std_17)
 string(REGEX REPLACE "/W[3|4]" "/w" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 target_compile_options(${TARGET_NAME} PRIVATE /bigobj /we4456 /wd4127 /DgraphyVersion=${GRAPHY_VERSION} /Dexprtk_disable_caseinsensitivity /D__STDCPP_WANT_MATH_SPEC_FUNCS__)
-
 target_include_directories(${TARGET_NAME} PRIVATE ${EIGEN3_INCLUDE_DIR})
-
 target_link_libraries(${TARGET_NAME} PRIVATE Qt5::Widgets Qt5::3DCore Qt5::3DRender Qt5::3DExtras Qt5::Concurrent Qt5::PrintSupport)
 target_link_libraries (${TARGET_NAME} PRIVATE Eigen3::Eigen)
 
+#install
 install (TARGETS ${TARGET_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-
 install (FILES
-#         $<TARGET_RUNTIME_DLLS:graphy>
          ${_qt5Core_install_prefix}/bin/Qt5Core.dll
          ./shortcuts.csv
          $<TARGET_FILE:Qt5::Widgets>
@@ -174,11 +170,13 @@ install (FILES
          CONFIGURATIONS Release
          DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
     )
-
+install (DIRECTORY ./datatest DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install (DIRECTORY ./obj DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 install (DIRECTORY ${_qt5Core_install_prefix}/plugins/platforms DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 install (DIRECTORY ${_qt5Core_install_prefix}/plugins/styles DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 install (DIRECTORY ${_qt5Core_install_prefix}/plugins/imageformats DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 install (DIRECTORY ${_qt5Core_install_prefix}/plugins/printsupport DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install (DIRECTORY ${_qt5Core_install_prefix}/plugins/geometryloaders DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 
 message("CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")

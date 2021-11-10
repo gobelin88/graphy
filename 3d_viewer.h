@@ -128,6 +128,7 @@ public slots:
     void slot_computeArun();
     void slot_computeHorn();
     void slot_computeSolidHarmonics();
+    void slot_itemDoubleClicked(int index);
 
 signals:
     void sig_newColumn(QString varName,Eigen::VectorXd data);
@@ -158,10 +159,9 @@ private:
     std::vector<Base3D*> objects3D;
     Grid3D* grid3D;
     void referenceObjectEntity(Base3D *base3D, QString name);
-    std::vector<Cloud3D*> getClouds();
-    std::vector<Cloud3D*> getSelectedClouds();
-    std::vector<Base3D*> getMeshs();
-    std::vector<Base3D*> getSelectedObjects();
+    std::vector<Base3D*> getMeshs(bool selected);
+    std::vector<Cloud3D*> getClouds(bool selected);
+    std::vector<Base3D*> getObjects(bool selected);
 
 
     //Labels Tiks and Arrows

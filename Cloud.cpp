@@ -24,6 +24,26 @@ Cloud::Cloud()
     init();
 }
 
+Cloud::Cloud(std::vector<Eigen::Vector3d> plist,
+      QString labelX,
+      QString labelY,
+      QString labelZ)
+{
+    for (int i=0; i<plist.size(); i++)
+    {
+        pts.push_back(Eigen::Vector4d(plist[i][0],plist[i][1],plist[i][2],0.0));
+    }
+
+    calcRanges();
+
+    this->labelX =labelX;
+    this->labelY =labelY;
+    this->labelZ =labelZ;
+    this->labelS .clear();
+
+    init();
+}
+
 Cloud::Cloud(const Eigen::VectorXd& x,
              const Eigen::VectorXd& y,
              const Eigen::VectorXd& z,
@@ -36,11 +56,7 @@ Cloud::Cloud(const Eigen::VectorXd& x,
         pts.push_back(Eigen::Vector4d(x[i],y[i],z[i],0.0));
     }
 
-    rangeX=getRange(x);
-    rangeY=getRange(y);
-    rangeZ=getRange(z);
-    rangeS=QCPRange(-1,1);
-
+    calcRanges();
 
     this->labelX =labelX;
     this->labelY =labelY;
@@ -64,10 +80,7 @@ Cloud::Cloud(const Eigen::VectorXd& x,
         pts.push_back(Eigen::Vector4d(x[i],y[i],z[i],s[i]));
     }
 
-    rangeX=getRange(x);
-    rangeY=getRange(y);
-    rangeZ=getRange(z);
-    rangeS=getRange(s);
+    calcRanges();
 
     this->labelX =labelX;
     this->labelY =labelY;
@@ -108,43 +121,75 @@ const QCPColorGradient& Cloud::getGradient()
     return gradient;
 }
 
-QCPRange Cloud::getRange(const Eigen::VectorXd& v)
+//QCPRange Cloud::getRange(const Eigen::VectorXd& v)
+//{
+//    double min=v.minCoeff();
+//    double max=v.maxCoeff();
+//    if(min!=max)
+//    {
+//        return QCPRange(min,max);
+//    }
+//    else
+//    {
+//        double eps=0.1;
+//        return QCPRange(min-eps,max+eps);
+//    }
+//}
+
+void Cloud::calcRanges()
 {
-    double min=v.minCoeff();
-    double max=v.maxCoeff();
-    if(min!=max)
+    Eigen::Vector4d min,max;
+    min.setConstant( DBL_MAX);
+    max.setConstant(-DBL_MAX);
+
+    for(int i=0;i<pts.size();i++)
     {
-        return QCPRange(min,max);
+        for(int j=0;j<4;j++)
+        {
+            if(pts[i][j]<min[j]){min[j]=pts[i][j];}
+            if(pts[i][j]>max[j]){max[j]=pts[i][j];}
+        }
     }
-    else
-    {
-        double eps=0.1;
-        return QCPRange(min-eps,max+eps);
-    }
+
+    rangeX=QCPRange(min[0],max[0]);
+    rangeY=QCPRange(min[1],max[1]);
+    rangeZ=QCPRange(min[2],max[2]);
+    rangeS=QCPRange(min[3],max[3]);
+
+    std::cout<<"Ranges"<<std::endl;
+    std::cout<<rangeX.lower<<" "<<rangeX.upper<<std::endl;
+    std::cout<<rangeY.lower<<" "<<rangeY.upper<<std::endl;
+    std::cout<<rangeZ.lower<<" "<<rangeZ.upper<<std::endl;
+    std::cout<<rangeS.lower<<" "<<rangeS.upper<<std::endl;
 }
 
-QCPRange Cloud::getXRange()
+QCPRange regularized(const QCPRange & range)
 {
-    return rangeX;
-}
-QCPRange Cloud::getYRange()
-{
-    return rangeY;
-}
-QCPRange Cloud::getZRange()
-{
-    return rangeZ;
-}
-QCPRange Cloud::getScalarFieldRange()
-{
-    if (rangeS.lower==rangeS.upper)
+    if (range.lower==range.upper)
     {
         return QCPRange(-1,1);
     }
     else
     {
-        return rangeS;
+        return range;
     }
+}
+
+QCPRange Cloud::getXRange()
+{
+    return regularized(rangeX);
+}
+QCPRange Cloud::getYRange()
+{
+    return regularized(rangeY);
+}
+QCPRange Cloud::getZRange()
+{
+    return regularized(rangeZ);
+}
+QCPRange Cloud::getScalarFieldRange()
+{
+    return regularized(rangeS);
 }
 
 std::vector<QRgb>& Cloud::getColors()

@@ -31,6 +31,9 @@ public slots:
     void slot_fullscreen(bool checked);
     void slot_onItemDoubleClicked(QListWidgetItem *item);
 
+signals:
+    void sig_itemDoubleClicked(int index);
+
 private:
     //----------------------------
 

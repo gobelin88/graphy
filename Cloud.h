@@ -15,6 +15,11 @@ class Cloud
 public:
     Cloud();
 
+    Cloud(std::vector<Eigen::Vector3d> plist,
+          QString labelX,
+          QString labelY,
+          QString labelZ);
+
     Cloud(const Eigen::VectorXd& x,
           const Eigen::VectorXd& y,
           const Eigen::VectorXd& z,
@@ -84,7 +89,7 @@ public:
 private:
     void calcBarycenterAndBoundingRadius();
 
-    QCPRange getRange(const Eigen::VectorXd& v);
+    //QCPRange getRange(const Eigen::VectorXd& v);
 
     std::vector<Eigen::Vector4d> pts;
     std::vector<QRgb> colors;
@@ -106,6 +111,7 @@ private:
     bool useCustomColor;
 
     void init();
+    void calcRanges();
 };
 
 #endif

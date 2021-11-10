@@ -47,6 +47,8 @@ Viewer3D::Viewer3D(const QMap<QString, QKeySequence>& shortcuts_map,QWidget * pa
     connect(customContainer->getYAxis(),SIGNAL(rangeChanged(const QCPRange&)),this,SLOT(slot_ScaleChanged()));
     connect(customContainer->getZAxis(),SIGNAL(rangeChanged(const QCPRange&)),this,SLOT(slot_ScaleChanged()));
     connect(customContainer->getColorScale(),SIGNAL(dataRangeChanged(const QCPRange&)),this,SLOT(slot_ColorScaleChanged(const QCPRange&)));
+    connect(customContainer,&CustomViewContainer::sig_itemDoubleClicked,this,&Viewer3D::slot_itemDoubleClicked);
+
     //addSphere(QPosAtt(Eigen::Vector3d(0.05,0.05,0.05),Eigen::Quaterniond(1,0,0,0)),1.0,QColor(128,128,128),0.01);
 
     createPopup();
@@ -83,6 +85,11 @@ void Viewer3D::init3D()
 
     auto* meshArrow = new Qt3DRender::QMesh();
     meshArrow->setSource(QUrl( QUrl::fromLocalFile(":/obj/obj/axis.obj") ) );
+
+    if(meshArrow->status()==Qt3DRender::QMesh::Status::Error)
+    {
+        std::cout<<"Failed to load mesh:"<<meshArrow->meshName().toStdString()<<std::endl;
+    }
 
     objArrowX=new Object3D(rootEntity,meshArrow,nullptr,PosAtt(Eigen::Vector3d(-0.0,1,-1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(1,0,0),Eigen::Vector3d(0,-1,0))),0.1f,QColor(255,0,0));
     objArrowY=new Object3D(rootEntity,meshArrow,nullptr,PosAtt(Eigen::Vector3d(-1,-0.0,1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),Eigen::Vector3d(0,1,0))),0.1f,QColor(0,255,0));
@@ -288,7 +295,7 @@ void Viewer3D::slot_saveImage()
 
 void Viewer3D::slot_copy()
 {
-    std::vector<Cloud3D*> list=getSelectedClouds();
+    std::vector<Cloud3D*> list=getClouds(true);
 
     if (list.size()>0)
     {
@@ -360,7 +367,7 @@ void Viewer3D::slot_saveRevolution()
 
 void Viewer3D::slot_fitEllipsoid()
 {
-    std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D *> selectedClouds=getClouds(true);
 
     for(unsigned int i=0;i<selectedClouds.size();i++)
     {
@@ -461,7 +468,7 @@ void Viewer3D::slot_fitEllipsoid()
 
 void Viewer3D::slot_fitSphere()
 {
-    std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D *> selectedClouds=getClouds(true);
 
     for(unsigned int i=0;i<selectedClouds.size();i++)
     {
@@ -484,7 +491,7 @@ void Viewer3D::slot_fitSphere()
 
 void Viewer3D::slot_fitPlan()
 {
-    std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D *> selectedClouds=getClouds(true);
 
     for(unsigned int i=0;i<selectedClouds.size();i++)
     {
@@ -531,7 +538,7 @@ void Viewer3D::slot_fitPlan()
 
 void Viewer3D::slot_projectPlan()
 {
-    std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D *> selectedClouds=getClouds(true);
 
     for(unsigned int i=0;i<selectedClouds.size();i++)
     {
@@ -602,7 +609,7 @@ void Viewer3D::slot_projectPlan()
 
 void Viewer3D::slot_projectSphere()
 {
-    std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D *> selectedClouds=getClouds(true);
 
     for(unsigned int i=0;i<selectedClouds.size();i++)
     {
@@ -663,7 +670,7 @@ void Viewer3D::slot_projectSphere()
 
 void Viewer3D::slot_projectCustomMesh()
 {
-    std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D *> selectedClouds=getClouds(true);
 
     for(unsigned int i=0;i<selectedClouds.size();i++)
     {
@@ -684,7 +691,7 @@ void Viewer3D::slot_projectCustomMesh()
 
 void Viewer3D::slot_randomSubSamples()
 {
-    std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D *> selectedClouds=getClouds(true);
 
     for(unsigned int i=0;i<selectedClouds.size();i++)
     {
@@ -739,7 +746,7 @@ void Viewer3D::slot_randomSubSamples()
 
 void Viewer3D::slot_fitCustomMesh()
 {
-    std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D *> selectedClouds=getClouds(true);
 
     for(unsigned int i=0;i<selectedClouds.size();i++)
     {
@@ -788,7 +795,7 @@ void Viewer3D::slot_fitCustomMesh()
 
 void Viewer3D::slot_ColorScaleChanged(const QCPRange& range)
 {
-    std::vector<Cloud3D *> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D *> selectedClouds=getClouds(true);
 
     for(unsigned int i=0;i<selectedClouds.size();i++)
     {
@@ -837,7 +844,7 @@ void Viewer3D::slot_ScaleChanged()
 
 void Viewer3D::slot_setGradient(int preset)
 {
-    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D*> selectedClouds=getClouds(true);
 
     for(unsigned int i=0;i<selectedClouds.size();i++)
     {
@@ -857,7 +864,7 @@ void Viewer3D::slot_setGradient(int preset)
 
 void Viewer3D::slot_useCustomColor(int value)
 {
-    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D*> selectedClouds=getClouds(true);
 
     for(unsigned int i=0;i<selectedClouds.size();i++)
     {
@@ -874,7 +881,7 @@ void Viewer3D::slot_useCustomColor(int value)
 
 void Viewer3D::slot_setCustomColor(QColor color)
 {
-    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D*> selectedClouds=getClouds(true);
 
     for(unsigned int i=0;i<selectedClouds.size();i++)
     {
@@ -905,10 +912,13 @@ void Viewer3D::addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::P
 {
     Cloud3D * currentCloud3D=new Cloud3D(cloudData,rootEntity);
 
-    referenceObjectEntity(currentCloud3D,QString("Cloud(%1,%2,%3)")
-                          .arg(currentCloud3D->cloud->getLabelX())
-                          .arg(currentCloud3D->cloud->getLabelY())
-                          .arg(currentCloud3D->cloud->getLabelZ()));
+    cloudData->setName(QString("Cloud : %4(%1,%2,%3)")
+                       .arg(currentCloud3D->cloud->getLabelX())
+                       .arg(currentCloud3D->cloud->getLabelY())
+                       .arg(currentCloud3D->cloud->getLabelZ())
+                       .arg(currentCloud3D->cloud->getLabelS()));
+
+    referenceObjectEntity(currentCloud3D,cloudData->getName());
 
 
     currentCloud3D->geometryRenderer->setPrimitiveType(primitiveMode);
@@ -932,42 +942,32 @@ void Viewer3D::addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::P
     customContainer->replot();
 }
 
-std::vector<Cloud3D*> Viewer3D::getClouds()
-{
-    std::vector<Cloud3D*> cloudsList;
-
-    for(unsigned int i=0;i<objects3D.size();i++)
-    {
-        Cloud3D* ptrCloud=dynamic_cast<Cloud3D*>(objects3D[i]);
-        if(ptrCloud)
-        {
-                cloudsList.push_back(ptrCloud);
-        }
-    }
-    return cloudsList;
-}
-
-std::vector<Base3D*> Viewer3D::getMeshs()
+std::vector<Base3D*> Viewer3D::getMeshs(bool selected)
 {
     std::vector<Base3D*> meshList;
 
     for(unsigned int i=0;i<objects3D.size();i++)
     {
+        QListWidgetItem * currentItem= customContainer->getSelectionView()->item(i);
+
         Base3D * ptrPlan3D=dynamic_cast<Plan3D*>(objects3D[i]);
         Base3D * ptrSphere3D=dynamic_cast<Sphere3D*>(objects3D[i]);
         Base3D * ptrObject3D=dynamic_cast<Object3D*>(objects3D[i]);
         Base3D * ptrEllipsoid3D=dynamic_cast<Ellipsoid3D*>(objects3D[i]);
 
-        if(ptrPlan3D){meshList.push_back(ptrPlan3D);}
-        if(ptrSphere3D){meshList.push_back(ptrSphere3D);}
-        if(ptrObject3D){meshList.push_back(ptrObject3D);}
-        if(ptrEllipsoid3D){meshList.push_back(ptrEllipsoid3D);}
+        if(currentItem->isSelected() || selected==false)
+        {
+            if(ptrPlan3D){meshList.push_back(ptrPlan3D);}
+            if(ptrSphere3D){meshList.push_back(ptrSphere3D);}
+            if(ptrObject3D){meshList.push_back(ptrObject3D);}
+            if(ptrEllipsoid3D){meshList.push_back(ptrEllipsoid3D);}
+        }
     }
 
     return meshList;
 }
 
-std::vector<Cloud3D*> Viewer3D::getSelectedClouds()
+std::vector<Cloud3D*> Viewer3D::getClouds(bool selected)
 {
     std::vector<Cloud3D*> selectedClouds;
 
@@ -986,8 +986,7 @@ std::vector<Cloud3D*> Viewer3D::getSelectedClouds()
         Cloud3D* ptrCloud=dynamic_cast<Cloud3D*>(objects3D[i]);
         if(ptrCloud)
         {
-            ptrCloud->cloud->setName(currentItem->text());
-            if(currentItem->isSelected())
+            if(currentItem->isSelected() || selected==false)
             {
                 selectedClouds.push_back(ptrCloud);
             }
@@ -996,7 +995,7 @@ std::vector<Cloud3D*> Viewer3D::getSelectedClouds()
     return selectedClouds;
 }
 
-std::vector<Base3D*> Viewer3D::getSelectedObjects()
+std::vector<Base3D*> Viewer3D::getObjects(bool selected)
 {
     std::vector<Base3D*> selectedObjects;
 
@@ -1012,7 +1011,7 @@ std::vector<Base3D*> Viewer3D::getSelectedObjects()
     {
         QListWidgetItem * currentItem= customContainer->getSelectionView()->item(i);
 
-        if(currentItem->isSelected())
+        if(currentItem->isSelected() || selected==false)
         {
             selectedObjects.push_back(objects3D[i]);
         }
@@ -1025,7 +1024,7 @@ void Viewer3D::slot_removeSelected()
 {
     std::cout<<"Remove Selected"<<std::endl;
 
-    std::vector<Base3D*> selectedObjects=getSelectedObjects();
+    std::vector<Base3D*> selectedObjects=getObjects(true);
 
     for(unsigned int i=0;i<selectedObjects.size();i++)
     {
@@ -1062,7 +1061,7 @@ void Viewer3D::setCloudPointSize(Cloud3D * currentCloud3D,double value)
 
 void Viewer3D::slot_setPointSize(double value)
 {
-    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D*> selectedClouds=getClouds(true);
 
     for(unsigned int i=0;i<selectedClouds.size();i++)
     {
@@ -1072,7 +1071,7 @@ void Viewer3D::slot_setPointSize(double value)
 
 void Viewer3D::slot_setPrimitiveType(int type)
 {
-    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D*> selectedClouds=getClouds(true);
 
     for(unsigned int i=0;i<selectedClouds.size();i++)
     {
@@ -1133,7 +1132,7 @@ void Viewer3D::addObject(Qt3DRender::QMesh* mesh_object,Object * object, PosAtt 
 {
     Object3D* object3D=new Object3D(rootEntity,mesh_object,object,posatt,scale,color);
 
-    referenceObjectEntity(object3D,"Mesh");
+    referenceObjectEntity(object3D,QString("Mesh : %1").arg(QFileInfo(mesh_object->source().fileName()).baseName()));
 
     Qt3DRender::QCullFace* culling = new Qt3DRender::QCullFace();
     culling->setMode(Qt3DRender::QCullFace::NoCulling);
@@ -1185,7 +1184,7 @@ void Viewer3D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
 
 void Viewer3D::slot_computeArun()
 {
-    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D*> selectedClouds=getClouds(true);
 
     if(selectedClouds.size()==2)
     {
@@ -1229,9 +1228,34 @@ void Viewer3D::slot_computeArun()
 
 }
 
+void Viewer3D::slot_itemDoubleClicked(int index)
+{
+    std::vector<Base3D*> selectedObjects=getObjects(true);
+
+    for(int i=0;i<selectedObjects.size();i++)
+    {
+        //Edit Cloud
+        Cloud3D * pcloud3D=dynamic_cast<Cloud3D *>(selectedObjects[i]);
+        if(pcloud3D)
+        {
+            bool ok;
+            QString newName = QInputDialog::getText(nullptr,"Set legend", "New cloud name:", QLineEdit::Normal, pcloud3D->cloud->getName(), &ok);
+            if (ok)
+            {
+                pcloud3D->cloud->setName(newName);
+                std::cout<<"index="<<index<<std::endl;
+                customContainer->getSelectionView()->item(index)->setText(newName);
+            }
+        }
+
+        //Edit Mesh
+
+    }
+}
+
 void Viewer3D::slot_computeSolidHarmonics()
 {
-    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D*> selectedClouds=getClouds(true);
 
     if(selectedClouds.size()==1)
     {
@@ -1256,10 +1280,18 @@ void Viewer3D::slot_computeSolidHarmonics()
         QLabel * l_eqn=new QLabel;
         l_eqn->setPixmap(QPixmap(":/eqn/eqn/SolidHarmonics_Regular.gif"));
 
+        QCheckBox * cb_optimized=new QCheckBox("Optimized",dialog);
+        cb_optimized->setChecked(false);
+        cb_optimized->setToolTip("For non-uniformly set of points basic correlation may be not sufficient "
+                                 "in order to estimate the harmonics decomposition. Enable this option will perform"
+                                 "Levenberg-Marquardt optimisation on data starting with basic correlation result.");
+
         gbox->addWidget(l_eqn,0,0,1,2);
         gbox->addWidget(sb_order,1,0);
         gbox->addWidget(cb_mode,1,1);
-        gbox->addWidget(buttonBox,2,0,1,2);
+        gbox->addWidget(cb_optimized,2,1);
+
+        gbox->addWidget(buttonBox,3,0,1,2);
         dialog->setLayout(gbox);
 
 //        connect(cb_mode, &QComboBox::currentIndexChanged,[=](int index) { l_eqn->setPixmap(QPixmap(":/eqn/eqn/SolidHarmonics_Regular.gif")); });
@@ -1283,7 +1315,11 @@ void Viewer3D::slot_computeSolidHarmonics()
             shd.guessDecomposition(pcl->data());
             Eigen::MatrixXd C=shd.getC();
             std::cout<<"C="<<C<<std::endl;
-            pcl->fit(&shd);
+
+            if(cb_optimized->isChecked())
+            {
+                pcl->fit(&shd);
+            }
 
             QString str;
             for(int l=0;l<shd.order();l++)
@@ -1321,7 +1357,7 @@ void Viewer3D::slot_computeSolidHarmonics()
 
 void Viewer3D::slot_computeHorn()
 {
-    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D*> selectedClouds=getClouds(true);
 
     if(selectedClouds.size()==2)
     {
@@ -1460,7 +1496,7 @@ void Viewer3D::keyPressEvent(QKeyEvent * event)
 
 void Viewer3D::slot_export()
 {
-    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D*> selectedClouds=getClouds(true);
 
     for(unsigned int i=0;i<selectedClouds.size();i++)
     {
@@ -1569,6 +1605,7 @@ void Viewer3D::slot_addMesh()
 
         auto* m_obj = new Qt3DRender::QMesh();
         m_obj->setSource(QUrl(QString("file:///")+filenames[i]));
+        //m_obj->setMeshName(QFileInfo(filenames[i]).baseName());
         addObject(m_obj,obj,PosAtt(),1.0,QColor(64,64,64));
     }
 
@@ -1742,7 +1779,7 @@ void Viewer3D::slot_resetView()
 {
     cameraParams->reset();
 
-    std::vector<Cloud3D*> cloudsList=getClouds();
+    std::vector<Cloud3D*> cloudsList=getClouds(false);
 
     for(unsigned int i=0;i<cloudsList.size();i++)
     {
@@ -1763,11 +1800,11 @@ void Viewer3D::slot_resetViewOnSameRanges()
 {
     cameraParams->reset();
 
-    std::vector<Cloud3D*> selectedClouds=getClouds();
+    std::vector<Cloud3D*> cloudsList=getClouds(false);
 
-    for(unsigned int i=0;i<selectedClouds.size();i++)
+    for(unsigned int i=0;i<cloudsList.size();i++)
     {
-        Cloud * currentCloud=selectedClouds[i]->cloud;
+        Cloud * currentCloud=cloudsList[i]->cloud;
         extendSameRanges(currentCloud->getXRange(),currentCloud->getYRange(),currentCloud->getZRange(),i);
         extendScalarRange(currentCloud->getScalarFieldRange(),i);
     }
@@ -1783,7 +1820,7 @@ void Viewer3D::slot_resetViewOnSelectedSameRanges()
 {
     cameraParams->reset();
 
-    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D*> selectedClouds=getClouds(true);
 
     for(unsigned int i=0;i<selectedClouds.size();i++)
     {
@@ -1803,7 +1840,7 @@ void Viewer3D::slot_resetViewOnSelected()
 {
     cameraParams->reset();
 
-    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D*> selectedClouds=getClouds(true);
 
     for(unsigned int i=0;i<selectedClouds.size();i++)
     {
@@ -1833,7 +1870,7 @@ void Viewer3D::configurePopup()
     cb_mode->blockSignals(true);
     c_gradient->blockSignals(true);
 
-    std::vector<Cloud3D*> selectedClouds=getSelectedClouds();
+    std::vector<Cloud3D*> selectedClouds=getClouds(true);
 
     if(selectedClouds.size()>0)
     {

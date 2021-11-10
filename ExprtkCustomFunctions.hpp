@@ -301,7 +301,7 @@ struct cwiseFunction : public exprtk::igeneric_function<T>
                             }
                             else if(qOptName==QString("max"))
                             {
-                                T max(DBL_MIN,DBL_MIN);
+                                T max(-DBL_MAX,-DBL_MAX);
                                 for(int i=0;i<p_data->rows();i++)
                                 {
                                     auto v=(*p_data)(i,cindex).toComplex();

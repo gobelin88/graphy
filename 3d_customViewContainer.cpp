@@ -47,13 +47,8 @@ CustomViewContainer::CustomViewContainer(QWidget* container,QWidget*parent, Qt::
 void CustomViewContainer::slot_onItemDoubleClicked(QListWidgetItem *item)
 {
     if (item) // only react if item was clicked (user could have clicked on border padding of legend where there is no item, then item is 0)
-    {
-        bool ok;
-        QString newName = QInputDialog::getText(this,"Set legend", "New cloud name:", QLineEdit::Normal, item->text(), &ok);
-        if (ok)
-        {
-            item->setText(newName);
-        }
+    {        
+        emit sig_itemDoubleClicked(selectionView->row(item));
     }
 }
 

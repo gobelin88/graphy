@@ -133,19 +133,18 @@ void SolidHarmonicsDecomposition::guessDecomposition(const std::vector<Eigen::Ve
     {
         for(int m=-l;m<=l;m++)
         {
-            double sum_lm=0.0,nh=0.0,ni=0.0;
+            double sum_lm=0.0,ny=0.0;
             for(int i=0;i<pt.size();i++)
             {
-                double sh=(mode==MODE_REGULAR)?
+                double sy=(mode==MODE_REGULAR)?
                           solidHarmonicsR(pt[i][0],pt[i][1],pt[i][2],l,m):
                           solidHarmonicsI(pt[i][0],pt[i][1],pt[i][2],l,m);
-                double si=pt[i][3];
+                double sx=pt[i][3];
 
-                sum_lm+=si*sh;
-                nh+=sh*sh;
-                ni+=si*si;
+                sum_lm+=sx*sy;
+                ny+=sy*sy;
             }
-            setC(l,m,sum_lm/sqrt(nh*ni));
+            setC(l,m,sum_lm/ny);
         }
     }
 }

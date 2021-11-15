@@ -68,6 +68,7 @@ public slots:
     void closeCurrentTable();
     void closeTable(int index);
     void slot_tab_moved(int from,int to);
+    void slot_tab_changed(int index);
 
     //Progress
     void slot_progress(int t);

@@ -6,7 +6,12 @@ void Cloud::init()
     customColor=qRgb(0,0,0);
     setGradientPreset(QCPColorGradient::gpPolar);
     calcBarycenterAndBoundingRadius();
-    name="Cloud";
+
+    setName(QString("Cloud : %4(%1,%2,%3)")
+                       .arg(getLabelX())
+                       .arg(getLabelY())
+                       .arg(getLabelZ())
+                       .arg(getLabelS()));
 }
 
 Cloud::Cloud()

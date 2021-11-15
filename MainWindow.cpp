@@ -43,6 +43,14 @@ MainWindow::MainWindow(QWidget* parent) :
     this->setCentralWidget(mdiArea);
 
     te_results=new QTextEdit;
+    QWidget * w_results=new QWidget;
+    QPushButton * pb_clearResults=new QPushButton("Clear",w_results);
+    QVBoxLayout * hlayoutResults=new QVBoxLayout;
+    connect(pb_clearResults,&QPushButton::pressed,te_results,&QTextEdit::clear);
+
+    hlayoutResults->addWidget(te_results);
+    hlayoutResults->addWidget(pb_clearResults);
+    w_results->setLayout(hlayoutResults);
 
     te_widget=new QTabWidget();
     te_widget->setTabsClosable(true);
@@ -51,7 +59,7 @@ MainWindow::MainWindow(QWidget* parent) :
 
     spliter=new QSplitter;
     spliter->addWidget(te_widget);
-    spliter->addWidget(te_results);
+    spliter->addWidget(w_results);
 
     QList<int> widgetsSizes;
     widgetsSizes<<1,0;
@@ -92,6 +100,7 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(ui->actionPlot_Gain_Phase, &QAction::triggered,this,&MainWindow::slot_plot_bode);
 
     connect(te_widget->tabBar(), &QTabBar::tabMoved ,this,&MainWindow::slot_tab_moved);
+    connect(te_widget, &QTabWidget::currentChanged ,this,&MainWindow::slot_tab_changed);
     //------------------------------------------------------------------------------
 
     loadShortcuts();
@@ -194,7 +203,7 @@ void MainWindow::addNewTable(MyTableView * newTable)
     newTable->addAction(ui->actionSave);
     tables.push_back(newTable);
     newTable->applyShortcuts(shortcuts);
-    newTable->getContainer()->setToolTip(newTable->model()->getCurrentFilename());
+    //newTable->getContainer()->setToolTip(newTable->model()->getCurrentFilename());
     te_widget->addTab(newTable->getContainer(),newTable->model()->getTabTitle());
     te_widget->setCurrentWidget(newTable->getContainer());
     resizeEvent(nullptr);
@@ -1265,6 +1274,12 @@ void MainWindow::saveShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
 void MainWindow::slot_tab_moved(int from,int to)
 {
     std::swap(tables[from],tables[to]);
+}
+
+void MainWindow::slot_tab_changed(int index)
+{
+    MyTableView * table=getCurrentTable();
+    this->setWindowTitle(QString("Graphy %1 : %2").arg(graphyVersion).arg(table->model()->getCurrentFilename()));
 }
 
 void MainWindow::closeCurrentTable()

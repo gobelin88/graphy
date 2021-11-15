@@ -113,7 +113,7 @@ void Viewer3D::createPopup()
     menuData= new QMenu("Point cloud");
     menuFit= new QMenu("Fit");
     menuProject= new QMenu("Project");
-    menuAlgorithmes= new QMenu("Algorithmes");
+    menuScalarField= new QMenu("ScalarField");
     menuSubSample= new QMenu("Subsample");
     menuView= new QMenu("View");
     menuMesh= new QMenu("Mesh");
@@ -125,12 +125,12 @@ void Viewer3D::createPopup()
     actFitSphere= new QAction("Sphere",  this);
     actFitPlan= new QAction("Plan",  this);
     actFitMesh= new QAction("Custom mesh",  this);
+    actFitPointCloud= new QAction("Point cloud",  this);
     actProjectSphere= new QAction("Sphere",  this);
     actProjectPlan= new QAction("Plan",  this);
     actProjectMesh= new QAction("Custom mesh",  this);
     actRandomSubSample= new QAction("Random",  this);
-    actComputeArun= new QAction("Arun",  this);
-    actComputeHorn= new QAction("Horn",  this);
+
     actComputeSolidHarmonics= new QAction("Solid Harmonics",  this);
     actRescale= new QAction("Rescale",  this);
     actRescaleSelected= new QAction("Rescale selected",  this);
@@ -223,22 +223,21 @@ void Viewer3D::createPopup()
     menuParameters->addAction(actWidget);
     menuData->addMenu(menuFit);
     menuData->addMenu(menuProject);
-    menuData->addMenu(menuAlgorithmes);
+    menuData->addMenu(menuScalarField);
     menuData->addMenu(menuSubSample);
     menuData->addAction(actExport);
     menuFit->addAction(actFitSphere);
     menuFit->addAction(actFitEllipsoid);
     menuFit->addAction(actFitPlan);
     menuFit->addAction(actFitMesh);
+    menuFit->addAction(actFitPointCloud);
     menuProject->addAction(actProjectSphere);
     menuProject->addAction(actProjectPlan);
     menuProject->addAction(actProjectMesh);
     menuMesh->addAction(actMeshLoad);
     menuMesh->addAction(actMeshCreateRotegrity);
     menuSubSample->addAction(actRandomSubSample);
-    menuAlgorithmes->addAction(actComputeArun);
-    menuAlgorithmes->addAction(actComputeHorn);
-    menuAlgorithmes->addAction(actComputeSolidHarmonics);
+    menuScalarField->addAction(actComputeSolidHarmonics);
 
     QObject::connect(cb_show_hide_labels,SIGNAL(stateChanged(int)),this,SLOT(slot_showHideLabels(int)));
     QObject::connect(cb_show_hide_grid,SIGNAL(stateChanged(int)),this,SLOT(slot_showHideGrid(int)));
@@ -249,8 +248,7 @@ void Viewer3D::createPopup()
     QObject::connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_resetView()));
     QObject::connect(actRescaleSelectedSameRanges,SIGNAL(triggered()),this,SLOT(slot_resetViewOnSelectedSameRanges()));
     QObject::connect(actRescaleSelected,SIGNAL(triggered()),this,SLOT(slot_resetViewOnSelected()));
-    QObject::connect(actComputeArun,SIGNAL(triggered()),this,SLOT(slot_computeArun()));
-    QObject::connect(actComputeHorn,SIGNAL(triggered()),this,SLOT(slot_computeHorn()));
+    QObject::connect(actFitPointCloud,SIGNAL(triggered()),this,SLOT(slot_fitPointCloud()));
     QObject::connect(actComputeSolidHarmonics,SIGNAL(triggered()),this,SLOT(slot_computeSolidHarmonics()));
     QObject::connect(actRemoveSelected,SIGNAL(triggered()),this,SLOT(slot_removeSelected()));
     QObject::connect(actRandomSubSample,SIGNAL(triggered()),this,SLOT(slot_randomSubSamples()));
@@ -908,18 +906,12 @@ QString appendLabel(QString label,QString content)
     }
 }
 
-void Viewer3D::addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode)
+void Viewer3D::addCloudScalar(Cloud* cloudData,
+                              Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode)
 {
     Cloud3D * currentCloud3D=new Cloud3D(cloudData,rootEntity);
 
-    cloudData->setName(QString("Cloud : %4(%1,%2,%3)")
-                       .arg(currentCloud3D->cloud->getLabelX())
-                       .arg(currentCloud3D->cloud->getLabelY())
-                       .arg(currentCloud3D->cloud->getLabelZ())
-                       .arg(currentCloud3D->cloud->getLabelS()));
-
     referenceObjectEntity(currentCloud3D,cloudData->getName());
-
 
     currentCloud3D->geometryRenderer->setPrimitiveType(primitiveMode);
 
@@ -1182,50 +1174,155 @@ void Viewer3D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     }
 }
 
-void Viewer3D::slot_computeArun()
+void Viewer3D::slot_fitPointCloud()
 {
     std::vector<Cloud3D*> selectedClouds=getClouds(true);
+    std::vector<Cloud3D*> cloudsList=getClouds(false);
 
-    if(selectedClouds.size()==2)
+    if(selectedClouds.size()==1)
     {
-        Eigen::Matrix3d R=Eigen::Matrix3d::Identity();
-        Eigen::Vector3d T=Eigen::Vector3d::Zero();
+        Cloud3D* pcA=selectedClouds[0];
+        if(cloudsList.size()>=2)
+        {
+            QDialog* dialog=new QDialog;
+            dialog->setLocale(QLocale("C"));
+            dialog->setWindowTitle("Point cloud registration");
+            QGridLayout* gbox = new QGridLayout();
 
-        std::vector<Eigen::Vector3d> Pa=selectedClouds[0]->cloud->positions();
-        std::vector<Eigen::Vector3d> Pb=selectedClouds[1]->cloud->positions();
-        QString PaName=selectedClouds[0]->cloud->getName();
-        QString PbName=selectedClouds[1]->cloud->getName();
+            QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok| QDialogButtonBox::Cancel);
 
-        std::cout<<"Compute Arun :"<<std::endl;
-        std::cout<<"Pa.size()="<<Pa.size()<<std::endl;
-        std::cout<<"Pb.size()="<<Pb.size()<<std::endl;
+            QComboBox * cb_algorithm=new QComboBox(dialog);
+            cb_algorithm->addItem("ARUN");
+            cb_algorithm->addItem("HORN");
 
-        algorithms::computeArunTranform(Pa,Pb,R,T);
-        Eigen::VectorXd ArunE=algorithms::getArunError(Pa,Pb,R,T);
-        double rms=ArunE.norm()/sqrt(ArunE.rows());
+            QComboBox * cb_cloudsList=new QComboBox(dialog);
+            for(int i=0;i<cloudsList.size();i++)
+            {
+                if(cloudsList[i]!=pcA)
+                {
+                    cb_cloudsList->addItem(cloudsList[i]->cloud->getName(),QVariant::fromValue(static_cast<void*>(cloudsList[i])));
+                }
+            }
 
-        emit sig_displayResults( QString("Compute Arun (Pa=R Pb+ T):\n"
-                                         "Pa=%14\n"
-                                         "Pb=%15\n"
-                                         "R=\n"
-                                         "%1 , %2 , %3\n"
-                                         "%4 , %5 , %6\n"
-                                         "%7 , %8 , %9\n"
-                                         "T=(%10 , %11 , %12)\n"
-                                         "Rms=%13\n")
-                                 .arg(R(0,0)).arg(R(0,1)).arg(R(0,2))
-                                 .arg(R(1,0)).arg(R(1,1)).arg(R(1,2))
-                                 .arg(R(2,0)).arg(R(2,1)).arg(R(2,2))
-                                 .arg(T[0]).arg(T[1]).arg(T[2])
-                                 .arg(rms).arg(PaName).arg(PbName));
+            QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+            QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
-        emit sig_newColumn("Err_Arun",ArunE);
+            gbox->addWidget(cb_algorithm,0,0,1,3);
+            gbox->addWidget(new QLabel(QString("Project ")),1,0);
+            gbox->addWidget(cb_cloudsList,1,1);
+            gbox->addWidget(new QLabel(QString(" on %1").arg(pcA->cloud->getName())),1,2);
+            gbox->addWidget(buttonBox,2,0,1,3);
+            dialog->setLayout(gbox);
+
+            int result=dialog->exec();
+            if (result == QDialog::Accepted)
+            {
+                Cloud3D* pcB=static_cast<Cloud3D*>(cb_cloudsList->currentData().value<void*>());
+
+                if(cb_algorithm->currentIndex()==0)
+                {
+                    computeArun(pcA->cloud,pcB->cloud);
+                }
+                else if(cb_algorithm->currentIndex()==1)
+                {
+                    computeHorn(pcA->cloud,pcB->cloud);
+                }
+            }
+        }
+        else
+        {
+            QMessageBox::information(nullptr,"Information fit point cloud","You dont have enough point cloud");
+        }
     }
     else
     {
-        QMessageBox::information(nullptr,"Information Arun","Please select two clouds");
+        QMessageBox::information(nullptr,"Information fit point cloud","Please select a cloud to project");
     }
+}
 
+void Viewer3D::computeHorn(Cloud * pcA,Cloud * pcB)
+{
+    Eigen::Quaterniond Q(1,0,0,0);
+    Eigen::Vector3d T=Eigen::Vector3d::Zero();
+    double S=1.0;
+
+    std::vector<Eigen::Vector3d> Pa=pcA->positions();
+    std::vector<Eigen::Vector3d> Pb=pcB->positions();
+
+    std::cout<<"Compute Horn"<<std::endl;
+    std::cout<<"Pa.size()="<<Pa.size()<<std::endl;
+    std::cout<<"Pb.size()="<<Pb.size()<<std::endl;
+
+    algorithms::computeHornTranform(Pa,Pb,Q,T,S);
+    Eigen::VectorXd HornE=algorithms::getHornError(Pa,Pb,Q,T,S);
+    double rms=HornE.norm()/sqrt(HornE.rows());
+
+    std::vector<Eigen::Vector3d> Pc(Pa.size());
+    Eigen::Matrix3d R=Q.toRotationMatrix();
+    for(int i=0;i<Pc.size();i++)
+    {
+        Pc[i]=R*Pb[i]+T;
+    }
+    Cloud * pcC=new Cloud(Pc,"X","Y","Z");
+    pcC->setName(QString("Pc (%1 projected on %2) [Horn]").arg(pcB->getName()).arg(pcA->getName()));
+    addCloudScalar(pcC);
+
+    emit sig_displayResults( QString("Compute Horn:\n"
+                                     "Q=(%1 , %2 , %3 , %4)\n"
+                                     "T=(%10 , %11 , %12)\n"
+                                     "S=%13\n"
+                                     "Rms=%14\n")
+                             .arg(Q.w()).arg(Q.x()).arg(Q.y()).arg(Q.z())
+                             .arg(T[0]).arg(T[1]).arg(T[2])
+                             .arg(S)
+                             .arg(rms));
+
+    emit sig_newColumn("Err_Horn",HornE);
+}
+
+void Viewer3D::computeArun(Cloud * pcA,Cloud * pcB)
+{
+    Eigen::Matrix3d R=Eigen::Matrix3d::Identity();
+    Eigen::Vector3d T=Eigen::Vector3d::Zero();
+
+    std::vector<Eigen::Vector3d> Pa=pcA->positions();
+    std::vector<Eigen::Vector3d> Pb=pcB->positions();
+    QString PaName=pcA->getName();
+    QString PbName=pcB->getName();
+
+    std::cout<<"Compute Arun :"<<std::endl;
+    std::cout<<"Pa.size()="<<Pa.size()<<std::endl;
+    std::cout<<"Pb.size()="<<Pb.size()<<std::endl;
+
+    algorithms::computeArunTranform(Pa,Pb,R,T);
+    Eigen::VectorXd ArunE=algorithms::getArunError(Pa,Pb,R,T);
+    double rms=ArunE.norm()/sqrt(ArunE.rows());
+
+    std::vector<Eigen::Vector3d> Pc(Pa.size());
+    for(int i=0;i<Pc.size();i++)
+    {
+        Pc[i]=R*Pb[i]+T;
+    }
+    Cloud * pcC=new Cloud(Pc,"X","Y","Z");
+    pcC->setName(QString("Pc (%1 projected on %2) [Arun]").arg(pcB->getName()).arg(pcA->getName()));
+    addCloudScalar(pcC);
+
+    emit sig_displayResults( QString("Compute Arun (Pa=R Pb+ T):\n"
+                                     "Pa=%14\n"
+                                     "Pb=%15\n"
+                                     "R=\n"
+                                     "%1 , %2 , %3\n"
+                                     "%4 , %5 , %6\n"
+                                     "%7 , %8 , %9\n"
+                                     "T=(%10 , %11 , %12)\n"
+                                     "Rms=%13\n")
+                             .arg(R(0,0)).arg(R(0,1)).arg(R(0,2))
+                             .arg(R(1,0)).arg(R(1,1)).arg(R(1,2))
+                             .arg(R(2,0)).arg(R(2,1)).arg(R(2,2))
+                             .arg(T[0]).arg(T[1]).arg(T[2])
+                             .arg(rms).arg(PaName).arg(PbName));
+
+    emit sig_newColumn("Err_Arun",ArunE);
 }
 
 void Viewer3D::slot_itemDoubleClicked(int index)
@@ -1355,44 +1452,7 @@ void Viewer3D::slot_computeSolidHarmonics()
     }
 }
 
-void Viewer3D::slot_computeHorn()
-{
-    std::vector<Cloud3D*> selectedClouds=getClouds(true);
 
-    if(selectedClouds.size()==2)
-    {
-        Eigen::Quaterniond Q(1,0,0,0);
-        Eigen::Vector3d T=Eigen::Vector3d::Zero();
-        double S=1.0;
-
-        std::vector<Eigen::Vector3d> Pa=selectedClouds[0]->cloud->positions();
-        std::vector<Eigen::Vector3d> Pb=selectedClouds[1]->cloud->positions();
-
-        std::cout<<"Compute Horn"<<std::endl;
-        std::cout<<"Pa.size()="<<Pa.size()<<std::endl;
-        std::cout<<"Pb.size()="<<Pb.size()<<std::endl;
-
-        algorithms::computeHornTranform(Pa,Pb,Q,T,S);
-        Eigen::VectorXd HornE=algorithms::getHornError(Pa,Pb,Q,T,S);
-        double rms=HornE.norm()/sqrt(HornE.rows());
-
-        emit sig_displayResults( QString("Compute Horn:\n"
-                                         "Q=(%1 , %2 , %3 , %4)\n"
-                                         "T=(%10 , %11 , %12)\n"
-                                         "S=%13\n"
-                                         "Rms=%14\n")
-                                 .arg(Q.w()).arg(Q.x()).arg(Q.y()).arg(Q.z())
-                                 .arg(T[0]).arg(T[1]).arg(T[2])
-                                 .arg(S)
-                                 .arg(rms));
-
-        emit sig_newColumn("Err_Horn",HornE);
-    }
-    else
-    {
-        QMessageBox::information(nullptr,"Information Arun","Please select two clouds");
-    }
-}
 
 void Viewer3D::slot_updateLabels()
 {

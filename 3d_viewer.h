@@ -82,7 +82,8 @@ public:
     Viewer3D(const QMap<QString, QKeySequence>& shortcuts_map, QWidget *parent);
     ~Viewer3D();
 
-    void addCloudScalar(Cloud* cloudData, Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode);
+    void addCloudScalar(Cloud* cloudData,
+                        Qt3DRender::QGeometryRenderer::PrimitiveType primitiveMode=Qt3DRender::QGeometryRenderer::PrimitiveType::Points);
     void addObject(Qt3DRender::QMesh* mesh_object, Object *object, PosAtt posatt, float scale, QColor color);
     void addSphere(Sphere * sphere,QColor color);
     void addEllipsoid(Ellipsoid * ellipsoid,QColor color);
@@ -125,10 +126,10 @@ public slots:
     void slot_showHideLabels(int value);
     void slot_removeSelected();
     void slot_updateLabels();
-    void slot_computeArun();
-    void slot_computeHorn();
     void slot_computeSolidHarmonics();
     void slot_itemDoubleClicked(int index);
+    void slot_fitPointCloud();
+
 
 signals:
     void sig_newColumn(QString varName,Eigen::VectorXd data);
@@ -142,6 +143,11 @@ protected:
     void keyPressEvent(QKeyEvent * event);
 
 private:
+
+    //Registration Algorithms
+    void computeArun(Cloud * pcA,Cloud * pcB);
+    void computeHorn(Cloud * pcA,Cloud * pcB);
+
     //Ranges
     void extendScalarRange(QCPRange itemRangeS,int i);
     void extendRanges(QCPRange itemRangeX,QCPRange itemRangeY,QCPRange itemRangeZ,int i);
@@ -179,7 +185,7 @@ private:
     QMenu* menuParameters;
     QMenu* menuFit;
     QMenu * menuProject;
-    QMenu * menuAlgorithmes;
+    QMenu * menuScalarField;
     QMenu * menuSubSample;
     QMenu * menuView;
     QMenu * menuData;
@@ -195,8 +201,7 @@ private:
     QAction * actProjectPlan;
     QAction * actProjectMesh;
     QAction * actRandomSubSample;
-    QAction * actComputeArun;
-    QAction * actComputeHorn;
+    QAction * actFitPointCloud;
     QAction * actComputeSolidHarmonics;
     QAction * actRescale;
     QAction * actRescaleSelectedSameRanges;

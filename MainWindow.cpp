@@ -1285,6 +1285,10 @@ void MainWindow::slot_tab_changed(int index)
         MyTableView * table=tables[index];
         this->setWindowTitle(QString("Graphy %1 : %2").arg(graphyVersion).arg(table->model()->getCurrentFilename()));
     }
+    else
+    {
+        this->setWindowTitle(QString("Graphy %1").arg(graphyVersion));
+    }
 }
 
 void MainWindow::closeCurrentTable()

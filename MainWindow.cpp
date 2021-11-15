@@ -332,6 +332,7 @@ void MainWindow::slot_save_as()
         if (!filename.isEmpty())
         {
             direct_save(filename);
+
         }
     }
 }
@@ -370,6 +371,7 @@ void MainWindow::slot_save_end(MyTableView * table)
 {
     if(table->isSave())
     {
+        slot_tab_changed(tables.indexOf(table));
         te_widget->setTabText(te_widget->currentIndex(),table->model()->getTabTitle());
     }
 }
@@ -1278,8 +1280,11 @@ void MainWindow::slot_tab_moved(int from,int to)
 
 void MainWindow::slot_tab_changed(int index)
 {
-    MyTableView * table=getCurrentTable();
-    this->setWindowTitle(QString("Graphy %1 : %2").arg(graphyVersion).arg(table->model()->getCurrentFilename()));
+    if(index>=0 && index<tables.size())
+    {
+        MyTableView * table=tables[index];
+        this->setWindowTitle(QString("Graphy %1 : %2").arg(graphyVersion).arg(table->model()->getCurrentFilename()));
+    }
 }
 
 void MainWindow::closeCurrentTable()

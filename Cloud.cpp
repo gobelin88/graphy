@@ -5,7 +5,6 @@ void Cloud::init()
     useCustomColor=false;
     customColor=qRgb(0,0,0);
     setGradientPreset(QCPColorGradient::gpPolar);
-    calcBarycenterAndBoundingRadius();
 
     setName(QString("Cloud : %4(%1,%2,%3)")
                        .arg(getLabelX())
@@ -49,6 +48,57 @@ Cloud::Cloud(std::vector<Eigen::Vector3d> plist,
     init();
 }
 
+Cloud::Cloud(std::vector<Eigen::Vector3d> plist,
+      const Eigen::VectorXd& scalarField,
+      QString labelX,
+      QString labelY,
+      QString labelZ,
+      QString labelS)
+{
+    if(scalarField.rows()==plist.size())
+    {
+        for (int i=0; i<plist.size(); i++)
+        {
+            pts.push_back(Eigen::Vector4d(plist[i][0],plist[i][1],plist[i][2],scalarField[i]));
+        }
+    }
+    else
+    {
+        std::cout<<"Error : Bad scalarfield size="<<scalarField.rows()<<" expected="<<plist.size()<<std::endl;
+        for (int i=0; i<plist.size(); i++)
+        {
+            pts.push_back(Eigen::Vector4d(plist[i][0],plist[i][1],plist[i][2],0));
+        }
+    }
+
+    calcRanges();
+
+    this->labelX =labelX;
+    this->labelY =labelY;
+    this->labelZ =labelZ;
+    this->labelS =labelS;
+
+    init();
+}
+
+Cloud::Cloud(std::vector<Eigen::Vector4d> plist,
+      QString labelX,
+      QString labelY,
+      QString labelZ,
+      QString labelS)
+{
+    pts=plist;
+
+    calcRanges();
+
+    this->labelX =labelX;
+    this->labelY =labelY;
+    this->labelZ =labelZ;
+    this->labelS =labelS;
+
+    init();
+}
+
 Cloud::Cloud(const Eigen::VectorXd& x,
              const Eigen::VectorXd& y,
              const Eigen::VectorXd& z,
@@ -56,9 +106,16 @@ Cloud::Cloud(const Eigen::VectorXd& x,
              QString labelY,
              QString labelZ)
 {
-    for (int i=0; i<x.size(); i++)
+    if(x.rows()==y.rows() && x.rows()==z.rows())
     {
-        pts.push_back(Eigen::Vector4d(x[i],y[i],z[i],0.0));
+        for (int i=0; i<x.size(); i++)
+        {
+            pts.push_back(Eigen::Vector4d(x[i],y[i],z[i],0.0));
+        }
+    }
+    else
+    {
+        std::cout<<"Error : Bad y,z size="<<y.rows()<<" "<<z.rows()<<" expected="<<x.size()<<std::endl;
     }
 
     calcRanges();
@@ -168,33 +225,21 @@ void Cloud::calcRanges()
     std::cout<<rangeS.lower<<" "<<rangeS.upper<<std::endl;
 }
 
-QCPRange regularized(const QCPRange & range)
-{
-    if (range.lower==range.upper)
-    {
-        return QCPRange(-1,1);
-    }
-    else
-    {
-        return range;
-    }
-}
-
 QCPRange Cloud::getXRange()
 {
-    return regularized(rangeX);
+    return rangeX;
 }
 QCPRange Cloud::getYRange()
 {
-    return regularized(rangeY);
+    return rangeY;
 }
 QCPRange Cloud::getZRange()
 {
-    return regularized(rangeZ);
+    return rangeZ;
 }
 QCPRange Cloud::getScalarFieldRange()
 {
-    return regularized(rangeS);
+    return rangeS;
 }
 
 std::vector<QRgb>& Cloud::getColors()
@@ -234,23 +279,16 @@ Eigen::Vector3d Cloud::getCenter()
     return Eigen::Vector3d(rangeX.center(),rangeY.center(),rangeZ.center());
 }
 
-Eigen::Vector3d Cloud::getBarycenter()
-{
-    return Barycenter;
-}
-
-void Cloud::calcBarycenterAndBoundingRadius()
+void Cloud::getBarycenterAndBoundingRadius(
+        Eigen::Vector3d & Barycenter,
+        double & boundingRadius)
 {
     Barycenter=Eigen::Vector3d(0,0,0);
     boundingRadius=0.0;
 
     if (pts.size()>0)
     {
-        for (int i=0; i<pts.size(); i++)
-        {
-            Barycenter+=pts[i].head<3>();
-        }
-        Barycenter/=pts.size();
+        Barycenter=getBarycenter();
 
 
         for (int i=0; i<pts.size(); i++)
@@ -265,9 +303,19 @@ void Cloud::calcBarycenterAndBoundingRadius()
     }
 }
 
-double Cloud::getBoundingRadius()
+Eigen::Vector3d Cloud::getBarycenter()
 {
-    return boundingRadius;
+    Eigen::Vector3d Barycenter(0,0,0);
+
+    if (pts.size()>0)
+    {
+        for (int i=0; i<pts.size(); i++)
+        {
+            Barycenter+=pts[i].head<3>();
+        }
+        Barycenter/=pts.size();
+    }
+    return Barycenter;
 }
 
 QString Cloud::getLabelX()
@@ -285,11 +333,6 @@ QString Cloud::getLabelZ()
 QString Cloud::getLabelS()
 {
     return labelS;
-}
-
-QVector3D Cloud::toQVec3D(Eigen::Vector3d p)
-{
-    return QVector3D(p[0],p[1],p[2]);
 }
 
 void Cloud::fit(Shape<Eigen::Vector4d>* model,int it,double xtol)
@@ -319,6 +362,16 @@ void Cloud::subSample(unsigned int nbPoints)
         int random_index=rand()%pts.size();
         pts.erase (pts.begin()+random_index);
     }
+    calcRanges();
+}
+
+void Cloud::move(const Eigen::Matrix3d & R, const Eigen::Vector3d & T,double scale)
+{
+    for(int i=0;i<pts.size();i++)
+    {
+        pts[i].head<3>()=scale*(R*pts[i].head<3>()+T);
+    }
+    calcRanges();
 }
 
 QByteArray Cloud::getBuffer(QCPRange range)

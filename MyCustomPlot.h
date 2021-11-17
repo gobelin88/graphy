@@ -4498,6 +4498,7 @@ public:
     QCPAxisRect* axisRectAt(const QPointF& pos) const;
     Q_SLOT void rescaleAxes(bool onlyVisiblePlottables=false);
 
+    QList<QCPAxis*> selectedAxes(QCPAxis::SelectablePart part) const;
     QList<QCPAxis*> selectedAxes() const;
     QList<QCPLegend*> selectedLegends() const;
     Q_SLOT void deselectAll();

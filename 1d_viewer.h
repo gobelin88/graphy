@@ -226,8 +226,8 @@ protected:
 
     void applyCIFilter(QString name);
 
-    QByteArray axistoByteArray(QCPAxis * paxis);
-    void axisFromByteArray(QCPAxis * paxis,QByteArray data);
+    QByteArray axistoByteArray(QCPAxis * paxis, QCPAxis::SelectablePart part);
+    void axisFromByteArray(QCPAxis * paxis,QByteArray data,QCPAxis::SelectablePart part);
 };
 
 #endif // VIEWER1D_H

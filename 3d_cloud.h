@@ -15,6 +15,8 @@ public:
     Qt3DRender::QPointSize* pointSize;
     Qt3DRender::QLineWidth* lineWidth;
 
+    void update(QCPRange scalarFieldRange);
+
     Cloud * cloud;
 };
 

@@ -1009,7 +1009,7 @@ void MyModel::slot_newRowsBegin()
 void MyModel::slot_setRows()
 {
     bool ok=false;
-    int N=QInputDialog::getInt(nullptr,"Number of rows","Set the number of rows to ",1,1,10000000,1,&ok);
+    int N=QInputDialog::getInt(nullptr,"Number of rows","Set the number of rows to ",this->m_data.rows(),1,10000000,1,&ok);
 
     if (ok)
     {

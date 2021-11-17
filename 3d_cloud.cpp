@@ -33,14 +33,24 @@ Cloud3D::Cloud3D(Cloud *cloud, Qt3DCore::QEntity* rootEntity)
     entity->addComponent(transformInit(entity));
     pointSize = new Qt3DRender::QPointSize();
     pointSize->setSizeMode(Qt3DRender::QPointSize::SizeMode::Fixed);
-    pointSize->setValue(4.0f);
+    pointSize->setValue(2.0f);
     lineWidth = new Qt3DRender::QLineWidth();
-    lineWidth->setValue(4.0f);
+    lineWidth->setValue(2.0f);
 
     positionAttribute->setCount(static_cast<unsigned int>(cloud->size()));
     indexAttribute->setCount(static_cast<unsigned int>(cloud->size()));
 
     buffer->setData(cloud->getBuffer(cloud->getScalarFieldRange()));
+}
+
+void Cloud3D::update(QCPRange scalarFieldRange)
+{
+    if(buffer)
+    {
+        positionAttribute->setCount(static_cast<unsigned int>(cloud->size()));
+        indexAttribute->setCount(static_cast<unsigned int>(cloud->size()));
+        buffer->setData(cloud->getBuffer(scalarFieldRange));
+    }
 }
 
 Cloud3D::~Cloud3D()

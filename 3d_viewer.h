@@ -129,6 +129,7 @@ public slots:
     void slot_computeSolidHarmonics();
     void slot_itemDoubleClicked(int index);
     void slot_fitPointCloud();
+    void slot_movePointCloud();
 
 
 signals:
@@ -145,8 +146,8 @@ protected:
 private:
 
     //Registration Algorithms
-    void computeArun(Cloud * pcA,Cloud * pcB);
-    void computeHorn(Cloud * pcA,Cloud * pcB);
+    bool computeArun(Cloud * pcA,Cloud * pcB);
+    bool computeHorn(Cloud * pcA,Cloud * pcB);
 
     //Ranges
     void extendScalarRange(QCPRange itemRangeS,int i);
@@ -186,7 +187,7 @@ private:
     QMenu* menuFit;
     QMenu * menuProject;
     QMenu * menuScalarField;
-    QMenu * menuSubSample;
+    QMenu * menuTools;
     QMenu * menuView;
     QMenu * menuData;
     QMenu * menuMesh;
@@ -201,6 +202,7 @@ private:
     QAction * actProjectPlan;
     QAction * actProjectMesh;
     QAction * actRandomSubSample;
+    QAction * actMove;
     QAction * actFitPointCloud;
     QAction * actComputeSolidHarmonics;
     QAction * actRescale;
@@ -230,6 +232,9 @@ private:
     bool yz_reversed;
     bool xz_reversed;
     void setCloudPointSize(Cloud3D * currentCloud3D, double value);
-
+    void resetRanges();
+    void dispRanges();
+    void updateScalarRanges(std::vector<Cloud3D*> & cloudsList);
+    void updateRanges(std::vector<Cloud3D*> & cloudsList,bool same);
 };
 #endif // VIEW3D_H

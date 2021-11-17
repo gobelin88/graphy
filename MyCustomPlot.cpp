@@ -15894,6 +15894,26 @@ QList<QCPAxis*> QCustomPlot::selectedAxes() const
     return result;
 }
 
+QList<QCPAxis*> QCustomPlot::selectedAxes(QCPAxis::SelectablePart part) const
+{
+    QList<QCPAxis*> result, allAxes;
+    foreach (QCPAxisRect* rect, axisRects())
+    {
+        allAxes << rect->axes();
+    }
+
+    foreach (QCPAxis* axis, allAxes)
+    {
+        if (axis->selectedParts() == part)
+        {
+            result.append(axis);
+        }
+    }
+
+    return result;
+}
+
+
 /*!
   Returns the legends that currently have selected parts, i.e. whose selection state is not \ref
   QCPLegend::spNone.

@@ -11,7 +11,8 @@ CustomViewContainer::CustomViewContainer(QWidget* container,QWidget*parent, Qt::
     createColorAxisPlot();
     createXAxisPlot();
     createYAxisPlot();
-    createZAxisPlot();
+    createZAxisPlot();    
+    axisList<<axisX<<axisY<<axisZ<<scale->axis();
 
     selectionView=new QListWidget(this);
     selectionView->setSelectionMode(QListWidget::ExtendedSelection);
@@ -42,6 +43,10 @@ CustomViewContainer::CustomViewContainer(QWidget* container,QWidget*parent, Qt::
     this->container=container;
 
     connect(selectionView,&QListWidget::itemDoubleClicked,this,&CustomViewContainer::slot_onItemDoubleClicked);
+    connect(axisX_plot,&QCustomPlot::axisDoubleClick,this,&CustomViewContainer::slot_onAxisDoubleClicked);
+    connect(axisY_plot,&QCustomPlot::axisDoubleClick,this,&CustomViewContainer::slot_onAxisDoubleClicked);
+    connect(axisZ_plot,&QCustomPlot::axisDoubleClick,this,&CustomViewContainer::slot_onAxisDoubleClicked);
+    connect(color_plot,&QCustomPlot::axisDoubleClick,this,&CustomViewContainer::slot_onAxisDoubleClicked);
 }
 
 void CustomViewContainer::slot_onItemDoubleClicked(QListWidgetItem *item)
@@ -49,6 +54,14 @@ void CustomViewContainer::slot_onItemDoubleClicked(QListWidgetItem *item)
     if (item) // only react if item was clicked (user could have clicked on border padding of legend where there is no item, then item is 0)
     {        
         emit sig_itemDoubleClicked(selectionView->row(item));
+    }
+}
+
+void CustomViewContainer::slot_onAxisDoubleClicked(QCPAxis* axis)
+{
+    if (axis) // only react if item was clicked (user could have clicked on border padding of legend where there is no item, then item is 0)
+    {
+        emit sig_axisDoubleClicked(axisList.indexOf(axis));
     }
 }
 
@@ -148,7 +161,6 @@ QWidget* CustomViewContainer::getContainer()
     return container;
 }
 
-
 QCPColorScale* CustomViewContainer::getColorScale()
 {
     return scale;
@@ -169,6 +181,14 @@ QCPAxis* CustomViewContainer::getYAxis()
 QCPAxis* CustomViewContainer::getZAxis()
 {
     return axisZ;
+}
+QCPAxis* CustomViewContainer::getAxis(int axisIndex)
+{
+    if(axisIndex<axisList.size() && axisIndex>=0)
+    {
+        return axisList[axisIndex];
+    }
+    return nullptr;
 }
 
 QVector3D CustomViewContainer::getTranslation()

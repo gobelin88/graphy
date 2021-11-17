@@ -18,6 +18,7 @@ public:
     QCPAxis* getXAxis();
     QCPAxis* getYAxis();
     QCPAxis* getZAxis();
+    QCPAxis* getAxis(int axisIndex);
 
     QVector3D getTranslation();
     QVector3D getScale();
@@ -30,9 +31,11 @@ public:
 public slots:
     void slot_fullscreen(bool checked);
     void slot_onItemDoubleClicked(QListWidgetItem *item);
+    void slot_onAxisDoubleClicked(QCPAxis* axis);
 
 signals:
-    void sig_itemDoubleClicked(int index);
+    void sig_itemDoubleClicked(int itemIndex);
+    void sig_axisDoubleClicked(int axisIndex);
 
 private:
     //----------------------------
@@ -44,7 +47,7 @@ private:
     QCPColorScale* scale;
 
     void createXAxisPlot();
-    QCustomPlot* axisX_plot;
+    QCustomPlot * axisX_plot;
     QCPAxisRect* axisX_rect;
     QCPAxis* axisX;
 
@@ -62,6 +65,8 @@ private:
 
     int axisSize;
     QGridLayout* glayout;
+
+    QVector<QCPAxis *> axisList;//X Y Z S;
 };
 
 #endif // CUSTOMVIEWCONTAINER_H

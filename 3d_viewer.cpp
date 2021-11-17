@@ -91,9 +91,9 @@ void Viewer3D::init3D()
         std::cout<<"Failed to load mesh:"<<meshArrow->meshName().toStdString()<<std::endl;
     }
 
-    objArrowX=new Object3D(rootEntity,meshArrow,nullptr,PosAtt(Eigen::Vector3d(-0.0,1,-1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(1,0,0),Eigen::Vector3d(0,-1,0))),0.1f,QColor(255,0,0));
-    objArrowY=new Object3D(rootEntity,meshArrow,nullptr,PosAtt(Eigen::Vector3d(-1,-0.0,1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),Eigen::Vector3d(0,1,0))),0.1f,QColor(0,255,0));
-    objArrowZ=new Object3D(rootEntity,meshArrow,nullptr,PosAtt(Eigen::Vector3d(1,-1,-0.0),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,0,1),Eigen::Vector3d(0,-1,0))),0.1f,QColor(0,0,255));
+    objArrowX=new Object3D(rootEntity,meshArrow,nullptr,PosAtt(Eigen::Vector3d(-0.0,1,-1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(1,0,0),Eigen::Vector3d(0,-1,0))),0.1f,QColor(0,0,0));
+    objArrowY=new Object3D(rootEntity,meshArrow,nullptr,PosAtt(Eigen::Vector3d(-1,-0.0,1),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,1,0),Eigen::Vector3d(0,1,0))),0.1f,QColor(0,0,0));
+    objArrowZ=new Object3D(rootEntity,meshArrow,nullptr,PosAtt(Eigen::Vector3d(1,-1,-0.0),Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d(0,0,1),Eigen::Vector3d(0,-1,0))),0.1f,QColor(0,0,0));
 
     labelx=new Label3D(rootEntity,"X",QVector3D(0,1,-1),0.1f,0,0,0);
     labely=new Label3D(rootEntity,"Y",QVector3D(-1,0,1),0.1f,0,90,90);
@@ -114,7 +114,7 @@ void Viewer3D::createPopup()
     menuFit= new QMenu("Fit");
     menuProject= new QMenu("Project");
     menuScalarField= new QMenu("ScalarField");
-    menuSubSample= new QMenu("Subsample");
+    menuTools= new QMenu("Tools");
     menuView= new QMenu("View");
     menuMesh= new QMenu("Mesh");
 
@@ -129,7 +129,8 @@ void Viewer3D::createPopup()
     actProjectSphere= new QAction("Sphere",  this);
     actProjectPlan= new QAction("Plan",  this);
     actProjectMesh= new QAction("Custom mesh",  this);
-    actRandomSubSample= new QAction("Random",  this);
+    actRandomSubSample= new QAction("Random subsample",  this);
+    actMove= new QAction("Move",  this);
 
     actComputeSolidHarmonics= new QAction("Solid Harmonics",  this);
     actRescale= new QAction("Rescale",  this);
@@ -164,6 +165,7 @@ void Viewer3D::createPopup()
 
     cb_use_custom_color=new QCheckBox("Use custom color");
     cw_custom_color=new ColorWheel();
+    cw_custom_color->setMinimumSize(128,128);
 
     sb_size=new QDoubleSpinBox;
     sb_size->setRange(0.1,100);
@@ -224,7 +226,7 @@ void Viewer3D::createPopup()
     menuData->addMenu(menuFit);
     menuData->addMenu(menuProject);
     menuData->addMenu(menuScalarField);
-    menuData->addMenu(menuSubSample);
+    menuData->addMenu(menuTools);
     menuData->addAction(actExport);
     menuFit->addAction(actFitSphere);
     menuFit->addAction(actFitEllipsoid);
@@ -236,7 +238,8 @@ void Viewer3D::createPopup()
     menuProject->addAction(actProjectMesh);
     menuMesh->addAction(actMeshLoad);
     menuMesh->addAction(actMeshCreateRotegrity);
-    menuSubSample->addAction(actRandomSubSample);
+    menuTools->addAction(actRandomSubSample);
+    menuTools->addAction(actMove);
     menuScalarField->addAction(actComputeSolidHarmonics);
 
     QObject::connect(cb_show_hide_labels,SIGNAL(stateChanged(int)),this,SLOT(slot_showHideLabels(int)));
@@ -252,6 +255,7 @@ void Viewer3D::createPopup()
     QObject::connect(actComputeSolidHarmonics,SIGNAL(triggered()),this,SLOT(slot_computeSolidHarmonics()));
     QObject::connect(actRemoveSelected,SIGNAL(triggered()),this,SLOT(slot_removeSelected()));
     QObject::connect(actRandomSubSample,SIGNAL(triggered()),this,SLOT(slot_randomSubSamples()));
+    QObject::connect(actMove,SIGNAL(triggered()),this,SLOT(slot_movePointCloud()));
     QObject::connect(actSave,SIGNAL(triggered()),this,SLOT(slot_saveImage()));
     QObject::connect(actSaveRevolution,SIGNAL(triggered()),this,SLOT(slot_saveRevolution()));
     QObject::connect(sb_size, SIGNAL(valueChanged(double)), this, SLOT(slot_setPointSize(double)));
@@ -472,7 +476,10 @@ void Viewer3D::slot_fitSphere()
     {
         Cloud * currentCloud=selectedClouds[i]->cloud;
 
-        Sphere * sphere=new Sphere(currentCloud->getBarycenter(),currentCloud->getBoundingRadius()/2.0);
+        Eigen::Vector3d barycenter;
+        double boundingRadius;
+        currentCloud->getBarycenterAndBoundingRadius(barycenter,boundingRadius);
+        Sphere * sphere=new Sphere(barycenter,boundingRadius/2.0);
         currentCloud->fit(sphere);
 
         Eigen::Vector3d C=sphere->getCenter();
@@ -495,7 +502,9 @@ void Viewer3D::slot_fitPlan()
     {
         Cloud * currentCloud=selectedClouds[i]->cloud;
 
-        Eigen::Vector3d barycenter=currentCloud->getBarycenter();
+        Eigen::Vector3d barycenter;
+        double boundingRadius;
+        currentCloud->getBarycenterAndBoundingRadius(barycenter,boundingRadius);
 
         Plan * plan;
         Plan * planA=new Plan(Eigen::Vector3d(1,0,0),barycenter);
@@ -526,7 +535,7 @@ void Viewer3D::slot_fitPlan()
 
         Eigen::Vector3d N=plan->getNormal();
 
-        addPlan(plan,currentCloud->getBoundingRadius()*2,QColor(128,128,128));
+        addPlan(plan,boundingRadius*2,QColor(128,128,128));
 
         emit sig_displayResults( QString("Fit Plan:\nNormal=+-(%1 , %2 , %3)\nRms=%4\n").arg(N[0]).arg(N[1]).arg(N[2]).arg(plan->getRMS()));
         emit sig_newColumn("Err_Plan",plan->getErrNorm());
@@ -613,6 +622,9 @@ void Viewer3D::slot_projectSphere()
     {
         Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
+        Eigen::Vector3d barycenter;
+        double boundingRadius;
+        currentCloud->getBarycenterAndBoundingRadius(barycenter,boundingRadius);
 
         QDialog* dialog=new QDialog;
         dialog->setLocale(QLocale("C"));
@@ -624,11 +636,10 @@ void Viewer3D::slot_projectSphere()
         QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
         QDoubleSpinBox* sb_radius=new QDoubleSpinBox(dialog);
-        sb_radius->setValue(currentCloud->getBoundingRadius());
+        sb_radius->setValue(boundingRadius);
         sb_radius->setPrefix("radius=");
         sb_radius->setRange(-10000000,10000000);
 
-        Eigen::Vector3d barycenter=currentCloud->getBarycenter();
         QDoubleSpinBox* sb_bx=new QDoubleSpinBox(dialog);
         sb_bx->setValue(barycenter.x());
         sb_bx->setPrefix("bx=");
@@ -698,7 +709,7 @@ void Viewer3D::slot_randomSubSamples()
 
         QDialog* dialog=new QDialog;
         dialog->setLocale(QLocale("C"));
-        dialog->setWindowTitle("Random Sub Samples");
+        dialog->setWindowTitle("Random Subsamples");
         dialog->setMinimumWidth(400);
         QGridLayout* gbox = new QGridLayout();
         QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -706,12 +717,10 @@ void Viewer3D::slot_randomSubSamples()
         QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
         QSpinBox* sb_subSamples=new QSpinBox(dialog);
-        sb_subSamples->setValue(currentCloud->getBoundingRadius());
         sb_subSamples->setPrefix("Samples=");
         sb_subSamples->setRange(0,currentCloud->size());
 
         QSlider* sb_slideSubSamples=new QSlider(Qt::Horizontal,dialog);
-        sb_slideSubSamples->setValue(currentCloud->getBoundingRadius());
         sb_slideSubSamples->setRange(0,currentCloud->size());
 
         QObject::connect(sb_slideSubSamples, SIGNAL(valueChanged(int)), sb_subSamples, SLOT(setValue(int)));
@@ -728,8 +737,7 @@ void Viewer3D::slot_randomSubSamples()
         if (result == QDialog::Accepted)
         {
             int nbPoints=sb_subSamples->value();
-            currentCloud3D->positionAttribute   ->setCount(static_cast<unsigned int>(nbPoints));
-            currentCloud3D->indexAttribute->setCount(static_cast<unsigned int>(nbPoints));
+
             currentCloud->subSample(nbPoints);
 
             if(nbPoints!=currentCloud->size())
@@ -737,7 +745,7 @@ void Viewer3D::slot_randomSubSamples()
                 std::cout<<"error : "<<nbPoints<<" "<<currentCloud->size()<<std::endl;
             }
 
-            currentCloud3D->buffer->setData(currentCloud->getBuffer(customContainer->getColorScale()->dataRange()) );
+            currentCloud3D->update(customContainer->getColorScale()->dataRange());
         }
     }
 }
@@ -759,9 +767,12 @@ void Viewer3D::slot_fitCustomMesh()
 
         Object * obj=new Object(filename,PosAtt());
 
+        Eigen::Vector3d barycenter;
+        double boundingRadius;
+        currentCloud->getBarycenterAndBoundingRadius(barycenter,boundingRadius);
 
         Vector3d obj_center=obj->getBox().middle();
-        obj->setScalePosAtt(PosAtt(currentCloud->getBarycenter()-obj_center,Eigen::Quaterniond(currentCloud->getBoundingRadius()/obj->getRadius(obj_center),0,0,0)));
+        obj->setScalePosAtt(PosAtt(barycenter-obj_center,Eigen::Quaterniond(boundingRadius/obj->getRadius(obj_center),0,0,0)));
 
         currentCloud->fit(obj,100);
 
@@ -800,9 +811,9 @@ void Viewer3D::slot_ColorScaleChanged(const QCPRange& range)
         Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
 
-        if (currentCloud && currentCloud3D->buffer)
+        if (currentCloud)
         {
-            currentCloud3D->buffer->setData(currentCloud->getBuffer(range));
+            currentCloud3D->update(range);
         }
     }
 }
@@ -869,10 +880,11 @@ void Viewer3D::slot_useCustomColor(int value)
         Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
 
-        if (currentCloud && currentCloud3D->buffer)
+        if (currentCloud)
         {
             currentCloud->setUseCustomColor(value);
-            currentCloud3D->buffer->setData(currentCloud->getBuffer(customContainer->getColorScale()->dataRange()));
+            //currentCloud3D->buffer->setData(currentCloud->getBuffer(customContainer->getColorScale()->dataRange()));
+            currentCloud3D->update(customContainer->getColorScale()->dataRange());
         }
     }
 }
@@ -886,23 +898,11 @@ void Viewer3D::slot_setCustomColor(QColor color)
         Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
 
-        if (currentCloud && currentCloud3D->buffer)
+        if (currentCloud)
         {
             currentCloud->setCustomColor(color.rgb());
-            currentCloud3D->buffer->setData(currentCloud->getBuffer(customContainer->getColorScale()->dataRange()));
+            currentCloud3D->update(customContainer->getColorScale()->dataRange());
         }
-    }
-}
-
-QString appendLabel(QString label,QString content)
-{
-    if(label.isEmpty())
-    {
-        return content;
-    }
-    else
-    {
-        return label+QString(",")+content;
     }
 }
 
@@ -911,23 +911,24 @@ void Viewer3D::addCloudScalar(Cloud* cloudData,
 {
     Cloud3D * currentCloud3D=new Cloud3D(cloudData,rootEntity);
 
-    referenceObjectEntity(currentCloud3D,cloudData->getName());
-
     currentCloud3D->geometryRenderer->setPrimitiveType(primitiveMode);
 
-    customContainer->getColorScale()->axis()->setLabel(currentCloud3D->cloud->getLabelS());
-    customContainer->getColorScale()->setGradient(currentCloud3D->cloud->getGradient());
+    //if(getClouds(false).size()==0)
+    {
+        customContainer->getColorScale()->setGradient(currentCloud3D->cloud->getGradient());
 
-    customContainer->getXAxis()->setLabel(appendLabel(customContainer->getXAxis()->label(),currentCloud3D->cloud->getLabelX()));
-    customContainer->getYAxis()->setLabel(appendLabel(customContainer->getYAxis()->label(),currentCloud3D->cloud->getLabelY()));
-    customContainer->getZAxis()->setLabel(appendLabel(customContainer->getZAxis()->label(),currentCloud3D->cloud->getLabelZ()));
+        customContainer->getXAxis()->setLabel(cloudData->getLabelX());
+        customContainer->getYAxis()->setLabel(cloudData->getLabelY());
+        customContainer->getZAxis()->setLabel(cloudData->getLabelZ());
+        customContainer->getColorScale()->axis()->setLabel(cloudData->getLabelS());
 
-    labelx->setText(customContainer->getXAxis()->label());
-    labely->setText(customContainer->getYAxis()->label());
-    labelz->setText(customContainer->getZAxis()->label());
+        labelx->setText(customContainer->getXAxis()->label());
+        labely->setText(customContainer->getYAxis()->label());
+        labelz->setText(customContainer->getZAxis()->label());
+    }
+    referenceObjectEntity(currentCloud3D,cloudData->getName());
 
     setCloudPointSize(currentCloud3D,currentCloud3D->pointSize->value());
-    //slot_resetView();
     slot_resetViewOnSameRanges();
 
     customContainer->adjustSize();
@@ -1174,6 +1175,61 @@ void Viewer3D::applyShortcuts(const QMap<QString,QKeySequence>& shortcuts_map)
     }
 }
 
+void Viewer3D::slot_movePointCloud()
+{
+    std::vector<Cloud3D*> selectedClouds=getClouds(true);
+
+    QDialog* dialog=new QDialog;
+    dialog->setLocale(QLocale("C"));
+    dialog->setWindowTitle("Move points clouds");
+    QGridLayout* gbox = new QGridLayout();
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok| QDialogButtonBox::Cancel);
+    QObject::connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    QObject::connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+    QDoubleSpinBox * sb_Rx=new QDoubleSpinBox(dialog);
+    QDoubleSpinBox * sb_Ry=new QDoubleSpinBox(dialog);
+    QDoubleSpinBox * sb_Rz=new QDoubleSpinBox(dialog);
+    QDoubleSpinBox * sb_Tx=new QDoubleSpinBox(dialog);
+    QDoubleSpinBox * sb_Ty=new QDoubleSpinBox(dialog);
+    QDoubleSpinBox * sb_Tz=new QDoubleSpinBox(dialog);
+    QDoubleSpinBox * sb_scale=new QDoubleSpinBox(dialog);
+    sb_Rx->setRange(-360,360); sb_Rx->setDecimals(5);sb_Rx->setPrefix("Rx=");sb_Rx->setSuffix("°");
+    sb_Ry->setRange(-360,360); sb_Ry->setDecimals(5);sb_Ry->setPrefix("Ry=");sb_Ry->setSuffix("°");
+    sb_Rz->setRange(-360,360); sb_Rz->setDecimals(5);sb_Rz->setPrefix("Rz=");sb_Rz->setSuffix("°");
+    sb_Tx->setRange(-1e100,1e100); sb_Tx->setDecimals(5);sb_Tx->setPrefix("Tx=");
+    sb_Ty->setRange(-1e100,1e100); sb_Ty->setDecimals(5);sb_Ty->setPrefix("Ty=");
+    sb_Tz->setRange(-1e100,1e100); sb_Tz->setDecimals(5);sb_Tz->setPrefix("Tz=");
+    sb_scale->setRange(-1e100,1e100); sb_scale->setDecimals(5);sb_scale->setPrefix("Scale=");
+    sb_scale->setValue(1.0);
+
+    gbox->addWidget(sb_Rx,0,0);
+    gbox->addWidget(sb_Ry,1,0);
+    gbox->addWidget(sb_Rz,2,0);
+    gbox->addWidget(sb_Tx,0,1);
+    gbox->addWidget(sb_Ty,1,1);
+    gbox->addWidget(sb_Tz,2,1);
+    gbox->addWidget(sb_scale,3,0,1,2);
+    gbox->addWidget(buttonBox,4,0,1,2);
+    dialog->setLayout(gbox);
+
+    int result=dialog->exec();
+    if (result == QDialog::Accepted)
+    {
+        for(int i=0;i<selectedClouds.size();i++)
+        {
+            Eigen::Matrix3d R= Eigen::Matrix3d(Eigen::AngleAxisd(sb_Rx->value()*M_PI/180, Eigen::Vector3d::UnitX())
+                             * Eigen::AngleAxisd(sb_Ry->value()*M_PI/180, Eigen::Vector3d::UnitY())
+                             * Eigen::AngleAxisd(sb_Rz->value()*M_PI/180, Eigen::Vector3d::UnitZ()));
+
+            Eigen::Vector3d T(sb_Tx->value(),sb_Ty->value(),sb_Tz->value());
+
+            selectedClouds[i]->cloud->move(R,T,sb_scale->value());
+            selectedClouds[i]->update(customContainer->getColorScale()->dataRange());
+        }
+    }
+}
+
 void Viewer3D::slot_fitPointCloud()
 {
     std::vector<Cloud3D*> selectedClouds=getClouds(true);
@@ -1221,11 +1277,17 @@ void Viewer3D::slot_fitPointCloud()
 
                 if(cb_algorithm->currentIndex()==0)
                 {
-                    computeArun(pcA->cloud,pcB->cloud);
+                    if(!computeArun(pcA->cloud,pcB->cloud))
+                    {
+                        QMessageBox::information(nullptr,"Information Arun","Point cloud must have the same number of points");
+                    }
                 }
                 else if(cb_algorithm->currentIndex()==1)
                 {
-                    computeHorn(pcA->cloud,pcB->cloud);
+                    if(!computeHorn(pcA->cloud,pcB->cloud))
+                    {
+                        QMessageBox::information(nullptr,"Information Arun","Point cloud must have the same number of points");
+                    }
                 }
             }
         }
@@ -1240,18 +1302,23 @@ void Viewer3D::slot_fitPointCloud()
     }
 }
 
-void Viewer3D::computeHorn(Cloud * pcA,Cloud * pcB)
+bool Viewer3D::computeHorn(Cloud * pcA,Cloud * pcB)
 {
+    std::vector<Eigen::Vector3d> Pa=pcA->positions();
+    std::vector<Eigen::Vector3d> Pb=pcB->positions();
+    if(Pa.size()!=Pb.size())
+    {
+        return false;
+    }
+
     Eigen::Quaterniond Q(1,0,0,0);
     Eigen::Vector3d T=Eigen::Vector3d::Zero();
     double S=1.0;
 
-    std::vector<Eigen::Vector3d> Pa=pcA->positions();
-    std::vector<Eigen::Vector3d> Pb=pcB->positions();
+    QString PaName=pcA->getName();
+    QString PbName=pcB->getName();
 
     std::cout<<"Compute Horn"<<std::endl;
-    std::cout<<"Pa.size()="<<Pa.size()<<std::endl;
-    std::cout<<"Pb.size()="<<Pb.size()<<std::endl;
 
     algorithms::computeHornTranform(Pa,Pb,Q,T,S);
     Eigen::VectorXd HornE=algorithms::getHornError(Pa,Pb,Q,T,S);
@@ -1261,13 +1328,15 @@ void Viewer3D::computeHorn(Cloud * pcA,Cloud * pcB)
     Eigen::Matrix3d R=Q.toRotationMatrix();
     for(int i=0;i<Pc.size();i++)
     {
-        Pc[i]=R*Pb[i]+T;
+        Pc[i]=S*(R*Pb[i]+T);
     }
-    Cloud * pcC=new Cloud(Pc,"X","Y","Z");
+    Cloud * pcC=new Cloud(Pc,HornE,"X","Y","Z","Error");
     pcC->setName(QString("Pc (%1 projected on %2) [Horn]").arg(pcB->getName()).arg(pcA->getName()));
     addCloudScalar(pcC);
 
-    emit sig_displayResults( QString("Compute Horn:\n"
+    emit sig_displayResults( QString("Compute Horn (Pa=S*(R*Pb[i]+T))\n"
+                                     "Pa=%15\n"
+                                     "Pb=%16\n"
                                      "Q=(%1 , %2 , %3 , %4)\n"
                                      "T=(%10 , %11 , %12)\n"
                                      "S=%13\n"
@@ -1275,24 +1344,30 @@ void Viewer3D::computeHorn(Cloud * pcA,Cloud * pcB)
                              .arg(Q.w()).arg(Q.x()).arg(Q.y()).arg(Q.z())
                              .arg(T[0]).arg(T[1]).arg(T[2])
                              .arg(S)
-                             .arg(rms));
+                             .arg(rms).arg(PaName).arg(PbName));
 
     emit sig_newColumn("Err_Horn",HornE);
+
+    return true;
 }
 
-void Viewer3D::computeArun(Cloud * pcA,Cloud * pcB)
+bool Viewer3D::computeArun(Cloud * pcA,Cloud * pcB)
 {
+    std::vector<Eigen::Vector3d> Pa=pcA->positions();
+    std::vector<Eigen::Vector3d> Pb=pcB->positions();
+
+    if(Pa.size()!=Pb.size())
+    {
+        return false;
+    }
+
     Eigen::Matrix3d R=Eigen::Matrix3d::Identity();
     Eigen::Vector3d T=Eigen::Vector3d::Zero();
 
-    std::vector<Eigen::Vector3d> Pa=pcA->positions();
-    std::vector<Eigen::Vector3d> Pb=pcB->positions();
     QString PaName=pcA->getName();
     QString PbName=pcB->getName();
 
     std::cout<<"Compute Arun :"<<std::endl;
-    std::cout<<"Pa.size()="<<Pa.size()<<std::endl;
-    std::cout<<"Pb.size()="<<Pb.size()<<std::endl;
 
     algorithms::computeArunTranform(Pa,Pb,R,T);
     Eigen::VectorXd ArunE=algorithms::getArunError(Pa,Pb,R,T);
@@ -1303,7 +1378,7 @@ void Viewer3D::computeArun(Cloud * pcA,Cloud * pcB)
     {
         Pc[i]=R*Pb[i]+T;
     }
-    Cloud * pcC=new Cloud(Pc,"X","Y","Z");
+    Cloud * pcC=new Cloud(Pc,ArunE,"X","Y","Z","Error");
     pcC->setName(QString("Pc (%1 projected on %2) [Arun]").arg(pcB->getName()).arg(pcA->getName()));
     addCloudScalar(pcC);
 
@@ -1323,6 +1398,8 @@ void Viewer3D::computeArun(Cloud * pcA,Cloud * pcB)
                              .arg(rms).arg(PaName).arg(PbName));
 
     emit sig_newColumn("Err_Arun",ArunE);
+
+    return true;
 }
 
 void Viewer3D::slot_itemDoubleClicked(int index)
@@ -1777,6 +1854,18 @@ void Viewer3D::slot_createRotegrity()
     }
 }
 
+QCPRange regularized(const QCPRange & range)
+{
+    if (range.lower==range.upper)
+    {
+        return QCPRange(range.lower-1,range.lower+1);
+    }
+    else
+    {
+        return range;
+    }
+}
+
 void Viewer3D::extendSameRanges(QCPRange itemRangeX,QCPRange itemRangeY,QCPRange itemRangeZ,int i)
 {
 
@@ -1789,17 +1878,19 @@ void Viewer3D::extendSameRanges(QCPRange itemRangeX,QCPRange itemRangeY,QCPRange
 
     if(i!=0)
     {
-        customContainer->getXAxis()->setRange(QCPRange(std::min(rangeMinMax.lower,rangex.lower),std::max(rangeMinMax.upper,rangex.upper)));
-        customContainer->getYAxis()->setRange(QCPRange(std::min(rangeMinMax.lower,rangey.lower),std::max(rangeMinMax.upper,rangey.upper)));
-        customContainer->getZAxis()->setRange(QCPRange(std::min(rangeMinMax.lower,rangez.lower),std::max(rangeMinMax.upper,rangez.upper)));
+        customContainer->getXAxis()->setRange(regularized(QCPRange(std::min(rangeMinMax.lower,rangex.lower),std::max(rangeMinMax.upper,rangex.upper))));
+        customContainer->getYAxis()->setRange(regularized(QCPRange(std::min(rangeMinMax.lower,rangey.lower),std::max(rangeMinMax.upper,rangey.upper))));
+        customContainer->getZAxis()->setRange(regularized(QCPRange(std::min(rangeMinMax.lower,rangez.lower),std::max(rangeMinMax.upper,rangez.upper))));
     }
     else
     {
-        customContainer->getXAxis()->setRange(rangeMinMax);
-        customContainer->getYAxis()->setRange(rangeMinMax);
-        customContainer->getZAxis()->setRange(rangeMinMax);
+        customContainer->getXAxis()->setRange(regularized(rangeMinMax));
+        customContainer->getYAxis()->setRange(regularized(rangeMinMax));
+        customContainer->getZAxis()->setRange(regularized(rangeMinMax));
     }
 }
+
+
 
 void Viewer3D::extendRanges(QCPRange itemRangeX,QCPRange itemRangeY,QCPRange itemRangeZ,int i)
 {
@@ -1809,17 +1900,19 @@ void Viewer3D::extendRanges(QCPRange itemRangeX,QCPRange itemRangeY,QCPRange ite
 
     if(i!=0)
     {
-        customContainer->getXAxis()->setRange(QCPRange(std::min(itemRangeX.lower,rangex.lower),std::max(itemRangeX.upper,rangex.upper)));
-        customContainer->getYAxis()->setRange(QCPRange(std::min(itemRangeY.lower,rangey.lower),std::max(itemRangeY.upper,rangey.upper)));
-        customContainer->getZAxis()->setRange(QCPRange(std::min(itemRangeZ.lower,rangez.lower),std::max(itemRangeZ.upper,rangez.upper)));
+        customContainer->getXAxis()->setRange(regularized(QCPRange(std::min(itemRangeX.lower,rangex.lower),std::max(itemRangeX.upper,rangex.upper))));
+        customContainer->getYAxis()->setRange(regularized(QCPRange(std::min(itemRangeY.lower,rangey.lower),std::max(itemRangeY.upper,rangey.upper))));
+        customContainer->getZAxis()->setRange(regularized(QCPRange(std::min(itemRangeZ.lower,rangez.lower),std::max(itemRangeZ.upper,rangez.upper))));
     }
     else
     {
-        customContainer->getXAxis()->setRange(itemRangeX);
-        customContainer->getYAxis()->setRange(itemRangeY);
-        customContainer->getZAxis()->setRange(itemRangeZ);
+        customContainer->getXAxis()->setRange(regularized(itemRangeX));
+        customContainer->getYAxis()->setRange(regularized(itemRangeY));
+        customContainer->getZAxis()->setRange(regularized(itemRangeZ));
     }
 }
+
+
 
 void Viewer3D::extendScalarRange(QCPRange itemRangeS,int i)
 {
@@ -1827,100 +1920,97 @@ void Viewer3D::extendScalarRange(QCPRange itemRangeS,int i)
 
     if(i!=0)
     {
-        customContainer->getColorScale()->setDataRange(QCPRange(std::min(itemRangeS.lower,ranges.lower),std::max(itemRangeS.upper,ranges.upper)));
+        customContainer->getColorScale()->setDataRange(regularized(QCPRange(std::min(itemRangeS.lower,ranges.lower),std::max(itemRangeS.upper,ranges.upper))));
     }
     else
     {
-        customContainer->getColorScale()->setDataRange(itemRangeS);
+        customContainer->getColorScale()->setDataRange(regularized(itemRangeS));
     }
+}
+
+
+
+void Viewer3D::resetRanges()
+{
+    QCPRange rangeReset(0,0);
+    customContainer->getXAxis()->setRange(rangeReset);
+    customContainer->getYAxis()->setRange(rangeReset);
+    customContainer->getZAxis()->setRange(rangeReset);
+}
+
+void Viewer3D::dispRanges()
+{
+    std::cout<<"Ranges:"<<std::endl;
+    std::cout<<customContainer->getXAxis()->range().lower<<" "<<customContainer->getXAxis()->range().upper<<std::endl;
+    std::cout<<customContainer->getYAxis()->range().lower<<" "<<customContainer->getYAxis()->range().upper<<std::endl;
+    std::cout<<customContainer->getZAxis()->range().lower<<" "<<customContainer->getZAxis()->range().upper<<std::endl;
+}
+
+void Viewer3D::updateScalarRanges(std::vector<Cloud3D*> & cloudsList)
+{
+    for(unsigned int i=0;i<cloudsList.size();i++)
+    {
+        cloudsList[i]->buffer->setData(cloudsList[i]->cloud->getBuffer(customContainer->getColorScale()->dataRange()));
+    }
+}
+
+void Viewer3D::updateRanges(std::vector<Cloud3D*> & cloudsList,bool same)
+{
+    resetRanges();
+    for(unsigned int i=0;i<cloudsList.size();i++)
+    {
+        Cloud * currentCloud=cloudsList[i]->cloud;
+        if(same)
+        {
+            extendSameRanges(currentCloud->getXRange(),currentCloud->getYRange(),currentCloud->getZRange(),i);
+        }
+        else
+        {
+            extendRanges(currentCloud->getXRange(),currentCloud->getYRange(),currentCloud->getZRange(),i);
+        }
+        extendScalarRange(currentCloud->getScalarFieldRange(),i);
+    }
+    updateScalarRanges(cloudsList);
+
+    customContainer->getColorScalePlot()->rescaleAxes();
+    customContainer->replot();
+
+    slot_ScaleChanged();
 }
 
 void Viewer3D::slot_resetView()
 {
-    cameraParams->reset();
-
     std::vector<Cloud3D*> cloudsList=getClouds(false);
+    updateRanges(cloudsList,false);
 
-    for(unsigned int i=0;i<cloudsList.size();i++)
-    {
-        Cloud * currentCloud=cloudsList[i]->cloud;
-        extendRanges(currentCloud->getXRange(),currentCloud->getYRange(),currentCloud->getZRange(),i);
-        extendScalarRange(currentCloud->getScalarFieldRange(),i);
-    }
-
-    customContainer->getColorScalePlot()->rescaleAxes();
-    customContainer->getColorScalePlot()->replot();
-    customContainer->replot();
-
-    slot_ScaleChanged();
+    cameraParams->reset();
     slot_updateGridAndLabels();
 }
 
 void Viewer3D::slot_resetViewOnSameRanges()
 {
-    cameraParams->reset();
-
     std::vector<Cloud3D*> cloudsList=getClouds(false);
-
-    for(unsigned int i=0;i<cloudsList.size();i++)
-    {
-        Cloud * currentCloud=cloudsList[i]->cloud;
-        extendSameRanges(currentCloud->getXRange(),currentCloud->getYRange(),currentCloud->getZRange(),i);
-        extendScalarRange(currentCloud->getScalarFieldRange(),i);
-    }
-
-    customContainer->getColorScalePlot()->rescaleAxes();
-    customContainer->replot();
-
-    slot_ScaleChanged();
-    slot_updateGridAndLabels();
+    updateRanges(cloudsList,true);
 }
 
 void Viewer3D::slot_resetViewOnSelectedSameRanges()
 {
-    cameraParams->reset();
-
     std::vector<Cloud3D*> selectedClouds=getClouds(true);
-
-    for(unsigned int i=0;i<selectedClouds.size();i++)
-    {
-        Cloud * currentCloud=selectedClouds[i]->cloud;
-        extendSameRanges(currentCloud->getXRange(),currentCloud->getYRange(),currentCloud->getZRange(),i);
-        extendScalarRange(currentCloud->getScalarFieldRange(),i);
-    }
-
-    customContainer->getColorScalePlot()->rescaleAxes();
-    customContainer->replot();
-
-    slot_ScaleChanged();
-    slot_updateGridAndLabels();
+    updateRanges(selectedClouds,true);
 }
 
 void Viewer3D::slot_resetViewOnSelected()
 {
-    cameraParams->reset();
-
     std::vector<Cloud3D*> selectedClouds=getClouds(true);
-
-    for(unsigned int i=0;i<selectedClouds.size();i++)
-    {
-        Cloud * currentCloud=selectedClouds[i]->cloud;
-        extendRanges(currentCloud->getXRange(),currentCloud->getYRange(),currentCloud->getZRange(),i);
-        extendScalarRange(currentCloud->getScalarFieldRange(),i);
-    }
-
-    customContainer->getColorScalePlot()->rescaleAxes();
-    customContainer->replot();
-
-    slot_ScaleChanged();
-    slot_updateGridAndLabels();
+    updateRanges(selectedClouds,false);
 }
 
 void Viewer3D::mouseDoubleClickEvent(QMouseEvent* event)
 {
     if (event->buttons()==Qt::LeftButton)
     {
-
+        cameraParams->reset();
+        slot_updateGridAndLabels();
     }
 }
 
@@ -1929,6 +2019,8 @@ void Viewer3D::configurePopup()
     sb_size->blockSignals(true);
     cb_mode->blockSignals(true);
     c_gradient->blockSignals(true);
+    cb_use_custom_color->blockSignals(true);
+    cw_custom_color->blockSignals(true);
 
     std::vector<Cloud3D*> selectedClouds=getClouds(true);
 
@@ -1960,6 +2052,8 @@ void Viewer3D::configurePopup()
     sb_size->blockSignals(false);
     cb_mode->blockSignals(false);
     c_gradient->blockSignals(false);
+    cb_use_custom_color->blockSignals(false);
+    cw_custom_color->blockSignals(false);
 }
 
 void Viewer3D::mousePressEvent(QMouseEvent* event)

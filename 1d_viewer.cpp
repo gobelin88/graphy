@@ -1091,7 +1091,7 @@ void Viewer1D::keyPressEvent(QKeyEvent* event)
 
     modifiers=event->modifiers();
 
-    std::cout<<modifiers<<" "<<event->modifiers()<<std::endl;
+    //std::cout<<modifiers<<" "<<event->modifiers()<<std::endl;
 }
 
 void Viewer1D::keyReleaseEvent(QKeyEvent* event)
@@ -1100,7 +1100,7 @@ void Viewer1D::keyReleaseEvent(QKeyEvent* event)
 
     modifiers=event->modifiers();
 
-    std::cout<<modifiers<<" "<<event->modifiers()<<std::endl;
+    //std::cout<<modifiers<<" "<<event->modifiers()<<std::endl;
 }
 
 
@@ -2392,7 +2392,6 @@ void Viewer1D::slot_rescale()
     }
 
     QList<QCPColorMap*> listmaps=getQCPListOf<QCPColorMap>(false);
-    std::cout<<"listmaps.size()="<<listmaps.size()<<std::endl;
     for (int i=0; i<listmaps.size(); i++)
     {
         if (listmaps[i]->colorScale())
@@ -2420,40 +2419,71 @@ void Viewer1D::slot_copy()
         QApplication::clipboard()->setMimeData(mimeData);
     }
 
-    QList<QCPAxis*> listAxis=selectedAxes();
-    if (listAxis.size()>0)
+    QList<QCPAxis*> listAxisLabel=this->selectedAxes(QCPAxis::SelectablePart::spAxisLabel);
+    if (listAxisLabel.size()>0)
     {
-        //Todo
-        std::cout<<"copy axis"<<std::endl;
         QMimeData * mimeData=new QMimeData();
-        QByteArray rawData=axistoByteArray(listAxis[0]);
+        QByteArray rawData=axistoByteArray(listAxisLabel[0],QCPAxis::SelectablePart::spAxisLabel);
 
-        mimeData->setData("Axis",rawData);
+        mimeData->setData("AxisLabel",rawData);
+        QApplication::clipboard()->setMimeData(mimeData);
+    }
+
+    QList<QCPAxis*> listAxisAxis=selectedAxes(QCPAxis::SelectablePart::spAxis);
+    if (listAxisAxis.size()>0)
+    {
+        std::cout<<"copy axis axis"<<std::endl;
+        QMimeData * mimeData=new QMimeData();
+        QByteArray rawData=axistoByteArray(listAxisAxis[0],QCPAxis::SelectablePart::spAxis);
+
+        mimeData->setData("AxisAxis",rawData);
         QApplication::clipboard()->setMimeData(mimeData);
     }
 }
 
-QByteArray Viewer1D::axistoByteArray(QCPAxis * paxis)
+QByteArray Viewer1D::axistoByteArray(QCPAxis * paxis,QCPAxis::SelectablePart part)
 {
     QByteArray data;
     QBuffer buffer(&data);
     buffer.open(QIODevice::WriteOnly);
     QDataStream ds(&buffer);
 
-    ds<<paxis->label();
+    if(QCPAxis::SelectablePart::spAxisLabel==part)
+    {
+        ds<<paxis->label();
+    }
+
+    if(QCPAxis::SelectablePart::spAxis==part)
+    {
+        std::cout<<paxis->range().lower<<" "<<paxis->range().upper<<std::endl;
+        ds<<paxis->range().lower<<paxis->range().upper;
+    }
+
 
     buffer.close();
 
     return data;
 }
 
-void Viewer1D::axisFromByteArray(QCPAxis * paxis,QByteArray data)
+void Viewer1D::axisFromByteArray(QCPAxis * paxis,QByteArray data,QCPAxis::SelectablePart part)
 {
     QBuffer buffer(&data);
     buffer.open(QIODevice::ReadOnly);
     QDataStream ds(&buffer);
 
-    QString label;ds>>label;paxis->setLabel(label);
+    if(QCPAxis::SelectablePart::spAxisLabel==part)
+    {
+        QString label;ds>>label;paxis->setLabel(label);
+    }
+
+    if(QCPAxis::SelectablePart::spAxis==part)
+    {
+        QCPRange range;
+        ds>>range.lower>>range.upper;
+        paxis->setRange(range);
+
+        std::cout<<paxis->range().lower<<" "<<paxis->range().upper<<std::endl;
+    }
 
     buffer.close();
 }
@@ -2471,18 +2501,28 @@ void Viewer1D::slot_paste()
             slot_addData(curve);
         }
 
-        if(mimeData->hasFormat("Axis"))
+        if(mimeData->hasFormat("AxisLabel"))
         {
             QList<QCPAxis*> listAxis=selectedAxes();
             if (listAxis.size()>0)
             {
-                    std::cout<<"paste axis"<<std::endl;
-                    axisFromByteArray(listAxis[0],mimeData->data("Axis"));
+                    axisFromByteArray(listAxis[0],mimeData->data("AxisLabel"),QCPAxis::SelectablePart::spAxisLabel);
+            }
+        }
+
+        if(mimeData->hasFormat("AxisAxis"))
+        {
+            std::cout<<"paste axis axis"<<std::endl;
+            QList<QCPAxis*> listAxis=selectedAxes();
+            if (listAxis.size()>0)
+            {
+                    axisFromByteArray(listAxis[0],mimeData->data("AxisAxis"),QCPAxis::SelectablePart::spAxis);
             }
         }
     }
 
-    slot_rescale();
+    //slot_rescale();
+    this->replot();
 }
 
 void Viewer1D::slot_svd()

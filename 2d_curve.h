@@ -142,12 +142,12 @@ public:
 
     std::vector<Eigen::Vector2d> getPoints();
 
-    QCPCurve * getCurvePtr()
+    MyQCPCurve * getCurvePtr()
     {
         return ptrCurve;
     }
 
-    QCPGraph * getGraphPtr()
+    MyQCPGraph * getGraphPtr()
     {
         return ptrGraph;
     }
@@ -172,7 +172,7 @@ public:
         this->s=fromQVector(other->getScalarField());
         this->l=other->getLabelField();
         this->legendname=other->name();
-        this->type= (std::is_same<QCPCurve, T>::value == true)? Curve2D::CURVE: Curve2D::GRAPH;
+        this->type= (std::is_same<MyQCPCurve, T>::value == true)? Curve2D::CURVE: Curve2D::GRAPH;
         this->style.mLineStyle=other->lineStyle();
         this->style.mScatterShape=other->scatterStyle().shape();
         this->style.mScatterSize=other->scatterStyle().size();
@@ -182,17 +182,17 @@ public:
 
         if(this->type==Curve2D::CURVE)
         {
-            ptrCurve=reinterpret_cast<QCPCurve*>(other);
+            ptrCurve=reinterpret_cast<MyQCPCurve*>(other);
             ptrGraph=nullptr;
         }
         else
         {
             ptrCurve=nullptr;
-            ptrGraph=reinterpret_cast<QCPGraph*>(other);
+            ptrGraph=reinterpret_cast<MyQCPGraph*>(other);
         }
     }
 
-    void fromQCPMap(QCPColorMap * other)
+    void fromQCPMap(MyQCPColorMap * other)
     {
         //work on
         this->mapParams=other->mapParams;
@@ -204,16 +204,16 @@ public:
         this->style.gradientType=other->colorScale()->gradient().getPreset();
     }
 
-    QCPColorMap* toQCPMap(QCustomPlot* plot)const
+    MyQCPColorMap* toQCPMap(MyQCustomPlot* plot)const
     {
         //work on
 
-        QCPColorMap * pqcp = nullptr;
+        MyQCPColorMap * pqcp = nullptr;
 
         if((getX().rows()==getY().rows()) &&
                 (getX().rows()==getScalarField().rows()))
         {
-            pqcp = new QCPColorMap(plot);
+            pqcp = new MyQCPColorMap(plot);
             pqcp->mapParams=mapParams;
             pqcp->mapParams.dataX=getX();
             pqcp->mapParams.dataY=getY();
@@ -252,11 +252,11 @@ public:
 
     //T = QCPCurve or QCPGraph
     template<typename T>
-    T* toQCP(QCustomPlot* plot)const
+    T* toQCP(MyQCustomPlot* plot)const
     {
         T* pqcp = nullptr;
 
-        if(std::is_same<QCPCurve, T>::value || std::is_same<QCPGraph, T>::value)
+        if(std::is_same<MyQCPCurve, T>::value || std::is_same<MyQCPGraph, T>::value)
         {
             pqcp = new T(plot);
             pqcp->setAlphaField(getQAlphaField());
@@ -298,7 +298,7 @@ public:
         return style;
     }
 
-    QCPColorMap::MapParams& getMapParams()
+    MyQCPColorMap::MapParams& getMapParams()
     {
         return mapParams;
     }
@@ -361,11 +361,11 @@ private:
     QString legendname;
     CurveType type;
 
-    QCPGraph * ptrGraph;
-    QCPCurve * ptrCurve;
+    MyQCPGraph * ptrGraph;
+    MyQCPCurve * ptrCurve;
 
     Style style;
-    QCPColorMap::MapParams mapParams;
+    MyQCPColorMap::MapParams mapParams;
 };
 
 #endif // CURVE2D_H

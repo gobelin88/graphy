@@ -102,9 +102,9 @@ void AppearanceDialog::configure(QList<QCPAbstractPlottable*> plottables)
     {
         setWindowTitle("Appearance of : "+plottables[0]->name());
 
-        QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(plottables[0]);
-        QCPGraph* currentgraph=dynamic_cast<QCPGraph*>(plottables[0]);
-        QCPColorMap* currentmap=dynamic_cast<QCPColorMap*>(plottables[0]);
+        MyQCPCurve* currentcurve=dynamic_cast<MyQCPCurve*>(plottables[0]);
+        MyQCPGraph* currentgraph=dynamic_cast<MyQCPGraph*>(plottables[0]);
+        MyQCPColorMap* currentmap=dynamic_cast<MyQCPColorMap*>(plottables[0]);
         if (currentmap)
         {
             cb_gradient->setCurrentIndex(currentmap->colorScale()->gradient().getPreset());

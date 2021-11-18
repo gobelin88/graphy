@@ -13,7 +13,7 @@
 #include "AppearanceDialog.h"
 #include "ModelCurveInterface.h"
 
-class Viewer1D:public QCustomPlot
+class Viewer1D:public MyQCustomPlot
 {
     Q_OBJECT
 public:
@@ -148,7 +148,7 @@ protected:
     QCPItemText* deltaLabel;
 
     //Model curve
-    QCPItemCustomCurve * modelCurve;
+    MyQCPItemCustomCurve * modelCurve;
     void createModelCurve();
     void showModelCurve();
     void hideModelCurve();

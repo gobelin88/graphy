@@ -805,7 +805,7 @@ void MainWindow::slot_plot_map_2D()
             curve.getMapParams().resolutionX= sb_resX->value();
             curve.getMapParams().resolutionY= sb_resY->value();
             curve.getMapParams().knn= sb_knn->value();
-            curve.getMapParams().mode=static_cast<QCPColorMap::MapParams::InterpolationMode>(cb_mode->currentIndex());
+            curve.getMapParams().mode=static_cast<MyQCPColorMap::MapParams::InterpolationMode>(cb_mode->currentIndex());
             curve.getStyle().gradientType=gradientType;
 
             std::cout<<data_z.rows()<<std::endl;
@@ -1415,7 +1415,10 @@ void MainWindow::slot_colourize()
 
                 if(!pb_clear->isChecked())
                 {
-                    if(cb_invert->isChecked())range.revert();
+                    if(cb_invert->isChecked())
+                    {
+                        std::swap(range.lower,range.upper);
+                    }
                     std::vector<QRgb> colors=cb_gradients->colourize(colData,range);
                     table->model()->colourizeCol(visualIndex,colors);
                 }

@@ -1,6 +1,7 @@
 #include "3d_customViewContainer.h"
 
 #include "QStackedLayout.h"
+#include <iostream>
 
 CustomViewContainer::CustomViewContainer(QWidget* container,QWidget*parent, Qt::WindowFlags flags)
     :QWidget(parent,flags)

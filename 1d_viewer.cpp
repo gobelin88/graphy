@@ -11,7 +11,7 @@
 
 #include "HeadComboBox.h"
 
-Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* parent):QCustomPlot(parent)
+Viewer1D::Viewer1D(const QMap<QString,QKeySequence>& shortcuts_map, QWidget* parent):MyQCustomPlot(parent)
 {
     colors<<QColor(160,0,0);
     colors<<QColor(0,160,0);
@@ -82,7 +82,7 @@ void Viewer1D::createModelCurve()
 {
     QPen pen;
     pen.setColor(QColor(Qt::red));
-    modelCurve=new QCPItemCustomCurve(this);
+    modelCurve=new MyQCPItemCustomCurve(this);
     modelCurve->setSelectable(false);
     modelCurve->setPen(pen);
 }
@@ -134,12 +134,12 @@ void Viewer1D::slot_addData(const Curve2D& datacurve)
     if (datacurve.getType()==Curve2D::GRAPH)
     {
         std::cout<<"graph"<<std::endl;
-        datacurve.toQCP<QCPGraph>(this);
+        datacurve.toQCP<MyQCPGraph>(this);
     }
     else if (datacurve.getType()==Curve2D::CURVE)
     {
         std::cout<<"curve"<<std::endl;
-        datacurve.toQCP<QCPCurve>(this);
+        datacurve.toQCP<MyQCPCurve>(this);
         axisRect()->setupFullAxesBox();
     }
     else if (datacurve.getType()==Curve2D::MAP)
@@ -920,39 +920,9 @@ QCPItemText * Viewer1D::createTextItem(double cx,double cy,QString markstr)
     return coordtextStr;
 }
 
-//void Viewer1D::keyPressEvent(QKeyEvent* event)
-//{
-//    QCustomPlot::keyPressEvent(event);
-//    modifiers |= event->modifiers();
-
-//    if (modifiers&Qt::ControlModifier && event->key()==Qt::Key_M)
-//    {
-//        state_mark = QString("mark");
-//        this->setCursor(Qt::PointingHandCursor);
-//    }
-
-//    if (modifiers&Qt::ControlModifier && event->key()==Qt::Key_L)
-//    {
-//        state_label = QInputDialog::getText(this, "New label", "New label :", QLineEdit::Normal,"");
-//        this->setCursor(Qt::PointingHandCursor);
-//    }
-
-//    if (modifiers&Qt::ControlModifier && event->key()==Qt::Key_F)
-//    {
-//        state_arrow = QString("first");
-//        this->setCursor(Qt::PointingHandCursor);
-//    }
-//}
-
-//void Viewer1D::keyReleaseEvent(QKeyEvent* event)
-//{
-//    QCustomPlot::keyReleaseEvent(event);
-//    modifiers &= event->modifiers();
-//}
-
 void Viewer1D::mouseMoveEvent(QMouseEvent* event)
 {
-    QCustomPlot::mouseMoveEvent(event);
+    MyQCustomPlot::mouseMoveEvent(event);
     double cx=this->xAxis->pixelToCoord(event->x());
     double cy=this->yAxis->pixelToCoord(event->y());
 
@@ -1087,7 +1057,7 @@ void Viewer1D::mouseMoveEvent(QMouseEvent* event)
 
 void Viewer1D::keyPressEvent(QKeyEvent* event)
 {
-    QCustomPlot::keyPressEvent(event);
+    MyQCustomPlot::keyPressEvent(event);
 
     modifiers=event->modifiers();
 
@@ -1096,7 +1066,7 @@ void Viewer1D::keyPressEvent(QKeyEvent* event)
 
 void Viewer1D::keyReleaseEvent(QKeyEvent* event)
 {
-    QCustomPlot::keyReleaseEvent(event);
+    MyQCustomPlot::keyReleaseEvent(event);
 
     modifiers=event->modifiers();
 
@@ -1106,7 +1076,7 @@ void Viewer1D::keyReleaseEvent(QKeyEvent* event)
 
 void Viewer1D::mousePressEvent(QMouseEvent* event)
 {
-    QCustomPlot::mousePressEvent(event);
+    MyQCustomPlot::mousePressEvent(event);
     if (event->button() == Qt::RightButton)
     {
         configurePopup();
@@ -2290,7 +2260,7 @@ QList<Curve2D> Viewer1D::getSelectedCurves()
 
     for (int i=0; i<plottableslist.size(); i++)
     {
-        QCPCurve* currentcurve=dynamic_cast<QCPCurve*>(plottableslist[i]);
+        MyQCPCurve* currentcurve=dynamic_cast<MyQCPCurve*>(plottableslist[i]);
         if (currentcurve)
         {
             Curve2D curve;
@@ -2298,7 +2268,7 @@ QList<Curve2D> Viewer1D::getSelectedCurves()
             curvelist.push_back(curve);
         }
 
-        QCPGraph* currentgraph=dynamic_cast<QCPGraph*>(plottableslist[i]);
+        MyQCPGraph* currentgraph=dynamic_cast<MyQCPGraph*>(plottableslist[i]);
         if (currentgraph)
         {
             Curve2D curve;
@@ -2306,7 +2276,7 @@ QList<Curve2D> Viewer1D::getSelectedCurves()
             curvelist.push_back(curve);
         }
 
-        QCPColorMap* currentmap=dynamic_cast<QCPColorMap*>(plottableslist[i]);
+        MyQCPColorMap* currentmap=dynamic_cast<MyQCPColorMap*>(plottableslist[i]);
         if (currentmap)
         {
             Curve2D curve;
@@ -2323,7 +2293,7 @@ void Viewer1D::slot_saveImageCurrentMap()
 {
     std::cout<<"slot_save_image_current_map"<<std::endl;
 
-    QList<QCPColorMap*> listMaps=getQCPListOf<QCPColorMap>(true);
+    QList<MyQCPColorMap*> listMaps=getQCPListOf<MyQCPColorMap>(true);
 
     for(int i=0;i<listMaps.size();i++)
     {
@@ -2382,7 +2352,7 @@ void Viewer1D::slot_saveImage()
 
 void Viewer1D::slot_rescale()
 {
-    QList<QCPCurve*> listcurves=getQCPListOf<QCPCurve>(false);
+    QList<MyQCPCurve*> listcurves=getQCPListOf<MyQCPCurve>(false);
     for (int i=0; i<listcurves.size(); i++)
     {
         if (listcurves[i]->getColorScale())
@@ -2391,7 +2361,7 @@ void Viewer1D::slot_rescale()
         }
     }
 
-    QList<QCPColorMap*> listmaps=getQCPListOf<QCPColorMap>(false);
+    QList<MyQCPColorMap*> listmaps=getQCPListOf<MyQCPColorMap>(false);
     for (int i=0; i<listmaps.size(); i++)
     {
         if (listmaps[i]->colorScale())
@@ -2419,7 +2389,7 @@ void Viewer1D::slot_copy()
         QApplication::clipboard()->setMimeData(mimeData);
     }
 
-    QList<QCPAxis*> listAxisLabel=this->selectedAxes(QCPAxis::SelectablePart::spAxisLabel);
+    QList<QCPAxis*> listAxisLabel=this->selectedAxesPart(QCPAxis::SelectablePart::spAxisLabel);
     if (listAxisLabel.size()>0)
     {
         QMimeData * mimeData=new QMimeData();
@@ -2429,7 +2399,7 @@ void Viewer1D::slot_copy()
         QApplication::clipboard()->setMimeData(mimeData);
     }
 
-    QList<QCPAxis*> listAxisAxis=selectedAxes(QCPAxis::SelectablePart::spAxis);
+    QList<QCPAxis*> listAxisAxis=selectedAxesPart(QCPAxis::SelectablePart::spAxis);
     if (listAxisAxis.size()>0)
     {
         std::cout<<"copy axis axis"<<std::endl;
@@ -2715,9 +2685,9 @@ void Viewer1D::slot_showSubGridType(int state)
 
 void Viewer1D::slot_setScalarFieldGradientType(int type)
 {
-    QList<QCPGraph*> graphslist=this->selectedGraphs();
-    QList<QCPCurve*> curveslist=this->getQCPListOf<QCPCurve>(true);
-    QList<QCPColorMap*> mapslist=this->getQCPListOf<QCPColorMap>(true);
+    QList<MyQCPGraph*> graphslist=this->getQCPListOf<MyQCPGraph>(true);
+    QList<MyQCPCurve*> curveslist=this->getQCPListOf<MyQCPCurve>(true);
+    QList<MyQCPColorMap*> mapslist=this->getQCPListOf<MyQCPColorMap>(true);
 
     for (int i=0; i<graphslist.size(); i++)
     {

@@ -147,12 +147,14 @@ target_sources(${TARGET_NAME} PRIVATE
     solidHarmonics/solidHarmonics.cpp
     icon.rc
     rsc.qrc
+    qcustomplot/qcustomplot.cpp
+    qcustomplot/qcustomplot.h
     )
 
 
 target_compile_features(${TARGET_NAME} PRIVATE cxx_std_17)
 string(REGEX REPLACE "/W[3|4]" "/w" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-target_compile_options(${TARGET_NAME} PRIVATE /bigobj /we4456 /wd4127 /DgraphyVersion=${GRAPHY_VERSION} /Dexprtk_disable_caseinsensitivity /D__STDCPP_WANT_MATH_SPEC_FUNCS__)
+target_compile_options(${TARGET_NAME} PRIVATE /bigobj /wd4127 /DgraphyVersion=${GRAPHY_VERSION} /Dexprtk_disable_caseinsensitivity /D__STDCPP_WANT_MATH_SPEC_FUNCS__)
 target_include_directories(${TARGET_NAME} PRIVATE ${EIGEN3_INCLUDE_DIR})
 target_link_libraries(${TARGET_NAME} PRIVATE Qt5::Widgets Qt5::3DCore Qt5::3DRender Qt5::3DExtras Qt5::Concurrent Qt5::PrintSupport)
 target_link_libraries (${TARGET_NAME} PRIVATE Eigen3::Eigen)

@@ -9,3 +9,7 @@ ui_*
 Makefile*
 release
 *.rc
+*qcustomplot/examples/*
+*qcustomplot/GPL.txt
+*qcustomplot/changelog.txt
+

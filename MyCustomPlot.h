@@ -148,11 +148,12 @@ public:
 
 class MyQCPCurve:public QCPCurve,public Hack
 {
+    Q_OBJECT
 public:
     MyQCPCurve(MyQCustomPlot * plot)
         :QCPCurve(plot->xAxis, plot->yAxis),Hack(plot)
     {
-
+        QObject::connect(scale,SIGNAL(dataRangeChanged(const QCPRange&)),this,SLOT(slot_setGradientRange()));
     }
 
     void drawScatterPlot(QCPPainter* painter,
@@ -441,6 +442,11 @@ public:
         }
     }
 
+public slots:
+    void slot_setGradientRange()
+    {
+        updateScalarFieldColor();
+    }
 
 };
 

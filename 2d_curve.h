@@ -106,7 +106,7 @@ public:
     void fit(Shape<Eigen::Vector2d>* model);
 
     //Fit a Polynome
-    Eigen::VectorXd fit(unsigned int order);
+    Eigen::VectorXd fit(unsigned int order, bool derivate);
     double at(const Eigen::VectorXd& A,double valuex);
     Eigen::VectorXd at(const Eigen::VectorXd& A,Eigen::VectorXd values);
     static QString getPolynomeString(const Eigen::VectorXd& C,unsigned int order);

@@ -148,50 +148,22 @@ void Viewer3D::createPopup()
     actPaste->setShortcut(QKeySequence("Ctrl+V"));
 
     ///////////////////////////////////////////////
-    QWidgetAction* actWidget=new QWidgetAction(popupMenu);
-    QWidget* widget=new QWidget;
-    actWidget->setDefaultWidget(widget);
+    QWidgetAction* parametersActionWidget=new QWidgetAction(popupMenu);
+    QWidget* parametersWidget=new QWidget;
+    parametersActionWidget->setDefaultWidget(parametersWidget);
 
     QGridLayout* gbox = new QGridLayout();
-
     cb_show_hide_grid=new QCheckBox("Show grid");
     cb_show_hide_grid->setChecked(grid3D->entity->isEnabled());
-
     cb_show_hide_axis=new QCheckBox("Show axis");
     cb_show_hide_axis->setChecked(true);
-
     cb_show_hide_labels=new QCheckBox("Show labels");
     cb_show_hide_labels->setChecked(true);
 
-    cb_use_custom_color=new QCheckBox("Use custom color");
-    cw_custom_color=new ColorWheel();
-    cw_custom_color->setMinimumSize(128,128);
-
-    sb_size=new QDoubleSpinBox;
-    sb_size->setRange(0.1,100);
-    sb_size->setSingleStep(0.1);
-
-    cb_mode=new QComboBox;
-    cb_mode->addItem("POINTS");
-    cb_mode->addItem("LINES");
-    cb_mode->addItem("LINES_LOOP");
-    cb_mode->addItem("LINE_STRIP");
-    cb_mode->addItem("TRIANGLES");
-    cb_mode->addItem("TRIANGLE_STRIP");
-
-    c_gradient=new MyGradientComboBox(nullptr);
-
-    gbox->addWidget(cb_mode,0,0);
-    gbox->addWidget(sb_size,0,1);
-    gbox->addWidget(c_gradient,1,0,1,2);
-    gbox->addWidget(cb_show_hide_grid,2,0,1,2);
-    gbox->addWidget(cb_show_hide_axis,3,0,1,2);
-    gbox->addWidget(cb_show_hide_labels,4,0,1,2);
-    gbox->addWidget(cb_use_custom_color,5,0);
-    gbox->addWidget(cw_custom_color,5,1);
-
-
-    widget->setLayout(gbox);
+    gbox->addWidget(cb_show_hide_grid,1,0);
+    gbox->addWidget(cb_show_hide_axis,2,0);
+    gbox->addWidget(cb_show_hide_labels,3,0);
+    parametersWidget->setLayout(gbox);
 
     ///////////////////////////////////////////////Action context
     customContainer->addAction(actCopy);
@@ -222,7 +194,7 @@ void Viewer3D::createPopup()
     menuView->addAction(actRescaleSelectedSameRanges);
     menuView->addAction(actRemoveSelected);
     menuView->addAction(actFullscreen);
-    menuParameters->addAction(actWidget);
+    menuParameters->addAction(parametersActionWidget);
     menuData->addMenu(menuFit);
     menuData->addMenu(menuProject);
     menuData->addMenu(menuScalarField);
@@ -258,8 +230,6 @@ void Viewer3D::createPopup()
     QObject::connect(actMove,SIGNAL(triggered()),this,SLOT(slot_movePointCloud()));
     QObject::connect(actSave,SIGNAL(triggered()),this,SLOT(slot_saveImage()));
     QObject::connect(actSaveRevolution,SIGNAL(triggered()),this,SLOT(slot_saveRevolution()));
-    QObject::connect(sb_size, SIGNAL(valueChanged(double)), this, SLOT(slot_setPointSize(double)));
-    QObject::connect(cb_mode, SIGNAL(currentIndexChanged(int) ), this, SLOT(slot_setPrimitiveType(int)));
     QObject::connect(actProjectMesh, SIGNAL(triggered() ), this, SLOT(slot_projectCustomMesh()));
     QObject::connect(actProjectPlan, SIGNAL(triggered() ), this, SLOT(slot_projectPlan()));
     QObject::connect(actProjectSphere, SIGNAL(triggered() ), this, SLOT(slot_projectSphere()));
@@ -267,9 +237,6 @@ void Viewer3D::createPopup()
     QObject::connect(actFitSphere, SIGNAL(triggered() ), this, SLOT(slot_fitSphere()));
     QObject::connect(actFitPlan, SIGNAL(triggered() ), this, SLOT(slot_fitPlan()));
     QObject::connect(actFitMesh, SIGNAL(triggered() ), this, SLOT(slot_fitCustomMesh()));
-    QObject::connect(c_gradient, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_setGradient(int)));
-    QObject::connect(cb_use_custom_color, SIGNAL(stateChanged(int)), this, SLOT(slot_useCustomColor(int)));
-    QObject::connect(cw_custom_color, SIGNAL(colorChanged(QColor)), this, SLOT(slot_setCustomColor(QColor)));
     QObject::connect(actFullscreen, SIGNAL(triggered(bool)), customContainer, SLOT(slot_fullscreen(bool)));
     QObject::connect(actCopy, SIGNAL(triggered()), this, SLOT(slot_copy()));
     QObject::connect(actPaste, SIGNAL(triggered()), this, SLOT(slot_paste()));
@@ -319,7 +286,15 @@ void Viewer3D::slot_paste()
             Cloud * cloud=new Cloud();
             QByteArray _data=mimeData->data("Cloud");
             cloud->fromByteArray(_data);
-            addCloudScalar(cloud,Qt3DRender::QGeometryRenderer::PrimitiveType::Points);
+
+            if(cloud->type()==Cloud::Type::TYPE_TRANSFORMS)
+            {
+                addCloudScalar(cloud,Qt3DRender::QGeometryRenderer::PrimitiveType::Lines);
+            }
+            else
+            {
+                addCloudScalar(cloud,Qt3DRender::QGeometryRenderer::PrimitiveType::Points);
+            }
         }
     }
 
@@ -860,11 +835,12 @@ void Viewer3D::slot_setGradient(int preset)
         Cloud3D * currentCloud3D=selectedClouds[i];
         Cloud * currentCloud=currentCloud3D->cloud;
 
-        if (currentCloud && currentCloud3D->buffer)
+        if (currentCloud)
         {
             currentCloud->setGradientPreset(static_cast<QCPColorGradient::GradientPreset>(preset));
             customContainer->getColorScale()->setGradient(currentCloud->getGradient());
-            currentCloud3D->buffer->setData(currentCloud->getBuffer(customContainer->getColorScale()->dataRange()));
+            //currentCloud3D->buffer->setData(currentCloud->getBuffer(customContainer->getColorScale()->dataRange()));
+            //currentCloud3D->update(customContainer->getColorScale()->dataRange());
             customContainer->getColorScalePlot()->rescaleAxes();
             customContainer->getColorScalePlot()->replot();
         }
@@ -913,7 +889,7 @@ void Viewer3D::addCloudScalar(Cloud* cloudData,
 
     currentCloud3D->geometryRenderer->setPrimitiveType(primitiveMode);
 
-    //if(getClouds(false).size()==0)
+
     {
         customContainer->getColorScale()->setGradient(currentCloud3D->cloud->getGradient());
 
@@ -926,9 +902,11 @@ void Viewer3D::addCloudScalar(Cloud* cloudData,
         labely->setText(customContainer->getYAxis()->label());
         labelz->setText(customContainer->getZAxis()->label());
     }
+
     referenceObjectEntity(currentCloud3D,cloudData->getName());
 
     setCloudPointSize(currentCloud3D,currentCloud3D->pointSize->value());
+
     slot_resetViewOnSameRanges();
 
     customContainer->adjustSize();
@@ -1110,7 +1088,15 @@ void Viewer3D::referenceObjectEntity(Base3D * base3D,QString name)
 
     if(dynamic_cast<Cloud3D*>(base3D)!=nullptr)
     {
-        item->setIcon(QIcon(QPixmap::fromImage(QImage(":/img/icons/points_cloud.png"))));
+        Cloud3D* pcloud=dynamic_cast<Cloud3D*>(base3D);
+        if(pcloud->cloud->type()==Cloud::Type::TYPE_TRANSFORMS)
+        {
+            item->setIcon(QIcon(QPixmap::fromImage(QImage(":/img/icons/transforms_cloud.png"))));
+        }
+        else
+        {
+            item->setIcon(QIcon(QPixmap::fromImage(QImage(":/img/icons/points_cloud.png"))));
+        }
     }
     else //Todo differents icon here
     {
@@ -1412,13 +1398,12 @@ void Viewer3D::slot_itemDoubleClicked(int index)
         Cloud3D * pcloud3D=dynamic_cast<Cloud3D *>(selectedObjects[i]);
         if(pcloud3D)
         {
-            bool ok;
-            QString newName = QInputDialog::getText(nullptr,"Set legend", "New cloud name:", QLineEdit::Normal, pcloud3D->cloud->getName(), &ok);
-            if (ok)
+            ConfigurationCloudDialog dialog(nullptr,pcloud3D,this);
+            int result=dialog.exec();
+            if (result == QDialog::Accepted)
             {
-                pcloud3D->cloud->setName(newName);
-                std::cout<<"index="<<index<<std::endl;
-                customContainer->getSelectionView()->item(index)->setText(newName);
+                dialog.apply();
+                customContainer->getSelectionView()->item(index)->setText(pcloud3D->cloud->getName());
             }
         }
 
@@ -1486,7 +1471,7 @@ void Viewer3D::slot_computeSolidHarmonics()
             SolidHarmonicsDecomposition shd(sb_order->value()+1,static_cast<SolidHarmonicsDecomposition::Mode>(cb_mode->currentData().toInt()));
             std::cout<<"Number of harmonics="<<shd.nb_params()<<std::endl;
 
-            shd.guessDecomposition(pcl->data());
+            shd.guessDecomposition(pcl->positionsAndScalarField());
             Eigen::MatrixXd C=shd.getC();
             std::cout<<"C="<<C<<std::endl;
 
@@ -1649,7 +1634,7 @@ void Viewer3D::slot_export()
             {
                 QTextStream ts(&file);
 
-                const std::vector<Eigen::Vector4d> & data=currentCloud->data();
+                const std::vector<Eigen::Vector4d> & data=currentCloud->positionsAndScalarField();
                 ts<<"<header>\n";
                 ts<<"X;Y;Z;S;\n";
                 ts<<"</header>\n";
@@ -1950,7 +1935,8 @@ void Viewer3D::updateScalarRanges(std::vector<Cloud3D*> & cloudsList)
 {
     for(unsigned int i=0;i<cloudsList.size();i++)
     {
-        cloudsList[i]->buffer->setData(cloudsList[i]->cloud->getBuffer(customContainer->getColorScale()->dataRange()));
+        //cloudsList[i]->buffer->setData(cloudsList[i]->cloud->getBuffer(customContainer->getColorScale()->dataRange()));
+        cloudsList[i]->update(customContainer->getColorScale()->dataRange());
     }
 }
 
@@ -2014,48 +2000,6 @@ void Viewer3D::mouseDoubleClickEvent(QMouseEvent* event)
     }
 }
 
-void Viewer3D::configurePopup()
-{
-    sb_size->blockSignals(true);
-    cb_mode->blockSignals(true);
-    c_gradient->blockSignals(true);
-    cb_use_custom_color->blockSignals(true);
-    cw_custom_color->blockSignals(true);
-
-    std::vector<Cloud3D*> selectedClouds=getClouds(true);
-
-    if(selectedClouds.size()>0)
-    {
-        Cloud3D * currentCloud3D=selectedClouds[0];
-        Cloud * currentCloud=currentCloud3D->cloud;
-
-        sb_size->setValue(static_cast<double>(currentCloud3D->pointSize->value()));
-        cb_mode->setCurrentIndex(static_cast<int>(currentCloud3D->geometryRenderer->primitiveType()));
-        c_gradient->setCurrentIndex(static_cast<int>(currentCloud->getGradientPreset()));
-
-        sb_size->setEnabled(true);
-        cb_mode->setEnabled(true);
-        cb_use_custom_color->setEnabled(true);
-        cw_custom_color->setEnabled(currentCloud3D->cloud->isCustomColorUsed());
-
-        cb_use_custom_color->setChecked(currentCloud3D->cloud->isCustomColorUsed());
-        cw_custom_color->setColor(currentCloud3D->cloud->getCustomColor());
-    }
-    else
-    {
-        sb_size->setEnabled(false);
-        cb_mode->setEnabled(false);
-        cb_use_custom_color->setEnabled(false);
-        cw_custom_color->setEnabled(false);
-    }
-
-    sb_size->blockSignals(false);
-    cb_mode->blockSignals(false);
-    c_gradient->blockSignals(false);
-    cb_use_custom_color->blockSignals(false);
-    cw_custom_color->blockSignals(false);
-}
-
 void Viewer3D::mousePressEvent(QMouseEvent* event)
 {
     if (event->buttons()==Qt::LeftButton)
@@ -2066,7 +2010,7 @@ void Viewer3D::mousePressEvent(QMouseEvent* event)
 
     if (event->button() == Qt::RightButton)
     {
-        configurePopup();
+        //configurePopup();
         popupMenu->exec(mapToGlobal(event->pos()));
     }
 }
@@ -2090,3 +2034,82 @@ void Viewer3D::wheelEvent(QWheelEvent* event)
 }
 
 
+//-------------------
+ConfigurationCloudDialog::ConfigurationCloudDialog(QWidget * parent,
+                                                   Cloud3D* pcloud3D,
+                                                   Viewer3D * pviewer3D)
+    :QDialog(parent)
+{
+    this->pcloud3D=pcloud3D;
+    setLocale(QLocale("C"));
+    setWindowTitle("Configure cloud");
+
+    le_name=new QLineEdit();
+
+    cb_use_custom_color=new QCheckBox("Use custom color");
+    cw_custom_color=new ColorWheel();
+    cw_custom_color->setMinimumSize(128,128);
+
+    sb_size=new QDoubleSpinBox;
+    sb_size->setRange(0.1,100);
+    sb_size->setSingleStep(0.1);
+
+    cb_mode=new QComboBox;
+    cb_mode->addItem("POINTS");
+    cb_mode->addItem("LINES");
+    cb_mode->addItem("LINES_LOOP");
+    cb_mode->addItem("LINE_STRIP");
+    cb_mode->addItem("TRIANGLES");
+    cb_mode->addItem("TRIANGLE_STRIP");
+
+    c_gradient=new MyGradientComboBox(nullptr);
+
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok| QDialogButtonBox::Cancel);
+
+    QObject::connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
+    QObject::connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
+
+    QGridLayout* gbox = new QGridLayout();
+    gbox->addWidget(le_name,0,0,1,2);
+    gbox->addWidget(c_gradient,1,0,1,2);
+    gbox->addWidget(cb_use_custom_color,2,0);
+    gbox->addWidget(cw_custom_color,2,1);
+    gbox->addWidget(sb_size,3,0);
+    gbox->addWidget(cb_mode,3,1);
+    gbox->addWidget(buttonBox,4,0,1,2);
+    setLayout(gbox);
+
+    configure();
+    connect(pviewer3D);
+}
+
+void ConfigurationCloudDialog::configure()
+{
+    le_name->setText(pcloud3D->cloud->getName());
+    le_name->setFocus();
+
+    sb_size->setValue(static_cast<double>(pcloud3D->pointSize->value()));
+    cb_mode->setCurrentIndex(static_cast<int>(pcloud3D->geometryRenderer->primitiveType()));
+    c_gradient->setCurrentIndex(static_cast<int>(pcloud3D->cloud->getGradientPreset()));
+
+    sb_size->setEnabled(true);
+    cb_mode->setEnabled(true);
+    cb_use_custom_color->setEnabled(true);
+
+    cb_use_custom_color->setChecked(pcloud3D->cloud->isCustomColorUsed());
+    cw_custom_color->setColor(pcloud3D->cloud->getCustomColor());
+}
+
+void ConfigurationCloudDialog::connect(Viewer3D * pviewer3D)
+{
+    QObject::connect(sb_size, SIGNAL(valueChanged(double)), pviewer3D, SLOT(slot_setPointSize(double)));
+    QObject::connect(cb_mode, SIGNAL(currentIndexChanged(int) ), pviewer3D, SLOT(slot_setPrimitiveType(int)));
+    QObject::connect(c_gradient, SIGNAL(currentIndexChanged(int)), pviewer3D, SLOT(slot_setGradient(int)));
+    QObject::connect(cb_use_custom_color, SIGNAL(stateChanged(int)), pviewer3D, SLOT(slot_useCustomColor(int)));
+    QObject::connect(cw_custom_color, SIGNAL(colorChanged(QColor)), pviewer3D, SLOT(slot_setCustomColor(QColor)));
+}
+
+void ConfigurationCloudDialog::apply()
+{
+    this->pcloud3D->cloud->setName(le_name->text());
+}

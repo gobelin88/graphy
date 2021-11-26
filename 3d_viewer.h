@@ -71,6 +71,8 @@ private:
 };
 
 
+
+
 /**
 @class View3D
 @brief Classe pour gestion d'affichage avec Qt3D
@@ -216,14 +218,11 @@ private:
     QAction* actCopy;
     QAction* actPaste;
 
-    QComboBox* c_gradient;
-    QDoubleSpinBox* sb_size;
-    QComboBox* cb_mode;
+
+
     QCheckBox * cb_show_hide_grid;
     QCheckBox * cb_show_hide_axis;
     QCheckBox * cb_show_hide_labels;
-    QCheckBox * cb_use_custom_color;
-    ColorWheel * cw_custom_color;
 
     //Misc
     QString current_filename;
@@ -236,5 +235,29 @@ private:
     void dispRanges();
     void updateScalarRanges(std::vector<Cloud3D*> & cloudsList);
     void updateRanges(std::vector<Cloud3D*> & cloudsList,bool same);
+};
+
+
+class ConfigurationCloudDialog:public QDialog
+{
+public:
+    ConfigurationCloudDialog(QWidget * parent,
+                             Cloud3D* pcloud3D,
+                             Viewer3D * pviewer3D);
+
+    void apply();
+
+private:
+    QLineEdit * le_name;
+    QComboBox* c_gradient;
+    QDoubleSpinBox* sb_size;
+    QComboBox* cb_mode;
+    ColorWheel * cw_custom_color;
+    QCheckBox * cb_use_custom_color;
+
+    void configure();
+    void connect(Viewer3D * pviewer3D);
+    Cloud3D* pcloud3D;
+
 };
 #endif // VIEW3D_H

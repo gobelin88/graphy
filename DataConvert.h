@@ -14,8 +14,15 @@ Eigen::VectorXd fromQVector(const QVector<double>& v);
 
 QString toString(const Eigen::MatrixXd& v);
 
+QDataStream & operator<<(QDataStream & ds,const Eigen::Quaterniond & q);
+QDataStream & operator>>(QDataStream & ds,Eigen::Quaterniond & q);
+
 QDataStream & operator<<(QDataStream & ds,const Eigen::VectorXd & v);
 QDataStream & operator>>(QDataStream & ds,Eigen::VectorXd & v);
+
+QDataStream & operator<<(QDataStream & ds,const Eigen::Vector3d & v);
+QDataStream & operator>>(QDataStream & ds,Eigen::Vector3d & v);
+
 QDataStream & operator<<(QDataStream & ds,const QVector<QString> & v);
 QDataStream & operator>>(QDataStream & ds,QVector<QString> & v);
 

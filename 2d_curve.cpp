@@ -339,25 +339,60 @@ Eigen::VectorXd Curve2D::at(const Eigen::VectorXd& C,Eigen::VectorXd valuex,Eige
     return valuesScalar;
 }
 
-Eigen::VectorXd Curve2D::fit(unsigned int order)
+Eigen::VectorXd Curve2D::fit(unsigned int order,bool derivate)
 {
-    Eigen::MatrixXd X=Eigen::MatrixXd::Zero(x.size(),order+1);
-
-    for (unsigned int n=0; n<order+1; ++n)
+    if(!derivate)
     {
-        for (int m=0; m<x.size(); ++m)
+        Eigen::MatrixXd X=Eigen::MatrixXd::Zero(x.size(),order+1);
+
+        for (unsigned int n=0; n<order+1; ++n)
         {
-            X(m,n)=(n==0)?1.0:((n==1)?x[m]:std::pow(x[m],n));
+            for (int m=0; m<x.size(); ++m)
+            {
+                X(m,n)=(n==0)?1.0:((n==1)?x[m]:std::pow(x[m],n));
+            }
         }
-    }
 
-    Eigen::VectorXd Y(x.size());
-    for (int i=0; i<x.size(); i++)
+        Eigen::VectorXd Y(x.size());
+        for (int i=0; i<x.size(); i++)
+        {
+            Y[i]=y[i];
+        }
+
+        return X.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(Y);
+    }
+    else
     {
-        Y[i]=y[i];
-    }
+        Eigen::MatrixXd X=Eigen::MatrixXd::Zero(x.size()*2,order+1);
 
-    return X.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(Y);
+        for (unsigned int n=0; n<order+1; ++n)
+        {
+            for (int m=0; m<x.size(); ++m)
+            {
+                X(m,n)=(n==0)?1.0:((n==1)?x[m]:std::pow(x[m],n));
+            }
+            for (int m=0; m<x.size(); ++m)
+            {
+                X(x.size()+m,n)=((n==0)?0.0:((n==1)?1:n*std::pow(x[m],n-1)));
+            }
+        }
+
+        Eigen::VectorXd Y(x.size()*2);
+        for (int i=0; i<x.size(); i++)
+        {
+            Y[i]=y[i];
+            if( (i-1)>=0 && (i+1)<x.size() )
+            {
+                Y[x.size()+i]=(y[i+1]-y[i-1])/(x[i+1]-x[i-1]);
+            }
+            else
+            {
+                Y[x.size()+i]=0.0;
+            }
+        }
+
+        return X.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(Y);
+    }
 }
 
 std::vector<Eigen::Vector2d> Curve2D::getPoints()

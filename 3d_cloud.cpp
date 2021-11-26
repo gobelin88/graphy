@@ -5,6 +5,7 @@ Cloud3D::Cloud3D(Cloud *cloud, Qt3DCore::QEntity* rootEntity)
 {
     this->cloud=cloud;
 
+
     geometry = new Qt3DRender::QGeometry(rootEntity);
     buffer = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer,geometry);
     positionAttribute = new Qt3DRender::QAttribute(geometry);
@@ -40,16 +41,25 @@ Cloud3D::Cloud3D(Cloud *cloud, Qt3DCore::QEntity* rootEntity)
     positionAttribute->setCount(static_cast<unsigned int>(cloud->size()));
     indexAttribute->setCount(static_cast<unsigned int>(cloud->size()));
 
-    buffer->setData(cloud->getBuffer(cloud->getScalarFieldRange()));
+    update(cloud->getScalarFieldRange());
 }
 
 void Cloud3D::update(QCPRange scalarFieldRange)
 {
     if(buffer)
     {
-        positionAttribute->setCount(static_cast<unsigned int>(cloud->size()));
-        indexAttribute->setCount(static_cast<unsigned int>(cloud->size()));
-        buffer->setData(cloud->getBuffer(scalarFieldRange));
+        if(cloud->type()==Cloud::Type::TYPE_TRANSFORMS)
+        {
+            positionAttribute->setCount(static_cast<unsigned int>(cloud->size()*6));
+            indexAttribute->setCount(static_cast<unsigned int>(cloud->size()*6));
+            buffer->setData(cloud->getBufferTransfos(0.01));
+        }
+        else
+        {
+            positionAttribute->setCount(static_cast<unsigned int>(cloud->size()));
+            indexAttribute->setCount(static_cast<unsigned int>(cloud->size()));
+            buffer->setData(cloud->getBuffer(scalarFieldRange));
+        }
     }
 }
 

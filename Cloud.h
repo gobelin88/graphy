@@ -10,9 +10,27 @@
 #define CLOUD_H
 
 /////////////////////////////////////////////////////////////////////////////////////////////
+struct DataCloudNode
+{
+    Eigen::Vector3d position;
+    Eigen::Quaterniond attitude;
+    double scalar;
+};
+
+QDataStream & operator>>(QDataStream & ds,std::vector<DataCloudNode> & nodes);
+QDataStream & operator<<(QDataStream & ds,std::vector<DataCloudNode> & nodes);
+
 class Cloud
 {
+
 public:
+
+    enum Type
+    {
+        TYPE_POINTS,
+        TYPE_TRANSFORMS,
+    };
+
     Cloud();
 
     Cloud(std::vector<Eigen::Vector3d> plist,
@@ -49,6 +67,25 @@ public:
           QString labelZ,
           QString labelS);
 
+    Cloud(const Eigen::VectorXd& x,
+          const Eigen::VectorXd& y,
+          const Eigen::VectorXd& z,
+          const std::vector<Eigen::Quaterniond> & attitudes,
+          QString labelX,
+          QString labelY,
+          QString labelZ);
+
+    Cloud(const Eigen::VectorXd& x,
+          const Eigen::VectorXd& y,
+          const Eigen::VectorXd& z,
+          const Eigen::VectorXd& qw,
+          const Eigen::VectorXd& qx,
+          const Eigen::VectorXd& qy,
+          const Eigen::VectorXd& qz,
+          QString labelX,
+          QString labelY,
+          QString labelZ);
+
     ~Cloud();
 
     void setName(QString name);
@@ -58,23 +95,29 @@ public:
 
     //Data
     std::vector<Eigen::Vector3d> positions()const;
-    const std::vector<Eigen::Vector4d> & data()const;
+    std::vector<Eigen::Vector4d> positionsAndScalarField()const;
+    const std::vector<DataCloudNode> & data()const;
+
     int size() const;
 
     QCPRange getXRange();
     QCPRange getYRange();
     QCPRange getZRange();
     QCPRange getScalarFieldRange();
-    std::vector<QRgb>& getColors();
     QRgb getCustomColor(){return customColor;}
     void setCustomColor(QRgb _customColor){this->customColor=_customColor;}
+
     bool isCustomColorUsed(){return useCustomColor;}
     void setUseCustomColor(bool value){useCustomColor=value;}
+    Type type(){return cloudType;}
+
     void setGradientPreset(QCPColorGradient::GradientPreset preset);
     const QCPColorGradient& getGradient();
     QCPColorGradient::GradientPreset getGradientPreset();
     Eigen::Vector3d getCenter();
+
     QByteArray getBuffer(QCPRange range);
+    QByteArray getBufferTransfos(double size=1.0);
 
     QString getLabelX();
     QString getLabelY();
@@ -101,9 +144,7 @@ public:
 private:
 
     //QCPRange getRange(const Eigen::VectorXd& v);
-
-    std::vector<Eigen::Vector4d> pts;
-    std::vector<QRgb> colors;
+    std::vector<DataCloudNode> nodes;
 
     QCPColorGradient gradient;
 
@@ -119,6 +160,7 @@ private:
 
     QRgb customColor;
     bool useCustomColor;
+    Type cloudType;
 
     void init();
     void calcRanges();

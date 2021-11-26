@@ -59,6 +59,17 @@ Eigen::VectorXd fromQVector(const QVector<double>& v_q)
     return v;
 }
 
+QDataStream & operator<<(QDataStream & ds,const Eigen::Quaterniond & q)
+{
+    ds<<q.w()<<q.x()<<q.y()<<q.z();
+    return ds;
+}
+QDataStream & operator>>(QDataStream & ds,Eigen::Quaterniond & q)
+{
+    ds>>q.w()>>q.x()>>q.y()>>q.z();
+    return ds;
+}
+
 QDataStream & operator<<(QDataStream & ds,const Eigen::VectorXd & v)
 {
     ds<<v.rows();
@@ -75,6 +86,24 @@ QDataStream & operator>>(QDataStream & ds,Eigen::VectorXd & v)
     ds>>nbRows;
     v.resize(nbRows);
     for(int i=0;i<v.rows();i++)
+    {
+        ds>>v[i];
+    }
+    return ds;
+}
+
+QDataStream & operator<<(QDataStream & ds,const Eigen::Vector3d & v)
+{
+    for(int i=0;i<3;i++)
+    {
+        ds<<v[i];
+    }
+    return ds;
+}
+
+QDataStream & operator>>(QDataStream & ds,Eigen::Vector3d & v)
+{
+    for(int i=0;i<3;i++)
     {
         ds>>v[i];
     }

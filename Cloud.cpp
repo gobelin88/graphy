@@ -2,6 +2,7 @@
 
 void Cloud::init()
 {
+    cloudType=TYPE_POINTS;
     useCustomColor=false;
     customColor=qRgb(0,0,0);
     setGradientPreset(QCPColorGradient::gpPolar);
@@ -15,6 +16,11 @@ void Cloud::init()
 
 Cloud::Cloud()
 {
+    if(sizeof(DataCloudNode)%sizeof(double)!=0)
+    {
+        std::cout<<"Bad sizeof(DataNode)="<<sizeof(DataCloudNode)<<" sizeof(double)="<<sizeof(double)<<std::endl;
+    }
+
     rangeX=QCPRange(-1,1);
     rangeY=QCPRange(-1,1);
     rangeZ=QCPRange(-1,1);
@@ -33,9 +39,12 @@ Cloud::Cloud(std::vector<Eigen::Vector3d> plist,
       QString labelY,
       QString labelZ)
 {
+    nodes.resize(plist.size());
     for (int i=0; i<plist.size(); i++)
     {
-        pts.push_back(Eigen::Vector4d(plist[i][0],plist[i][1],plist[i][2],0.0));
+        nodes[i].position=plist[i];
+        nodes[i].scalar=0;
+        nodes[i].attitude=Eigen::Quaterniond(1,0,0,0);
     }
 
     calcRanges();
@@ -57,18 +66,17 @@ Cloud::Cloud(std::vector<Eigen::Vector3d> plist,
 {
     if(scalarField.rows()==plist.size())
     {
+        nodes.resize(plist.size());
         for (int i=0; i<plist.size(); i++)
         {
-            pts.push_back(Eigen::Vector4d(plist[i][0],plist[i][1],plist[i][2],scalarField[i]));
+            nodes[i].position=plist[i];
+            nodes[i].scalar=scalarField[i];
+            nodes[i].attitude=Eigen::Quaterniond(1,0,0,0);
         }
     }
     else
     {
         std::cout<<"Error : Bad scalarfield size="<<scalarField.rows()<<" expected="<<plist.size()<<std::endl;
-        for (int i=0; i<plist.size(); i++)
-        {
-            pts.push_back(Eigen::Vector4d(plist[i][0],plist[i][1],plist[i][2],0));
-        }
     }
 
     calcRanges();
@@ -87,7 +95,13 @@ Cloud::Cloud(std::vector<Eigen::Vector4d> plist,
       QString labelZ,
       QString labelS)
 {
-    pts=plist;
+    nodes.resize(plist.size());
+    for (int i=0; i<plist.size(); i++)
+    {
+        nodes[i].position=plist[i].head<3>();
+        nodes[i].scalar=plist[i][3];
+        nodes[i].attitude=Eigen::Quaterniond(1,0,0,0);
+    }
 
     calcRanges();
 
@@ -108,9 +122,12 @@ Cloud::Cloud(const Eigen::VectorXd& x,
 {
     if(x.rows()==y.rows() && x.rows()==z.rows())
     {
+        nodes.resize(x.size());
         for (int i=0; i<x.size(); i++)
         {
-            pts.push_back(Eigen::Vector4d(x[i],y[i],z[i],0.0));
+             nodes[i].position=Eigen::Vector3d(x[i],y[i],z[i]);
+             nodes[i].scalar=0;
+             nodes[i].attitude=Eigen::Quaterniond(1,0,0,0);
         }
     }
     else
@@ -129,17 +146,110 @@ Cloud::Cloud(const Eigen::VectorXd& x,
 }
 
 Cloud::Cloud(const Eigen::VectorXd& x,
+          const Eigen::VectorXd& y,
+          const Eigen::VectorXd& z,
+          const std::vector<Eigen::Quaterniond> & attitudes,
+          QString labelX,
+          QString labelY,
+          QString labelZ)
+{
+    if(x.rows()==y.rows() && x.rows()==z.rows() && x.rows()==attitudes.size())
+    {
+        for (int i=0; i<x.size(); i++)
+        {
+            nodes.resize(x.size());
+            for (int i=0; i<x.size(); i++)
+            {
+                 nodes[i].position=Eigen::Vector3d(x[i],y[i],z[i]);
+                 nodes[i].scalar=0.0;
+                 nodes[i].attitude=attitudes[i];
+            }
+        }
+
+
+    }
+    else
+    {
+        std::cout<<"Error : Bad y,z or attitudes size="<<y.rows()<<" "<<z.rows()<<" "<<attitudes.size()<<" expected="<<x.size()<<std::endl;
+    }
+
+    calcRanges();
+
+    this->labelX =labelX;
+    this->labelY =labelY;
+    this->labelZ =labelZ;
+
+    init();
+    cloudType=TYPE_TRANSFORMS;
+}
+
+Cloud::Cloud(const Eigen::VectorXd& x,
+            const Eigen::VectorXd& y,
+            const Eigen::VectorXd& z,
+            const Eigen::VectorXd& qw,
+            const Eigen::VectorXd& qx,
+            const Eigen::VectorXd& qy,
+            const Eigen::VectorXd& qz,
+          QString labelX,
+          QString labelY,
+          QString labelZ)
+{
+    if(x.rows()==y.rows() && x.rows()==z.rows() &&
+       x.rows()==qw.rows() && x.rows()==qx.rows() && x.rows()==qy.rows() && x.rows()==qz.rows())
+    {
+        for (int i=0; i<x.size(); i++)
+        {
+            nodes.resize(x.size());
+            for (int i=0; i<x.size(); i++)
+            {
+                 nodes[i].position=Eigen::Vector3d(x[i],y[i],z[i]);
+                 nodes[i].scalar=0.0;
+                 nodes[i].attitude=Eigen::Quaterniond(qw[i],qx[i],qy[i],qz[i]);
+            }
+        }
+
+
+    }
+    else
+    {
+        std::cout<<"Error : Bad y,z,attitudes size="<<y.rows()<<" "<<z.rows()<<" "<<qw.rows()<<" expected="<<x.size()<<std::endl;
+    }
+
+    calcRanges();
+
+    this->labelX =labelX;
+    this->labelY =labelY;
+    this->labelZ =labelZ;
+
+    init();
+    cloudType=TYPE_TRANSFORMS;
+}
+
+Cloud::Cloud(const Eigen::VectorXd& x,
              const Eigen::VectorXd& y,
              const Eigen::VectorXd& z,
-             const Eigen::VectorXd& s,
+             const Eigen::VectorXd& scalarField,
              QString labelX,
              QString labelY,
              QString labelZ,
              QString labelS)
 {
-    for (int i=0; i<x.size(); i++)
+    if(x.rows()==y.rows() && x.rows()==z.rows() && x.rows()==scalarField.rows())
     {
-        pts.push_back(Eigen::Vector4d(x[i],y[i],z[i],s[i]));
+        for (int i=0; i<x.size(); i++)
+        {
+            nodes.resize(x.size());
+            for (int i=0; i<x.size(); i++)
+            {
+                 nodes[i].position=Eigen::Vector3d(x[i],y[i],z[i]);
+                 nodes[i].scalar=scalarField[i];
+                 nodes[i].attitude=Eigen::Quaterniond(1,0,0,0);
+            }
+        }
+    }
+    else
+    {
+        std::cout<<"Error : Bad y,z,s size="<<y.rows()<<" "<<z.rows()<<" "<<scalarField.rows()<<" expected="<<x.size()<<std::endl;
     }
 
     calcRanges();
@@ -204,12 +314,20 @@ void Cloud::calcRanges()
     min.setConstant( DBL_MAX);
     max.setConstant(-DBL_MAX);
 
-    for(int i=0;i<pts.size();i++)
+    for(int i=0;i<nodes.size();i++)
     {
         for(int j=0;j<4;j++)
         {
-            if(pts[i][j]<min[j]){min[j]=pts[i][j];}
-            if(pts[i][j]>max[j]){max[j]=pts[i][j];}
+            if(j!=3)
+            {
+                if(nodes[i].position[j]<min[j]){min[j]=nodes[i].position[j];}
+                if(nodes[i].position[j]>max[j]){max[j]=nodes[i].position[j];}
+            }
+            else
+            {
+                if(nodes[i].scalar<min[j]){min[j]=nodes[i].scalar;}
+                if(nodes[i].scalar>max[j]){max[j]=nodes[i].scalar;}
+            }
         }
     }
 
@@ -242,23 +360,29 @@ QCPRange Cloud::getScalarFieldRange()
     return rangeS;
 }
 
-std::vector<QRgb>& Cloud::getColors()
+std::vector<Eigen::Vector4d> Cloud::positionsAndScalarField()const
 {
-    return colors;
-}
+    std::vector<Eigen::Vector4d> positionsAndScalarField(nodes.size());
 
-const std::vector<Eigen::Vector4d> & Cloud::data()const
-{
-    return pts;
+    for(int i=0;i<nodes.size();i++)
+    {
+        positionsAndScalarField[i]=Eigen::Vector4d(
+                nodes[i].position[0],
+                nodes[i].position[1],
+                nodes[i].position[2],
+                nodes[i].scalar);
+    }
+
+    return positionsAndScalarField;
 }
 
 std::vector<Eigen::Vector3d> Cloud::positions()const
 {
-    std::vector<Eigen::Vector3d> positions(pts.size());
+    std::vector<Eigen::Vector3d> positions(nodes.size());
 
-    for(int i=0;i<pts.size();i++)
+    for(int i=0;i<nodes.size();i++)
     {
-        positions[i]=pts[i].head<3>();
+        positions[i]=nodes[i].position;
     }
 
     return positions;
@@ -266,12 +390,20 @@ std::vector<Eigen::Vector3d> Cloud::positions()const
 
 int Cloud::size()const
 {
-    return static_cast<int>(pts.size());
+    return static_cast<int>(nodes.size());
 }
 
 void Cloud::operator=(const Cloud& other)
 {
-    this->pts=other.pts;
+    this->nodes=other.nodes;
+    this->cloudType=other.cloudType;
+    this->useCustomColor=other.useCustomColor;
+
+    this->labelX  = other.labelX;
+    this->labelY  = other.labelY;
+    this->labelZ  = other.labelZ;
+    this->labelS  = other.labelS;
+    this->name    = other.name;
 }
 
 Eigen::Vector3d Cloud::getCenter()
@@ -286,14 +418,14 @@ void Cloud::getBarycenterAndBoundingRadius(
     Barycenter=Eigen::Vector3d(0,0,0);
     boundingRadius=0.0;
 
-    if (pts.size()>0)
+    if (nodes.size()>0)
     {
         Barycenter=getBarycenter();
 
 
-        for (int i=0; i<pts.size(); i++)
+        for (int i=0; i<nodes.size(); i++)
         {
-            double radius=(pts[i].head<3>()-Barycenter).norm();
+            double radius=(nodes[i].position-Barycenter).norm();
 
             if (radius>boundingRadius)
             {
@@ -307,13 +439,13 @@ Eigen::Vector3d Cloud::getBarycenter()
 {
     Eigen::Vector3d Barycenter(0,0,0);
 
-    if (pts.size()>0)
+    if (nodes.size()>0)
     {
-        for (int i=0; i<pts.size(); i++)
+        for (int i=0; i<nodes.size(); i++)
         {
-            Barycenter+=pts[i].head<3>();
+            Barycenter+=nodes[i].position;
         }
-        Barycenter/=pts.size();
+        Barycenter/=nodes.size();
     }
     return Barycenter;
 }
@@ -337,7 +469,7 @@ QString Cloud::getLabelS()
 
 void Cloud::fit(Shape<Eigen::Vector4d>* model,int it,double xtol)
 {
-    model->fit(pts,it,xtol);
+    model->fit(positionsAndScalarField(),it,xtol);
 }
 
 void Cloud::fit(Shape<Eigen::Vector3d>* model,int it,double xtol)
@@ -347,51 +479,54 @@ void Cloud::fit(Shape<Eigen::Vector3d>* model,int it,double xtol)
 
 void Cloud::project(Shape<Eigen::Vector3d>* model)
 {
-    for(int i=0;i<pts.size();i++)
+    for(int i=0;i<nodes.size();i++)
     {
-        pts[i].head<3>()-=model->delta(pts[i].head<3>());
+        nodes[i].position-=model->delta(nodes[i].position);
     }
 }
 
 void Cloud::subSample(unsigned int nbPoints)
 {
-    int nbpoints_to_remove=(int)pts.size()-(int)nbPoints;
+    int nbpoints_to_remove=(int)nodes.size()-(int)nbPoints;
 
     for(int i=0;i<nbpoints_to_remove;i++)
     {
-        int random_index=rand()%pts.size();
-        pts.erase (pts.begin()+random_index);
+        int random_index=rand()%nodes.size();
+        nodes.erase (nodes.begin()+random_index);
     }
     calcRanges();
 }
 
 void Cloud::move(const Eigen::Matrix3d & R, const Eigen::Vector3d & T,double scale)
 {
-    for(int i=0;i<pts.size();i++)
+    for(int i=0;i<nodes.size();i++)
     {
-        pts[i].head<3>()=scale*(R*pts[i].head<3>()+T);
+        nodes[i].position=scale*(R*nodes[i].position+T);
     }
     calcRanges();
 }
 
 QByteArray Cloud::getBuffer(QCPRange range)
 {
+    std::vector<QRgb> colors;
+
     if(!useCustomColor)
-    {
-        const double * colordata=(const double *)pts.data()+3;
-        colors.resize(pts.size());
-        gradient.colorize(colordata,range,colors.data(),static_cast<int>(pts.size()),4,false);
+    {        
+        const double * colordata=&nodes[0].scalar;//(const double *)nodes.data()+7;
+        colors.resize(nodes.size());
+        unsigned int dataFactor=sizeof(DataCloudNode)/sizeof(double);
+        gradient.colorize(colordata,range,colors.data(),static_cast<int>(nodes.size()),dataFactor,false);
     }
 
     QByteArray bufferBytes;
-    bufferBytes.resize(2 * 3 * ( static_cast<int>(pts.size()) ) * sizeof(float));
+    bufferBytes.resize(2 * 3 * ( static_cast<int>(nodes.size()) ) * sizeof(float));
     float* vertices = reinterpret_cast<float*>(bufferBytes.data());
 
-    for (int i=0; i<pts.size(); i++)
+    for (int i=0; i<nodes.size(); i++)
     {
-        *vertices++ = pts[i][0];
-        *vertices++ = pts[i][1];
-        *vertices++ = pts[i][2];
+        *vertices++ = nodes[i].position[0];
+        *vertices++ = nodes[i].position[1];
+        *vertices++ = nodes[i].position[2];
 
         if(useCustomColor)
         {
@@ -410,6 +545,60 @@ QByteArray Cloud::getBuffer(QCPRange range)
     return bufferBytes;
 }
 
+QByteArray Cloud::getBufferTransfos(double size)
+{
+    QByteArray bufferBytes;
+    bufferBytes.resize(6 * 2 * 3 * ( static_cast<int>(nodes.size()) ) * sizeof(float));
+    float* vertices = reinterpret_cast<float*>(bufferBytes.data());
+
+    for (int i=0; i<nodes.size(); i++)
+    {
+        //X
+        *vertices++ = nodes[i].position[0];
+        *vertices++ = nodes[i].position[1];
+        *vertices++ = nodes[i].position[2];
+        *vertices++ = 255.0;
+        *vertices++ = 0;
+        *vertices++ = 0;
+        *vertices++ = nodes[i].position[0]+size;
+        *vertices++ = nodes[i].position[1];
+        *vertices++ = nodes[i].position[2];
+        *vertices++ = 255.0;
+        *vertices++ = 0;
+        *vertices++ = 0;
+
+        //Y
+        *vertices++ = nodes[i].position[0];
+        *vertices++ = nodes[i].position[1];
+        *vertices++ = nodes[i].position[2];
+        *vertices++ = 0;
+        *vertices++ = 255;
+        *vertices++ = 0;
+        *vertices++ = nodes[i].position[0];
+        *vertices++ = nodes[i].position[1]+size;
+        *vertices++ = nodes[i].position[2];
+        *vertices++ = 0;
+        *vertices++ = 255;
+        *vertices++ = 0;
+
+        //Z
+        *vertices++ = nodes[i].position[0];
+        *vertices++ = nodes[i].position[1];
+        *vertices++ = nodes[i].position[2];
+        *vertices++ = 0;
+        *vertices++ = 0;
+        *vertices++ = 0;
+        *vertices++ = nodes[i].position[0];
+        *vertices++ = nodes[i].position[1];
+        *vertices++ = nodes[i].position[2]+size;
+        *vertices++ = 0;
+        *vertices++ = 0;
+        *vertices++ = 255;
+    }
+
+    return bufferBytes;
+}
+
 QByteArray Cloud::toByteArray()
 {
     QByteArray data;
@@ -417,7 +606,9 @@ QByteArray Cloud::toByteArray()
     buffer.open(QIODevice::WriteOnly);
     QDataStream ds(&buffer);
 
-    ds<<pts;
+    ds<<nodes;
+    ds<<static_cast<int>(cloudType);
+    ds<<useCustomColor;
     ds<<name;
     ds<<labelX;
     ds<<labelY;
@@ -439,7 +630,9 @@ void Cloud::fromByteArray(QByteArray data)
     buffer.open(QIODevice::ReadOnly);
     QDataStream ds(&buffer);
 
-    ds>>pts;
+    ds>>nodes;
+    int cloudTypei;ds>>cloudTypei;cloudType=(Type)(cloudTypei);
+    ds>>useCustomColor;
     ds>>name;
     ds>>labelX;
     ds>>labelY;
@@ -451,4 +644,29 @@ void Cloud::fromByteArray(QByteArray data)
     ds>>rangeS.lower>>rangeS.upper;
 
     buffer.close();
+}
+
+QDataStream & operator>>(QDataStream & ds, std::vector<DataCloudNode> & nodes)
+{
+    size_t sz;
+    ds>>sz;
+    nodes.resize(sz);
+    for(int i=0;i<nodes.size();i++)
+    {
+        ds>>nodes[i].position;
+        ds>>nodes[i].attitude;
+        ds>>nodes[i].scalar;
+    }
+    return ds;
+}
+QDataStream & operator<<(QDataStream & ds,std::vector<DataCloudNode> & nodes)
+{
+    ds<<nodes.size();
+    for(int i=0;i<nodes.size();i++)
+    {
+        ds<<nodes[i].position;
+        ds<<nodes[i].attitude;
+        ds<<nodes[i].scalar;
+    }
+    return ds;
 }

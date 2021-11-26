@@ -878,7 +878,7 @@ void MainWindow::slot_plot_cloud_3D()
 
     QModelIndexList id_list=table->selectionModel()->selectedColumns();
 
-    if (id_list.size()==0 || id_list.size()%3==0 || id_list.size()%4==0)
+    if (id_list.size()==0 || id_list.size()%3==0 || id_list.size()%4==0 || id_list.size()%7==0)
     {
         Viewer3D* view3d=new Viewer3D(shortcuts,nullptr);
 
@@ -931,6 +931,26 @@ void MainWindow::slot_plot_cloud_3D()
                 view3d->addCloudScalar(cloud,Qt3DRender::QGeometryRenderer::Points);
             }
         }
+        else if (id_list.size()%7==0)
+        {
+            for(int i=0;i<id_list.size();i+=7)
+            {
+                Eigen::VectorXd data_x=table->getLogicalColDataDouble(id_list[i].column());
+                Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[i+1].column());
+                Eigen::VectorXd data_z=table->getLogicalColDataDouble(id_list[i+2].column());
+                Eigen::VectorXd data_qw=table->getLogicalColDataDouble(id_list[i+3].column());
+                Eigen::VectorXd data_qx=table->getLogicalColDataDouble(id_list[i+4].column());
+                Eigen::VectorXd data_qy=table->getLogicalColDataDouble(id_list[i+5].column());
+                Eigen::VectorXd data_qz=table->getLogicalColDataDouble(id_list[i+6].column());
+                cloud=new Cloud(data_x,data_y,data_z,
+                                data_qw,data_qx,data_qy,data_qz,
+                                table->getLogicalColName(id_list[i].column()),
+                                table->getLogicalColName(id_list[i+1].column()),
+                                table->getLogicalColName(id_list[i+2].column()));
+
+                view3d->addCloudScalar(cloud,Qt3DRender::QGeometryRenderer::Lines);
+            }
+        }
 
         //mdiArea->addSubWindow(view3d->getContainer(),Qt::WindowStaysOnTopHint);
         view3d->getContainer()->show();
@@ -938,7 +958,7 @@ void MainWindow::slot_plot_cloud_3D()
     }
     else
     {
-        QMessageBox::information(this,"Information","Please select 3 columns (x,y,z) or 4 columns (x,y,z,scalar)");
+        QMessageBox::information(this,"Information","Please select 3 columns (x,y,z) or 4 columns (x,y,z,scalar) or 7 columns (x,y,z,qw,qx,qy,qz)");
     }
 }
 

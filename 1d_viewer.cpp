@@ -1953,6 +1953,9 @@ void Viewer1D::slot_fitPolynomial()
         getOrder->setValue(1);
         getOrder->setPrefix("Order=");
 
+        QCheckBox * cb_derivate=new QCheckBox("Fit Derivate",this);
+        cb_derivate->setChecked(false);
+
         QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
                                                            | QDialogButtonBox::Cancel);
 
@@ -1961,6 +1964,7 @@ void Viewer1D::slot_fitPolynomial()
 
         gbox->addWidget(label_eqn,0,0);
         gbox->addWidget(getOrder,1,0);
+        gbox->addWidget(cb_derivate,2,0);
         gbox->addWidget(buttonBox,3,0);
 
         dialog->setLayout(gbox);
@@ -1972,7 +1976,7 @@ void Viewer1D::slot_fitPolynomial()
             int order=getOrder->value();
             for (int i=0; i<curves.size(); i++)
             {
-                Eigen::VectorXd C=curves[i].fit(order);
+                Eigen::VectorXd C=curves[i].fit(order,cb_derivate->isChecked());
                 Eigen::VectorXd X=curves[i].getLinX(1000);
                 Eigen::VectorXd Y=curves[i].at(C,X);
 

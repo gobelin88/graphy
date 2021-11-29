@@ -360,6 +360,11 @@ QCPRange Cloud::getScalarFieldRange()
     return rangeS;
 }
 
+const std::vector<DataCloudNode> & Cloud::data()const
+{
+    return nodes;
+}
+
 std::vector<Eigen::Vector4d> Cloud::positionsAndScalarField()const
 {
     std::vector<Eigen::Vector4d> positionsAndScalarField(nodes.size());

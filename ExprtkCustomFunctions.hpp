@@ -555,13 +555,29 @@ struct solidHarmonicsRegularFunction : public exprtk::ifunction<T>
         : exprtk::ifunction<T>(5)
     {
         exprtk::disable_has_side_effects(*this);
+        cart=true;
+    }
+
+    void setMode(bool cart)
+    {
+        this->cart=cart;
     }
 
     inline T operator()(const T& x,const T& y,const T& z,const T& l,const T& m)
     {
-        return T(solidHarmonicsR(x.real(),y.real(),z.real(),
-                               std::round(l.real()),std::round(m.real())));
+        if(cart)
+        {
+            return T(cart_solidHarmonicsR(x.real(),y.real(),z.real(),
+                                   std::round(l.real()),std::round(m.real())));
+        }
+        else
+        {
+            return T(sph_solidHarmonicsR(x.real(),y.real(),z.real(),
+                                   std::round(l.real()),std::round(m.real())));
+        }
     }
+
+    bool cart;
 };
 
 template <typename T>
@@ -573,13 +589,29 @@ struct solidHarmonicsIrregularFunction : public exprtk::ifunction<T>
         : exprtk::ifunction<T>(5)
     {
         exprtk::disable_has_side_effects(*this);
+        cart=true;
+    }
+
+    void setMode(bool cart)
+    {
+        this->cart=cart;
     }
 
     inline T operator()(const T& x,const T& y,const T& z,const T& l,const T& m)
     {
-        return T(solidHarmonicsI(x.real(),y.real(),z.real(),
-                               std::round(l.real()),std::round(m.real())));
+        if(cart)
+        {
+            return T(cart_solidHarmonicsI(x.real(),y.real(),z.real(),
+                                   std::round(l.real()),std::round(m.real())));
+        }
+        else
+        {
+            return T(sph_solidHarmonicsI(x.real(),y.real(),z.real(),
+                                   std::round(l.real()),std::round(m.real())));
+        }
     }
+
+    bool cart;
 };
 
 template <typename T>

@@ -187,11 +187,10 @@ private:
     QMenu* popupMenu;
     QMenu* menuParameters;
     QMenu* menuFit;
-    QMenu * menuProject;
+    QMenu * menuProjectOn;
     QMenu * menuScalarField;
-    QMenu * menuTools;
     QMenu * menuView;
-    QMenu * menuData;
+    QMenu * menuPointCloud;
     QMenu * menuMesh;
 
     QAction* actSave;
@@ -205,7 +204,7 @@ private:
     QAction * actProjectMesh;
     QAction * actRandomSubSample;
     QAction * actMove;
-    QAction * actFitPointCloud;
+    QAction * actRegisterPointCloud;
     QAction * actComputeSolidHarmonics;
     QAction * actRescale;
     QAction * actRescaleSelectedSameRanges;

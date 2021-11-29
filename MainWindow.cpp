@@ -1087,15 +1087,15 @@ void MainWindow::slot_plot_histogram()
     {
         Viewer1D* viewer1d=createViewer1D();
 
-        for (int k=0; k<id_list.size(); k++)
+        bool ok;
+        int nbbins=QInputDialog::getInt(this,"Number of bins","Nb bins=",100,2,10000,1,&ok);
+        if (ok)
         {
-            Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[k].column());
-
-            if (data_y.size()>0)
+            for (int k=0; k<id_list.size(); k++)
             {
-                bool ok;
-                int nbbins=QInputDialog::getInt(this,"Number of bins","Nb bins=",100,2,10000,1,&ok);
-                if (ok)
+                Eigen::VectorXd data_y=table->getLogicalColDataDouble(id_list[k].column());
+
+                if (data_y.size()>0)
                 {
                     viewer1d->slot_histogram(data_y,QString("Histogram %1").arg(table->getLogicalColName(id_list[k  ].column())),nbbins);
                 }

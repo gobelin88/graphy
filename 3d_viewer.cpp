@@ -40,6 +40,10 @@ Viewer3D::Viewer3D(const QMap<QString, QKeySequence>& shortcuts_map,QWidget * pa
     new Light3D(rootEntity, "white",QVector3D(5,5,-5));
     new Light3D(rootEntity, "white",QVector3D(-5,5,5));
     new Light3D(rootEntity, "white",QVector3D(-5,5,-5));
+    new Light3D(rootEntity, "white",QVector3D(5,-5,5));
+    new Light3D(rootEntity, "white",QVector3D(5,-5,-5));
+    new Light3D(rootEntity, "white",QVector3D(-5,-5,5));
+    new Light3D(rootEntity, "white",QVector3D(-5,-5,-5));
 
     init3D();
 
@@ -110,11 +114,10 @@ void Viewer3D::createPopup()
     popupMenu=new QMenu();
 
     menuParameters= new QMenu("Parameters");
-    menuData= new QMenu("Point cloud");
+    menuPointCloud= new QMenu("Point cloud");
     menuFit= new QMenu("Fit");
-    menuProject= new QMenu("Project");
+    menuProjectOn= new QMenu("Project on");
     menuScalarField= new QMenu("ScalarField");
-    menuTools= new QMenu("Tools");
     menuView= new QMenu("View");
     menuMesh= new QMenu("Mesh");
 
@@ -125,14 +128,14 @@ void Viewer3D::createPopup()
     actFitSphere= new QAction("Sphere",  this);
     actFitPlan= new QAction("Plan",  this);
     actFitMesh= new QAction("Custom mesh",  this);
-    actFitPointCloud= new QAction("Point cloud",  this);
+    actRegisterPointCloud= new QAction("Rigid registration",  this);
     actProjectSphere= new QAction("Sphere",  this);
     actProjectPlan= new QAction("Plan",  this);
     actProjectMesh= new QAction("Custom mesh",  this);
     actRandomSubSample= new QAction("Random subsample",  this);
     actMove= new QAction("Move",  this);
 
-    actComputeSolidHarmonics= new QAction("Solid Harmonics",  this);
+    actComputeSolidHarmonics= new QAction("Solid Harmonics decomposition",  this);
     actRescale= new QAction("Rescale",  this);
     actRescaleSelected= new QAction("Rescale selected",  this);
     actRescaleSelectedSameRanges= new QAction("Rescale selected same ranges",  this);
@@ -184,7 +187,7 @@ void Viewer3D::createPopup()
     popupMenu->addMenu(menuParameters);
     popupMenu->addMenu(menuView);
     popupMenu->addSeparator();
-    popupMenu->addMenu(menuData);
+    popupMenu->addMenu(menuPointCloud);
     popupMenu->addMenu(menuMesh);
     popupMenu->addSeparator();
     popupMenu->addAction(actSave);
@@ -195,23 +198,27 @@ void Viewer3D::createPopup()
     menuView->addAction(actRemoveSelected);
     menuView->addAction(actFullscreen);
     menuParameters->addAction(parametersActionWidget);
-    menuData->addMenu(menuFit);
-    menuData->addMenu(menuProject);
-    menuData->addMenu(menuScalarField);
-    menuData->addMenu(menuTools);
-    menuData->addAction(actExport);
+    menuPointCloud->addMenu(menuFit);
+    menuPointCloud->addMenu(menuProjectOn);
+    menuPointCloud->addMenu(menuScalarField);
+    menuPointCloud->addSeparator();
+    menuPointCloud->addAction(actRegisterPointCloud);
+    menuPointCloud->addAction(actRandomSubSample);
+    menuPointCloud->addAction(actMove);
+    menuPointCloud->addSeparator();
+    menuPointCloud->addAction(actExport);
+
     menuFit->addAction(actFitSphere);
     menuFit->addAction(actFitEllipsoid);
     menuFit->addAction(actFitPlan);
     menuFit->addAction(actFitMesh);
-    menuFit->addAction(actFitPointCloud);
-    menuProject->addAction(actProjectSphere);
-    menuProject->addAction(actProjectPlan);
-    menuProject->addAction(actProjectMesh);
+
+    menuProjectOn->addAction(actProjectSphere);
+    menuProjectOn->addAction(actProjectPlan);
+    menuProjectOn->addAction(actProjectMesh);
     menuMesh->addAction(actMeshLoad);
     menuMesh->addAction(actMeshCreateRotegrity);
-    menuTools->addAction(actRandomSubSample);
-    menuTools->addAction(actMove);
+
     menuScalarField->addAction(actComputeSolidHarmonics);
 
     QObject::connect(cb_show_hide_labels,SIGNAL(stateChanged(int)),this,SLOT(slot_showHideLabels(int)));
@@ -223,7 +230,7 @@ void Viewer3D::createPopup()
     QObject::connect(actRescale,SIGNAL(triggered()),this,SLOT(slot_resetView()));
     QObject::connect(actRescaleSelectedSameRanges,SIGNAL(triggered()),this,SLOT(slot_resetViewOnSelectedSameRanges()));
     QObject::connect(actRescaleSelected,SIGNAL(triggered()),this,SLOT(slot_resetViewOnSelected()));
-    QObject::connect(actFitPointCloud,SIGNAL(triggered()),this,SLOT(slot_fitPointCloud()));
+    QObject::connect(actRegisterPointCloud,SIGNAL(triggered()),this,SLOT(slot_fitPointCloud()));
     QObject::connect(actComputeSolidHarmonics,SIGNAL(triggered()),this,SLOT(slot_computeSolidHarmonics()));
     QObject::connect(actRemoveSelected,SIGNAL(triggered()),this,SLOT(slot_removeSelected()));
     QObject::connect(actRandomSubSample,SIGNAL(triggered()),this,SLOT(slot_randomSubSamples()));
@@ -1440,7 +1447,7 @@ void Viewer3D::slot_computeSolidHarmonics()
         l_eqn->setPixmap(QPixmap(":/eqn/eqn/SolidHarmonics_Regular.gif"));
 
         QCheckBox * cb_optimized=new QCheckBox("Optimized",dialog);
-        cb_optimized->setChecked(false);
+        cb_optimized->setChecked(true);
         cb_optimized->setToolTip("For non-uniformly set of points basic correlation may be not sufficient "
                                  "in order to estimate the harmonics decomposition. Enable this option will perform"
                                  "Levenberg-Marquardt optimisation on data starting with basic correlation result.");
@@ -1448,12 +1455,9 @@ void Viewer3D::slot_computeSolidHarmonics()
         gbox->addWidget(l_eqn,0,0,1,2);
         gbox->addWidget(sb_order,1,0);
         gbox->addWidget(cb_mode,1,1);
-        gbox->addWidget(cb_optimized,2,1);
-
+        gbox->addWidget(cb_optimized,2,0);
         gbox->addWidget(buttonBox,3,0,1,2);
         dialog->setLayout(gbox);
-
-//        connect(cb_mode, &QComboBox::currentIndexChanged,[=](int index) { l_eqn->setPixmap(QPixmap(":/eqn/eqn/SolidHarmonics_Regular.gif")); });
 
         connect(cb_mode, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [=]( int index )
         {
@@ -1467,18 +1471,54 @@ void Viewer3D::slot_computeSolidHarmonics()
         int result=dialog->exec();
         if (result == QDialog::Accepted)
         {
+            QElapsedTimer timer;
+            timer.start();
+
+            bool cart=false;
+
             std::cout<<"slot_computeSolidHarmonics...fit"<<std::endl;
-            SolidHarmonicsDecomposition shd(sb_order->value()+1,static_cast<SolidHarmonicsDecomposition::Mode>(cb_mode->currentData().toInt()));
+
+            const std::vector<DataCloudNode> & p_data=pcl->data();
+            std::vector<Eigen::Vector4d> dataPoints(p_data.size());
+            std::vector<Eigen::Vector2d> fitPoints(p_data.size());
+            for(int i=0;i<dataPoints.size();i++)
+            {
+                if(!cart)
+                {
+                    cartesian_to_spherical(p_data[i].position[0],p_data[i].position[1],p_data[i].position[2],
+                                dataPoints[i][0],dataPoints[i][1],dataPoints[i][2]);
+                }
+                else
+                {
+                    dataPoints[i][0]=p_data[i].position[0];
+                    dataPoints[i][1]=p_data[i].position[1];
+                    dataPoints[i][2]=p_data[i].position[2];
+                }
+                dataPoints[i][3]=p_data[i].scalar;
+
+                fitPoints[i][0]=i;
+                fitPoints[i][1]=p_data[i].scalar;
+            }
+
+            SolidHarmonicsDecomposition shd(dataPoints,
+                                            sb_order->value()+1,
+                                            static_cast<SolidHarmonicsDecomposition::Mode>(cb_mode->currentData().toInt()),
+                                            cart);
+
             std::cout<<"Number of harmonics="<<shd.nb_params()<<std::endl;
 
-            shd.guessDecomposition(pcl->positionsAndScalarField());
+            shd.preCalcSolidsHarmonics();
+            shd.guessDecomposition();
+
             Eigen::MatrixXd C=shd.getC();
             std::cout<<"C="<<C<<std::endl;
 
             if(cb_optimized->isChecked())
             {
-                pcl->fit(&shd);
+                shd.fit(fitPoints,10000,-1);
             }
+
+            std::cout<<"Time="<<timer.nsecsElapsed()*1e-9<<std::endl;
 
             QString str;
             for(int l=0;l<shd.order();l++)

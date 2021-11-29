@@ -88,6 +88,7 @@ public:
     Qt3DCore::QEntity* entity;
     Qt3DRender::QBuffer* buffer;
     Qt3DRender::QAttribute* positionAttribute;
+    Qt3DRender::QAttribute* normalAttribute;
     Qt3DRender::QGeometry* geometry;
     Qt3DRender::QGeometryRenderer* geometryRenderer;
 
@@ -99,6 +100,30 @@ public:
     QMatrix4x4 tR,tT;
 
     Qt3DRender::QObjectPicker * picker;
+
+    Qt3DRender::QMaterial * getShapeFitMaterial(Qt3DCore::QEntity* rootEntity,QColor color)
+    {
+        Qt3DExtras::QDiffuseSpecularMaterial * pmaterial= new Qt3DExtras::QDiffuseSpecularMaterial(rootEntity);
+        pmaterial->setAmbient(color);
+        pmaterial->setDiffuse(color);
+        pmaterial->setSpecular(color);
+        pmaterial->setShininess(0);
+        pmaterial->setAlphaBlendingEnabled(true);
+
+        Qt3DRender::QCullFace* pculling= new Qt3DRender::QCullFace();
+        pculling->setMode(Qt3DRender::QCullFace::Front);
+
+        auto effect = pmaterial->effect();
+        for (auto t : effect->techniques())
+        {
+            for (auto rp : t->renderPasses())
+            {
+                rp->addRenderState(pculling);
+            }
+        }
+
+        return pmaterial;
+    }
 };
 
 #endif // BASE3D_H

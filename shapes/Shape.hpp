@@ -132,7 +132,7 @@ public:
         return err_dist;
     }
 	
-private:
+protected:
     std::vector<T> points;
 };
 

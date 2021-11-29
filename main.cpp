@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
     {
         std::cout<<"Starting Graphy Version-"<<graphyVersion<<std::endl;
         MainWindow w;
-        w.show();
+        w.showMaximized();
 
         QObject::connect(&app, &SingleApplication::instanceStarted, [ &w ]() {w.raise();w.activateWindow();});
         QObject::connect(&app,&SingleApplication::receivedMessage,&w,&MainWindow::receivedMessage);

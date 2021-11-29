@@ -171,20 +171,7 @@ Plan3D::Plan3D(Qt3DCore::QEntity* rootEntity,Plan* plan,float radius,QColor colo
     geometryRenderer = new Qt3DRender::QGeometryRenderer(rootEntity);
     geometryRenderer->setGeometry(geometry);
     geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Triangles);
-    material = new Qt3DExtras::QPhongMaterial(rootEntity);
-    static_cast<Qt3DExtras::QPhongMaterial*>(material)->setAmbient(color);
-    //static_cast<Qt3DExtras::QPhongAlphaMaterial*>(material)->setAlpha(0.8);
-
-    Qt3DRender::QCullFace* culling = new Qt3DRender::QCullFace();
-    culling->setMode(Qt3DRender::QCullFace::NoCulling);
-    auto effect = material->effect();
-    for (auto t : effect->techniques())
-    {
-        for (auto rp : t->renderPasses())
-        {
-            rp->addRenderState(culling);
-        }
-    }
+    material = getShapeFitMaterial(rootEntity,color);
 
     // entity
     entity->addComponent(geometryRenderer);
@@ -234,9 +221,19 @@ Sphere3D::Sphere3D(Qt3DCore::QEntity* rootEntity,Sphere * sphere,QColor color)
     positionAttribute->setVertexSize(3);
     positionAttribute->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
     positionAttribute->setBuffer(buffer);
-    positionAttribute->setByteStride(3 * sizeof(float));
+    positionAttribute->setByteStride(6 * sizeof(float));
     positionAttribute->setCount(Na*Nb);
     geometry->addAttribute(positionAttribute); // We add the vertices in the geometry
+
+    normalAttribute = new Qt3DRender::QAttribute(geometry);
+    normalAttribute->setName(Qt3DRender::QAttribute::defaultNormalAttributeName());
+    normalAttribute->setVertexBaseType(Qt3DRender::QAttribute::Float);
+    normalAttribute->setVertexSize(3);
+    normalAttribute->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
+    normalAttribute->setBuffer(buffer);
+    normalAttribute->setByteOffset(3 * sizeof(float));
+    normalAttribute->setByteStride(6 * sizeof(float));
+    geometry->addAttribute(normalAttribute);
 
     // connectivity between vertices
     QByteArray indexBytes;
@@ -273,20 +270,7 @@ Sphere3D::Sphere3D(Qt3DCore::QEntity* rootEntity,Sphere * sphere,QColor color)
     geometryRenderer = new Qt3DRender::QGeometryRenderer(rootEntity);
     geometryRenderer->setGeometry(geometry);
     geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Triangles);
-    material = new Qt3DExtras::QPhongMaterial(rootEntity);
-    static_cast<Qt3DExtras::QPhongMaterial*>(material)->setAmbient(color);
-    //static_cast<Qt3DExtras::QPhongAlphaMaterial*>(material)->setAlpha(0.8);
-
-    Qt3DRender::QCullFace* culling = new Qt3DRender::QCullFace();
-    culling->setMode(Qt3DRender::QCullFace::NoCulling);
-    auto effect = material->effect();
-    for (auto t : effect->techniques())
-    {
-        for (auto rp : t->renderPasses())
-        {
-            rp->addRenderState(culling);
-        }
-    }
+    material = getShapeFitMaterial(rootEntity,color);
 
     // entity
     entity->addComponent(geometryRenderer);
@@ -303,7 +287,7 @@ Sphere3D::~Sphere3D()
 QByteArray Sphere3D::getBuffer()
 {
     QByteArray bufferBytes;
-    bufferBytes.resize(Na* Nb*3 * sizeof(float));
+    bufferBytes.resize(Na* Nb*6 * sizeof(float));
     float* positions = reinterpret_cast<float*>(bufferBytes.data());
 
     double radius=sphere->getRadius();
@@ -315,11 +299,17 @@ QByteArray Sphere3D::getBuffer()
             double alpha=double(i)/Na*M_PI*2;
             double beta=double(j)/(Nb-1)*M_PI-M_PI/2;
 
-            Eigen::Vector3d p= sphere->getCenter()+radius*Eigen::Vector3d(cos(alpha)*cos(beta),sin(alpha)*cos(beta),sin(beta));
+
+            Eigen::Vector3d n(cos(alpha)*cos(beta),sin(alpha)*cos(beta),sin(beta));
+            Eigen::Vector3d p= sphere->getCenter()+radius*n;
 
             *positions++ = p.x();
             *positions++ = p.y();
             *positions++ = p.z();
+
+            *positions++ = n.x();
+            *positions++ = n.y();
+            *positions++ = n.z();
         }
     }
 
@@ -382,20 +372,7 @@ Ellipsoid3D::Ellipsoid3D(Qt3DCore::QEntity* rootEntity,Ellipsoid * ellipsoid,QCo
     geometryRenderer = new Qt3DRender::QGeometryRenderer(rootEntity);
     geometryRenderer->setGeometry(geometry);
     geometryRenderer->setPrimitiveType(Qt3DRender::QGeometryRenderer::Triangles);
-    material = new Qt3DExtras::QPhongMaterial(rootEntity);
-    static_cast<Qt3DExtras::QPhongMaterial*>(material)->setAmbient(color);
-    //static_cast<Qt3DExtras::QPhongAlphaMaterial*>(material)->setAlpha(0.8);
-
-    Qt3DRender::QCullFace* culling = new Qt3DRender::QCullFace();
-    culling->setMode(Qt3DRender::QCullFace::NoCulling);
-    auto effect = material->effect();
-    for (auto t : effect->techniques())
-    {
-        for (auto rp : t->renderPasses())
-        {
-            rp->addRenderState(culling);
-        }
-    }
+    material = getShapeFitMaterial(rootEntity,color);
 
     // entity
     entity->addComponent(geometryRenderer);
